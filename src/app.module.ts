@@ -17,6 +17,7 @@ import { RecomendacaoModule } from './modules/recomendacao/recomendacao.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { ServicosModule } from './modules/servicos/servicos.module';
 import { SimuladorModule } from './modules/simulador/simulador.module';
+import { SolicitacaoModule } from './modules/solicitacao/solicitacao.module';
 import { UsuarioModule } from './modules/usuario/usuario.module';
 
 @Module({
@@ -53,6 +54,7 @@ import { UsuarioModule } from './modules/usuario/usuario.module';
     ServicosModule,
     PublicidadeModule,
     CloudinaryModule,
+    SolicitacaoModule,
   ],
 
   controllers: [],
