@@ -5,9 +5,12 @@ import {
   Logger,
   MaxFileSizeValidator,
   ParseFilePipe,
+  Get,
   Post,
   UploadedFile,
   UseInterceptors,
+  ParseIntPipe,
+  Param
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes } from '@nestjs/swagger';
@@ -43,5 +46,17 @@ export class BlogController {
     this.logger.log(`Iniciando criação de post no blog...`);
 
     return this.blogService.criarPost(blogDto, imagem);
+  }
+
+  @Get()
+  getAll(): Promise<Blog[]> {
+    this.logger.log(`Iniciando busca de todos os posts do blog...`);
+    return this.blogService.getAll();
+  }
+
+  @Get(':id')
+  getById(@Param('id', ParseIntPipe) id: number): Promise<Blog> {
+    this.logger.log(`Iniciando busca de post do blog por Id...`);
+    return this.blogService.getById(id);
   }
 }

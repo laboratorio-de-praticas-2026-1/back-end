@@ -10,6 +10,8 @@ describe('BlogService', () => {
 
   const mockBlogModel = {
     create: jest.fn(),
+    findAll: jest.fn(),
+    findByPk: jest.fn(),
   };
 
   const mockCloudinaryService = {
@@ -72,5 +74,51 @@ describe('BlogService', () => {
       mockPost,
     );
     expect(mockBlogModel.create).toHaveBeenCalledWith(postData);
+  });
+
+   it('deve buscar todos os posts do blog com sucesso!', async () => {
+    const mockPosts = [
+      {
+        id: 1,
+        titulo: 'Título 1',
+        conteudo: 'Conteúdo 1',
+        dataPublicacao: new Date(),
+        urlImagem: 'http://example.com/1',
+      },
+      {
+        id: 2,
+        titulo: 'Título 2',
+        conteudo: 'Conteúdo 2',
+        dataPublicacao: new Date(),
+        urlImagem: 'http://example.com/2',
+      },
+    ];
+
+    mockBlogModel.findAll.mockResolvedValue(mockPosts);
+
+    await expect(service.getAll()).resolves.toEqual(mockPosts);
+    expect(mockBlogModel.findAll).toHaveBeenCalledTimes(1);
+  });
+
+  it('deve buscar um post do blog por id com sucesso!', async () => {
+    const mockPost = {
+      id: 1,
+      titulo: 'Título do Post',
+      conteudo: 'Conteúdo do post',
+      dataPublicacao: new Date(),
+      urlImagem: 'http://example.com/post',
+    };
+
+    mockBlogModel.findByPk.mockResolvedValue(mockPost);
+
+    await expect(service.getById(1)).resolves.toEqual(mockPost);
+    expect(mockBlogModel.findByPk).toHaveBeenCalledWith(1);
+  });
+
+  it('deve lançar erro ao buscar post do blog por id inexistente', async () => {
+    mockBlogModel.findByPk.mockResolvedValue(null);
+
+    await expect(service.getById(999)).rejects.toThrow('Post não encontrado');
+    expect(mockBlogModel.findByPk).toHaveBeenCalledWith(999);
   });
 });

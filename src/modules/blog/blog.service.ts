@@ -2,6 +2,7 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
@@ -43,5 +44,19 @@ export class BlogService {
       dataPublicacao: blogDto.dataPublicacao,
       urlImagem: urlImagem,
     });
+  }
+
+  async getAll(): Promise<Blog[]> {
+    return this.blogModel.findAll();
+  }
+
+  async getById(id: number): Promise<Blog> {
+    const blog = await this.blogModel.findByPk(id);
+
+    if (!blog) {
+      throw new NotFoundException('Post não encontrado');
+    }
+
+    return blog;
   }
 }
