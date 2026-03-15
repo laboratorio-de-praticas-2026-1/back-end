@@ -63,10 +63,10 @@ export class BlogService {
   async deleteById(id: number): Promise<void> {
     const blog = await this.blogModel.findByPk(id);
 
-  if (!blog) {
-    throw new NotFoundException('Post não encontrado');
-  }
+    if (!blog) {
+      throw new NotFoundException('Post não encontrado');
+    }
 
-  await blog.destroy();
-}
+    await blog.destroy();
+  }
 }
