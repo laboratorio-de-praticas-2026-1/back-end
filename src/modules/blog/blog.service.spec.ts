@@ -76,7 +76,7 @@ describe('BlogService', () => {
     expect(mockBlogModel.create).toHaveBeenCalledWith(postData);
   });
 
-   it('deve buscar todos os posts do blog com sucesso!', async () => {
+  it('deve buscar todos os posts do blog com sucesso!', async () => {
     const mockPosts = [
       {
         id: 1,
