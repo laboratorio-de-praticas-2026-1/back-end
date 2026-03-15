@@ -10,7 +10,8 @@ import {
   UploadedFile,
   UseInterceptors,
   ParseIntPipe,
-  Param
+  Param,
+  Delete,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes } from '@nestjs/swagger';
@@ -58,5 +59,11 @@ export class BlogController {
   getById(@Param('id', ParseIntPipe) id: number): Promise<Blog> {
     this.logger.log(`Iniciando busca de post do blog por Id...`);
     return this.blogService.getById(id);
+  }
+
+  @Delete(':id')
+  deleteById(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    this.logger.log(`Iniciando remoção de post do blog por Id...`);
+    return this.blogService.deleteById(id);
   }
 }
