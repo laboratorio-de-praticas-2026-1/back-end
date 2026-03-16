@@ -1,44 +1,44 @@
 # Back-end Bortone
 
-Esta documentacao cobre exclusivamente o back-end atual do repositorio, implementado com **NestJS + Sequelize + MySQL**.
+Esta documentação cobre exclusivamente o back-end atual do repositório, implementado com **NestJS + Sequelize + MySQL**.
 
 ## Escopo
 
-- Estrutura de inicializacao da API
-- Configuracao de ambiente
-- Arquitetura por modulos
+- Estrutura de inicialização da API
+- Configuração de ambiente
+- Arquitetura por módulos
 - Endpoints HTTP implementados
 - Gateway WebSocket
-- Modelos Sequelize do dominio
-- Status atual de implementacao por modulo
+- Modelos Sequelize do domínio
+- Status atual de implementação por módulo
 
 ## Tecnologias
 
-| Tecnologia | Funcao |
+| Tecnologia | Função |
 | --- | --- |
 | NestJS 11 | Framework principal da API |
 | Sequelize + sequelize-typescript | ORM e mapeamento de modelos |
 | MySQL | Banco de dados |
-| class-validator / class-transformer | Validacao de DTOs |
-| Swagger (`/swagger`) | Exploracao e teste de endpoints |
-| Socket.IO via `@nestjs/websockets` | Comunicacao em tempo real |
+| class-validator / class-transformer | Validação de DTOs |
+| Swagger (`/swagger`) | Exploração e teste de endpoints |
+| Socket.IO via `@nestjs/websockets` | Comunicação em tempo real |
 
-## Inicio rapido
+## Início rápido
 
-1. Configurar variaveis de ambiente em `.env` (com base em `.env.example`)
-2. Instalar dependencias: `npm install`
+1. Configurar variáveis de ambiente em `.env` (com base em `.env.example`)
+2. Instalar dependências: `npm install`
 3. Rodar a API: `npm run start:dev`
 4. Abrir Swagger: `http://localhost:3000/swagger`
 
-## Mapa da documentacao
+## Mapa da documentação
 
-- **Configuracao do Ambiente**: setup local e variaveis
-- **Arquitetura Back-end**: organizacao da aplicacao NestJS
-- **API / Modulos e Endpoints**: rotas por controller
+- **Configuração do Ambiente**: setup local e variáveis
+- **Arquitetura Back-end**: organização da aplicação NestJS
+- **API / Módulos e Endpoints**: rotas por controller
 - **API / WebSocket (Chat)**: status e estrutura de gateway
-- **Dados / Modelos Sequelize**: entidades, campos e relacoes
-- **Status de Implementacao**: panorama de modulos implementados e stubs
+- **Dados / Modelos Sequelize**: entidades, campos e relações
+- **Status de Implementação**: panorama de módulos implementados e stubs
 
-## Observacao importante
+## Observação importante
 
-Esta documentacao representa o estado atual do codigo no repositorio. Modulos ainda sem rotas implementadas foram marcados explicitamente como **stub/estrutura base**.
+Esta documentação representa o estado atual do código no repositório. Módulos ainda sem rotas implementadas foram marcados explicitamente como **stub/estrutura base**.

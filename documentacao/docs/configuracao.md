@@ -1,22 +1,22 @@
-# Configuracao do ambiente
+# Configuração do ambiente
 
 ## Pre-requisitos
 
 - Node.js 20+
 - npm 10+
-- Banco MySQL acessivel (local via repositorio database ou remoto)
+- Banco MySQL acessível (local via repositório database ou remoto)
 
-## Instalar dependencias
+## Instalar dependências
 
 ```bash
 npm install
 ```
 
-## Variaveis de ambiente
+## Variáveis de ambiente
 
 Crie um arquivo `.env` na raiz com base em `.env.example`.
 
-### Exemplo de configuracao (desenvolvimento)
+### Exemplo de configuração (desenvolvimento)
 
 ```env
 DATABASE_HOST=mysql-banco-dev-lp.alwaysdata.net
@@ -27,7 +27,7 @@ DATABASE_PORT=3306
 PORT=3000
 ```
 
-> Para banco local, use o compose do repositorio de database e ajuste host/credenciais conforme seu ambiente.
+> Para banco local, use o compose do repositório de database e ajuste host/credenciais conforme seu ambiente.
 
 ## Executar a API
 
@@ -35,23 +35,23 @@ PORT=3000
 npm run start:dev
 ```
 
-A aplicacao sobe em `http://localhost:3000` por padrao.
+A aplicação sobe em `http://localhost:3000` por padrão.
 
 ## Swagger
 
-Com a API em execucao, acesse:
+Com a API em execução, acesse:
 
 ```text
 http://localhost:3000/swagger
 ```
 
-## Scripts uteis
+## Scripts úteis
 
-| Script | Funcao |
+| Script | Função |
 | --- | --- |
 | `npm run start:dev` | Executa API em modo watch |
-| `npm run build` | Build de producao |
+| `npm run build` | Build de produção |
 | `npm run start:prod` | Roda build gerado em `dist/` |
-| `npm run lint` | Lint com correcao automatica |
-| `npm test` | Testes unitarios |
+| `npm run lint` | Lint com correção automática |
+| `npm test` | Testes unitários |
 | `npm run test:e2e` | Testes end-to-end |

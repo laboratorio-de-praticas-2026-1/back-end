@@ -1,6 +1,6 @@
 # Modelos Sequelize
 
-## Visao geral
+## Visão geral
 
 Modelos mapeados em `src/models` usando `sequelize-typescript`.
 
@@ -60,6 +60,7 @@ Modelos mapeados em `src/models` usando `sequelize-typescript`.
 - `id` (PK)
 - `nome`
 - `email` (unico)
+- `email` (único)
 - `senha`
 - `nivel` (`cliente` | `administrador`)
 - `cpfCnpj`
@@ -89,7 +90,7 @@ Modelos mapeados em `src/models` usando `sequelize-typescript`.
 - `dataSolicitacao`
 - `dataConclusao`
 
-**Relacoes**
+**Relações**
 
 - `Solicitacao` pertence a `Usuario`
 - `Solicitacao` pertence a `Veiculo`
@@ -104,6 +105,6 @@ Modelos mapeados em `src/models` usando `sequelize-typescript`.
 - `statusValidacao` (`pendente`, `aprovado`, `rejeitado`)
 - `dataUpload`
 
-## Observacao sobre schema
+## Observação sobre schema
 
-O back-end esta configurado com `synchronize: false`. Alteracoes de estrutura devem ser feitas via processo oficial do repositorio de banco de dados/migracoes.
+O back-end está configurado com `synchronize: false`. Alterações de estrutura devem ser feitas via processo oficial do repositório de banco de dados/migrações.
