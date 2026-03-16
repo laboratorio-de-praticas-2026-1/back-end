@@ -17,6 +17,7 @@ import { HeaderModule } from './modules/header/header.module';
 import { BuscaModule } from './modules/busca/busca.module';
 import { ServicosModule } from './modules/servicos/servicos.module';
 import { PublicidadeModule } from './modules/publicidade/publicidade.module';
+import { SolicitacaoModule } from './modules/solicitacao/solicitacao.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { PublicidadeModule } from './modules/publicidade/publicidade.module';
     BuscaModule,
     ServicosModule,
     PublicidadeModule,
+    SolicitacaoModule,
   ],
 
   controllers: [],

@@ -23,11 +23,11 @@ export class Solicitacao extends Model {
   declare usuario: Usuario;
 
   @ForeignKey(() => Veiculo)
-  @Column({ field: 'veiculo_id', allowNull: false })
-  declare veiculoId: number;
+  @Column({ field: 'veiculo_id', type: DataType.INTEGER, allowNull: true })
+  declare veiculoId: number | null;
 
   @BelongsTo(() => Veiculo)
-  declare veiculo: Veiculo;
+  declare veiculo: Veiculo | null;
 
   @ForeignKey(() => Servico)
   @Column({ field: 'servico_id', allowNull: false })
