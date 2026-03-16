@@ -1,0 +1,40 @@
+site_name: Back-end Bortone - Documentacao Tecnica
+site_description: Documentacao tecnica do back-end NestJS do projeto Bortone
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - tables
+  - attr_list
+
+theme:
+  name: material
+  language: pt
+  palette:
+    - scheme: default
+      primary: custom
+      accent: custom
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+    - toc.integrate
+
+extra_css:
+  - stylesheets/custom.css
+
+nav:
+  - Inicio: index.md
+  - Configuracao do Ambiente: configuracao.md
+  - Arquitetura Back-end: arquitetura-backend.md
+  - API:
+      - Modulos e Endpoints: api/modulos-e-endpoints.md
+      - WebSocket (Chat): api/websocket-chat.md
+  - Dados:
+      - Modelos Sequelize: dados/modelos-sequelize.md
+  - Status de Implementacao: status-implementacao.md
