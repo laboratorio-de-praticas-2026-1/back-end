@@ -12,6 +12,7 @@ import {
   ParseIntPipe,
   Param,
   Delete,
+  HttpCode,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes } from '@nestjs/swagger';
@@ -62,6 +63,7 @@ export class BlogController {
   }
 
   @Delete(':id')
+  @HttpCode(204)
   deleteById(@Param('id', ParseIntPipe) id: number): Promise<void> {
     this.logger.log(`Iniciando remoção de post do blog por Id...`);
     return this.blogService.deleteById(id);
