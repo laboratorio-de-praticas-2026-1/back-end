@@ -90,4 +90,27 @@ describe('BlogService', () => {
     await expect(service.getById(999)).rejects.toThrow('Post não encontrado');
     expect(mockBlogModel.findByPk).toHaveBeenCalledWith(999);
   });
+
+  it('deve deletar um post do blog com sucesso!', async () => {
+    const mockPost = {
+      destroy: jest.fn(),
+    };
+
+    mockBlogModel.findByPk.mockResolvedValue(mockPost);
+
+    await expect(service.deleteById(1)).resolves.toBeUndefined();
+
+    expect(mockBlogModel.findByPk).toHaveBeenCalledWith(1);
+    expect(mockPost.destroy).toHaveBeenCalled();
+  });
+
+  it('deve lançar erro ao deletar post inexistente', async () => {
+    mockBlogModel.findByPk.mockResolvedValue(null);
+
+    await expect(service.deleteById(999)).rejects.toThrow(
+      'Post não encontrado',
+    );
+
+    expect(mockBlogModel.findByPk).toHaveBeenCalledWith(999);
+  });
 });

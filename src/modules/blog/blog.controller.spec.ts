@@ -9,6 +9,7 @@ describe('BlogController', () => {
     criarPost: jest.fn(),
     getAll: jest.fn(),
     getById: jest.fn(),
+    deleteById: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -81,5 +82,12 @@ describe('BlogController', () => {
 
     await expect(controller.getById(1)).resolves.toEqual(mockPost);
     expect(mockBlogService.getById).toHaveBeenCalledWith(1);
+  });
+
+  it('deve deletar um post do blog com sucesso!', async () => {
+    mockBlogService.deleteById.mockResolvedValue(undefined);
+
+    await expect(controller.deleteById(1)).resolves.toBeUndefined();
+    expect(mockBlogService.deleteById).toHaveBeenCalledWith(1);
   });
 });
