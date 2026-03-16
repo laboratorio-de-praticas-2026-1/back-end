@@ -12,7 +12,6 @@ export function logError({
   chatId = null,
   stack = null,
 }: LogParams) {
-
   const log = {
     level: 'error',
     timestamp: new Date().toISOString(),
@@ -25,12 +24,7 @@ export function logError({
   console.error(JSON.stringify(log));
 }
 
-export function logInfo({
-  message,
-  userId = null,
-  chatId = null,
-}: LogParams) {
-
+export function logInfo({ message, userId = null, chatId = null }: LogParams) {
   const log = {
     level: 'info',
     timestamp: new Date().toISOString(),
