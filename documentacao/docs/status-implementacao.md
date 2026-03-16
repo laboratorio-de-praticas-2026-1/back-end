@@ -1,25 +1,25 @@
-# Status de implementacao
+# Status de implementação
 
 ## Panorama atual
 
-| Modulo | Status do service | Endpoints HTTP |
+| Módulo | Status do service | Endpoints HTTP |
 | --- | --- | --- |
-| agendamento | stub | nao |
+| agendamento | stub | não |
 | blog | implementado | sim |
-| busca | stub | nao |
-| chat | stub (gateway base) | nao |
+| busca | stub | não |
+| chat | stub (gateway base) | não |
 | contato | implementado | sim |
-| dashboard | stub | nao |
-| faq | stub | nao |
-| header | stub | nao |
-| mapa | stub | nao |
-| notificacao | stub | nao |
-| publicidade | stub | nao |
-| recomendacao | stub | nao |
-| reports | stub | nao |
-| servicos | stub | nao |
-| simulador | stub | nao |
-| usuario | stub | nao |
+| dashboard | stub | não |
+| faq | stub | não |
+| header | stub | não |
+| mapa | stub | não |
+| notificacao | stub | não |
+| publicidade | stub | não |
+| recomendacao | stub | não |
+| reports | stub | não |
+| servicos | stub | não |
+| simulador | stub | não |
+| usuario | stub | não |
 
 ## DTOs existentes
 
@@ -28,12 +28,12 @@
 
 ## Testes
 
-- Ha arquivos unitarios `.spec.ts` por modulo.
+- Há arquivos unitários `.spec.ts` por módulo.
 - Existe suite e2e em `test/`.
 
-## Prioridades tecnicas sugeridas
+## Prioridades técnicas sugeridas
 
-1. Definir endpoints minimos para modulos stubs com contrato claro de DTO.
-2. Padronizar documentacao Swagger com `@ApiTags` em todos os controllers.
-3. Aumentar cobertura de testes para services com regra de negocio.
+1. Definir endpoints mínimos para módulos stubs com contrato claro de DTO.
+2. Padronizar documentação Swagger com `@ApiTags` em todos os controllers.
+3. Aumentar cobertura de testes para services com regra de negócio.
 4. Documentar eventos do chat quando os handlers WebSocket forem implementados.

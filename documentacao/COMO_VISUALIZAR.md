@@ -1,14 +1,14 @@
-# Como visualizar a documentacao
+# Como visualizar a documentação
 
-## Opcao 1 - Rodar localmente com MkDocs (recomendado)
+## Opção 1 - Rodar localmente com MkDocs (recomendado)
 
-### 1. Instalar dependencias
+### 1. Instalar dependências
 
 ```bash
 pip install mkdocs mkdocs-material pymdown-extensions
 ```
 
-### 2. Entrar na pasta da documentacao
+### 2. Entrar na pasta da documentação
 
 ```bash
 cd documentacao
@@ -26,7 +26,7 @@ mkdocs serve
 http://127.0.0.1:8000
 ```
 
-## Opcao 2 - Gerar build estatico
+## Opção 2 - Gerar build estático
 
 ```bash
 cd documentacao
@@ -35,7 +35,7 @@ mkdocs build --clean
 
 Os arquivos gerados ficam em `documentacao/site/`.
 
-## Opcao 3 - Publicar no GitHub Pages (opcional)
+## Opção 3 - Publicar no GitHub Pages (opcional)
 
 ```bash
 cd documentacao

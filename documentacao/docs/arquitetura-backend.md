@@ -1,51 +1,51 @@
 # Arquitetura do back-end
 
-## Visao geral
+## Visão geral
 
-A aplicacao segue o padrao modular do NestJS, com separacao por contexto de negocio em `src/modules`.
+A aplicação segue o padrão modular do NestJS, com separação por contexto de negócio em `src/modules`.
 
-## Bootstrap da aplicacao
+## Bootstrap da aplicação
 
-No `main.ts`, a aplicacao:
+No `main.ts`, a aplicação:
 
-1. Cria a instancia Nest
+1. Cria a instância Nest
 2. Configura Swagger em `/swagger`
 3. Habilita CORS aberto
-4. Aplica pipe global de validacao
+4. Aplica pipe global de validação
 5. Inicia na porta `PORT` (fallback `3000`)
 
-## Modulo raiz
+## Módulo raiz
 
-No `app.module.ts`, sao carregados:
+No `app.module.ts`, são carregados:
 
 - `ConfigModule` global com `.env`
 - `SequelizeModule.forRoot(...)` com MySQL
-- Modulos de dominio (contato, blog, faq, chat, etc.)
+- Módulos de domínio (contato, blog, faq, chat, etc.)
 
-## Camadas e convencoes
+## Camadas e convenções
 
-Cada modulo segue a estrutura tipica:
+Cada módulo segue a estrutura típica:
 
-- `*.module.ts`: declaracao do modulo
-- `*.controller.ts`: exposicao de endpoints
-- `*.service.ts`: regra de negocio
-- `dto/`: contratos de entrada/saida (quando aplicavel)
+- `*.module.ts`: declaração do módulo
+- `*.controller.ts`: exposição de endpoints
+- `*.service.ts`: regra de negócio
+- `dto/`: contratos de entrada/saída (quando aplicável)
 
-## Persistencia
+## Persistência
 
 - ORM: Sequelize (`sequelize-typescript`)
 - Modelos em `src/models/*.model.ts`
 - `autoLoadModels: true`
-- `synchronize: false` (nao altera schema automaticamente)
-- `timestamps: false` por padrao global
+- `synchronize: false` (não altera schema automaticamente)
+- `timestamps: false` por padrão global
 
-## Integracoes expostas
+## Integrações expostas
 
 - API HTTP REST via controllers
-- Swagger para documentacao interativa
-- WebSocket gateway no modulo `chat`
+- Swagger para documentação interativa
+- WebSocket gateway no módulo `chat`
 
-## Modulos registrados atualmente
+## Módulos registrados atualmente
 
 - agendamento
 - blog

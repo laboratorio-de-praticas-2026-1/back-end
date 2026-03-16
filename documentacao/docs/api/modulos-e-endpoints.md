@@ -1,33 +1,33 @@
-# Modulos e endpoints
+# Módulos e endpoints
 
 ## Resumo
 
-Atualmente, o projeto possui **15 controllers** registrados. Destes, **2 controllers** possuem endpoints HTTP implementados no codigo.
+Atualmente, o projeto possui **15 controllers** registrados. Destes, **2 controllers** possuem endpoints HTTP implementados no código.
 
 ## Endpoints implementados
 
 ### Blog
 
 - `POST /blog`
-  - Metodo: `criarPost()`
+  - Método: `criarPost()`
   - Body: `BlogCreateDto`
   - Objetivo: criar uma postagem de blog
 
 ### Contato
 
 - `GET /contato`
-  - Metodo: `buscarContato()`
+  - Método: `buscarContato()`
   - Objetivo: retornar dados de contato/empresa
 
 - `GET /contato/:id`
-  - Metodo: `buscarContatoById(id)`
-  - Parametros:
+  - Método: `buscarContatoById(id)`
+  - Parâmetros:
     - `id` (number, validado com `ParseIntPipe`)
   - Objetivo: retornar registro de contato por identificador
 
 ## Controllers sem endpoints HTTP (estrutura base)
 
-Os controllers abaixo existem e estao registrados no modulo raiz, mas ainda sem rotas HTTP declaradas:
+Os controllers abaixo existem e estão registrados no módulo raiz, mas ainda sem rotas HTTP declaradas:
 
 - `agendamento`
 - `busca`
@@ -43,8 +43,8 @@ Os controllers abaixo existem e estao registrados no modulo raiz, mas ainda sem 
 - `simulador`
 - `usuario`
 
-## Observacoes de documentacao da API
+## Observações de documentação da API
 
-- Swagger esta configurado globalmente em `/swagger`.
-- Decorators Swagger por endpoint estao presentes principalmente em `contato`.
-- Recomendacao: adicionar `@ApiTags` e respostas padronizadas em todos os controllers conforme os modulos avancarem.
+- Swagger está configurado globalmente em `/swagger`.
+- Decorators Swagger por endpoint estão presentes principalmente em `contato`.
+- Recomendação: adicionar `@ApiTags` e respostas padronizadas em todos os controllers conforme os módulos avançarem.

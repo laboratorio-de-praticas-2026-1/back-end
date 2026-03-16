@@ -1,5 +1,5 @@
-site_name: Back-end Bortone - Documentacao Tecnica
-site_description: Documentacao tecnica do back-end NestJS do projeto Bortone
+site_name: Back-end Bortone - Documentação Técnica
+site_description: Documentação técnica do back-end NestJS do projeto Bortone
 
 markdown_extensions:
   - admonition
