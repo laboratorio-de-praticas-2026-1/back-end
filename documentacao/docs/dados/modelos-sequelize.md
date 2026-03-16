@@ -1,5 +1,7 @@
 # Modelos Sequelize
 
+## Documentação Detalhada do Banco de Dados
+ Documentação: [https://laboratorio-de-praticas-2026-1.github.io/database/]
 ## Visão geral
 
 Modelos mapeados em `src/models` usando `sequelize-typescript`.
@@ -107,4 +109,4 @@ Modelos mapeados em `src/models` usando `sequelize-typescript`.
 
 ## Observação sobre schema
 
-O back-end está configurado com `synchronize: false`. Alterações de estrutura devem ser feitas via processo oficial do repositório de banco de dados/migrações.
+O back-end está configurado com `synchronize: false`. Alterações de estrutura devem ser feitas via processo oficial do [repositório de banco de dados](https://github.com/laboratorio-de-praticas-2026-1/database.git)/migrações.
