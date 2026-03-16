@@ -17,5 +17,6 @@ export class NotificacaoService {
     this.logger.log(
       `Confirmacao da solicitacao ${payload.solicitacaoId} registrada para ${payload.email} (${payload.nomeUsuario}) no servico ${payload.servicoNome}.`,
     );
+    return Promise.resolve();
   }
 }

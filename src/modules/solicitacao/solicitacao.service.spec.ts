@@ -114,6 +114,44 @@ describe('SolicitacaoService', () => {
     });
   });
 
+  it('deve criar solicitacao sem veiculo quando nao informado', async () => {
+    const solicitacaoDto = {
+      usuario_id: 1,
+      servico_id: 3,
+      observacao_cliente: 'Observacao sem veiculo',
+    };
+
+    mockUsuarioModel.findByPk.mockResolvedValue({
+      id: 1,
+      nome: 'Amanda',
+      email: 'amanda@email.com',
+    });
+    mockServicoModel.findByPk.mockResolvedValue({
+      id: 3,
+      nome: 'Transferencia',
+    });
+    mockSolicitacaoModel.create.mockResolvedValue({
+      id: 11,
+    });
+    mockNotificacaoService.enviarConfirmacaoSolicitacao.mockResolvedValue(
+      undefined,
+    );
+
+    await expect(service.criarSolicitacao(solicitacaoDto)).resolves.toEqual({
+      message: 'Solicitação de serviço criada com sucesso',
+    });
+    expect(mockVeiculoModel.findByPk).not.toHaveBeenCalled();
+    expect(mockSolicitacaoModel.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        usuarioId: 1,
+        veiculoId: null,
+        servicoId: 3,
+        observacaoCliente: 'Observacao sem veiculo',
+        status: 'recebido',
+      }),
+    );
+  });
+
   it('deve falhar quando usuario nao for encontrado', async () => {
     mockUsuarioModel.findByPk.mockResolvedValue(null);
     mockVeiculoModel.findByPk.mockResolvedValue({

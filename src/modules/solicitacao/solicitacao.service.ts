@@ -28,9 +28,8 @@ export class SolicitacaoService {
   async criarSolicitacao(
     solicitacaoDto: CreateSolicitacaoDto,
   ): Promise<{ message: string }> {
-    const [usuario, veiculo, servico] = await Promise.all([
+    const [usuario, servico] = await Promise.all([
       this.usuarioModel.findByPk(solicitacaoDto.usuario_id),
-      this.veiculoModel.findByPk(solicitacaoDto.veiculo_id),
       this.servicoModel.findByPk(solicitacaoDto.servico_id),
     ]);
 
@@ -38,15 +37,19 @@ export class SolicitacaoService {
       throw new NotFoundException('Usuario nao encontrado');
     }
 
-    if (!veiculo) {
-      throw new NotFoundException('Veiculo nao encontrado');
-    }
-
     if (!servico) {
       throw new NotFoundException('Servico nao encontrado');
     }
 
-    if (veiculo.usuarioId !== usuario.id) {
+    const veiculo = solicitacaoDto.veiculo_id
+      ? await this.veiculoModel.findByPk(solicitacaoDto.veiculo_id)
+      : null;
+
+    if (solicitacaoDto.veiculo_id && !veiculo) {
+      throw new NotFoundException('Veiculo nao encontrado');
+    }
+
+    if (veiculo && veiculo.usuarioId !== usuario.id) {
       throw new BadRequestException(
         'O veiculo informado nao pertence ao usuario',
       );
@@ -54,7 +57,7 @@ export class SolicitacaoService {
 
     const solicitacao = await this.solicitacaoModel.create({
       usuarioId: usuario.id,
-      veiculoId: veiculo.id,
+      veiculoId: veiculo?.id ?? null,
       servicoId: servico.id,
       observacaoCliente: solicitacaoDto.observacao_cliente ?? null,
       status: 'recebido',
