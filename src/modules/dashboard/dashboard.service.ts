@@ -15,27 +15,30 @@ export class DashboardService {
   ) {}
 
   async retornarInfosDashboard(): Promise<DashboardReturnDto> {
-    const solicitacoesEmAberto: number = await this.solicitacaoModel.count({
-      where: {
-        status: {
-          [Op.in]: [
-            'recebido',
-            'aguardando_pagamento',
-            'aguardando_documento',
-            'em_andamento',
-          ],
+    const [
+      solicitacoesEmAberto,
+      solicitacoesConcluidas,
+      documentosPendentesValidacao,
+    ] = await Promise.all([
+      this.solicitacaoModel.count({
+        where: {
+          status: {
+            [Op.in]: [
+              'recebido',
+              'aguardando_pagamento',
+              'aguardando_documento',
+              'em_andamento',
+            ],
+          },
         },
-      },
-    });
-
-    const solicitacoesConcluidas: number = await this.solicitacaoModel.count({
-      where: { status: 'concluido' },
-    });
-
-    const documentosPendentesValidacao: number =
-      await this.documentoSolicitacaoModel.count({
+      }),
+      this.solicitacaoModel.count({
+        where: { status: 'concluido' },
+      }),
+      this.documentoSolicitacaoModel.count({
         where: { statusValidacao: 'pendente' },
-      });
+      }),
+    ]);
 
     return {
       solicitacoes: {
