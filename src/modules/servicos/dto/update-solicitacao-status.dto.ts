@@ -39,7 +39,6 @@ export class UpdateSolicitacaoStatusDto {
   @IsOptional()
   @IsString({ message: 'Observação administrativa deve ser uma string' })
   @Transform(({ value }) => {
-    // Aceita tanto observacao_admin quanto observacaoAdmin
     return value || undefined;
   })
   observacao_admin?: string;
