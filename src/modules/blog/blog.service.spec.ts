@@ -168,4 +168,21 @@ describe('BlogService', () => {
     expect(mockBlogModel.findByPk).toHaveBeenCalledWith(1);
     expect(mockPost.update).toHaveBeenCalledWith(postData);
   });
+
+  it('deve lançar erro ao atualizar post inexistente', async () => {
+    const postData = {
+      titulo: 'Título inexistente',
+      conteudo: 'Conteúdo qualquer',
+      dataPublicacao: new Date(),
+      urlImagem: 'http://example.com/inexistente',
+    };
+
+    mockBlogModel.findByPk.mockResolvedValue(null);
+
+    await expect(service.updateBlog(999, postData)).rejects.toThrow(
+      'Post não encontrado',
+    );
+
+    expect(mockBlogModel.findByPk).toHaveBeenCalledWith(999);
+  });
 });
