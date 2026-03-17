@@ -30,7 +30,6 @@ export class ServicosService {
       status: updateSolicitacaoStatusDto.status,
     };
 
-    // Usa observacao_admin se disponível, senão usa observacaoAdmin
     const observacao = updateSolicitacaoStatusDto.observacao_admin || updateSolicitacaoStatusDto.observacaoAdmin;
     if (observacao) {
       updateData.observacaoAdmin = observacao;
