@@ -39,4 +39,21 @@ export class BlogService {
 
     await blog.destroy();
   }
+
+  async updateBlog(id: number, blogDto: BlogCreateDto): Promise<Blog> {
+    const blog = await this.blogModel.findByPk(id);
+
+    if (!blog) {
+      throw new NotFoundException('Post não encontrado');
+    }
+
+    await blog.update({
+      titulo: blogDto.titulo,
+      conteudo: blogDto.conteudo,
+      dataPublicacao: blogDto.dataPublicacao,
+      urlImagem: blogDto.urlImagem,
+    });
+
+    return blog;
+  }
 }

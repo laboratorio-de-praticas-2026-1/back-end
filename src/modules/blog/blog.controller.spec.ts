@@ -10,6 +10,7 @@ describe('BlogController', () => {
     getAll: jest.fn(),
     getById: jest.fn(),
     deleteById: jest.fn(),
+    updateBlog: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -89,5 +90,26 @@ describe('BlogController', () => {
 
     await expect(controller.deleteById(1)).resolves.toBeUndefined();
     expect(mockBlogService.deleteById).toHaveBeenCalledWith(1);
+  });
+
+  it('deve atualizar post de blog com sucesso!', async () => {
+    const postData = {
+      titulo: 'Título do Post',
+      conteudo: 'Conteúdo do post',
+      dataPublicacao: new Date(),
+      urlImagem: 'http://example.com/post',
+    };
+
+    const mockPostAtualizado = {
+      id: 1,
+      ...postData,
+    };
+
+    mockBlogService.updateBlog.mockResolvedValue(mockPostAtualizado);
+
+    await expect(controller.updateBlog(1, postData)).resolves.toEqual(
+      mockPostAtualizado,
+    );
+    expect(mockBlogService.updateBlog).toHaveBeenCalledWith(1, postData);
   });
 });
