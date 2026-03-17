@@ -2,26 +2,16 @@ import { IsEnum, IsOptional, IsString } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export enum SolicitacaoStatus {
-  RECEBIDO = 'recebido',
-  AGUARDANDO_PAGAMENTO = 'aguardando_pagamento',
-  AGUARDANDO_DOCUMENTO = 'aguardando_documento',
-  EM_ANDAMENTO = 'em_andamento',
-  CONCLUIDO = 'concluido',
-  CANCELADO = 'cancelado',
-}
-
 export class UpdateSolicitacaoStatusDto {
   @ApiProperty({
     description: 'Status da solicitação',
-    enum: SolicitacaoStatus,
-    enumName: 'SolicitacaoStatus',
+    enum: ['recebido', 'aguardando_pagamento', 'aguardando_documento', 'em_andamento', 'concluido', 'cancelado'],
     example: 'em_andamento'
   })
-  @IsEnum(SolicitacaoStatus, {
+  @IsEnum(['recebido', 'aguardando_pagamento', 'aguardando_documento', 'em_andamento', 'concluido', 'cancelado'], {
     message: 'Status deve ser um dos seguintes: recebido, aguardando_pagamento, aguardando_documento, em_andamento, concluido, cancelado',
   })
-  status: SolicitacaoStatus;
+  status: 'recebido' | 'aguardando_pagamento' | 'aguardando_documento' | 'em_andamento' | 'concluido' | 'cancelado';
 
   @ApiPropertyOptional({
     description: 'Observação administrativa sobre a atualização',
