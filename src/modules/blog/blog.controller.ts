@@ -11,6 +11,7 @@ import {
   UseInterceptors,
   ParseIntPipe,
   Param,
+  Put,
   Delete,
   HttpCode,
 } from '@nestjs/common';
@@ -67,5 +68,14 @@ export class BlogController {
   deleteById(@Param('id', ParseIntPipe) id: number): Promise<void> {
     this.logger.log(`Iniciando remoção de post do blog por Id...`);
     return this.blogService.deleteById(id);
+  }
+
+  @Put(':id')
+  updateBlog(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() blogDto: BlogCreateDto,
+  ): Promise<Blog> {
+    this.logger.log(`Iniciando atualização de post no blog...`);
+    return this.blogService.updateBlog(id, blogDto);
   }
 }
