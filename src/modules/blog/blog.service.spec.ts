@@ -10,6 +10,7 @@ describe('BlogService', () => {
     create: jest.fn(),
     findAll: jest.fn(),
     findByPk: jest.fn(),
+    update: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -112,5 +113,28 @@ describe('BlogService', () => {
     );
 
     expect(mockBlogModel.findByPk).toHaveBeenCalledWith(999);
+  });
+
+  it('deve atualizar um post do blog com sucesso!', async () => {
+    const postData = {
+      titulo: 'Título do Post',
+      conteudo: 'Conteúdo do post',
+      dataPublicacao: new Date(),
+      urlImagem: 'http://example.com/post',
+    };
+
+    const mockPost = {
+      id: 1,
+      update: jest.fn(),
+      ...postData,
+    };
+
+    mockPost.update.mockResolvedValue(mockPost);
+    mockBlogModel.findByPk.mockResolvedValue(mockPost);
+
+    await expect(service.updateBlog(1, postData)).resolves.toEqual(mockPost);
+
+    expect(mockBlogModel.findByPk).toHaveBeenCalledWith(1);
+    expect(mockPost.update).toHaveBeenCalledWith(postData);
   });
 });
