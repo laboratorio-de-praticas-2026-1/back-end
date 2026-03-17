@@ -16,6 +16,7 @@ import { UsuarioModule } from './modules/usuario/usuario.module';
 import { HeaderModule } from './modules/header/header.module';
 import { BuscaModule } from './modules/busca/busca.module';
 import { ServicosModule } from './modules/servicos/servicos.module';
+import { SolicitacaoModule } from './modules/solicitacao/solicitacao.module';
 import { PublicidadeModule } from './modules/publicidade/publicidade.module';
 import { SolicitacaoModule } from './modules/solicitacao/solicitacao.module';
 
@@ -51,6 +52,7 @@ import { SolicitacaoModule } from './modules/solicitacao/solicitacao.module';
     HeaderModule,
     BuscaModule,
     ServicosModule,
+    SolicitacaoModule,
     PublicidadeModule,
     SolicitacaoModule,
   ],
