@@ -52,6 +52,7 @@ import { UsuarioModule } from './modules/usuario/usuario.module';
     HeaderModule,
     BuscaModule,
     ServicosModule,
+    SolicitacaoModule,
     PublicidadeModule,
     CloudinaryModule,
     SolicitacaoModule,
