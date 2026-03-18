@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BuscaService } from './busca.service';
 import { getModelToken } from '@nestjs/sequelize';
 import { Blog } from 'src/models/blog.model';
+import { Banner } from 'src/models/banner.model';
 
 describe('BuscaService', () => {
   let service: BuscaService;
@@ -10,8 +11,13 @@ describe('BuscaService', () => {
     findAll: jest.fn(),
   };
 
+  const mockBannerModel = {
+    findAll: jest.fn(),
+  };
+
   beforeEach(async () => {
     mockBlogModel.findAll.mockReset();
+    mockBannerModel.findAll.mockReset();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -19,6 +25,10 @@ describe('BuscaService', () => {
         {
           provide: getModelToken(Blog),
           useValue: mockBlogModel,
+        },
+        {
+          provide: getModelToken(Banner),
+          useValue: mockBannerModel,
         },
       ],
     }).compile();
@@ -96,5 +106,44 @@ describe('BuscaService', () => {
         ate: '2026-01-31',
       }),
     ).rejects.toBeDefined();
+  });
+
+  it('deve buscar banners ativos quando status=ativo', async () => {
+    const retorno = [{ id: 1 }];
+    mockBannerModel.findAll.mockResolvedValue(retorno);
+
+    await expect(
+      service.buscarBannerPorStatus({ status: 'ativo' }),
+    ).resolves.toEqual(retorno);
+
+    expect(mockBannerModel.findAll).toHaveBeenCalledTimes(1);
+    expect(mockBannerModel.findAll).toHaveBeenCalledWith({
+      where: {
+        ativo: true,
+      },
+    });
+  });
+
+  it('deve buscar banners inativos quando status=inativo', async () => {
+    const retorno = [{ id: 1 }];
+    mockBannerModel.findAll.mockResolvedValue(retorno);
+
+    await expect(
+      service.buscarBannerPorStatus({ status: 'inativo' }),
+    ).resolves.toEqual(retorno);
+
+    expect(mockBannerModel.findAll).toHaveBeenCalledTimes(1);
+    expect(mockBannerModel.findAll).toHaveBeenCalledWith({
+      where: {
+        ativo: false,
+      },
+    });
+  });
+
+  it('deve falhar quando status é inválido', async () => {
+    await expect(
+      service.buscarBannerPorStatus({ status: 'x' } as any),
+    ).rejects.toBeDefined();
+    expect(mockBannerModel.findAll).not.toHaveBeenCalled();
   });
 });

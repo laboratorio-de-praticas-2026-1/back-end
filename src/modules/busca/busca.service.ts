@@ -2,11 +2,16 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { col, fn, Op, where } from 'sequelize';
 import { Blog } from 'src/models/blog.model';
+import { Banner } from 'src/models/banner.model';
 import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
+import { BuscaBannerStatusDto } from './dto/busca-banner-status.dto';
 
 @Injectable()
 export class BuscaService {
-	constructor(@InjectModel(Blog) private blogModel: typeof Blog) {}
+	constructor(
+		@InjectModel(Blog) private blogModel: typeof Blog,
+		@InjectModel(Banner) private bannerModel: typeof Banner,
+	) {}
 
 	async buscarBlogsPorIntervaloDeData(
 		dto: BuscaBlogIntervaloDto,
@@ -33,6 +38,28 @@ export class BuscaService {
 
 		return await this.blogModel.findAll({
 			where: where(dataPublicacaoDateOnly, condicao),
+		});
+	}
+
+	async buscarBannerPorStatus(dto: BuscaBannerStatusDto): Promise<Banner[]> {
+		if (typeof dto.status !== 'string') {
+			throw new BadRequestException(
+				'Campo "status" deve ser "ativo" ou "inativo"',
+			);
+		}
+
+		const status = dto.status.trim().toLowerCase();
+		if (status !== 'ativo' && status !== 'inativo') {
+			throw new BadRequestException(
+				'Campo "status" deve ser "ativo" ou "inativo"',
+			);
+		}
+
+		const ativo = status === 'ativo';
+		return await this.bannerModel.findAll({
+			where: {
+				ativo,
+			},
 		});
 	}
 
