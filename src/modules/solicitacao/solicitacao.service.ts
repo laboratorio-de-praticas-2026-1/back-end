@@ -42,7 +42,7 @@ export class SolicitacaoService {
       throw new NotFoundException('Servico nao encontrado');
     }
 
-    const veiculo = solicitacaoDto.veiculo_id
+    const veiculo: Veiculo | null = solicitacaoDto.veiculo_id
       ? await this.veiculoModel.findByPk(solicitacaoDto.veiculo_id)
       : null;
 
@@ -56,7 +56,7 @@ export class SolicitacaoService {
       );
     }
 
-    const solicitacao = await this.solicitacaoModel.create({
+    const solicitacao: Solicitacao = await this.solicitacaoModel.create({
       usuarioId: usuario.id,
       veiculoId: veiculo?.id ?? null,
       servicoId: servico.id,
@@ -92,7 +92,7 @@ export class SolicitacaoService {
     id: number,
     updateSolicitacaoStatusDto: UpdateSolicitacaoStatusDto,
   ): Promise<{ message: string }> {
-    const solicitacao = await this.findSolicitacaoById(id);
+    const solicitacao: Solicitacao = await this.findSolicitacaoById(id);
 
     const updateData: Partial<Solicitacao> = {
       status: updateSolicitacaoStatusDto.status,
