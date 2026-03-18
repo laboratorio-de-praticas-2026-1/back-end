@@ -11,19 +11,28 @@ export class BuscaService {
 	async buscarBlogsPorIntervaloDeData(
 		dto: BuscaBlogIntervaloDto,
 	): Promise<Blog[]> {
-		const de = this.parseDataBr(dto.de, 'de');
-		const ate = this.parseDataBr(dto.ate, 'ate');
+		if (!dto.de && !dto.ate) {
+			throw new BadRequestException('Informe ao menos uma data: "de" ou "ate"');
+		}
 
-		if (de.key > ate.key) {
+		const de = dto.de ? this.parseDataBr(dto.de, 'de') : undefined;
+		const ate = dto.ate ? this.parseDataBr(dto.ate, 'ate') : undefined;
+
+		if (de && ate && de.key > ate.key) {
 			throw new BadRequestException(
 				'Intervalo inválido: "de" não pode ser maior que "ate"',
 			);
 		}
 
+		const dataPublicacaoDateOnly = fn('DATE', col('data_publicacao'));
+		const condicao = de && ate
+			? { [Op.between]: [de.ymd, ate.ymd] }
+			: de
+				? { [Op.gte]: de.ymd }
+				: { [Op.lte]: ate!.ymd };
+
 		return await this.blogModel.findAll({
-			where: where(fn('DATE', col('data_publicacao')), {
-				[Op.between]: [de.ymd, ate.ymd],
-			}),
+			where: where(dataPublicacaoDateOnly, condicao),
 		});
 	}
 
