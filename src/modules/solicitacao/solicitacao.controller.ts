@@ -12,7 +12,7 @@ import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto'
 @Controller('solicitacao')
 @ApiTags('solicitacao')
 export class SolicitacaoController {
-  private readonly logger = new Logger(SolicitacaoController.name);
+  private readonly logger: Logger = new Logger(SolicitacaoController.name);
 
   constructor(private readonly solicitacaoService: SolicitacaoService) {}
 
