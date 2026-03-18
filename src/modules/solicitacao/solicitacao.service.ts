@@ -78,7 +78,8 @@ export class SolicitacaoService {
   }
 
   async findSolicitacaoById(id: number): Promise<Solicitacao> {
-    const solicitacao = await this.solicitacaoModel.findByPk(id);
+    const solicitacao: Solicitacao | null =
+      await this.solicitacaoModel.findByPk(id);
 
     if (!solicitacao) {
       throw new NotFoundException(`Solicitação com ID ${id} não encontrada`);
@@ -97,8 +98,7 @@ export class SolicitacaoService {
       status: updateSolicitacaoStatusDto.status,
     };
 
-    const observacao =
-      updateSolicitacaoStatusDto.observacao_admin ||
+    const observacao: string | undefined =
       updateSolicitacaoStatusDto.observacaoAdmin;
     if (observacao) {
       updateData.observacaoAdmin = observacao;

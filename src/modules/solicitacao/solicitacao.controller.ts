@@ -1,5 +1,10 @@
 import { Body, Controller, Logger, Param, Post, Put } from '@nestjs/common';
-import { ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiBody } from '@nestjs/swagger'
+import {
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiTags,
+  ApiBody,
+} from '@nestjs/swagger';
 import { CreateSolicitacaoDto } from './dto/create-solicitacao.dto';
 import { SolicitacaoService } from './solicitacao.service';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
@@ -12,16 +17,17 @@ export class SolicitacaoController {
   constructor(private readonly solicitacaoService: SolicitacaoService) {}
 
   @Post()
-  criarSolicitacao(@Body() solicitacaoDto: CreateSolicitacaoDto) {
+  criarSolicitacao(
+    @Body() solicitacaoDto: CreateSolicitacaoDto,
+  ): Promise<{ message: string }> {
     this.logger.log('Iniciando criacao de solicitacao de servico...');
     return this.solicitacaoService.criarSolicitacao(solicitacaoDto);
   }
-}
 
   @Put('solicitacao/:id')
   @ApiBody({
     type: UpdateSolicitacaoStatusDto,
-    description: 'Dados para atualização do status da solicitação'
+    description: 'Dados para atualização do status da solicitação',
   })
   @ApiOkResponse({
     description: 'Status da solicitação atualizado com sucesso',
@@ -30,10 +36,10 @@ export class SolicitacaoController {
       properties: {
         message: {
           type: 'string',
-          example: 'Status da solicitação atualizado com sucesso.'
-        }
-      }
-    }
+          example: 'Status da solicitação atualizado com sucesso.',
+        },
+      },
+    },
   })
   @ApiNotFoundResponse({
     description: 'Solicitação não encontrada',
@@ -42,17 +48,17 @@ export class SolicitacaoController {
       properties: {
         message: {
           type: 'string',
-          example: 'Solicitação com ID 999 não encontrada'
+          example: 'Solicitação com ID 999 não encontrada',
         },
         error: { type: 'string', example: 'Not Found' },
-        statusCode: { type: 'number', example: 404 }
-      }
-    }
+        statusCode: { type: 'number', example: 404 },
+      },
+    },
   })
-  async updateSolicitacaoStatus(
+  updateSolicitacaoStatus(
     @Param('id') id: string,
     @Body() updateSolicitacaoStatusDto: UpdateSolicitacaoStatusDto,
-  ) {
+  ): Promise<{ message: string }> {
     return this.solicitacaoService.updateSolicitacaoStatus(
       parseInt(id, 10),
       updateSolicitacaoStatusDto,
