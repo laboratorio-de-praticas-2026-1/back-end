@@ -1,21 +1,28 @@
+import { Body, Controller, Logger, Param, Post, Put } from '@nestjs/common';
 import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiTags,
   ApiBody,
 } from '@nestjs/swagger';
-import { Body, Controller, Logger, Param, Post, Put } from '@nestjs/common';
 import { CreateSolicitacaoDto } from './dto/create-solicitacao.dto';
 import { SolicitacaoService } from './solicitacao.service';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 
 @ApiTags('solicitacao')
-@Controller()
 @Controller('solicitacao')
 export class SolicitacaoController {
   private readonly logger = new Logger(SolicitacaoController.name);
 
   constructor(private readonly solicitacaoService: SolicitacaoService) {}
+
+  @Post()
+  criarSolicitacao(
+    @Body() solicitacaoDto: CreateSolicitacaoDto,
+  ): Promise<{ message: string }> {
+    this.logger.log('Iniciando criacao de solicitacao de servico...');
+    return this.solicitacaoService.criarSolicitacao(solicitacaoDto);
+  }
 
   @Put('solicitacao/:id')
   @ApiBody({
@@ -51,16 +58,10 @@ export class SolicitacaoController {
   updateSolicitacaoStatus(
     @Param('id') id: string,
     @Body() updateSolicitacaoStatusDto: UpdateSolicitacaoStatusDto,
-  ) {
+  ): Promise<{ message: string }> {
     return this.solicitacaoService.updateSolicitacaoStatus(
       parseInt(id, 10),
       updateSolicitacaoStatusDto,
     );
-  }
-
-  @Post()
-  criarSolicitacao(@Body() solicitacaoDto: CreateSolicitacaoDto) {
-    this.logger.log('Iniciando criacao de solicitacao de servico...');
-    return this.solicitacaoService.criarSolicitacao(solicitacaoDto);
   }
 }

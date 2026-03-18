@@ -11,12 +11,10 @@ import { MapaModule } from './modules/mapa/mapa.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { RecomendacaoModule } from './modules/recomendacao/recomendacao.module';
-import { AgendamentoModule } from './modules/agendamento/agendamento.module';
 import { UsuarioModule } from './modules/usuario/usuario.module';
 import { HeaderModule } from './modules/header/header.module';
 import { BuscaModule } from './modules/busca/busca.module';
 import { ServicosModule } from './modules/servicos/servicos.module';
-import { SolicitacaoModule } from './modules/solicitacao/solicitacao.module';
 import { PublicidadeModule } from './modules/publicidade/publicidade.module';
 import { SolicitacaoModule } from './modules/solicitacao/solicitacao.module';
 
@@ -47,7 +45,6 @@ import { SolicitacaoModule } from './modules/solicitacao/solicitacao.module';
     ReportsModule,
     DashboardModule,
     RecomendacaoModule,
-    AgendamentoModule,
     UsuarioModule,
     HeaderModule,
     BuscaModule,
