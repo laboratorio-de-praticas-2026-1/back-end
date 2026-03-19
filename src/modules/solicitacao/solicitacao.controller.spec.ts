@@ -36,7 +36,20 @@ describe('SolicitacaoController', () => {
     };
 
     const resposta = {
-      message: 'Solicitação de serviço criada com sucesso',
+      message: 'Agendamento de serviço realizado com sucesso',
+      protocolo: {
+        cliente: {
+          nome: 'Amanda Vithoria Alves Freitas',
+        },
+        servico: {
+          nome: 'Renovacao CNH',
+          valor_base: 200,
+        },
+        solicitacao: {
+          data_solicitacao: '2026-03-10',
+          prazo_estimado: '2026-03-20',
+        },
+      },
     };
 
     mockSolicitacaoService.criarSolicitacao.mockResolvedValue(resposta);

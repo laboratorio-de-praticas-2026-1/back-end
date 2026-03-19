@@ -72,6 +72,8 @@ describe('SolicitacaoService', () => {
       observacao_cliente: 'Observacao do cliente',
     };
 
+    const dataSolicitacao = new Date('2026-03-10T12:00:00.000Z');
+
     mockUsuarioModel.findByPk.mockResolvedValue({
       id: 1,
       nome: 'Amanda',
@@ -84,16 +86,32 @@ describe('SolicitacaoService', () => {
     mockServicoModel.findByPk.mockResolvedValue({
       id: 3,
       nome: 'Transferencia',
+      valorBase: 200,
+      prazoEstimadoDias: 10,
     });
     mockSolicitacaoModel.create.mockResolvedValue({
       id: 10,
+      dataSolicitacao,
     });
     mockNotificacaoService.enviarConfirmacaoSolicitacao.mockResolvedValue(
       undefined,
     );
 
     await expect(service.criarSolicitacao(solicitacaoDto)).resolves.toEqual({
-      message: 'Solicitação de serviço criada com sucesso',
+      message: 'Agendamento de serviço realizado com sucesso',
+      protocolo: {
+        cliente: {
+          nome: 'Amanda',
+        },
+        servico: {
+          nome: 'Transferencia',
+          valor_base: 200,
+        },
+        solicitacao: {
+          data_solicitacao: '2026-03-10',
+          prazo_estimado: '2026-03-20',
+        },
+      },
     });
     expect(mockSolicitacaoModel.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -110,7 +128,19 @@ describe('SolicitacaoService', () => {
       email: 'amanda@email.com',
       nomeUsuario: 'Amanda',
       solicitacaoId: 10,
-      servicoNome: 'Transferencia',
+      protocolo: {
+        cliente: {
+          nome: 'Amanda',
+        },
+        servico: {
+          nome: 'Transferencia',
+          valor_base: 200,
+        },
+        solicitacao: {
+          data_solicitacao: '2026-03-10',
+          prazo_estimado: '2026-03-20',
+        },
+      },
     });
   });
 
@@ -121,6 +151,8 @@ describe('SolicitacaoService', () => {
       observacao_cliente: 'Observacao sem veiculo',
     };
 
+    const dataSolicitacao = new Date('2026-03-10T12:00:00.000Z');
+
     mockUsuarioModel.findByPk.mockResolvedValue({
       id: 1,
       nome: 'Amanda',
@@ -129,16 +161,32 @@ describe('SolicitacaoService', () => {
     mockServicoModel.findByPk.mockResolvedValue({
       id: 3,
       nome: 'Transferencia',
+      valorBase: 150,
+      prazoEstimadoDias: 5,
     });
     mockSolicitacaoModel.create.mockResolvedValue({
       id: 11,
+      dataSolicitacao,
     });
     mockNotificacaoService.enviarConfirmacaoSolicitacao.mockResolvedValue(
       undefined,
     );
 
     await expect(service.criarSolicitacao(solicitacaoDto)).resolves.toEqual({
-      message: 'Solicitação de serviço criada com sucesso',
+      message: 'Agendamento de serviço realizado com sucesso',
+      protocolo: {
+        cliente: {
+          nome: 'Amanda',
+        },
+        servico: {
+          nome: 'Transferencia',
+          valor_base: 150,
+        },
+        solicitacao: {
+          data_solicitacao: '2026-03-10',
+          prazo_estimado: '2026-03-15',
+        },
+      },
     });
     expect(mockVeiculoModel.findByPk).not.toHaveBeenCalled();
     expect(mockSolicitacaoModel.create).toHaveBeenCalledWith(
@@ -152,6 +200,57 @@ describe('SolicitacaoService', () => {
     );
   });
 
+  it('deve criar solicitacao mesmo se o envio do email falhar', async () => {
+    const solicitacaoDto = {
+      usuario_id: 1,
+      veiculo_id: 2,
+      servico_id: 3,
+      observacao_cliente: 'Observacao com falha de email',
+    };
+
+    const dataSolicitacao = new Date('2026-03-10T12:00:00.000Z');
+
+    mockUsuarioModel.findByPk.mockResolvedValue({
+      id: 1,
+      nome: 'Amanda',
+      email: 'amanda@email.com',
+    });
+    mockVeiculoModel.findByPk.mockResolvedValue({
+      id: 2,
+      usuarioId: 1,
+    });
+    mockServicoModel.findByPk.mockResolvedValue({
+      id: 3,
+      nome: 'Transferencia',
+      valorBase: 200,
+      prazoEstimadoDias: 10,
+    });
+    mockSolicitacaoModel.create.mockResolvedValue({
+      id: 12,
+      dataSolicitacao,
+    });
+    mockNotificacaoService.enviarConfirmacaoSolicitacao.mockRejectedValue(
+      new Error('Falha no envio'),
+    );
+
+    await expect(service.criarSolicitacao(solicitacaoDto)).resolves.toEqual({
+      message: 'Agendamento de serviço realizado com sucesso',
+      protocolo: {
+        cliente: {
+          nome: 'Amanda',
+        },
+        servico: {
+          nome: 'Transferencia',
+          valor_base: 200,
+        },
+        solicitacao: {
+          data_solicitacao: '2026-03-10',
+          prazo_estimado: '2026-03-20',
+        },
+      },
+    });
+  });
+
   it('deve falhar quando usuario nao for encontrado', async () => {
     mockUsuarioModel.findByPk.mockResolvedValue(null);
     mockVeiculoModel.findByPk.mockResolvedValue({
@@ -161,6 +260,8 @@ describe('SolicitacaoService', () => {
     mockServicoModel.findByPk.mockResolvedValue({
       id: 3,
       nome: 'Transferencia',
+      valorBase: 200,
+      prazoEstimadoDias: 10,
     });
 
     await expect(
@@ -185,6 +286,8 @@ describe('SolicitacaoService', () => {
     mockServicoModel.findByPk.mockResolvedValue({
       id: 3,
       nome: 'Transferencia',
+      valorBase: 200,
+      prazoEstimadoDias: 10,
     });
 
     await expect(
