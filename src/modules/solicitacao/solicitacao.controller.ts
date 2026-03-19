@@ -1,4 +1,12 @@
-import { Body, Controller, Logger, Param, Post, Put } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Logger,
+  Param,
+  ParseIntPipe,
+  Post,
+  Put,
+} from '@nestjs/common';
 import {
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -24,7 +32,7 @@ export class SolicitacaoController {
     return this.solicitacaoService.criarSolicitacao(solicitacaoDto);
   }
 
-  @Put('solicitacao/:id')
+  @Put(':id')
   @ApiBody({
     type: UpdateSolicitacaoStatusDto,
     description: 'Dados para atualização do status da solicitação',
@@ -56,11 +64,11 @@ export class SolicitacaoController {
     },
   })
   updateSolicitacaoStatus(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateSolicitacaoStatusDto: UpdateSolicitacaoStatusDto,
   ): Promise<{ message: string }> {
-    return this.solicitacaoService.updateSolicitacaoStatus(
-      parseInt(id, 10),
+    return this.solicitacaoService.updateSolicitacaoStatusById(
+      id,
       updateSolicitacaoStatusDto,
     );
   }

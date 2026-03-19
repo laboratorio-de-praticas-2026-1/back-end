@@ -11,6 +11,7 @@ import { Usuario } from 'src/models/usuario.model';
 import { Veiculo } from 'src/models/veiculo.model';
 import { NotificacaoService } from '../notificacao/notificacao.service';
 import { CreateSolicitacaoDto } from './dto/create-solicitacao.dto';
+import { StatusSolicitacaoEnum } from 'src/commons/enums/status-solicitacao.enum';
 
 @Injectable()
 export class SolicitacaoService {
@@ -88,7 +89,7 @@ export class SolicitacaoService {
     return solicitacao;
   }
 
-  async updateSolicitacaoStatus(
+  async updateSolicitacaoStatusById(
     id: number,
     updateSolicitacaoStatusDto: UpdateSolicitacaoStatusDto,
   ): Promise<{ message: string }> {
@@ -104,7 +105,7 @@ export class SolicitacaoService {
       updateData.observacaoAdmin = observacao;
     }
 
-    if (updateSolicitacaoStatusDto.status === 'concluido') {
+    if (updateSolicitacaoStatusDto.status === StatusSolicitacaoEnum.CONCLUIDO) {
       updateData.dataConclusao = new Date();
     }
 
