@@ -4,12 +4,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
+import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 import { Servico } from 'src/models/servico.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
 import { Usuario } from 'src/models/usuario.model';
 import { Veiculo } from 'src/models/veiculo.model';
 import { NotificacaoService } from '../notificacao/notificacao.service';
 import { CreateSolicitacaoDto } from './dto/create-solicitacao.dto';
+import { StatusSolicitacaoEnum } from 'src/commons/enums/status-solicitacao.enum';
 
 @Injectable()
 export class SolicitacaoService {
@@ -41,7 +43,7 @@ export class SolicitacaoService {
       throw new NotFoundException('Servico nao encontrado');
     }
 
-    const veiculo = solicitacaoDto.veiculo_id
+    const veiculo: Veiculo | null = solicitacaoDto.veiculo_id
       ? await this.veiculoModel.findByPk(solicitacaoDto.veiculo_id)
       : null;
 
@@ -55,7 +57,7 @@ export class SolicitacaoService {
       );
     }
 
-    const solicitacao = await this.solicitacaoModel.create({
+    const solicitacao: Solicitacao = await this.solicitacaoModel.create({
       usuarioId: usuario.id,
       veiculoId: veiculo?.id ?? null,
       servicoId: servico.id,
@@ -73,6 +75,44 @@ export class SolicitacaoService {
 
     return {
       message: 'Solicitação de serviço criada com sucesso',
+    };
+  }
+
+  async findSolicitacaoById(id: number): Promise<Solicitacao> {
+    const solicitacao: Solicitacao | null =
+      await this.solicitacaoModel.findByPk(id);
+
+    if (!solicitacao) {
+      throw new NotFoundException(`Solicitação com ID ${id} não encontrada`);
+    }
+
+    return solicitacao;
+  }
+
+  async updateSolicitacaoStatusById(
+    id: number,
+    updateSolicitacaoStatusDto: UpdateSolicitacaoStatusDto,
+  ): Promise<{ message: string }> {
+    const solicitacao: Solicitacao = await this.findSolicitacaoById(id);
+
+    const updateData: Partial<Solicitacao> = {
+      status: updateSolicitacaoStatusDto.status,
+    };
+
+    const observacao: string | undefined =
+      updateSolicitacaoStatusDto.observacaoAdmin;
+    if (observacao) {
+      updateData.observacaoAdmin = observacao;
+    }
+
+    if (updateSolicitacaoStatusDto.status === StatusSolicitacaoEnum.CONCLUIDO) {
+      updateData.dataConclusao = new Date();
+    }
+
+    await solicitacao.update(updateData);
+
+    return {
+      message: 'Status da solicitação atualizado com sucesso.',
     };
   }
 }
