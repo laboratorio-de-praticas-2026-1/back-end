@@ -14,6 +14,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { CreateSolicitacaoDto } from './dto/create-solicitacao.dto';
+import { CreateSolicitacaoResponseDto } from './dto/create-solicitacao-response.dto';
 import { SolicitacaoService } from './solicitacao.service';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 
@@ -27,7 +28,7 @@ export class SolicitacaoController {
   @Post()
   criarSolicitacao(
     @Body() solicitacaoDto: CreateSolicitacaoDto,
-  ): Promise<{ message: string }> {
+  ): Promise<CreateSolicitacaoResponseDto> {
     this.logger.log('Iniciando criacao de solicitacao de servico...');
     return this.solicitacaoService.criarSolicitacao(solicitacaoDto);
   }
