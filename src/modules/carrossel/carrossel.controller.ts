@@ -9,7 +9,9 @@ export class CarrosselController {
 
   @Get()
   listarBanners(@Query('termo') termo?: string) {
-    this.logger.log(`Listando itens do carrossel com filtro: ${termo ?? 'sem filtro'}`);
+    this.logger.log(
+      `Listando itens do carrossel com filtro: ${termo ?? 'sem filtro'}`,
+    );
     return this.carrosselService.listarBanners(termo);
   }
 }

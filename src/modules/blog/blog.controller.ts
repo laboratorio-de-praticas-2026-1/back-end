@@ -9,7 +9,9 @@ export class BlogController {
 
   @Get()
   listarPosts(@Query('termo') termo?: string) {
-    this.logger.log(`Listando posts do blog com filtro: ${termo ?? 'sem filtro'}`);
+    this.logger.log(
+      `Listando posts do blog com filtro: ${termo ?? 'sem filtro'}`,
+    );
     return this.blogService.listarPosts(termo);
   }
 

@@ -19,7 +19,8 @@ export class BlogService {
 
       return {
         itens,
-        mensagem: itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+        mensagem:
+          itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
       };
     }
 
