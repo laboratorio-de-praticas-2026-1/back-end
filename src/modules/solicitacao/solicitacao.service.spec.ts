@@ -270,7 +270,7 @@ describe('SolicitacaoService', () => {
         veiculo_id: 2,
         servico_id: 3,
       }),
-    ).rejects.toThrow('Usuario nao encontrado');
+    ).rejects.toThrow('Usuário não encontrado');
   });
 
   it('deve falhar quando veiculo nao pertencer ao usuario', async () => {
@@ -296,6 +296,6 @@ describe('SolicitacaoService', () => {
         veiculo_id: 2,
         servico_id: 3,
       }),
-    ).rejects.toThrow('O veiculo informado nao pertence ao usuario');
+    ).rejects.toThrow('O veículo informado não pertence ao usuário');
   });
 });

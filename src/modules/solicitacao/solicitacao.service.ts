@@ -43,11 +43,11 @@ export class SolicitacaoService {
     ]);
 
     if (!usuario) {
-      throw new NotFoundException('Usuario nao encontrado');
+      throw new NotFoundException('Usuário não encontrado');
     }
 
     if (!servico) {
-      throw new NotFoundException('Servico nao encontrado');
+      throw new NotFoundException('Serviço não encontrado');
     }
 
     const veiculo: Veiculo | null = solicitacaoDto.veiculo_id
@@ -55,12 +55,12 @@ export class SolicitacaoService {
       : null;
 
     if (solicitacaoDto.veiculo_id && !veiculo) {
-      throw new NotFoundException('Veiculo nao encontrado');
+      throw new NotFoundException('Veículo não encontrado');
     }
 
     if (veiculo && veiculo.usuarioId !== usuario.id) {
       throw new BadRequestException(
-        'O veiculo informado nao pertence ao usuario',
+        'O veículo informado não pertence ao usuário',
       );
     }
 
@@ -79,20 +79,20 @@ export class SolicitacaoService {
       solicitacao,
     );
 
-    try {
-      await this.notificacaoService.enviarConfirmacaoSolicitacao({
+    void this.notificacaoService
+      .enviarConfirmacaoSolicitacao({
         email: usuario.email,
         nomeUsuario: usuario.nome,
         solicitacaoId: solicitacao.id,
         protocolo,
+      })
+      .catch((error: unknown) => {
+        const mensagemErro =
+          error instanceof Error ? error.message : 'Erro desconhecido';
+        this.logger.warn(
+          `Falha ao enviar email de confirmacao da solicitacao ${solicitacao.id}: ${mensagemErro}`,
+        );
       });
-    } catch (error) {
-      const mensagemErro =
-        error instanceof Error ? error.message : 'Erro desconhecido';
-      this.logger.warn(
-        `Falha ao enviar email de confirmacao da solicitacao ${solicitacao.id}: ${mensagemErro}`,
-      );
-    }
 
     return {
       message: 'Agendamento de serviço realizado com sucesso',
@@ -105,7 +105,7 @@ export class SolicitacaoService {
       await this.solicitacaoModel.findByPk(id);
 
     if (!solicitacao) {
-      throw new NotFoundException(`Solicitacao com ID ${id} nao encontrada`);
+      throw new NotFoundException(`Solicitação com ID ${id} não encontrada`);
     }
 
     return solicitacao;
@@ -134,7 +134,7 @@ export class SolicitacaoService {
     await solicitacao.update(updateData);
 
     return {
-      message: 'Status da solicitacao atualizado com sucesso.',
+      message: 'Status da solicitação atualizado com sucesso.',
     };
   }
 
@@ -168,10 +168,6 @@ export class SolicitacaoService {
   }
 
   private formatarData(data: Date): string {
-    const ano = data.getFullYear();
-    const mes = String(data.getMonth() + 1).padStart(2, '0');
-    const dia = String(data.getDate()).padStart(2, '0');
-
-    return `${ano}-${mes}-${dia}`;
+    return data.toISOString().slice(0, 10);
   }
 }
