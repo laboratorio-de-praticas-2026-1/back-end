@@ -15,6 +15,19 @@ export class NotificacaoService {
   async enviarConfirmacaoSolicitacao(
     payload: ConfirmacaoSolicitacaoPayload,
   ): Promise<void> {
+    void this.montarMensagemConfirmacao(payload);
+
+    this.logger.log(
+      `Email de confirmacao da solicitacao ${payload.solicitacaoId} preparado com sucesso`,
+    );
+
+    return Promise.resolve();
+  }
+
+  private montarMensagemConfirmacao(payload: ConfirmacaoSolicitacaoPayload): {
+    assunto: string;
+    conteudo: string;
+  } {
     const assunto = `Confirmacao da solicitacao #${payload.solicitacaoId}`;
     const conteudo = [
       `Ola, ${payload.nomeUsuario}!`,
@@ -25,9 +38,6 @@ export class NotificacaoService {
       `Prazo estimado: ${payload.protocolo.solicitacao.prazo_estimado}`,
     ].join(' ');
 
-    this.logger.log(
-      `Email de confirmacao da solicitacao ${payload.solicitacaoId} preparado para ${payload.email}. Assunto: ${assunto}. Conteudo: ${conteudo}`,
-    );
-    return Promise.resolve();
+    return { assunto, conteudo };
   }
 }

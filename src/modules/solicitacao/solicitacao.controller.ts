@@ -8,15 +8,16 @@ import {
   Put,
 } from '@nestjs/common';
 import {
+  ApiBody,
+  ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiTags,
-  ApiBody,
 } from '@nestjs/swagger';
 import { CreateSolicitacaoDto } from './dto/create-solicitacao.dto';
 import { CreateSolicitacaoResponseDto } from './dto/create-solicitacao-response.dto';
-import { SolicitacaoService } from './solicitacao.service';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
+import { SolicitacaoService } from './solicitacao.service';
 
 @ApiTags('solicitacao')
 @Controller('solicitacao')
@@ -26,6 +27,10 @@ export class SolicitacaoController {
   constructor(private readonly solicitacaoService: SolicitacaoService) {}
 
   @Post()
+  @ApiCreatedResponse({
+    description: 'Solicitação criada com sucesso com retorno de protocolo',
+    type: CreateSolicitacaoResponseDto,
+  })
   criarSolicitacao(
     @Body() solicitacaoDto: CreateSolicitacaoDto,
   ): Promise<CreateSolicitacaoResponseDto> {
