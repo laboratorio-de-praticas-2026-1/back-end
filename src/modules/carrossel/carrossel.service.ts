@@ -1,21 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { Blog } from 'src/models/blog.model';
 import { Op } from 'sequelize';
-import { BlogCreateDto } from './dto/blog-create.dto';
+import { Banner } from 'src/models/banner.model';
 
 @Injectable()
-export class BlogService {
-  constructor(@InjectModel(Blog) private blogModel: typeof Blog) {}
+export class CarrosselService {
+  constructor(@InjectModel(Banner) private bannerModel: typeof Banner) {}
 
-  async listarPosts(termo?: string): Promise<{
-    itens: Blog[];
+  async listarBanners(termo?: string): Promise<{
+    itens: Banner[];
     mensagem?: string;
   }> {
     const termoNormalizado = termo?.trim();
 
     if (!termoNormalizado) {
-      const itens = await this.blogModel.findAll({ order: [['id', 'DESC']] });
+      const itens = await this.bannerModel.findAll({ order: [['id', 'DESC']] });
 
       return {
         itens,
@@ -24,8 +23,7 @@ export class BlogService {
     }
 
     const filtros: Array<Record<string, unknown>> = [
-      { titulo: { [Op.like]: `%${termoNormalizado}%` } },
-      { conteudo: { [Op.like]: `%${termoNormalizado}%` } },
+      { descricao: { [Op.like]: `%${termoNormalizado}%` } },
     ];
 
     const termoComoNumero = Number(termoNormalizado);
@@ -33,7 +31,7 @@ export class BlogService {
       filtros.push({ id: termoComoNumero });
     }
 
-    const itens = await this.blogModel.findAll({
+    const itens = await this.bannerModel.findAll({
       where: { [Op.or]: filtros },
       order: [['id', 'DESC']],
     });
@@ -42,14 +40,5 @@ export class BlogService {
       itens,
       mensagem: itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
     };
-  }
-
-  async criarPost(blogDto: BlogCreateDto): Promise<Blog> {
-    return await this.blogModel.create({
-      titulo: blogDto.titulo,
-      conteudo: blogDto.conteudo,
-      dataPublicacao: blogDto.dataPublicacao,
-      urlImagem: blogDto.urlImagem,
-    });
   }
 }
