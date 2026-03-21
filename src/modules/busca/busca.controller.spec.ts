@@ -8,7 +8,12 @@ describe('BuscaController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [BuscaController],
-      providers: [BuscaService],
+      providers: [
+        {
+          provide: BuscaService,
+          useValue: {},
+        },
+      ],
     }).compile();
 
     controller = module.get<BuscaController>(BuscaController);
