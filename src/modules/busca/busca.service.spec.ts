@@ -57,8 +57,8 @@ describe('BuscaService', () => {
 
     await expect(
       service.buscarBlogsPorIntervaloDeData({
-        de: '01/01/2026',
-        ate: '31/01/2026',
+        de: '2026-01-01',
+        ate: '2026-01-31',
       }),
     ).resolves.toEqual(retorno);
 
@@ -75,7 +75,7 @@ describe('BuscaService', () => {
 
     await expect(
       service.buscarBlogsPorIntervaloDeData({
-        de: '01/01/2026',
+        de: '2026-01-01',
       }),
     ).resolves.toEqual(retorno);
 
@@ -92,7 +92,7 @@ describe('BuscaService', () => {
 
     await expect(
       service.buscarBlogsPorIntervaloDeData({
-        ate: '31/01/2026',
+        ate: '2026-01-31',
       }),
     ).resolves.toEqual(retorno);
 
@@ -121,31 +121,31 @@ describe('BuscaService', () => {
   it('deve falhar com formato inválido', async () => {
     await expect(
       service.buscarBlogsPorIntervaloDeData({
-        de: '2026-01-01',
-        ate: '31/01/2026',
+        de: '01/01/2026',
+        ate: '2026-01-31',
       }),
     ).rejects.toThrow(BadRequestException);
 
     await expect(
       service.buscarBlogsPorIntervaloDeData({
-        de: '2026-01-01',
-        ate: '31/01/2026',
+        de: '01/01/2026',
+        ate: '2026-01-31',
       }),
-    ).rejects.toThrow('Campo "de" deve estar no formato DD/MM/YYYY');
+    ).rejects.toThrow('Campo "de" deve estar no formato YYYY-MM-DD');
   });
 
   it('deve falhar com formato inválido quando só uma data é informada', async () => {
     await expect(
       service.buscarBlogsPorIntervaloDeData({
-        ate: '2026-01-31',
+        ate: '31/01/2026',
       }),
     ).rejects.toThrow(BadRequestException);
 
     await expect(
       service.buscarBlogsPorIntervaloDeData({
-        ate: '2026-01-31',
+        ate: '31/01/2026',
       }),
-    ).rejects.toThrow('Campo "ate" deve estar no formato DD/MM/YYYY');
+    ).rejects.toThrow('Campo "ate" deve estar no formato YYYY-MM-DD');
   });
 
   it('deve buscar banners ativos quando status=ativo', async () => {

@@ -8,7 +8,7 @@ export class BuscaController {
   private readonly logger = new Logger(BuscaController.name);
   constructor(private readonly buscaService: BuscaService) {}
 
-  @Get('blogs_avancada')
+  @Get('blog/periodo')
   buscarBlogsPorIntervaloDeData(@Query() dto: BuscaBlogIntervaloDto) {
     this.logger.log(
       `Buscando blogs por intervalo de data: de=${dto.de} ate=${dto.ate}`,
@@ -16,7 +16,7 @@ export class BuscaController {
     return this.buscaService.buscarBlogsPorIntervaloDeData(dto);
   }
 
-  @Get('banners_status')
+  @Get('banner/status')
   buscarBannerPorStatus(@Query() dto: BuscaBannerStatusDto) {
     this.logger.log(`Buscando banners por status: status=${dto.status}`);
     return this.buscaService.buscarBannerPorStatus(dto);

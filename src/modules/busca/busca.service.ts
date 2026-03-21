@@ -29,15 +29,13 @@ export class BuscaService {
       );
     }
 
-    const inicio = de ? this.startOfDayDateTime(de.ymd) : undefined;
-    const fimExclusivo = ate
-      ? this.startOfDayDateTime(this.addDaysYmd(ate.ymd, 1))
-      : undefined;
+    const inicio = de ? de.ymd : undefined;
+    const fimExclusivo = ate ? ate.ymd : undefined;
 
     const filtros = [
       ...(inicio ? [where(col('data_publicacao'), Op.gte, inicio)] : []),
       ...(fimExclusivo
-        ? [where(col('data_publicacao'), Op.lt, fimExclusivo)]
+        ? [where(col('data_publicacao'), Op.lte, fimExclusivo)]
         : []),
     ];
 
@@ -61,16 +59,16 @@ export class BuscaService {
     valor: string,
     campo: string,
   ): { ymd: string; key: number } {
-    const match = valor.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    const match = valor.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (!match) {
       throw new BadRequestException(
-        `Campo "${campo}" deve estar no formato DD/MM/YYYY`,
+        `Campo "${campo}" deve estar no formato YYYY-MM-DD`,
       );
     }
 
-    const dia = Number(match[1]);
+    const dia = Number(match[3]);
     const mes = Number(match[2]);
-    const ano = Number(match[3]);
+    const ano = Number(match[1]);
 
     const dataUtc = new Date(Date.UTC(ano, mes - 1, dia, 0, 0, 0, 0));
 
@@ -89,32 +87,5 @@ export class BuscaService {
       ).padStart(2, '0')}`,
       key: ano * 10000 + mes * 100 + dia,
     };
-  }
-
-  private addDaysYmd(ymd: string, dias: number): string {
-    const match = ymd.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (!match) {
-      throw new BadRequestException('Formato interno de data inválido');
-    }
-
-    const ano = Number(match[1]);
-    const mes = Number(match[2]);
-    const dia = Number(match[3]);
-
-    const dataUtc = new Date(Date.UTC(ano, mes - 1, dia, 0, 0, 0, 0));
-    dataUtc.setUTCDate(dataUtc.getUTCDate() + dias);
-
-    const novoAno = dataUtc.getUTCFullYear();
-    const novoMes = dataUtc.getUTCMonth() + 1;
-    const novoDia = dataUtc.getUTCDate();
-
-    return `${String(novoAno).padStart(4, '0')}-${String(novoMes).padStart(
-      2,
-      '0',
-    )}-${String(novoDia).padStart(2, '0')}`;
-  }
-
-  private startOfDayDateTime(ymd: string): string {
-    return `${ymd} 00:00:00`;
   }
 }
