@@ -9,7 +9,4 @@ export class BlogCreateDto {
 
   @IsDateString()
   dataPublicacao: Date;
-
-  @IsString()
-  urlImagem: string;
 }
