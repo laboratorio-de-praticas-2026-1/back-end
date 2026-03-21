@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { Readable } from 'stream';
 import { BlogController } from './blog.controller';
 import { BlogService } from './blog.service';
-import { Readable } from 'stream';
 
 describe('BlogController', () => {
   let controller: BlogController;
@@ -46,7 +46,6 @@ describe('BlogController', () => {
       titulo: 'Título do Post',
       conteudo: 'Conteúdo do post',
       dataPublicacao: new Date(),
-      urlImagem: 'http://example.com/post',
     };
 
     const mockPost = {
@@ -113,19 +112,23 @@ describe('BlogController', () => {
       titulo: 'Título do Post',
       conteudo: 'Conteúdo do post',
       dataPublicacao: new Date(),
-      urlImagem: 'http://example.com/post',
     };
 
     const mockPostAtualizado = {
       id: 1,
+      urlImagem: 'http://example.com/post',
       ...postData,
     };
 
     mockBlogService.updateBlog.mockResolvedValue(mockPostAtualizado);
 
-    await expect(controller.updateBlog(1, postData)).resolves.toEqual(
+    await expect(controller.updateBlog(1, postData, mockFile)).resolves.toEqual(
       mockPostAtualizado,
     );
-    expect(mockBlogService.updateBlog).toHaveBeenCalledWith(1, postData);
+    expect(mockBlogService.updateBlog).toHaveBeenCalledWith(
+      1,
+      postData,
+      mockFile,
+    );
   });
 });
