@@ -31,18 +31,23 @@ describe('HeaderService', () => {
 
   describe('getBannersAtivos', () => {
     it('should return an array of banners', async () => {
-      const mockBanners = [
-        { id: 1, urlImagem: 'test.jpg', descricao: 'Test', ativo: true },
-      ];
+      const mockBanners = [{ id: 1, urlImagem: 'test.jpg', descricao: 'Test' }];
       mockBannerModel.findAll.mockResolvedValue(mockBanners);
 
       const result = await service.getBannersAtivos();
 
       expect(mockBannerModel.findAll).toHaveBeenCalledWith({
         where: { ativo: true },
+        order: [['id', 'ASC']],
+        attributes: [
+          ['id', 'id'],
+          ['url_imagem', 'urlImagem'],
+          ['descricao', 'descricao'],
+        ],
+        raw: true,
       });
       expect(result).toEqual([
-        { id: 1, url_imagem: 'test.jpg', descricao: 'Test' },
+        { id: 1, urlImagem: 'test.jpg', descricao: 'Test' },
       ]);
     });
   });
