@@ -1,16 +1,17 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { col, Op, where } from 'sequelize';
-import { Blog } from 'src/models/blog.model';
 import { Banner } from 'src/models/banner.model';
-import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
+import { Blog } from 'src/models/blog.model';
+import { CarrosselService } from '../carrossel/carrossel.service';
 import { BuscaBannerStatusDto } from './dto/busca-banner-status.dto';
+import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
 
 @Injectable()
 export class BuscaService {
   constructor(
     @InjectModel(Blog) private blogModel: typeof Blog,
-    @InjectModel(Banner) private bannerModel: typeof Banner,
+    private readonly carrosselService: CarrosselService,
   ) {}
 
   async buscarBlogsPorIntervaloDeData(
@@ -133,38 +134,6 @@ export class BuscaService {
     itens: Banner[];
     mensagem?: string;
   }> {
-    const termoNormalizado = termo?.trim();
-
-    if (!termoNormalizado) {
-      const itens = await this.bannerModel.findAll({ order: [['id', 'DESC']] });
-
-      return {
-        itens,
-        mensagem:
-          itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
-      };
-    }
-
-    const filtros: Array<Record<string, unknown>> = [
-      { descricao: { [Op.like]: `%${termoNormalizado}%` } },
-    ];
-
-    const termoEhInteiroDecimal = /^(0|[1-9]\d*)$/.test(termoNormalizado);
-    if (termoEhInteiroDecimal) {
-      const termoComoNumero = parseInt(termoNormalizado, 10);
-      if (!Number.isNaN(termoComoNumero)) {
-        filtros.push({ id: termoComoNumero });
-      }
-    }
-
-    const itens = await this.bannerModel.findAll({
-      where: { [Op.or]: filtros },
-      order: [['id', 'DESC']],
-    });
-
-    return {
-      itens,
-      mensagem: itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
-    };
+    return this.carrosselService.listarBanners(termo);
   }
 }

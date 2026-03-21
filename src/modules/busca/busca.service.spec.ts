@@ -1,17 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigModule } from '@nestjs/config';
-import { SequelizeModule } from '@nestjs/sequelize';
-import { BuscaService } from './busca.service';
 import { getModelToken } from '@nestjs/sequelize';
+import { Op } from 'sequelize';
+import { BuscaService } from './busca.service';
 import { BadRequestException } from '@nestjs/common';
 import { Blog } from 'src/models/blog.model';
 import { Banner } from 'src/models/banner.model';
-import { Op } from 'sequelize';
 import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
+import { CarrosselService } from '../carrossel/carrossel.service';
 
 describe('BuscaService', () => {
   let service: BuscaService;
-  let module: TestingModule;
+  const findAllMock = jest.fn();
+  const carrosselServiceMock = {
+    listarBanners: jest.fn(),
+  };
 
   type WhereClause = Partial<Record<symbol, unknown>>;
 
@@ -32,6 +34,8 @@ describe('BuscaService', () => {
   beforeEach(async () => {
     mockBlogModel.findAll.mockReset();
     mockBannerModel.findAll.mockReset();
+    findAllMock.mockReset();
+    carrosselServiceMock.listarBanners.mockReset();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -42,13 +46,17 @@ describe('BuscaService', () => {
         },
         {
           provide: getModelToken(Banner),
-          useValue: mockBannerModel,
+          useValue: mockBannerModel,          
+        },
+        {
+          provide: CarrosselService,
+          useValue: carrosselServiceMock,
         },
       ],
     }).compile();
 
     service = module.get<BuscaService>(BuscaService);
-  }); 
+  });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
@@ -180,6 +188,57 @@ describe('BuscaService', () => {
       where: {
         ativo: false,
       },
+    });
+  });
+  it('deve delegar a listagem de carrossel para o CarrosselService', async () => {
+    carrosselServiceMock.listarBanners.mockResolvedValue({
+      itens: [],
+      mensagem: 'Nenhum item foi encontrado.',
+    });
+
+    await service.listarCarrossel('teste');
+
+    expect(carrosselServiceMock.listarBanners).toHaveBeenCalledWith('teste');
+  });
+
+  it('deve listar blog sem filtro ordenando por id decrescente', async () => {
+    findAllMock.mockResolvedValue([]);
+
+    await service.listarBlog();
+
+    expect(findAllMock).toHaveBeenCalledWith({ order: [['id', 'DESC']] });
+  });
+
+  it('deve montar filtro por titulo e conteudo quando termo textual for informado', async () => {
+    findAllMock.mockResolvedValue([]);
+
+    await service.listarBlog('  civic  ');
+
+    expect(findAllMock).toHaveBeenCalledWith({
+      where: {
+        [Op.or]: [
+          { titulo: { [Op.like]: '%civic%' } },
+          { conteudo: { [Op.like]: '%civic%' } },
+        ],
+      },
+      order: [['id', 'DESC']],
+    });
+  });
+
+  it('deve incluir filtro por id quando termo numerico for informado', async () => {
+    findAllMock.mockResolvedValue([]);
+
+    await service.listarBlog('42');
+
+    expect(findAllMock).toHaveBeenCalledWith({
+      where: {
+        [Op.or]: [
+          { titulo: { [Op.like]: '%42%' } },
+          { conteudo: { [Op.like]: '%42%' } },
+          { id: 42 },
+        ],
+      },
+      order: [['id', 'DESC']],
     });
   });
 });

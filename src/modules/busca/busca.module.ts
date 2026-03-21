@@ -3,10 +3,10 @@ import { BuscaService } from './busca.service';
 import { BuscaController } from './busca.controller';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { Blog } from 'src/models/blog.model';
-import { Banner } from 'src/models/banner.model';
+import { CarrosselModule } from '../carrossel/carrossel.module';
 
 @Module({
-  imports: [SequelizeModule.forFeature([Blog, Banner])],
+  imports: [SequelizeModule.forFeature([Blog]), CarrosselModule],
   controllers: [BuscaController],
   providers: [BuscaService],
 })

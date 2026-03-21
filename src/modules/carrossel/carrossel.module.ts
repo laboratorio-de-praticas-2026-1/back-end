@@ -8,5 +8,6 @@ import { CarrosselService } from './carrossel.service';
   imports: [SequelizeModule.forFeature([Banner])],
   controllers: [CarrosselController],
   providers: [CarrosselService],
+  exports: [CarrosselService],
 })
 export class CarrosselModule {}
