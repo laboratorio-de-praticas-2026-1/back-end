@@ -20,8 +20,8 @@ export class BuscaService {
       throw new BadRequestException('Informe ao menos uma data: "de" ou "ate"');
     }
 
-    const de = dto.de ? this.parseDataBr(dto.de, 'de') : undefined;
-    const ate = dto.ate ? this.parseDataBr(dto.ate, 'ate') : undefined;
+    const de = dto.de ? this.parseYmdDate(dto.de, 'de') : undefined;
+    const ate = dto.ate ? this.parseYmdDate(dto.ate, 'ate') : undefined;
 
     if (de && ate && de.key > ate.key) {
       throw new BadRequestException(
@@ -30,12 +30,12 @@ export class BuscaService {
     }
 
     const inicio = de ? de.ymd : undefined;
-    const fimExclusivo = ate ? ate.ymd : undefined;
+    const fimInclusivo = ate ? ate.ymd : undefined;
 
     const filtros = [
       ...(inicio ? [where(col('data_publicacao'), Op.gte, inicio)] : []),
-      ...(fimExclusivo
-        ? [where(col('data_publicacao'), Op.lte, fimExclusivo)]
+      ...(fimInclusivo
+        ? [where(col('data_publicacao'), Op.lte, fimInclusivo)]
         : []),
     ];
 
@@ -55,7 +55,7 @@ export class BuscaService {
     });
   }
 
-  private parseDataBr(
+  private parseYmdDate(
     valor: string,
     campo: string,
   ): { ymd: string; key: number } {
