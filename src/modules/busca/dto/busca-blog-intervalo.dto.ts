@@ -1,13 +1,19 @@
-import { IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Matches,
+  IsDateString,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class BuscaBlogIntervaloDto {
   @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
-    message: 'Campo "de" deve estar no formato YYYY-MM-DD',
-  })
+  @IsDateString(
+    {},
+    { message: 'Campo "de" deve ser uma data válida no formato YYYY-MM-DD' },
+  )
   @ApiPropertyOptional({
     description: 'Data inicial do intervalo',
     example: '2024-10-29',
@@ -17,10 +23,10 @@ export class BuscaBlogIntervaloDto {
 
   @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
-    message: 'Campo "ate" deve estar no formato YYYY-MM-DD',
-  })
+  @IsDateString(
+    {},
+    { message: 'Campo "ate" deve ser uma data válida no formato YYYY-MM-DD' },
+  )
   @ApiPropertyOptional({
     description: 'Data final do intervalo',
     example: '2024-12-31',
