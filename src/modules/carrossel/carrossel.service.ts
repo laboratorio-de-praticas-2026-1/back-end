@@ -27,9 +27,12 @@ export class CarrosselService {
       { descricao: { [Op.like]: `%${termoNormalizado}%` } },
     ];
 
-    const termoComoNumero = Number(termoNormalizado);
-    if (!Number.isNaN(termoComoNumero)) {
-      filtros.push({ id: termoComoNumero });
+    const termoEhInteiroDecimal = /^(0|[1-9]\d*)$/.test(termoNormalizado);
+    if (termoEhInteiroDecimal) {
+      const termoComoNumero = parseInt(termoNormalizado, 10);
+      if (!Number.isNaN(termoComoNumero)) {
+        filtros.push({ id: termoComoNumero });
+      }
     }
 
     const itens = await this.bannerModel.findAll({

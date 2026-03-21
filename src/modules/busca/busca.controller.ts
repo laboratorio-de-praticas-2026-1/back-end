@@ -21,4 +21,19 @@ export class BuscaController {
     this.logger.log(`Buscando banners por status: status=${dto.status}`);
     return this.buscaService.buscarBannerPorStatus(dto);
   }
+  @Get()
+  listarBlog(@Query('termo') termo?: string) {
+    this.logger.log(
+      `Listando posts do blog com filtro: ${termo ?? 'sem filtro'}`,
+    );
+    return this.buscaService.listarBlog(termo);
+  }
+
+  @Get('carrossel')
+  listarCarrossel(@Query('termo') termo?: string) {
+    this.logger.log(
+      `Listando itens do carrossel com filtro: ${termo ?? 'sem filtro'}`,
+    );
+    return this.buscaService.listarCarrossel(termo);
+  }
 }
