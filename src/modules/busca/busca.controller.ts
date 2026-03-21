@@ -2,6 +2,7 @@ import { Controller, Get, Logger, Query } from '@nestjs/common';
 import { BuscaService } from './busca.service';
 import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
 import { BuscaBannerStatusDto } from './dto/busca-banner-status.dto';
+import { Blog } from 'src/models/blog.model';
 
 @Controller('busca')
 export class BuscaController {
@@ -21,19 +22,22 @@ export class BuscaController {
     this.logger.log(`Buscando banners por status: status=${dto.status}`);
     return this.buscaService.buscarBannerPorStatus(dto);
   }
-  @Get()
-  listarBlog(@Query('termo') termo?: string) {
+  @Get('blog/termo')
+  listarBlog(@Query('termo') termo?: string): Promise<{
+    itens: Blog[];
+    mensagem?: string;
+  }> {
     this.logger.log(
       `Listando posts do blog com filtro: ${termo ?? 'sem filtro'}`,
     );
-    return this.buscaService.listarBlog(termo);
+    return this.buscaService.listarBlogByTermo(termo);
   }
 
-  @Get('carrossel')
+  @Get('carrossel/termo')
   listarCarrossel(@Query('termo') termo?: string) {
     this.logger.log(
       `Listando itens do carrossel com filtro: ${termo ?? 'sem filtro'}`,
     );
-    return this.buscaService.listarCarrossel(termo);
+    return this.buscaService.listarBannersByTermo(termo);
   }
 }

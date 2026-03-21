@@ -3,7 +3,6 @@ import { InjectModel } from '@nestjs/sequelize';
 import { col, Op, where } from 'sequelize';
 import { Banner } from 'src/models/banner.model';
 import { Blog } from 'src/models/blog.model';
-import { CarrosselService } from '../carrossel/carrossel.service';
 import { BuscaBannerStatusDto } from './dto/busca-banner-status.dto';
 import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
 
@@ -11,7 +10,7 @@ import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
 export class BuscaService {
   constructor(
     @InjectModel(Blog) private blogModel: typeof Blog,
-    private readonly carrosselService: CarrosselService,
+    @InjectModel(Banner) private bannerModel: typeof Banner,
   ) {}
 
   async buscarBlogsPorIntervaloDeData(
@@ -88,9 +87,8 @@ export class BuscaService {
       ).padStart(2, '0')}`,
       key: ano * 10000 + mes * 100 + dia,
     };
-  };
-
-  async listarBlog(termo?: string): Promise<{
+  }
+  async listarBlogByTermo(termo?: string): Promise<{
     itens: Blog[];
     mensagem?: string;
   }> {
@@ -130,10 +128,42 @@ export class BuscaService {
     };
   }
 
-  async listarCarrossel(termo?: string): Promise<{
+  async listarBannersByTermo(termo?: string): Promise<{
     itens: Banner[];
     mensagem?: string;
   }> {
-    return this.carrosselService.listarBanners(termo);
+    const termoNormalizado = termo?.trim();
+
+    if (!termoNormalizado) {
+      const itens = await this.bannerModel.findAll({ order: [['id', 'DESC']] });
+
+      return {
+        itens,
+        mensagem:
+          itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+      };
+    }
+
+    const filtros: Array<Record<string, unknown>> = [
+      { descricao: { [Op.like]: `%${termoNormalizado}%` } },
+    ];
+
+    const termoEhInteiroDecimal = /^(0|[1-9]\d*)$/.test(termoNormalizado);
+    if (termoEhInteiroDecimal) {
+      const termoComoNumero = parseInt(termoNormalizado, 10);
+      if (!Number.isNaN(termoComoNumero)) {
+        filtros.push({ id: termoComoNumero });
+      }
+    }
+
+    const itens = await this.bannerModel.findAll({
+      where: { [Op.or]: filtros },
+      order: [['id', 'DESC']],
+    });
+
+    return {
+      itens,
+      mensagem: itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+    };
   }
 }

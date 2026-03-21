@@ -17,7 +17,6 @@ import { HeaderModule } from './modules/header/header.module';
 import { BuscaModule } from './modules/busca/busca.module';
 import { ServicosModule } from './modules/servicos/servicos.module';
 import { PublicidadeModule } from './modules/publicidade/publicidade.module';
-import { CarrosselModule } from './modules/carrossel/carrossel.module';
 
 @Module({
   imports: [
@@ -52,7 +51,6 @@ import { CarrosselModule } from './modules/carrossel/carrossel.module';
     BuscaModule,
     ServicosModule,
     PublicidadeModule,
-    CarrosselModule,
   ],
 
   controllers: [],

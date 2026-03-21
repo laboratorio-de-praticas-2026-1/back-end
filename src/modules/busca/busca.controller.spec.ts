@@ -5,13 +5,13 @@ import { BuscaService } from './busca.service';
 describe('BuscaController', () => {
   let controller: BuscaController;
   const buscaServiceMock = {
-    listarBlog: jest.fn(),
-    listarCarrossel: jest.fn(),
+    listarBlogByTermo: jest.fn(),
+    listarBannersByTermo: jest.fn(),
   };
 
   beforeEach(async () => {
-    buscaServiceMock.listarBlog.mockReset();
-    buscaServiceMock.listarCarrossel.mockReset();
+    buscaServiceMock.listarBlogByTermo.mockReset();
+    buscaServiceMock.listarBannersByTermo.mockReset();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [BuscaController],
@@ -31,18 +31,18 @@ describe('BuscaController', () => {
   });
 
   it('deve delegar a listagem de blog para o BuscaService', async () => {
-    buscaServiceMock.listarBlog.mockResolvedValue({ itens: [] });
+    buscaServiceMock.listarBlogByTermo.mockResolvedValue({ itens: [] });
 
     await controller.listarBlog('motor');
 
-    expect(buscaServiceMock.listarBlog).toHaveBeenCalledWith('motor');
+    expect(buscaServiceMock.listarBlogByTermo).toHaveBeenCalledWith('motor');
   });
 
   it('deve delegar a listagem de carrossel para o BuscaService', async () => {
-    buscaServiceMock.listarCarrossel.mockResolvedValue({ itens: [] });
+    buscaServiceMock.listarBannersByTermo.mockResolvedValue({ itens: [] });
 
     await controller.listarCarrossel('promo');
 
-    expect(buscaServiceMock.listarCarrossel).toHaveBeenCalledWith('promo');
+    expect(buscaServiceMock.listarBannersByTermo).toHaveBeenCalledWith('promo');
   });
 });
