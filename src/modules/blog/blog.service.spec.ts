@@ -151,7 +151,6 @@ describe('BlogService', () => {
       titulo: 'Título do Post',
       conteudo: 'Conteúdo do post',
       dataPublicacao: new Date(),
-      urlImagem: 'http://example.com/post',
     };
 
     const mockPost = {
