@@ -56,12 +56,10 @@ describe('BlogController', () => {
 
     mockBlogService.criarPost.mockResolvedValue(mockPost);
 
-
     await expect(controller.criarPost(postData, mockFile)).resolves.toEqual(
       mockPost,
     );
     expect(mockBlogService.criarPost).toHaveBeenCalledWith(postData, mockFile);
-
   });
 
   it('deve buscar todos os posts do blog com sucesso!', async () => {
