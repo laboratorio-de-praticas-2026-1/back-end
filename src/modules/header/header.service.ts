@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Banner } from '../../models/banner.model';
+import { CarrosselBannerResponseDto } from './dto/carrosel-banner-response.dto';
 
 @Injectable()
 export class HeaderService {
@@ -9,17 +10,16 @@ export class HeaderService {
     private readonly bannerModel: typeof Banner,
   ) {}
 
-  async getBannersAtivos(): Promise<
-    { id: number; url_imagem: string; descricao: string }[]
-  > {
-    const banners = await this.bannerModel.findAll({
+  async getBannersAtivos(): Promise<CarrosselBannerResponseDto[]> {
+    return await this.bannerModel.findAll({
       where: { ativo: true },
+      order: [['id', 'ASC']],
+      attributes: [
+        ['id', 'id'],
+        ['url_imagem', 'urlImagem'],
+        ['descricao', 'descricao'],
+      ],
+      raw: true,
     });
-
-    return banners.map((banner) => ({
-      id: banner.id,
-      url_imagem: banner.urlImagem || '',
-      descricao: banner.descricao || '',
-    }));
   }
 }
