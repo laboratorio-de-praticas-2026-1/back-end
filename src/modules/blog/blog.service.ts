@@ -81,7 +81,6 @@ export class BlogService {
       titulo: blogDto.titulo,
       conteudo: blogDto.conteudo,
       dataPublicacao: blogDto.dataPublicacao,
-      urlImagem: blogDto.urlImagem,
     });
 
     return blog;
