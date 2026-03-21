@@ -1,4 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigModule } from '@nestjs/config';
+import { SequelizeModule } from '@nestjs/sequelize';
 import { BuscaService } from './busca.service';
 import { getModelToken } from '@nestjs/sequelize';
 import { BadRequestException } from '@nestjs/common';
@@ -9,6 +11,7 @@ import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
 
 describe('BuscaService', () => {
   let service: BuscaService;
+  let module: TestingModule;
 
   type WhereClause = Partial<Record<symbol, unknown>>;
 
@@ -45,7 +48,7 @@ describe('BuscaService', () => {
     }).compile();
 
     service = module.get<BuscaService>(BuscaService);
-  });
+  }); 
 
   it('should be defined', () => {
     expect(service).toBeDefined();
