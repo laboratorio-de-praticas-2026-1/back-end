@@ -1,10 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { col, Op, where } from 'sequelize';
-import { Blog } from 'src/models/blog.model';
 import { Banner } from 'src/models/banner.model';
-import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
+import { Blog } from 'src/models/blog.model';
 import { BuscaBannerStatusDto } from './dto/busca-banner-status.dto';
+import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
 
 @Injectable()
 export class BuscaService {
@@ -86,6 +86,84 @@ export class BuscaService {
         dia,
       ).padStart(2, '0')}`,
       key: ano * 10000 + mes * 100 + dia,
+    };
+  }
+  async listarBlogByTermo(termo?: string): Promise<{
+    itens: Blog[];
+    mensagem?: string;
+  }> {
+    const termoNormalizado = termo?.trim();
+
+    if (!termoNormalizado) {
+      const itens = await this.blogModel.findAll({ order: [['id', 'DESC']] });
+
+      return {
+        itens,
+        mensagem:
+          itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+      };
+    }
+
+    const filtros: Array<Record<string, unknown>> = [
+      { titulo: { [Op.like]: `%${termoNormalizado}%` } },
+      { conteudo: { [Op.like]: `%${termoNormalizado}%` } },
+    ];
+
+    const termoEhInteiroDecimal = /^(0|[1-9]\d*)$/.test(termoNormalizado);
+    if (termoEhInteiroDecimal) {
+      const termoComoNumero = parseInt(termoNormalizado, 10);
+      if (!Number.isNaN(termoComoNumero)) {
+        filtros.push({ id: termoComoNumero });
+      }
+    }
+
+    const itens = await this.blogModel.findAll({
+      where: { [Op.or]: filtros },
+      order: [['id', 'DESC']],
+    });
+
+    return {
+      itens,
+      mensagem: itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+    };
+  }
+
+  async listarBannersByTermo(termo?: string): Promise<{
+    itens: Banner[];
+    mensagem?: string;
+  }> {
+    const termoNormalizado = termo?.trim();
+
+    if (!termoNormalizado) {
+      const itens = await this.bannerModel.findAll({ order: [['id', 'DESC']] });
+
+      return {
+        itens,
+        mensagem:
+          itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+      };
+    }
+
+    const filtros: Array<Record<string, unknown>> = [
+      { descricao: { [Op.like]: `%${termoNormalizado}%` } },
+    ];
+
+    const termoEhInteiroDecimal = /^(0|[1-9]\d*)$/.test(termoNormalizado);
+    if (termoEhInteiroDecimal) {
+      const termoComoNumero = parseInt(termoNormalizado, 10);
+      if (!Number.isNaN(termoComoNumero)) {
+        filtros.push({ id: termoComoNumero });
+      }
+    }
+
+    const itens = await this.bannerModel.findAll({
+      where: { [Op.or]: filtros },
+      order: [['id', 'DESC']],
+    });
+
+    return {
+      itens,
+      mensagem: itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
     };
   }
 }
