@@ -1,6 +1,7 @@
 // src/modules/header/header.service.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { HeaderService } from './header.service';
+import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
 import { getModelToken } from '@nestjs/sequelize';
 import { Banner } from 'src/models/banner.model';
 import { NotFoundException } from '@nestjs/common';
@@ -14,15 +15,21 @@ describe('HeaderService', () => {
     urlImagem: 'https://example.com/banner.jpg',
     descricao: 'Banner de teste',
     ativo: true,
+    reload: jest.fn().mockResolvedValue(undefined),
+    update: jest.fn().mockResolvedValue(undefined),
+    destroy: jest.fn().mockResolvedValue(undefined),
   };
 
   const mockBannerModel = {
     findAll: jest.fn().mockResolvedValue([]),
     findByPk: jest.fn().mockResolvedValue(mockBanner),
     create: jest.fn().mockResolvedValue(mockBanner),
-    reload: jest.fn().mockResolvedValue(mockBanner),
-    update: jest.fn().mockResolvedValue(mockBanner),
-    destroy: jest.fn().mockResolvedValue(undefined),
+  };
+
+  const mockCloudinaryService = {
+    uploadFile: jest.fn().mockResolvedValue({
+      secure_url: 'https://cloudinary.com/test.jpg',
+    }),
   };
 
   beforeEach(async () => {
@@ -32,6 +39,10 @@ describe('HeaderService', () => {
         {
           provide: getModelToken(Banner),
           useValue: mockBannerModel,
+        },
+        {
+          provide: CloudinaryService,
+          useValue: mockCloudinaryService,
         },
       ],
     }).compile();
@@ -92,11 +103,18 @@ describe('HeaderService', () => {
   describe('create', () => {
     it('should create a new banner', async () => {
       const createDto = {
-        urlImagem: 'https://example.com/banner.jpg',
         descricao: 'Banner de teste',
         ativo: true,
-        reload: jest.fn().mockResolvedValue(undefined),
       };
+
+      const mockFile = {
+        fieldname: 'imagem',
+        originalname: 'banner.jpg',
+        encoding: '7bit',
+        mimetype: 'image/jpeg',
+        buffer: Buffer.from('fake-image-content'),
+        size: 1234,
+      } as Express.Multer.File;
 
       const createdBanner = {
         ...mockBanner,
@@ -107,13 +125,14 @@ describe('HeaderService', () => {
         .spyOn(mockBannerModel, 'create')
         .mockResolvedValue(createdBanner as any);
 
-      const result = await service.create(createDto);
+      const result = await service.create(createDto, mockFile);
       expect(result).toEqual(createdBanner);
       expect(mockBannerModel.create).toHaveBeenCalledWith({
-        urlImagem: createDto.urlImagem,
+        urlImagem: 'https://cloudinary.com/test.jpg',
         descricao: createDto.descricao,
         ativo: createDto.ativo,
       });
+      expect(mockCloudinaryService.uploadFile).toHaveBeenCalledWith(mockFile);
     });
   });
 });

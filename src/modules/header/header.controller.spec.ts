@@ -5,7 +5,6 @@ import { HeaderService } from './header.service';
 
 describe('HeaderController', () => {
   let controller: HeaderController;
-  let service: HeaderService;
 
   const mockBanner = {
     id: 1,
@@ -14,19 +13,28 @@ describe('HeaderController', () => {
     ativo: true,
   };
 
+  const mockFile = {
+    fieldname: 'imagem',
+    originalname: 'banner.jpg',
+    encoding: '7bit',
+    mimetype: 'image/jpeg',
+    buffer: Buffer.from('fake-image-content'),
+    size: 1234,
+  } as Express.Multer.File;
+
   const headerServiceMock = {
     listAll: jest.fn().mockResolvedValue([mockBanner]),
     findById: jest.fn().mockResolvedValue(mockBanner),
     create: jest.fn().mockResolvedValue(mockBanner),
     update: jest.fn().mockResolvedValue(mockBanner),
     delete: jest.fn().mockResolvedValue(undefined),
+    getBannersAtivos: jest.fn().mockResolvedValue([mockBanner]),
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [HeaderController],
       providers: [
-        HeaderService,
         {
           provide: HeaderService,
           useValue: headerServiceMock,
@@ -35,7 +43,10 @@ describe('HeaderController', () => {
     }).compile();
 
     controller = module.get<HeaderController>(HeaderController);
-    service = module.get<HeaderService>(HeaderService);
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
@@ -59,31 +70,40 @@ describe('HeaderController', () => {
   });
 
   describe('create', () => {
-    it('should create a new banner', async () => {
+    it('should create a new banner with image', async () => {
       const createDto = {
-        urlImagem: 'https://example.com/banner.jpg',
         descricao: 'Banner de teste',
         ativo: true,
       };
 
-      const result = await controller.create(createDto);
+      const result = await controller.create(createDto, mockFile);
+
       expect(result).toEqual(mockBanner);
-      expect(headerServiceMock.create).toHaveBeenCalledWith(createDto);
+      expect(headerServiceMock.create).toHaveBeenCalledWith(
+        createDto,
+        mockFile,
+      );
     });
   });
 
   describe('update', () => {
-    it('should update a banner', async () => {
+    it('should update a banner with optional image', async () => {
       const updateDto = { ativo: false };
-      const result = await controller.update('1', updateDto);
+
+      const result = await controller.update(1, updateDto, mockFile);
+
       expect(result).toEqual(mockBanner);
-      expect(headerServiceMock.update).toHaveBeenCalledWith(1, updateDto);
+      expect(headerServiceMock.update).toHaveBeenCalledWith(
+        1,
+        updateDto,
+        mockFile,
+      );
     });
   });
 
   describe('delete', () => {
     it('should delete a banner', async () => {
-      const result = await controller.delete('1');
+      const result = await controller.delete(1);
       expect(result).toEqual({
         message: 'Banner do header com ID 1 removido com sucesso',
       });
