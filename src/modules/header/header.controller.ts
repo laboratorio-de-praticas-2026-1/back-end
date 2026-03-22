@@ -15,7 +15,7 @@ import { HeaderCreateDto } from './dto/header-create.dto';
 import { HeaderUpdateDto } from './dto/header-update.dto';
 import { HeaderService } from './header.service';
 
-@Controller()
+@Controller('header')
 export class HeaderController {
   private readonly logger = new Logger(HeaderController.name);
 
