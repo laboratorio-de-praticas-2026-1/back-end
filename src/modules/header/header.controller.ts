@@ -13,6 +13,8 @@ import {
 import { HeaderService } from './header.service';
 import { HeaderCreateDto } from './dto/header-create.dto';
 import { HeaderUpdateDto } from './dto/header-update.dto';
+import { Banner } from 'src/models/banner.model';
+import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
 
 @Controller()
 export class HeaderController {
@@ -56,30 +58,44 @@ export class HeaderController {
     return this.headerService.getBannersAtivos();
   }
   @Get()
-  async getAll() {
+  @ApiOperation({ summary: 'Listar todos os banners' })
+  @ApiOkResponse({
+    description: 'Lista de banners',
+    type: Banner,
+    isArray: true,
+  })
+  async getAll(): Promise<Banner[]> {
     this.logger.log('Listando todos os banners do header...');
     return await this.headerService.listAll();
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Buscar banner por ID' })
+  @ApiOkResponse({ description: 'Banner  encontrado', type: Banner })
   async getById(@Param('id') id: string) {
     this.logger.log(`Buscando banner do header com ID ${id}...`);
     return await this.headerService.findById(Number(id));
   }
 
   @Post()
+  @ApiOperation({ summary: 'Criar um novo banner' })
+  @ApiOkResponse({ description: 'Banner criado', type: Banner })
   async create(@Body() headerDto: HeaderCreateDto) {
     this.logger.log('Criando novo banner do header...');
     return await this.headerService.create(headerDto);
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Atualizar um banner existente' })
+  @ApiOkResponse({ description: 'Banner atualizado', type: Banner })
   async update(@Param('id') id: string, @Body() headerDto: HeaderUpdateDto) {
     this.logger.log(`Atualizando banner do header com ID ${id}...`);
     return await this.headerService.update(Number(id), headerDto);
   }
 
   @Delete(':id')
+  @ApiOperation({ summary: 'Deletar um banner por ID' })
+  @ApiOkResponse({ description: 'Banner deletado' })
   async delete(@Param('id') id: string) {
     this.logger.log(`Deletando banner do header com ID ${id}...`);
     await this.headerService.delete(Number(id));
