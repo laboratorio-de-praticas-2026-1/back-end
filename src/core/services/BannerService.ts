@@ -40,4 +40,4 @@ export class BannerService {
     this.banners.splice(index, 1);
     return Promise.resolve();
   }
-};
+}
