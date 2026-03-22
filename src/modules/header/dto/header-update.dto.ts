@@ -1,15 +1,13 @@
-import { IsString, IsBoolean, IsOptional } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 
 export class HeaderUpdateDto {
-  @IsOptional()
-  @IsString()
-  urlImagem?: string;
-
   @IsOptional()
   @IsString()
   descricao?: string;
 
   @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
   @IsBoolean()
   ativo?: boolean;
 }

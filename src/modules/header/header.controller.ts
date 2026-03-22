@@ -2,13 +2,25 @@ import {
   Body,
   Controller,
   Delete,
+  FileTypeValidator,
   Get,
   Logger,
+  MaxFileSizeValidator,
   Param,
+  ParseFilePipe,
+  ParseIntPipe,
   Patch,
   Post,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  ApiBody,
+  ApiConsumes,
+  ApiOkResponse,
+  ApiOperation,
+} from '@nestjs/swagger';
 import { Banner } from 'src/models/banner.model';
 import { CarrosselBannerResponseDto } from './dto/carrosel-banner-response.dto';
 import { HeaderCreateDto } from './dto/header-create.dto';
@@ -78,26 +90,102 @@ export class HeaderController {
 
   @Post()
   @ApiOperation({ summary: 'Criar um novo banner' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        descricao: {
+          type: 'string',
+          example: 'Banner de exemplo',
+        },
+        ativo: {
+          type: 'boolean',
+          example: true,
+        },
+        imagem: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+      required: ['ativo', 'imagem'],
+    },
+  })
   @ApiOkResponse({ description: 'Banner criado', type: Banner })
-  async create(@Body() headerDto: HeaderCreateDto) {
+  @UseInterceptors(FileInterceptor('imagem'))
+  async create(
+    @Body() headerDto: HeaderCreateDto,
+    @UploadedFile(
+      new ParseFilePipe({
+        fileIsRequired: true,
+        errorHttpStatusCode: 400,
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 2 * 1024 * 1024 }),
+          new FileTypeValidator({
+            fileType: 'image/jpeg|image/png|image/svg\\+xml|image/webp',
+          }),
+        ],
+      }),
+    )
+    imagem: Express.Multer.File,
+  ): Promise<Banner> {
     this.logger.log('Criando novo banner do header...');
-    return await this.headerService.create(headerDto);
+    return await this.headerService.create(headerDto, imagem);
   }
 
   @Patch(':id')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        descricao: {
+          type: 'string',
+          example: 'Banner de exemplo',
+        },
+        ativo: {
+          type: 'boolean',
+          example: true,
+        },
+        imagem: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+      required: [],
+    },
+  })
+  @ApiOkResponse({ description: 'Banner atualizado', type: Banner })
   @ApiOperation({ summary: 'Atualizar um banner existente' })
   @ApiOkResponse({ description: 'Banner atualizado', type: Banner })
-  async update(@Param('id') id: string, @Body() headerDto: HeaderUpdateDto) {
+  @UseInterceptors(FileInterceptor('imagem'))
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() headerDto: HeaderUpdateDto,
+    @UploadedFile(
+      new ParseFilePipe({
+        fileIsRequired: false,
+        errorHttpStatusCode: 400,
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 2 * 1024 * 1024 }),
+          new FileTypeValidator({
+            fileType: 'image/jpeg|image/png|image/svg\\+xml|image/webp',
+          }),
+        ],
+      }),
+    )
+    imagem?: Express.Multer.File,
+  ): Promise<Banner> {
     this.logger.log(`Atualizando banner do header com ID ${id}...`);
-    return await this.headerService.update(Number(id), headerDto);
+    return await this.headerService.update(id, headerDto, imagem);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Deletar um banner por ID' })
   @ApiOkResponse({ description: 'Banner deletado' })
-  async delete(@Param('id') id: string) {
+  async delete(@Param('id', ParseIntPipe) id: number) {
     this.logger.log(`Deletando banner do header com ID ${id}...`);
-    await this.headerService.delete(Number(id));
+    await this.headerService.delete(id);
     return { message: `Banner do header com ID ${id} removido com sucesso` };
   }
 }
