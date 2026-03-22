@@ -50,7 +50,7 @@ export class HeaderService {
   async update(id: number, headerDto: HeaderUpdateDto): Promise<Banner> {
     const banner = await this.findById(id);
 
-    const updateData: any = {};
+    const updateData: Partial<Banner> = {};
     if (headerDto.urlImagem !== undefined) {
       updateData.urlImagem = headerDto.urlImagem;
     }

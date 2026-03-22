@@ -18,6 +18,11 @@ describe('HeaderService', () => {
 
   const mockBannerModel = {
     findAll: jest.fn().mockResolvedValue([]),
+    findByPk: jest.fn().mockResolvedValue(mockBanner),
+    create: jest.fn().mockResolvedValue(mockBanner),
+    reload: jest.fn().mockResolvedValue(mockBanner),
+    update: jest.fn().mockResolvedValue(mockBanner),
+    destroy: jest.fn().mockResolvedValue(undefined),
   };
 
   beforeEach(async () => {
@@ -26,14 +31,7 @@ describe('HeaderService', () => {
         HeaderService,
         {
           provide: getModelToken(Banner),
-          useValue: {
-            findAll: jest.fn().mockResolvedValue([mockBanner]),
-            findByPk: jest.fn().mockResolvedValue(mockBanner),
-            create: jest.fn().mockResolvedValue(mockBanner),
-            reload: jest.fn().mockResolvedValue(mockBanner),
-            update: jest.fn().mockResolvedValue(mockBanner),
-            destroy: jest.fn().mockResolvedValue(undefined),
-          },
+          useValue: mockBannerModel,
         },
       ],
     }).compile();
@@ -70,9 +68,10 @@ describe('HeaderService', () => {
   });
   describe('listAll', () => {
     it('should return an array of banners', async () => {
+      mockBannerModel.findAll.mockResolvedValue([mockBanner]);
       const result = await service.listAll();
       expect(result).toEqual([mockBanner]);
-      expect(bannerModel.findAll).toHaveBeenCalled();
+      expect(mockBannerModel.findAll).toHaveBeenCalled();
     });
   });
 
@@ -80,11 +79,11 @@ describe('HeaderService', () => {
     it('should return a banner by id', async () => {
       const result = await service.findById(1);
       expect(result).toEqual(mockBanner);
-      expect(bannerModel.findByPk).toHaveBeenCalledWith(1);
+      expect(mockBannerModel.findByPk).toHaveBeenCalledWith(1);
     });
 
     it('should throw NotFoundException when banner not found', async () => {
-      jest.spyOn(bannerModel, 'findByPk').mockResolvedValueOnce(null);
+      jest.spyOn(mockBannerModel, 'findByPk').mockResolvedValueOnce(null);
 
       await expect(service.findById(999)).rejects.toThrow(NotFoundException);
     });
@@ -96,6 +95,7 @@ describe('HeaderService', () => {
         urlImagem: 'https://example.com/banner.jpg',
         descricao: 'Banner de teste',
         ativo: true,
+        reload: jest.fn().mockResolvedValue(undefined),
       };
 
       const createdBanner = {
@@ -103,11 +103,13 @@ describe('HeaderService', () => {
         reload: jest.fn().mockResolvedValue(undefined),
       };
 
-      jest.spyOn(bannerModel, 'create').mockResolvedValue(createdBanner as any);
+      jest
+        .spyOn(mockBannerModel, 'create')
+        .mockResolvedValue(createdBanner as any);
 
       const result = await service.create(createDto);
       expect(result).toEqual(createdBanner);
-      expect(bannerModel.create).toHaveBeenCalledWith({
+      expect(mockBannerModel.create).toHaveBeenCalledWith({
         urlImagem: createDto.urlImagem,
         descricao: createDto.descricao,
         ativo: createDto.ativo,

@@ -14,6 +14,14 @@ describe('HeaderController', () => {
     ativo: true,
   };
 
+  const headerServiceMock = {
+    listAll: jest.fn().mockResolvedValue([mockBanner]),
+    findById: jest.fn().mockResolvedValue(mockBanner),
+    create: jest.fn().mockResolvedValue(mockBanner),
+    update: jest.fn().mockResolvedValue(mockBanner),
+    delete: jest.fn().mockResolvedValue(undefined),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [HeaderController],
@@ -21,14 +29,7 @@ describe('HeaderController', () => {
         HeaderService,
         {
           provide: HeaderService,
-          useValue: {
-            findAll: jest.fn().mockResolvedValue([]),
-            listAll: jest.fn().mockResolvedValue([mockBanner]),
-            findById: jest.fn().mockResolvedValue(mockBanner),
-            create: jest.fn().mockResolvedValue(mockBanner),
-            update: jest.fn().mockResolvedValue(mockBanner),
-            delete: jest.fn().mockResolvedValue(undefined),
-          },
+          useValue: headerServiceMock,
         },
       ],
     }).compile();
@@ -45,7 +46,7 @@ describe('HeaderController', () => {
     it('should return an array of banners', async () => {
       const result = await controller.getAll();
       expect(result).toEqual([mockBanner]);
-      expect(service.listAll).toHaveBeenCalled();
+      expect(headerServiceMock.listAll).toHaveBeenCalled();
     });
   });
 
@@ -53,7 +54,7 @@ describe('HeaderController', () => {
     it('should return a banner by id', async () => {
       const result = await controller.getById('1');
       expect(result).toEqual(mockBanner);
-      expect(service.findById).toHaveBeenCalledWith(1);
+      expect(headerServiceMock.findById).toHaveBeenCalledWith(1);
     });
   });
 
@@ -67,7 +68,7 @@ describe('HeaderController', () => {
 
       const result = await controller.create(createDto);
       expect(result).toEqual(mockBanner);
-      expect(service.create).toHaveBeenCalledWith(createDto);
+      expect(headerServiceMock.create).toHaveBeenCalledWith(createDto);
     });
   });
 
@@ -76,7 +77,7 @@ describe('HeaderController', () => {
       const updateDto = { ativo: false };
       const result = await controller.update('1', updateDto);
       expect(result).toEqual(mockBanner);
-      expect(service.update).toHaveBeenCalledWith(1, updateDto);
+      expect(headerServiceMock.update).toHaveBeenCalledWith(1, updateDto);
     });
   });
 
@@ -86,7 +87,7 @@ describe('HeaderController', () => {
       expect(result).toEqual({
         message: 'Banner do header com ID 1 removido com sucesso',
       });
-      expect(service.delete).toHaveBeenCalledWith(1);
+      expect(headerServiceMock.delete).toHaveBeenCalledWith(1);
     });
   });
 });
