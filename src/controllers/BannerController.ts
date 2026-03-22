@@ -72,4 +72,4 @@ export class BannerController {
       return res.status(404).json({ error: message });
     }
   }
-}
+};
