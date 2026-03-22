@@ -30,6 +30,9 @@ describe('HeaderService', () => {
             findAll: jest.fn().mockResolvedValue([mockBanner]),
             findByPk: jest.fn().mockResolvedValue(mockBanner),
             create: jest.fn().mockResolvedValue(mockBanner),
+            reload: jest.fn().mockResolvedValue(mockBanner),
+            update: jest.fn().mockResolvedValue(mockBanner),
+            destroy: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],
@@ -95,8 +98,15 @@ describe('HeaderService', () => {
         ativo: true,
       };
 
+      const createdBanner = {
+        ...mockBanner,
+        reload: jest.fn().mockResolvedValue(undefined),
+      };
+
+      jest.spyOn(bannerModel, 'create').mockResolvedValue(createdBanner as any);
+
       const result = await service.create(createDto);
-      expect(result).toEqual(mockBanner);
+      expect(result).toEqual(createdBanner);
       expect(bannerModel.create).toHaveBeenCalledWith({
         urlImagem: createDto.urlImagem,
         descricao: createDto.descricao,
