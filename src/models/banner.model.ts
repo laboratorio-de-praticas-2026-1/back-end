@@ -7,7 +7,10 @@ export class Banner extends Model {
   @Column({ primaryKey: true, autoIncrement: true })
   declare id: number;
 
-  @ApiProperty({ description: 'URL da imagem do banner', example: 'https://example.com/banner.jpg' })
+  @ApiProperty({
+    description: 'URL da imagem do banner',
+    example: 'https://example.com/banner.jpg',
+  })
   @Column({
     field: 'url_imagem',
     type: DataType.STRING(255),
@@ -15,7 +18,10 @@ export class Banner extends Model {
   })
   declare urlImagem: string | null;
 
-  @ApiProperty({ description: 'Descrição do banner', example: 'Banner promocional' })
+  @ApiProperty({
+    description: 'Descrição do banner',
+    example: 'Banner promocional',
+  })
   @Column({
     type: DataType.STRING(255),
     allowNull: true,
