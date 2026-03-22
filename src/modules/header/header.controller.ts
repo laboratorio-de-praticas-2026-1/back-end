@@ -1,5 +1,3 @@
-import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
-import { CarrosselBannerResponseDto } from './dto/carrosel-banner-response.dto';
 import {
   Body,
   Controller,
@@ -10,11 +8,12 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
-import { HeaderService } from './header.service';
+import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
+import { Banner } from 'src/models/banner.model';
+import { CarrosselBannerResponseDto } from './dto/carrosel-banner-response.dto';
 import { HeaderCreateDto } from './dto/header-create.dto';
 import { HeaderUpdateDto } from './dto/header-update.dto';
-import { Banner } from 'src/models/banner.model';
-import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
+import { HeaderService } from './header.service';
 
 @Controller()
 export class HeaderController {
