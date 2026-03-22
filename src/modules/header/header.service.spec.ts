@@ -2,10 +2,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HeaderService } from './header.service';
 import { getModelToken } from '@nestjs/sequelize';
-import { Banner } from '../../models/banner.model';
+import { Banner } from 'src/models/banner.model';
+import { NotFoundException } from '@nestjs/common';
 
 describe('HeaderService', () => {
   let service: HeaderService;
+  let bannerModel: typeof Banner;
+
+  const mockBanner = {
+    id: 1,
+    urlImagem: 'https://example.com/banner.jpg',
+    descricao: 'Banner de teste',
+    ativo: true,
+  };
 
   const mockBannerModel = {
     findAll: jest.fn().mockResolvedValue([]),
@@ -17,12 +26,17 @@ describe('HeaderService', () => {
         HeaderService,
         {
           provide: getModelToken(Banner),
-          useValue: mockBannerModel,
+          useValue: {
+            findAll: jest.fn().mockResolvedValue([mockBanner]),
+            findByPk: jest.fn().mockResolvedValue(mockBanner),
+            create: jest.fn().mockResolvedValue(mockBanner),
+          },
         },
       ],
     }).compile();
 
     service = module.get<HeaderService>(HeaderService);
+    bannerModel = module.get<typeof Banner>(getModelToken(Banner));
   });
 
   it('should be defined', () => {
@@ -49,6 +63,45 @@ describe('HeaderService', () => {
       expect(result).toEqual([
         { id: 1, urlImagem: 'test.jpg', descricao: 'Test' },
       ]);
+    });
+  });
+  describe('listAll', () => {
+    it('should return an array of banners', async () => {
+      const result = await service.listAll();
+      expect(result).toEqual([mockBanner]);
+      expect(bannerModel.findAll).toHaveBeenCalled();
+    });
+  });
+
+  describe('findById', () => {
+    it('should return a banner by id', async () => {
+      const result = await service.findById(1);
+      expect(result).toEqual(mockBanner);
+      expect(bannerModel.findByPk).toHaveBeenCalledWith(1);
+    });
+
+    it('should throw NotFoundException when banner not found', async () => {
+      jest.spyOn(bannerModel, 'findByPk').mockResolvedValueOnce(null);
+
+      await expect(service.findById(999)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('create', () => {
+    it('should create a new banner', async () => {
+      const createDto = {
+        urlImagem: 'https://example.com/banner.jpg',
+        descricao: 'Banner de teste',
+        ativo: true,
+      };
+
+      const result = await service.create(createDto);
+      expect(result).toEqual(mockBanner);
+      expect(bannerModel.create).toHaveBeenCalledWith({
+        urlImagem: createDto.urlImagem,
+        descricao: createDto.descricao,
+        ativo: createDto.ativo,
+      });
     });
   });
 });
