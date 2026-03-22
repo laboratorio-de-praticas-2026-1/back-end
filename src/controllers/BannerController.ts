@@ -32,7 +32,8 @@ export class BannerController {
       });
       return res.status(201).json(novoBanner);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Erro desconhecido';
+      const message =
+        error instanceof Error ? error.message : 'Erro desconhecido';
       return res.status(400).json({ error: message });
     }
   }
@@ -48,7 +49,8 @@ export class BannerController {
       const atualizado = await BannerService.update(id, req.body);
       return res.status(200).json(atualizado);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Erro desconhecido';
+      const message =
+        error instanceof Error ? error.message : 'Erro desconhecido';
       const status = message === 'Banner não encontrado' ? 404 : 400;
       return res.status(status).json({ error: message });
     }
@@ -65,8 +67,9 @@ export class BannerController {
       await BannerService.delete(id);
       return res.status(200).json({ message: 'Banner removido com sucesso' });
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Erro desconhecido';
+      const message =
+        error instanceof Error ? error.message : 'Erro desconhecido';
       return res.status(404).json({ error: message });
     }
   }
-};
+}
