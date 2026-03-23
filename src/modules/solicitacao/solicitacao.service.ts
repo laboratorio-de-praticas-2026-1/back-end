@@ -1,20 +1,27 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
+import { StatusSolicitacaoEnum } from 'src/commons/enums/status-solicitacao.enum';
 import { Servico } from 'src/models/servico.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
 import { Usuario } from 'src/models/usuario.model';
 import { Veiculo } from 'src/models/veiculo.model';
 import { NotificacaoService } from '../notificacao/notificacao.service';
 import { CreateSolicitacaoDto } from './dto/create-solicitacao.dto';
-import { StatusSolicitacaoEnum } from 'src/commons/enums/status-solicitacao.enum';
+import {
+  CreateSolicitacaoResponseDto,
+  ProtocoloSolicitacaoDto,
+} from './dto/create-solicitacao-response.dto';
+import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 
 @Injectable()
 export class SolicitacaoService {
+  private readonly logger: Logger = new Logger(SolicitacaoService.name);
+
   constructor(
     @InjectModel(Solicitacao)
     private readonly solicitacaoModel: typeof Solicitacao,
@@ -29,18 +36,18 @@ export class SolicitacaoService {
 
   async criarSolicitacao(
     solicitacaoDto: CreateSolicitacaoDto,
-  ): Promise<{ message: string }> {
+  ): Promise<CreateSolicitacaoResponseDto> {
     const [usuario, servico] = await Promise.all([
       this.usuarioModel.findByPk(solicitacaoDto.usuario_id),
       this.servicoModel.findByPk(solicitacaoDto.servico_id),
     ]);
 
     if (!usuario) {
-      throw new NotFoundException('Usuario nao encontrado');
+      throw new NotFoundException('Usuário não encontrado');
     }
 
     if (!servico) {
-      throw new NotFoundException('Servico nao encontrado');
+      throw new NotFoundException('Serviço não encontrado');
     }
 
     const veiculo: Veiculo | null = solicitacaoDto.veiculo_id
@@ -48,12 +55,12 @@ export class SolicitacaoService {
       : null;
 
     if (solicitacaoDto.veiculo_id && !veiculo) {
-      throw new NotFoundException('Veiculo nao encontrado');
+      throw new NotFoundException('Veículo não encontrado');
     }
 
     if (veiculo && veiculo.usuarioId !== usuario.id) {
       throw new BadRequestException(
-        'O veiculo informado nao pertence ao usuario',
+        'O veículo informado não pertence ao usuário',
       );
     }
 
@@ -66,15 +73,30 @@ export class SolicitacaoService {
       dataSolicitacao: new Date(),
     });
 
-    await this.notificacaoService.enviarConfirmacaoSolicitacao({
-      email: usuario.email,
-      nomeUsuario: usuario.nome,
-      solicitacaoId: solicitacao.id,
-      servicoNome: servico.nome,
-    });
+    const protocolo: ProtocoloSolicitacaoDto = this.gerarProtocoloSolicitacao(
+      usuario,
+      servico,
+      solicitacao,
+    );
+
+    void this.notificacaoService
+      .enviarConfirmacaoSolicitacao({
+        email: usuario.email,
+        nomeUsuario: usuario.nome,
+        solicitacaoId: solicitacao.id,
+        protocolo,
+      })
+      .catch((error: unknown) => {
+        const mensagemErro =
+          error instanceof Error ? error.message : 'Erro desconhecido';
+        this.logger.warn(
+          `Falha ao enviar email de confirmacao da solicitacao ${solicitacao.id}: ${mensagemErro}`,
+        );
+      });
 
     return {
-      message: 'Solicitação de serviço criada com sucesso',
+      message: 'Agendamento de serviço realizado com sucesso',
+      protocolo,
     };
   }
 
@@ -114,5 +136,38 @@ export class SolicitacaoService {
     return {
       message: 'Status da solicitação atualizado com sucesso.',
     };
+  }
+
+  private gerarProtocoloSolicitacao(
+    usuario: Usuario,
+    servico: Servico,
+    solicitacao: Solicitacao,
+  ): ProtocoloSolicitacaoDto {
+    const dataSolicitacao = solicitacao.dataSolicitacao ?? new Date();
+    const prazoEstimadoDias = servico.prazoEstimadoDias ?? 0;
+    const prazoEstimado = new Date(dataSolicitacao);
+
+    prazoEstimado.setDate(prazoEstimado.getDate() + prazoEstimadoDias);
+
+    return {
+      cliente: {
+        nome: usuario.nome,
+      },
+      servico: {
+        nome: servico.nome,
+        valor_base:
+          servico.valorBase !== null && servico.valorBase !== undefined
+            ? Number(servico.valorBase)
+            : null,
+      },
+      solicitacao: {
+        data_solicitacao: this.formatarData(dataSolicitacao),
+        prazo_estimado: this.formatarData(prazoEstimado),
+      },
+    };
+  }
+
+  private formatarData(data: Date): string {
+    return data.toISOString().slice(0, 10);
   }
 }
