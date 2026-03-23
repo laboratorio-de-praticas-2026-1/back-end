@@ -18,6 +18,7 @@ import { CreateSolicitacaoDto } from './dto/create-solicitacao.dto';
 import { CreateSolicitacaoResponseDto } from './dto/create-solicitacao-response.dto';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 import { SolicitacaoService } from './solicitacao.service';
+import { CreateDocumentoDto } from './dto/create-documento.dto';
 
 @ApiTags('solicitacao')
 @Controller('solicitacao')
@@ -77,5 +78,28 @@ export class SolicitacaoController {
       id,
       updateSolicitacaoStatusDto,
     );
+  }
+
+  @Post(':id/documentos')
+  @ApiCreatedResponse({
+    description: 'Documento enviado com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Documento enviado com sucesso e aguardando validação.',
+        },
+      },
+    },
+  })
+  @ApiNotFoundResponse({
+    description: 'Solicitação não encontrada',
+  })
+  enviarDocumento(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() data: CreateDocumentoDto,
+  ): Promise<{ message: string }> {
+    return this.solicitacaoService.enviarDocumento(id, data);
   }
 }
