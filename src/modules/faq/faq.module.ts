@@ -6,6 +6,7 @@ import { Faq } from 'src/models/faq.model';
 import { SequelizeModule } from '@nestjs/sequelize';
 
 @Module({
+  imports: [SequelizeModule.forFeature([Faq, Empresa])],
   controllers: [FaqController],
   providers: [FaqService],
   exports: [FaqService],
