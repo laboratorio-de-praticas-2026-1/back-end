@@ -2,6 +2,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Faq } from 'src/models/faq.model';
+import { CreateFaqDto } from './dto/create-faq.dto';
+import { UpdateFaqDto } from './dto/update-faq.dto';
 
 @Injectable()
 export class FaqService {
@@ -10,17 +12,14 @@ export class FaqService {
     private faqModel: typeof Faq,
   ) {}
 
-  //Listar FAQs públicas (exibição no site para visitantes)
   async getFaqs(): Promise<Faq[]> {
     return this.faqModel.findAll();
   }
 
-  //Listar todas as FAQs no painel CMS (uso administrativo)
   async getAllFaqsAdmin(): Promise<Faq[]> {
     return this.faqModel.findAll();
   }
 
-  //Buscar uma FAQ específica pelo ID
   async getFaqById(id: number): Promise<Faq> {
     const faq = await this.faqModel.findByPk(id);
     if (!faq) {
@@ -29,17 +28,21 @@ export class FaqService {
     return faq;
   }
 
-  //Criar uma nova FAQ
-  async createFaq(pergunta: string, resposta: string): Promise<Faq> {
-    return this.faqModel.create({ pergunta, resposta });
+  async createFaq(dto: CreateFaqDto): Promise<Faq> {
+    return this.faqModel.create({
+      pergunta: dto.pergunta,
+      resposta: dto.resposta,
+    });
   }
 
-  //Remover uma FAQ pelo ID
+  async updateFaq(id: number, dto: UpdateFaqDto): Promise<Faq> {
+    const faq = await this.getFaqById(id);
+    await faq.update(dto);
+    return faq;
+  }
+
   async deleteFaq(id: number): Promise<void> {
-    const faq = await this.faqModel.findByPk(id);
-    if (!faq) {
-      throw new NotFoundException('FAQ não encontrada');
-    }
+    const faq = await this.getFaqById(id);
     await faq.destroy();
   }
 }

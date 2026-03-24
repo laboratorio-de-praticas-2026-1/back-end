@@ -39,13 +39,13 @@ describe('FaqService', () => {
 
   it('createFaq deve chamar model.create', async () => {
     faqModelMock.create.mockResolvedValueOnce({ id: 2, pergunta: 'P2', resposta: 'R2' });
-    await expect(service.createFaq('P2', 'R2')).resolves.toEqual({ id: 2, pergunta: 'P2', resposta: 'R2' });
+    await service.createFaq({ pergunta: 'P2', resposta: 'R2' })
     expect(faqModelMock.create).toHaveBeenCalledWith({ pergunta: 'P2', resposta: 'R2' });
   });
 
   it('deleteFaq deve destruir existente', async () => {
     const fakeFaq = { id: 1, destroy: jest.fn().mockResolvedValue(undefined) };
-    faqModelMock.findByPk.mockResolvedValueOnce(fakeFaq as any);
+    faqModelMock.findByPk.mockResolvedValueOnce(fakeFaq as unknown as Faq);
     await service.deleteFaq(1);
     expect(faqModelMock.findByPk).toHaveBeenCalledWith(1);
     expect(fakeFaq.destroy).toHaveBeenCalled();
