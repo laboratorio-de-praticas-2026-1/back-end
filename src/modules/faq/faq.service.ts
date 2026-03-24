@@ -16,10 +16,6 @@ export class FaqService {
     return this.faqModel.findAll();
   }
 
-  async getAllFaqsAdmin(): Promise<Faq[]> {
-    return this.faqModel.findAll();
-  }
-
   async getFaqById(id: number): Promise<Faq> {
     const faq = await this.faqModel.findByPk(id);
     if (!faq) {
