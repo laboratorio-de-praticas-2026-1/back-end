@@ -1,5 +1,6 @@
 import { getModelToken } from '@nestjs/sequelize';
 import { Test, TestingModule } from '@nestjs/testing';
+import { DocumentoSolicitacao } from 'src/models/documento-solicitacao.model';
 import { Servico } from 'src/models/servico.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
 import { Usuario } from 'src/models/usuario.model';
@@ -29,6 +30,7 @@ describe('SolicitacaoService', () => {
   });
 
   let mockSolicitacaoModel: MockModel;
+  let mockDocumentoModel: MockModel;
   let mockUsuarioModel: MockModel;
   let mockVeiculoModel: MockModel;
   let mockServicoModel: MockModel;
@@ -37,6 +39,10 @@ describe('SolicitacaoService', () => {
   beforeEach(async () => {
     mockSolicitacaoModel = {
       create: jest.fn(),
+    };
+
+    mockDocumentoModel = {
+      findByPk: jest.fn(),
     };
 
     mockUsuarioModel = {
@@ -61,6 +67,10 @@ describe('SolicitacaoService', () => {
         {
           provide: getModelToken(Solicitacao),
           useValue: mockSolicitacaoModel,
+        },
+        {
+          provide: getModelToken(DocumentoSolicitacao),
+          useValue: mockDocumentoModel,
         },
         {
           provide: getModelToken(Usuario),
