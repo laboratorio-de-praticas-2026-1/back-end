@@ -1,37 +1,50 @@
 // Logger utilitário para logs estruturados
+
 interface LogParams {
   message: string;
-  userId?: number | null;
-  chatId?: number | null;
+  userId?: string | number | null;
+  chatId?: string | number | null;
   stack?: string | null;
+  context?: string; // 🔥 ex: ChatGateway, ChatService
+  meta?: Record<string, any>; // 🔥 dados extras
 }
 
-export function logError({
-  message,
-  userId = null,
-  chatId = null,
-  stack = null,
-}: LogParams) {
+function baseLog(level: 'info' | 'error', params: LogParams) {
+  const {
+    message,
+    userId = null,
+    chatId = null,
+    stack = null,
+    context = 'app',
+    meta = {},
+  } = params;
+
   const log = {
-    level: 'error',
+    level,
     timestamp: new Date().toISOString(),
+    context,
     userId,
     chatId,
     message,
-    stack,
+    ...(meta && Object.keys(meta).length ? { meta } : {}),
+    ...(typeof stack === 'string' && stack ? { stack } : {}),
   };
 
-  console.error(JSON.stringify(log));
+  const output = JSON.stringify(log);
+
+  if (level === 'error') {
+    console.error(output);
+  } else {
+    console.log(output);
+  }
 }
 
-export function logInfo({ message, userId = null, chatId = null }: LogParams) {
-  const log = {
-    level: 'info',
-    timestamp: new Date().toISOString(),
-    userId,
-    chatId,
-    message,
-  };
+// ================= EXPORTS =================
 
-  console.log(JSON.stringify(log));
+export function logError(params: LogParams) {
+  baseLog('error', params);
+}
+
+export function logInfo(params: LogParams) {
+  baseLog('info', params);
 }
