@@ -19,27 +19,33 @@ describe('SolicitacaoService', () => {
     jest.useRealTimers();
   });
 
-  const mockSolicitacaoModel = {
-    create: jest.fn(),
-  };
-
-  const mockUsuarioModel = {
-    findByPk: jest.fn(),
-  };
-
-  const mockVeiculoModel = {
-    findByPk: jest.fn(),
-  };
-
-  const mockServicoModel = {
-    findByPk: jest.fn(),
-  };
-
-  const mockNotificacaoService = {
-    enviarConfirmacaoSolicitacao: jest.fn(),
-  };
+  let mockSolicitacaoModel: any;
+  let mockUsuarioModel: any;
+  let mockVeiculoModel: any;
+  let mockServicoModel: any;
+  let mockNotificacaoService: any;
 
   beforeEach(async () => {
+    mockSolicitacaoModel = {
+      create: jest.fn(),
+    };
+
+    mockUsuarioModel = {
+      findByPk: jest.fn(),
+    };
+
+    mockVeiculoModel = {
+      findByPk: jest.fn(),
+    };
+
+    mockServicoModel = {
+      findByPk: jest.fn(),
+    };
+
+    mockNotificacaoService = {
+      enviarConfirmacaoSolicitacao: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SolicitacaoService,
@@ -70,7 +76,7 @@ describe('SolicitacaoService', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
   });
 
   it('deve criar solicitacao com sucesso', async () => {
