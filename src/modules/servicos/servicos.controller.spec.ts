@@ -9,6 +9,8 @@ describe('ServicosController', () => {
   const mockServicosService = {
     findAll: jest.fn(),
     findOne: jest.fn(),
+    updateServico: jest.fn(),
+    deleteServico: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -63,6 +65,48 @@ describe('ServicosController', () => {
       mockServicosService.findOne.mockRejectedValue(new NotFoundException());
 
       await expect(controller.findOne(99)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('updateServico', () => {
+    it('deve retornar o serviço atualizado', async () => {
+      const id = 1;
+      const dto = { nome: 'Novo Nome' };
+      const mockResult = { id, ...dto };
+
+      mockServicosService.updateServico = jest
+        .fn()
+        .mockResolvedValue(mockResult);
+
+      const result = await controller.updateServico(id, dto);
+
+      expect(mockServicosService.updateServico).toHaveBeenCalledWith(id, dto);
+      expect(result).toEqual(mockResult);
+    });
+  });
+
+  describe('deleteServico', () => {
+    it('deve deletar um serviço com sucesso', async () => {
+      const id = 1;
+
+      // Configuramos o mock para apenas resolver (já que o delete retorna void/undefined)
+      mockServicosService.deleteServico = jest
+        .fn()
+        .mockResolvedValue(undefined);
+
+      await controller.deleteServico(id);
+
+      expect(mockServicosService.deleteServico).toHaveBeenCalledWith(id);
+    });
+
+    it('deve propagar NotFoundException quando serviço não encontrado para deletar', async () => {
+      mockServicosService.deleteServico = jest
+        .fn()
+        .mockRejectedValue(new NotFoundException());
+
+      await expect(controller.deleteServico(99)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });
