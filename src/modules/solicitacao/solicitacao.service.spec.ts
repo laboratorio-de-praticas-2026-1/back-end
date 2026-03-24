@@ -7,6 +7,15 @@ import { Veiculo } from 'src/models/veiculo.model';
 import { NotificacaoService } from '../notificacao/notificacao.service';
 import { SolicitacaoService } from './solicitacao.service';
 
+interface MockModel {
+  create?: jest.Mock;
+  findByPk?: jest.Mock;
+}
+
+interface MockNotificacao {
+  enviarConfirmacaoSolicitacao?: jest.Mock;
+}
+
 describe('SolicitacaoService', () => {
   let service: SolicitacaoService;
 
@@ -19,11 +28,11 @@ describe('SolicitacaoService', () => {
     jest.useRealTimers();
   });
 
-  let mockSolicitacaoModel: any;
-  let mockUsuarioModel: any;
-  let mockVeiculoModel: any;
-  let mockServicoModel: any;
-  let mockNotificacaoService: any;
+  let mockSolicitacaoModel: MockModel;
+  let mockUsuarioModel: MockModel;
+  let mockVeiculoModel: MockModel;
+  let mockServicoModel: MockModel;
+  let mockNotificacaoService: MockNotificacao;
 
   beforeEach(async () => {
     mockSolicitacaoModel = {
