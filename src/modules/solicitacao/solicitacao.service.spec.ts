@@ -10,6 +10,15 @@ import { SolicitacaoService } from './solicitacao.service';
 describe('SolicitacaoService', () => {
   let service: SolicitacaoService;
 
+  beforeAll(() => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-03-10T12:00:00.000Z'));
+  });
+
+  afterAll(() => {
+    jest.useRealTimers();
+  });
+
   const mockSolicitacaoModel = {
     create: jest.fn(),
   };

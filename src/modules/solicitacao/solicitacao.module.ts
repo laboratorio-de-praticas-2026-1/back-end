@@ -11,7 +11,13 @@ import { DocumentoSolicitacao } from 'src/models/documento-solicitacao.model';
 
 @Module({
   imports: [
-    SequelizeModule.forFeature([Solicitacao, DocumentoSolicitacao, Usuario, Veiculo, Servico]),
+    SequelizeModule.forFeature([
+      Solicitacao,
+      DocumentoSolicitacao,
+      Usuario,
+      Veiculo,
+      Servico,
+    ]),
     NotificacaoModule,
   ],
   controllers: [SolicitacaoController],
