@@ -1,5 +1,6 @@
 import { getModelToken } from '@nestjs/sequelize';
 import { Test, TestingModule } from '@nestjs/testing';
+import { DocumentoSolicitacao } from 'src/models/documento-solicitacao.model';
 import { Servico } from 'src/models/servico.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
 import { Usuario } from 'src/models/usuario.model';
@@ -7,36 +8,69 @@ import { Veiculo } from 'src/models/veiculo.model';
 import { NotificacaoService } from '../notificacao/notificacao.service';
 import { SolicitacaoService } from './solicitacao.service';
 
+interface MockModel {
+  create?: jest.Mock;
+  findByPk?: jest.Mock;
+}
+
+interface MockNotificacao {
+  enviarConfirmacaoSolicitacao?: jest.Mock;
+}
+
 describe('SolicitacaoService', () => {
   let service: SolicitacaoService;
 
-  const mockSolicitacaoModel = {
-    create: jest.fn(),
-  };
+  beforeAll(() => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-03-10T12:00:00.000Z'));
+  });
 
-  const mockUsuarioModel = {
-    findByPk: jest.fn(),
-  };
+  afterAll(() => {
+    jest.useRealTimers();
+  });
 
-  const mockVeiculoModel = {
-    findByPk: jest.fn(),
-  };
-
-  const mockServicoModel = {
-    findByPk: jest.fn(),
-  };
-
-  const mockNotificacaoService = {
-    enviarConfirmacaoSolicitacao: jest.fn(),
-  };
+  let mockSolicitacaoModel: MockModel;
+  let mockDocumentoModel: MockModel;
+  let mockUsuarioModel: MockModel;
+  let mockVeiculoModel: MockModel;
+  let mockServicoModel: MockModel;
+  let mockNotificacaoService: MockNotificacao;
 
   beforeEach(async () => {
+    mockSolicitacaoModel = {
+      create: jest.fn(),
+    };
+
+    mockDocumentoModel = {
+      findByPk: jest.fn(),
+    };
+
+    mockUsuarioModel = {
+      findByPk: jest.fn(),
+    };
+
+    mockVeiculoModel = {
+      findByPk: jest.fn(),
+    };
+
+    mockServicoModel = {
+      findByPk: jest.fn(),
+    };
+
+    mockNotificacaoService = {
+      enviarConfirmacaoSolicitacao: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SolicitacaoService,
         {
           provide: getModelToken(Solicitacao),
           useValue: mockSolicitacaoModel,
+        },
+        {
+          provide: getModelToken(DocumentoSolicitacao),
+          useValue: mockDocumentoModel,
         },
         {
           provide: getModelToken(Usuario),
@@ -61,7 +95,7 @@ describe('SolicitacaoService', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
   });
 
   it('deve criar solicitacao com sucesso', async () => {

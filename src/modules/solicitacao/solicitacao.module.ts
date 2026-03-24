@@ -7,10 +7,17 @@ import { Usuario } from 'src/models/usuario.model';
 import { Veiculo } from 'src/models/veiculo.model';
 import { NotificacaoModule } from '../notificacao/notificacao.module';
 import { SolicitacaoController } from './solicitacao.controller';
+import { DocumentoSolicitacao } from 'src/models/documento-solicitacao.model';
 
 @Module({
   imports: [
-    SequelizeModule.forFeature([Solicitacao, Usuario, Veiculo, Servico]),
+    SequelizeModule.forFeature([
+      Solicitacao,
+      DocumentoSolicitacao,
+      Usuario,
+      Veiculo,
+      Servico,
+    ]),
     NotificacaoModule,
   ],
   controllers: [SolicitacaoController],

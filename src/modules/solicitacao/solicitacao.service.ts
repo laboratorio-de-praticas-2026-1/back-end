@@ -17,6 +17,8 @@ import {
   ProtocoloSolicitacaoDto,
 } from './dto/create-solicitacao-response.dto';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
+import { DocumentoSolicitacao } from 'src/models/documento-solicitacao.model';
+import { CreateDocumentoDto } from './dto/create-documento.dto';
 
 @Injectable()
 export class SolicitacaoService {
@@ -25,6 +27,8 @@ export class SolicitacaoService {
   constructor(
     @InjectModel(Solicitacao)
     private readonly solicitacaoModel: typeof Solicitacao,
+    @InjectModel(DocumentoSolicitacao)
+    private readonly documentoModel: typeof DocumentoSolicitacao,
     @InjectModel(Usuario)
     private readonly usuarioModel: typeof Usuario,
     @InjectModel(Veiculo)
@@ -169,5 +173,29 @@ export class SolicitacaoService {
 
   private formatarData(data: Date): string {
     return data.toISOString().slice(0, 10);
+  }
+
+  // Criação de rota de envio de documentos
+  async enviarDocumento(
+    solicitacaoId: number,
+    data: CreateDocumentoDto,
+  ): Promise<{ message: string }> {
+    if (!data.tipo_documento || !data.url_criptografada) {
+      throw new BadRequestException('Dados inválidos');
+    }
+    const solicitacao = await this.solicitacaoModel.findByPk(solicitacaoId);
+    if (!solicitacao) {
+      throw new NotFoundException('Solicitação não encontrada');
+    }
+    await this.documentoModel.create({
+      solicitacaoId: solicitacaoId,
+      nomeHash: data.url_criptografada,
+      tipoDocumento: data.tipo_documento,
+      dataUpload: new Date(),
+      statusValidacao: 'pendente',
+    });
+    return {
+      message: 'Documento enviado com sucesso e aguardando validação.',
+    };
   }
 }
