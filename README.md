@@ -50,10 +50,10 @@ No painel lateral direito da issue, clique em **"Create a branch"** na seção *
 
 **Escolha a origem correta:**
 
-| Repositório | Branch de origem |
-|---|---|
+| Repositório  | Branch de origem            |
+| ------------ | --------------------------- |
 | **Back-end** | `short-release/seu-produto` |
-| **Database** | `develop` |
+| **Database** | `develop`                   |
 
 Selecione a branch de origem no campo **"Branch source"** e clique em **"Create branch"**.
 
@@ -73,6 +73,7 @@ Ou pelo **VSCode** (aba Source Control → trocar branch) ou pelo **GitHub Deskt
 ---
 
 ### 5. Desenvolva e commite
+
 (Para desenvolver siga o fluxo de setup do projeto localmente [Guia de Setup Local](#setup-local))
 
 Faça seu trabalho e commite seguindo o padrão [Conventional Commits](https://www.conventionalcommits.org/):
@@ -83,15 +84,15 @@ git commit -m "feat: descrição do que foi feito"
 git push origin nome-da-sua-branch
 ```
 
-| Prefixo | Uso |
-|---|---|
-| `feat:` | Nova funcionalidade |
-| `fix:` | Correção de bug |
-| `chore:` | Tarefa técnica sem impacto funcional |
-| `docs:` | Documentação |
+| Prefixo     | Uso                                      |
+| ----------- | ---------------------------------------- |
+| `feat:`     | Nova funcionalidade                      |
+| `fix:`      | Correção de bug                          |
+| `chore:`    | Tarefa técnica sem impacto funcional     |
+| `docs:`     | Documentação                             |
 | `refactor:` | Refatoração sem mudança de comportamento |
-| `test:` | Adição ou ajuste de testes |
-| `ci:` | Configuração de CI/CD |
+| `test:`     | Adição ou ajuste de testes               |
+| `ci:`       | Configuração de CI/CD                    |
 
 ---
 
@@ -99,16 +100,18 @@ git push origin nome-da-sua-branch
 
 Na aba **Pull Requests**, clique em **New pull request** e configure:
 
-| Campo | Valor |
-|---|---|
-| **base** (esquerda) | branch pai (`short-release/seu-produto``) |
-| **compare** (direita) | sua branch |
+| Campo                 | Valor                                     |
+| --------------------- | ----------------------------------------- |
+| **base** (esquerda)   | branch pai (`short-release/seu-produto``) |
+| **compare** (direita) | sua branch                                |
 
 **No corpo do PR:**
+
 - Descreva com detalhes o que foi feito
 - Referencie a issue com `closes #numero` para fechá-la automaticamente
 
 **No painel lateral:**
+
 - Solicite a review do seu **PO ou PM** na aba **Reviewers**
 
 ---
@@ -118,6 +121,7 @@ Na aba **Pull Requests**, clique em **New pull request** e configure:
 ```
 sua branch  →  short-release/produto  →  release/entrega-DD-MM  →  develop  →  main
 ```
+
 ```
 chore/      →  develop  →  main
 ```
@@ -136,12 +140,12 @@ chore/      →  develop  →  main
 ---
 
 ## Setup Local
-``` 
+
+```
 Caso seja necessário rodar o banco de dados localmente, utilize o repositório abaixo:
 https://github.com/laboratorio-de-praticas-2026-1/database
 Inicialize o banco utilizando Docker Compose e depois siga os passos para iniciar o back-end.
 ```
-
 
 ### 1. Clone o repositório
 
@@ -159,11 +163,12 @@ npm install
 
 ---
 
-### 3. Crie um arquivo ``` .env ``` seguindo a estrutura de variáveis do ``` .env.example ```
+### 3. Crie um arquivo `.env` seguindo a estrutura de variáveis do `.env.example`
 
 ---
 
 ### 4. Inicialize o projeto
+
 ```bash
 npm run start:dev
 ```

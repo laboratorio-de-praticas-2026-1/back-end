@@ -176,26 +176,26 @@ export class SolicitacaoService {
   }
 
   // Criação de rota de envio de documentos
-async enviarDocumento(
-  solicitacaoId: number,
-  data: CreateDocumentoDto,
-    ): Promise<{ message: string }> {
-  if (!data.tipo_documento || !data.url_criptografada) {
-    throw new BadRequestException('Dados inválidos');
+  async enviarDocumento(
+    solicitacaoId: number,
+    data: CreateDocumentoDto,
+  ): Promise<{ message: string }> {
+    if (!data.tipo_documento || !data.url_criptografada) {
+      throw new BadRequestException('Dados inválidos');
+    }
+    const solicitacao = await this.solicitacaoModel.findByPk(solicitacaoId);
+    if (!solicitacao) {
+      throw new NotFoundException('Solicitação não encontrada');
+    }
+    await this.documentoModel.create({
+      solicitacaoId: solicitacaoId,
+      nomeHash: data.url_criptografada,
+      tipoDocumento: data.tipo_documento,
+      dataUpload: new Date(),
+      statusValidacao: 'pendente',
+    });
+    return {
+      message: 'Documento enviado com sucesso e aguardando validação.',
+    };
   }
-  const solicitacao = await this.solicitacaoModel.findByPk(solicitacaoId);
-  if (!solicitacao) {
-    throw new NotFoundException('Solicitação não encontrada');
-  }
-  await this.documentoModel.create({
-    solicitacaoId: solicitacaoId,
-    nomeHash: data.url_criptografada,
-    tipoDocumento: data.tipo_documento,
-    dataUpload: new Date(),
-    statusValidacao: 'pendente',
-  });
-  return {
-    message: 'Documento enviado com sucesso e aguardando validação.',
-  };
-}
 }
