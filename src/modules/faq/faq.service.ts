@@ -18,9 +18,11 @@ export class FaqService {
 
   async getFaqById(id: number): Promise<Faq> {
     const faq = await this.faqModel.findByPk(id);
+
     if (!faq) {
       throw new NotFoundException('FAQ não encontrada');
     }
+
     return faq;
   }
 
@@ -33,12 +35,15 @@ export class FaqService {
 
   async updateFaq(id: number, dto: UpdateFaqDto): Promise<Faq> {
     const faq = await this.getFaqById(id);
+
     await faq.update(dto);
-    return faq;
+
+    return await faq.reload(); // garante dados atualizados
   }
 
   async deleteFaq(id: number): Promise<void> {
     const faq = await this.getFaqById(id);
+
     await faq.destroy();
   }
 }
