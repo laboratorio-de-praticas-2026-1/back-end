@@ -175,6 +175,7 @@ export class SolicitacaoService {
     return data.toISOString().slice(0, 10);
   }
 
+  // Criação de rota de envio de documentos
 async enviarDocumento(
   solicitacaoId: number,
   data: CreateDocumentoDto,
