@@ -29,7 +29,7 @@ export class BlogController {
   constructor(private readonly blogService: BlogService) {}
 
   @Post()
-  @ApiOperation({summary: "Criar um novo post para o blog"})
+  @ApiOperation({ summary: 'Criar um novo post para o blog' })
   @ApiBody({
     schema: {
       type: 'object',
@@ -60,21 +60,21 @@ export class BlogController {
   }
 
   @Get()
-  @ApiOperation({summary: "Busca todos os posts do blog"})
+  @ApiOperation({ summary: 'Busca todos os posts do blog' })
   getAll(): Promise<Blog[]> {
     this.logger.log(`Iniciando busca de todos os posts do blog...`);
     return this.blogService.getAll();
   }
 
   @Get(':id')
-  @ApiOperation({summary: "Busca um post do blog pelo id"})
+  @ApiOperation({ summary: 'Busca um post do blog pelo id' })
   getById(@Param('id', ParseIntPipe) id: number): Promise<Blog> {
     this.logger.log(`Iniciando busca de post do blog por Id...`);
     return this.blogService.getById(id);
   }
 
   @Delete(':id')
-  @ApiOperation({summary: "Deletar um post do blog pelo id"})
+  @ApiOperation({ summary: 'Deletar um post do blog pelo id' })
   @HttpCode(204)
   deleteById(@Param('id', ParseIntPipe) id: number): Promise<void> {
     this.logger.log(`Iniciando remoção de post do blog por Id...`);
@@ -82,7 +82,7 @@ export class BlogController {
   }
 
   @Put(':id')
-  @ApiOperation({summary: "Atualizar um post do blog"})
+  @ApiOperation({ summary: 'Atualizar um post do blog' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
