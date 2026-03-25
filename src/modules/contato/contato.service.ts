@@ -7,7 +7,11 @@ import {
 import { InjectModel } from '@nestjs/sequelize';
 import { Empresa } from 'src/models/empresa.model';
 import { EmpresaDto } from './dto/empresa-response.dto';
-import { ConnectionError, ConnectionRefusedError, HostNotFoundError } from 'sequelize';
+import {
+  ConnectionError,
+  ConnectionRefusedError,
+  HostNotFoundError,
+} from 'sequelize';
 
 @Injectable()
 export class ContatoService {

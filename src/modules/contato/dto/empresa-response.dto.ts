@@ -28,7 +28,9 @@ export class EmpresaDto {
   @ApiProperty()
   site: string;
 
-  @ApiProperty({ description: 'Endereço completo (endereço + cidade + estado)' })
+  @ApiProperty({
+    description: 'Endereço completo (endereço + cidade + estado)',
+  })
   enderecoCompleto: string;
 
   constructor(
@@ -52,6 +54,8 @@ export class EmpresaDto {
     this.estado = estado;
     this.site = site;
     // Concatena os campos para formar o endereço completo
-    this.enderecoCompleto = [endereco, cidade, estado].filter(Boolean).join(', ');
+    this.enderecoCompleto = [endereco, cidade, estado]
+      .filter(Boolean)
+      .join(', ');
   }
 }
