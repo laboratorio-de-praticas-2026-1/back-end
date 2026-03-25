@@ -33,7 +33,9 @@ describe('FaqService', () => {
     faqModelMock.create.mockResolvedValue({});
   });
 
-  afterEach(() => jest.resetAllMocks());
+  afterEach(() => {
+    jest.resetAllMocks();
+  });
 
   it('getFaqs deve retornar lista', async () => {
     const result = await service.getFaqs();
