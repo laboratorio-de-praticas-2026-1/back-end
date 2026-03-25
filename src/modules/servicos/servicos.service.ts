@@ -18,7 +18,17 @@ export class ServicosService {
     if (!servico) {
       throw new NotFoundException(`Serviço com id ${id} não encontrado`);
     }
-
     return servico;
+  }
+
+  async updateServico(id: number, dados: Partial<Servico>): Promise<Servico> {
+    const servico = await this.findOne(id);
+    await servico.update(dados);
+    return servico.reload();
+  }
+
+  async deleteServico(id: number): Promise<void> {
+    const servico = await this.findOne(id);
+    await servico.destroy();
   }
 }

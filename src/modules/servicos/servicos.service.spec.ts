@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/unbound-method */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Test, TestingModule } from '@nestjs/testing';
 import { ServicosService } from './servicos.service';
 import { getModelToken } from '@nestjs/sequelize';
@@ -69,6 +71,51 @@ describe('ServicosService', () => {
 
       await expect(service.findOne(99)).rejects.toThrow(NotFoundException);
       expect(mockServicoModel.findByPk).toHaveBeenCalledWith(99);
+    });
+  });
+
+  describe('updateServico', () => {
+    it('deve atualizar um serviço com sucesso', async () => {
+      const mockServico = {
+        id: 1,
+        nome: 'Original',
+        update: jest.fn().mockResolvedValue(undefined),
+        reload: jest.fn().mockResolvedValue({ id: 1, nome: 'Atualizado' }),
+      };
+
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockServico as any);
+
+      const dadosParaAtualizar = { nome: 'Atualizado' };
+      const resultado = await service.updateServico(1, dadosParaAtualizar);
+
+      expect(service.findOne).toHaveBeenCalledWith(1);
+      expect(mockServico.update).toHaveBeenCalled();
+      expect(mockServico.reload).toHaveBeenCalled();
+      expect(resultado.nome).toBe('Atualizado');
+    });
+  });
+
+  describe('deleteServico', () => {
+    it('deve deletar um serviço com sucesso', async () => {
+      const mockServico = {
+        id: 1,
+        destroy: jest.fn().mockResolvedValue(undefined),
+      };
+
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockServico as any);
+
+      await service.deleteServico(1);
+
+      expect(service.findOne).toHaveBeenCalledWith(1);
+      expect(mockServico.destroy).toHaveBeenCalled();
+    });
+
+    it('deve lançar erro se tentar deletar um serviço inexistente', async () => {
+      jest.spyOn(service, 'findOne').mockRejectedValue(new NotFoundException());
+
+      await expect(service.deleteServico(99)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });
