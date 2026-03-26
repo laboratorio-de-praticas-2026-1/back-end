@@ -7,7 +7,6 @@ import { NotFoundException } from '@nestjs/common';
 describe('FaqController', () => {
   let controller: FaqController;
 
-  // mock do service
   const faqServiceMock = {
     getFaqs: jest.fn(),
     getFaqById: jest.fn(),
@@ -28,34 +27,47 @@ describe('FaqController', () => {
     controller = module.get<FaqController>(FaqController);
   });
 
-  // limpa mocks
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  //TESTES
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
   // GET /faq
-  it('deve retornar apenas FAQs ativas', async () => {
+  it('deve retornar todas as FAQs', async () => {
     const mockFaqs = [
-      { id: 1, pergunta: 'P1', resposta: 'R1', status: true },
-      { id: 2, pergunta: 'P2', resposta: 'R2', status: false },
+      { id: 1, pergunta: 'P1', resposta: 'R1' },
+      { id: 2, pergunta: 'P2', resposta: 'R2' },
     ];
 
     faqServiceMock.getFaqs.mockResolvedValue(mockFaqs);
 
-    const result = await controller.getPublicFaqs();
+    const result = await controller.getFaqs();
 
-    expect(result).toEqual([mockFaqs[0]]);
+    expect(result).toEqual(mockFaqs);
+    expect(faqServiceMock.getFaqs).toHaveBeenCalled();
+  });
+
+  // GET /faq/admin
+  it('deve retornar todas as FAQs (admin)', async () => {
+    const mockFaqs = [
+      { id: 1 },
+      { id: 2 },
+    ];
+
+    faqServiceMock.getFaqs.mockResolvedValue(mockFaqs);
+
+    const result = await controller.getAllFaqsAdmin();
+
+    expect(result).toEqual(mockFaqs);
     expect(faqServiceMock.getFaqs).toHaveBeenCalled();
   });
 
   // GET /faq/:id
   it('deve retornar uma FAQ por ID', async () => {
-    const faq = { id: 1, pergunta: 'P1', resposta: 'R1', status: true };
+    const faq = { id: 1, pergunta: 'P1', resposta: 'R1' };
 
     faqServiceMock.getFaqById.mockResolvedValue(faq);
 
@@ -65,7 +77,7 @@ describe('FaqController', () => {
     expect(faqServiceMock.getFaqById).toHaveBeenCalledWith(1);
   });
 
-  // ❌ GET /faq/:id não encontrada
+  // GET erro
   it('deve lançar erro se FAQ não existir', async () => {
     faqServiceMock.getFaqById.mockRejectedValue(
       new NotFoundException('FAQ não encontrada'),
@@ -74,20 +86,6 @@ describe('FaqController', () => {
     await expect(controller.getFaqById(999)).rejects.toThrow(
       NotFoundException,
     );
-  });
-
-  // GET /faq/admin
-  it('deve retornar todas as FAQs (admin)', async () => {
-    const mockFaqs = [
-      { id: 1, status: true },
-      { id: 2, status: false },
-    ];
-
-    faqServiceMock.getFaqs.mockResolvedValue(mockFaqs);
-
-    const result = await controller.getAllFaqsAdmin();
-
-    expect(result).toEqual(mockFaqs);
   });
 
   // DELETE
