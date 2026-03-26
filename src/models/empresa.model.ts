@@ -35,7 +35,7 @@ export class Empresa extends Model {
 
   @Column({
     type: DataType.ENUM('clinica', 'vistoria', 'detran'),
-    allowNull: true
+    allowNull: true,
   })
   declare tipo: 'clinica' | 'vistoria' | 'detran' | null;
 
