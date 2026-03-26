@@ -7,20 +7,21 @@ import {
   ParseFilePipe,
   Get,
   Post,
-  UploadedFile,
   UseInterceptors,
   ParseIntPipe,
   Param,
   Put,
   Delete,
   HttpCode,
+  UploadedFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { ApiConsumes, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { Blog } from 'src/models/blog.model';
 import { BlogService } from './blog.service';
 import { BlogCreateDto } from './dto/blog-create.dto';
 import { BlogUpdateDto } from './dto/blog-update.dto';
+import { imageFilePipe } from 'src/commons/pipes/file.pipe';
 
 @Controller('blog')
 export class BlogController {
@@ -28,7 +29,7 @@ export class BlogController {
   constructor(private readonly blogService: BlogService) {}
 
   @Post()
-  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Criar um novo post para o blog' })
   @ApiBody({
     schema: {
       type: 'object',
@@ -45,22 +46,12 @@ export class BlogController {
       required: ['titulo', 'conteudo', 'dataPublicacao', 'imagem'],
     },
   })
+  @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('imagem'))
   criarPost(
     @Body()
     blogDto: BlogCreateDto,
-    @UploadedFile(
-      new ParseFilePipe({
-        fileIsRequired: true,
-        errorHttpStatusCode: 400,
-        validators: [
-          new MaxFileSizeValidator({ maxSize: 2 * 1024 * 1024 }),
-          new FileTypeValidator({
-            fileType: 'image/jpeg|image/png|image/svg\\+xml|image/webp',
-          }),
-        ],
-      }),
-    )
+    @UploadedFile(imageFilePipe)
     imagem: Express.Multer.File,
   ): Promise<Blog> {
     this.logger.log(`Iniciando criação de post no blog...`);
@@ -69,18 +60,21 @@ export class BlogController {
   }
 
   @Get()
+  @ApiOperation({ summary: 'Busca todos os posts do blog' })
   getAll(): Promise<Blog[]> {
     this.logger.log(`Iniciando busca de todos os posts do blog...`);
     return this.blogService.getAll();
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Busca um post do blog pelo id' })
   getById(@Param('id', ParseIntPipe) id: number): Promise<Blog> {
     this.logger.log(`Iniciando busca de post do blog por Id...`);
     return this.blogService.getById(id);
   }
 
   @Delete(':id')
+  @ApiOperation({ summary: 'Deletar um post do blog pelo id' })
   @HttpCode(204)
   deleteById(@Param('id', ParseIntPipe) id: number): Promise<void> {
     this.logger.log(`Iniciando remoção de post do blog por Id...`);
@@ -88,6 +82,7 @@ export class BlogController {
   }
 
   @Put(':id')
+  @ApiOperation({ summary: 'Atualizar um post do blog' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -117,18 +112,7 @@ export class BlogController {
   updateBlog(
     @Param('id', ParseIntPipe) id: number,
     @Body() blogDto: BlogUpdateDto,
-    @UploadedFile(
-      new ParseFilePipe({
-        fileIsRequired: false,
-        errorHttpStatusCode: 400,
-        validators: [
-          new MaxFileSizeValidator({ maxSize: 2 * 1024 * 1024 }),
-          new FileTypeValidator({
-            fileType: 'image/jpeg|image/png|image/svg\\+xml|image/webp',
-          }),
-        ],
-      }),
-    )
+    @UploadedFile(imageFilePipe)
     imagem?: Express.Multer.File,
   ): Promise<Blog> {
     this.logger.log(`Iniciando atualização de post no blog...`);
