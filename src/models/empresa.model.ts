@@ -33,7 +33,8 @@ export class Empresa extends Model {
   @Column({ type: DataType.STRING(100), allowNull: true })
   declare site: string | null;
 
-  @Column({ type: DataType.ENUM('clinica','vistoria','detran'), allowNull: true })
+  @Column({ type: DataType.ENUM('clinica', 'vistoria', 'detran'), 
+  allowNull: true })
   declare tipo: 'clinica' | 'vistoria' | 'detran' | null;
 
   @Column({ type: DataType.STRING(100), allowNull: true })
