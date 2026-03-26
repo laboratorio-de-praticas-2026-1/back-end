@@ -33,12 +33,12 @@ export class Empresa extends Model {
   @Column({ type: DataType.STRING(100), allowNull: true })
   declare site: string | null;
 
-  @Column({ type: DataType.STRING(50), allowNull: true })
-  declare tipo: string | null;
+  @Column({ type: DataType.ENUM("Clinica","Detran","Parceiras"), allowNull: true })
+  declare tipo: "Clinica" | "Detran" | "Parceiras" | null;
 
-  @Column({ type: DataType.DECIMAL(10, 8), allowNull: true })
-  declare latitude: number | null;
+  @Column({ type: DataType.STRING(100), allowNull: true })
+  declare latitude: string | null;
 
-  @Column({ type: DataType.DECIMAL(11, 8), allowNull: true })
-  declare longitude: number | null;
+  @Column({ type: DataType.STRING(100), allowNull: true })
+  declare longitude: string | null;
 }
