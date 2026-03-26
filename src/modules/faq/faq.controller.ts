@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Param,
-  Delete,
-  ParseIntPipe,
-} from '@nestjs/common';
+import { Controller, Get, Param, Delete, ParseIntPipe } from '@nestjs/common';
 import { FaqService } from './faq.service';
 
 @Controller('faq')
