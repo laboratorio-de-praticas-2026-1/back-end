@@ -1,12 +1,44 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { getModelToken } from '@nestjs/sequelize';
+import { Op } from 'sequelize';
 import { BuscaService } from './busca.service';
+import { BadRequestException } from '@nestjs/common';
+import { Blog } from 'src/models/blog.model';
+import { Banner } from 'src/models/banner.model';
+import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
 
 describe('BuscaService', () => {
   let service: BuscaService;
+  const blogFindAllMock = jest.fn();
+  const bannerFindAllMock = jest.fn();
+
+  type WhereClause = Partial<Record<symbol, unknown>>;
+
+  interface FindAllOptions {
+    where?: unknown;
+    order?: unknown;
+  }
 
   beforeEach(async () => {
+    blogFindAllMock.mockReset();
+    bannerFindAllMock.mockReset();
+
     const module: TestingModule = await Test.createTestingModule({
-      providers: [BuscaService],
+      providers: [
+        BuscaService,
+        {
+          provide: getModelToken(Blog),
+          useValue: {
+            findAll: blogFindAllMock,
+          },
+        },
+        {
+          provide: getModelToken(Banner),
+          useValue: {
+            findAll: bannerFindAllMock,
+          },
+        },
+      ],
     }).compile();
 
     service = module.get<BuscaService>(BuscaService);
@@ -14,5 +46,267 @@ describe('BuscaService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  it('deve buscar blogs entre datas (incluindo limites)', async () => {
+    const retorno = [{ id: 1 }];
+    blogFindAllMock.mockResolvedValue(retorno);
+
+    await expect(
+      service.buscarBlogsPorIntervaloDeData({
+        de: '2026-01-01',
+        ate: '2026-01-31',
+      }),
+    ).resolves.toEqual(retorno);
+
+    expect(blogFindAllMock).toHaveBeenCalledTimes(1);
+    const calls = blogFindAllMock.mock.calls as Array<Array<FindAllOptions>>;
+    const args = calls[0]?.[0];
+    expect(args.where).toBeDefined();
+    const whereClause = args.where as WhereClause;
+    expect(whereClause[Op.and]).toHaveLength(2);
+  });
+
+  it('deve buscar blogs a partir de uma data (incluindo limite)', async () => {
+    const retorno = [{ id: 1 }];
+    blogFindAllMock.mockResolvedValue(retorno);
+
+    await expect(
+      service.buscarBlogsPorIntervaloDeData({
+        de: '2026-01-01',
+      }),
+    ).resolves.toEqual(retorno);
+
+    expect(blogFindAllMock).toHaveBeenCalledTimes(1);
+    const calls = blogFindAllMock.mock.calls as Array<Array<FindAllOptions>>;
+    const args = calls[0]?.[0];
+    expect(args.where).toBeDefined();
+    const whereClause = args.where as WhereClause;
+    expect(whereClause[Op.and]).toHaveLength(1);
+  });
+
+  it('deve buscar blogs até uma data (incluindo limite)', async () => {
+    const retorno = [{ id: 1 }];
+    blogFindAllMock.mockResolvedValue(retorno);
+
+    await expect(
+      service.buscarBlogsPorIntervaloDeData({
+        ate: '2026-01-31',
+      }),
+    ).resolves.toEqual(retorno);
+
+    expect(blogFindAllMock).toHaveBeenCalledTimes(1);
+    const calls = blogFindAllMock.mock.calls as Array<Array<FindAllOptions>>;
+    const args = calls[0]?.[0];
+    expect(args.where).toBeDefined();
+    const whereClause = args.where as WhereClause;
+    expect(whereClause[Op.and]).toHaveLength(1);
+  });
+
+  it('deve falhar quando nenhuma data é informada', async () => {
+    await expect(
+      service.buscarBlogsPorIntervaloDeData(
+        {} as unknown as BuscaBlogIntervaloDto,
+      ),
+    ).rejects.toThrow(BadRequestException);
+
+    await expect(
+      service.buscarBlogsPorIntervaloDeData(
+        {} as unknown as BuscaBlogIntervaloDto,
+      ),
+    ).rejects.toThrow('Informe ao menos uma data: "de" ou "ate"');
+    expect(blogFindAllMock).not.toHaveBeenCalled();
+  });
+
+  it('deve falhar com formato inválido', async () => {
+    await expect(
+      service.buscarBlogsPorIntervaloDeData({
+        de: '01/01/2026',
+        ate: '2026-01-31',
+      }),
+    ).rejects.toThrow(BadRequestException);
+
+    await expect(
+      service.buscarBlogsPorIntervaloDeData({
+        de: '01/01/2026',
+        ate: '2026-01-31',
+      }),
+    ).rejects.toThrow('Campo "de" deve estar no formato YYYY-MM-DD');
+  });
+
+  it('deve falhar com formato inválido quando só uma data é informada', async () => {
+    await expect(
+      service.buscarBlogsPorIntervaloDeData({
+        ate: '31/01/2026',
+      }),
+    ).rejects.toThrow(BadRequestException);
+
+    await expect(
+      service.buscarBlogsPorIntervaloDeData({
+        ate: '31/01/2026',
+      }),
+    ).rejects.toThrow('Campo "ate" deve estar no formato YYYY-MM-DD');
+  });
+
+  it('deve buscar banners ativos quando status=ativo', async () => {
+    const retorno = [{ id: 1 }];
+    bannerFindAllMock.mockResolvedValue(retorno);
+
+    await expect(
+      service.buscarBannerPorStatus({ status: 'ativo' }),
+    ).resolves.toEqual(retorno);
+
+    expect(bannerFindAllMock).toHaveBeenCalledTimes(1);
+    expect(bannerFindAllMock).toHaveBeenCalledWith({
+      where: {
+        ativo: true,
+      },
+    });
+  });
+
+  it('deve buscar banners inativos quando status=inativo', async () => {
+    const retorno = [{ id: 1 }];
+    bannerFindAllMock.mockResolvedValue(retorno);
+
+    await expect(
+      service.buscarBannerPorStatus({ status: 'inativo' }),
+    ).resolves.toEqual(retorno);
+
+    expect(bannerFindAllMock).toHaveBeenCalledTimes(1);
+    expect(bannerFindAllMock).toHaveBeenCalledWith({
+      where: {
+        ativo: false,
+      },
+    });
+  });
+
+  it('deve listar blog sem filtro ordenando por id decrescente', async () => {
+    blogFindAllMock.mockResolvedValue([]);
+
+    await service.listarBlogByTermo();
+
+    expect(blogFindAllMock).toHaveBeenCalledWith({ order: [['id', 'DESC']] });
+  });
+
+  it('deve montar filtro por titulo e conteudo quando termo textual for informado', async () => {
+    blogFindAllMock.mockResolvedValue([]);
+
+    await service.listarBlogByTermo('  civic  ');
+
+    expect(blogFindAllMock).toHaveBeenCalledWith({
+      where: {
+        [Op.or]: [
+          { titulo: { [Op.like]: '%civic%' } },
+          { conteudo: { [Op.like]: '%civic%' } },
+        ],
+      },
+      order: [['id', 'DESC']],
+    });
+  });
+
+  it('deve incluir filtro por id quando termo numerico for informado', async () => {
+    blogFindAllMock.mockResolvedValue([]);
+
+    await service.listarBlogByTermo('42');
+
+    expect(blogFindAllMock).toHaveBeenCalledWith({
+      where: {
+        [Op.or]: [
+          { titulo: { [Op.like]: '%42%' } },
+          { conteudo: { [Op.like]: '%42%' } },
+          { id: 42 },
+        ],
+      },
+      order: [['id', 'DESC']],
+    });
+  });
+
+  describe('listarBlogByTermo', () => {
+    it('should be defined', () => {
+      expect(service).toBeDefined();
+    });
+
+    it('deve listar blog sem filtro ordenando por id decrescente', async () => {
+      blogFindAllMock.mockResolvedValue([]);
+
+      await service.listarBlogByTermo();
+
+      expect(blogFindAllMock).toHaveBeenCalledWith({ order: [['id', 'DESC']] });
+    });
+
+    it('deve montar filtro por titulo e conteudo quando termo textual for informado', async () => {
+      blogFindAllMock.mockResolvedValue([]);
+
+      await service.listarBlogByTermo('  civic  ');
+
+      expect(blogFindAllMock).toHaveBeenCalledWith({
+        where: {
+          [Op.or]: [
+            { titulo: { [Op.like]: '%civic%' } },
+            { conteudo: { [Op.like]: '%civic%' } },
+          ],
+        },
+        order: [['id', 'DESC']],
+      });
+    });
+
+    it('deve incluir filtro por id quando termo numerico for informado', async () => {
+      blogFindAllMock.mockResolvedValue([]);
+
+      await service.listarBlogByTermo('42');
+
+      expect(blogFindAllMock).toHaveBeenCalledWith({
+        where: {
+          [Op.or]: [
+            { titulo: { [Op.like]: '%42%' } },
+            { conteudo: { [Op.like]: '%42%' } },
+            { id: 42 },
+          ],
+        },
+        order: [['id', 'DESC']],
+      });
+    });
+  });
+
+  describe('listarBannersByTermo', () => {
+    it('deve retornar mensagem quando nao encontrar itens sem filtro', async () => {
+      bannerFindAllMock.mockResolvedValue([]);
+
+      const resultado = await service.listarBannersByTermo();
+
+      expect(bannerFindAllMock).toHaveBeenCalledWith({
+        order: [['id', 'DESC']],
+      });
+      expect(resultado).toEqual({
+        itens: [],
+        mensagem: 'Nenhum item foi encontrado.',
+      });
+    });
+
+    it('deve montar filtro por descricao quando termo textual for informado', async () => {
+      bannerFindAllMock.mockResolvedValue([]);
+
+      await service.listarBannersByTermo('  destaque  ');
+
+      expect(bannerFindAllMock).toHaveBeenCalledWith({
+        where: {
+          [Op.or]: [{ descricao: { [Op.like]: '%destaque%' } }],
+        },
+        order: [['id', 'DESC']],
+      });
+    });
+
+    it('deve incluir filtro por id quando termo numerico for informado', async () => {
+      bannerFindAllMock.mockResolvedValue([]);
+
+      await service.listarBannersByTermo('7');
+
+      expect(bannerFindAllMock).toHaveBeenCalledWith({
+        where: {
+          [Op.or]: [{ descricao: { [Op.like]: '%7%' } }, { id: 7 }],
+        },
+        order: [['id', 'DESC']],
+      });
+    });
   });
 });
