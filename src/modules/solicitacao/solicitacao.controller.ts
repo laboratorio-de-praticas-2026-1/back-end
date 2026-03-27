@@ -6,6 +6,7 @@ import {
   ParseIntPipe,
   Post,
   Put,
+  Get,
 } from '@nestjs/common';
 import {
   ApiBody,
@@ -37,6 +38,51 @@ export class SolicitacaoController {
   ): Promise<CreateSolicitacaoResponseDto> {
     this.logger.log('Iniciando criacao de solicitacao de servico...');
     return this.solicitacaoService.criarSolicitacao(solicitacaoDto);
+  }
+
+  @Get()
+  @ApiOkResponse({
+    description: 'Lista de solicitações retornada com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        total: {
+          type: 'number',
+          example: 10,
+        },
+        solicitacoes: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'number', example: 1 },
+              status: { type: 'string', example: 'PENDENTE' },
+              cliente: {
+                type: 'object',
+                properties: {
+                  id: { type: 'number', example: 1 },
+                  nome: { type: 'string', example: 'João da Silva' },
+                },
+              },
+              servico: {
+                type: 'object',
+                properties: {
+                  id: { type: 'number', example: 2 },
+                  nome: { type: 'string', example: 'Instalação' },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async listarSolicitacoes(): Promise<{
+    total: number;
+    solicitacoes: any[];
+  }> {
+    this.logger.log('Buscando lista de solicitações...');
+    return this.solicitacaoService.listarSolicitacoes();
   }
 
   @Put(':id')
