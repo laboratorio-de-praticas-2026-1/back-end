@@ -1,6 +1,8 @@
 /* eslint-disable prettier/prettier */
-import { Controller, Get, Delete, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Delete, Param, ParseIntPipe, Post, Body, Patch } from '@nestjs/common';
 import { FaqService } from './faq.service';
+import { CreateFaqDto } from './dto/create-faq.dto';
+import { UpdateFaqDto } from './dto/update-faq.dto';
 
 @Controller('faq')
 export class FaqController {
@@ -22,6 +24,21 @@ export class FaqController {
   @Get(':id')
   async getFaqById(@Param('id', ParseIntPipe) id: number) {
     return this.faqService.getFaqById(id);
+  }
+
+  // POST /faq/admin
+  @Post('admin')
+  async createFaq(@Body() dto: CreateFaqDto) {
+    return this.faqService.createFaq(dto);
+  }
+
+  // PATCH /faq/admin/:id
+  @Patch('admin/:id')
+  async updateFaq(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateFaqDto,
+  ) {
+    return this.faqService.updateFaq(id, dto);
   }
 
   // DELETE /faq/admin/:id

@@ -10,6 +10,8 @@ describe('FaqController', () => {
   const faqServiceMock = {
     getFaqs: jest.fn(),
     getFaqById: jest.fn(),
+    createFaq: jest.fn(),
+    updateFaq:jest.fn(),
     deleteFaq: jest.fn(),
   };
 
@@ -86,6 +88,50 @@ describe('FaqController', () => {
     await expect(controller.getFaqById(999)).rejects.toThrow(
       NotFoundException,
     );
+  });
+
+  // POST /faq/admin
+  it('deve criar uma FAQ', async () => {
+    const dto = { pergunta: 'P1', resposta: 'R1'};
+    const createdFaq = { id: 1, ...dto };
+
+    faqServiceMock.createFaq.mockResolvedValue(createdFaq);
+
+    const result = await controller.createFaq(dto);
+
+    expect(result).toEqual(createdFaq);
+    expect(faqServiceMock.createFaq).toHaveBeenCalledWith(dto);
+  });
+
+  // POST erro
+  it('deve lançar erro ao criar uma FAQ', async () => {
+    const dto = { pergunta: 'Teste', resposta: 'Resposta' };
+
+    faqServiceMock.createFaq.mockRejectedValue(new NotFoundException());
+
+    await expect(controller.createFaq(dto)).rejects.toThrow(NotFoundException);
+  });
+
+  // PATCH /faq/admin/:id
+  it('deve atualizar uma FAQ', async () => {
+    const dto = { resposta: 'Resposta atualizada' };
+    const updatedFaq = { id: 1, pergunta: 'P1', resposta: 'Resposta atualizada' };
+
+    faqServiceMock.updateFaq.mockResolvedValue(updatedFaq);
+
+    const result = await controller.updateFaq(1, dto);
+
+    expect(result).toEqual(updatedFaq);
+    expect(faqServiceMock.updateFaq).toHaveBeenCalledWith(1, dto);
+  });
+
+  // PATCH erro
+  it('deve lançar erro ao atualizar uma FAQ inexistente', async () => {
+    const dto = { resposta: 'Nova resposta' };
+
+    faqServiceMock.updateFaq.mockRejectedValue(new NotFoundException());
+
+    await expect(controller.updateFaq(999, dto)).rejects.toThrow(NotFoundException);
   });
 
   // DELETE
