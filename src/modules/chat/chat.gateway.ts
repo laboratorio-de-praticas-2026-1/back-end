@@ -8,7 +8,7 @@ import {
   MessageBody,
   ConnectedSocket,
 } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
+import { Server } from 'socket.io';
 import { ChatService } from './chat.service';
 import { dentroHorario } from './utils/timeUtils';
 import {
@@ -57,7 +57,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       ? [...room]
           .map((socketId) => this.server.sockets.sockets.get(socketId))
           .filter((s): s is AuthSocket => !!s && !!(s as AuthSocket).userId)
-          .map((s) => (s as AuthSocket).userId)
+          .map((s) => s.userId)
       : [];
 
     this.server.to(this.AGENTS_ROOM).emit('chat', {
@@ -66,7 +66,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 
-  handleConnection(socket: AuthSocket) {
+  handleConnection(_socket: AuthSocket) {
     // Connection established, authentication will be handled via events
   }
 
@@ -135,12 +135,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       socket.userId = userId;
       socket.join(this.userRoom(userId));
 
-      this.chatService.send(socket, {
+      void this.chatService.send(socket, {
         type: 'status',
         msg: `✅ Conectado como ${nomeUsuario}`,
       });
 
-      this.chatService.send(socket, {
+      void this.chatService.send(socket, {
         type: 'history',
         messages: this.chatService.history[userId],
       });
@@ -157,7 +157,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.chatService.addAgent(agentId, socket);
       socket.join(this.AGENTS_ROOM);
 
-      this.chatService.send(socket, {
+      void this.chatService.send(socket, {
         type: 'status',
         msg: 'Conectado como atendente.',
       });

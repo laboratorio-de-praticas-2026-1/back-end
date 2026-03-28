@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { randomUUID } from 'crypto';
-import { AuthService } from '../../commons/auth.service';
+import { AuthService, JwtUserPayload } from '../../commons/auth.service';
 import { ChatMessage, UserData } from './utils/types';
 
 // ================= SERVICE =================

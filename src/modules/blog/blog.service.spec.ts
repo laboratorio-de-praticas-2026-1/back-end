@@ -24,7 +24,7 @@ describe('BlogService', () => {
     service = module.get<BlogService>(BlogService);
   });
 
-  it('deve criar post de blog com sucesso!', () => {
+  it('deve criar post de blog com sucesso!', async () => {
     const postData = {
       titulo: 'Título do Post',
       conteudo: 'Conteúdo do post',
@@ -39,7 +39,7 @@ describe('BlogService', () => {
 
     mockBlogModel.create.mockResolvedValue(mockPost);
 
-    expect(service.criarPost(postData)).resolves.toEqual(mockPost);
+    await expect(service.criarPost(postData)).resolves.toEqual(mockPost);
     expect(mockBlogModel.create).toHaveBeenCalledWith(postData);
   });
 });

@@ -1,14 +1,20 @@
-// eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
+/* eslint-disable */
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { ChatGateway } from './chat.gateway';
 import { ChatService } from './chat.service';
-import { AuthService } from '../../commons/auth.service';
+import { AuthService, JwtUserPayload } from '../../commons/auth.service';
 import { Logger } from '@nestjs/common';
 import * as timeUtils from './utils/timeUtils';
 
 type MockSocket = { disconnect: jest.Mock };
 type MockWs = { role: string; userId: string };
+type MockAuthSocket = {
+  disconnect: jest.Mock;
+  join: jest.Mock;
+  userId?: string;
+  role?: string;
+};
 
 describe('ChatGateway', () => {
   beforeAll(() => {
@@ -56,11 +62,11 @@ describe('ChatGateway', () => {
 
     jest.spyOn(chatService, 'verifyToken').mockReturnValue(null);
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+     
     (gateway as any).handleConnect(socket, {
       type: 'connect',
       token: 'invalid',
-    });
+    } as IncomingMessage);
 
     expect(socket.disconnect).toHaveBeenCalledWith(true);
   });
@@ -79,8 +85,11 @@ describe('ChatGateway', () => {
       message: 'Atendimento disponível das 08h às 18h',
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-    (gateway as any).handleMessage(ws, { type: 'message', text: 'Olá' });
+     
+    (gateway as any).handleMessage(ws, {
+      type: 'message',
+      text: 'Olá',
+    } as IncomingMessage);
 
     expect(sendSpy).toHaveBeenCalledWith(ws, {
       type: 'status',
@@ -95,7 +104,7 @@ describe('ChatGateway', () => {
     };
 
     chatService.users['user-1'] = {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+       
       socket: ws as any,
       nome: 'Usuário de Teste',
       lastActivity: Date.now(),
@@ -106,8 +115,11 @@ describe('ChatGateway', () => {
       .mockImplementation(() => {});
     jest.spyOn(timeUtils, 'dentroHorario').mockReturnValue({ ok: true });
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-    (gateway as any).handleMessage(ws, { type: 'message', text: '   ' });
+     
+    (gateway as any).handleMessage(ws, {
+      type: 'message',
+      text: '   ',
+    } as IncomingMessage);
 
     expect(sendSpy).toHaveBeenCalledWith(ws, {
       type: 'error',
@@ -122,7 +134,7 @@ describe('ChatGateway', () => {
     };
 
     chatService.users['user-1'] = {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+       
       socket: ws as any,
       nome: 'Usuário de Teste',
       lastActivity: Date.now(),
@@ -134,8 +146,11 @@ describe('ChatGateway', () => {
 
     jest.spyOn(timeUtils, 'dentroHorario').mockReturnValue({ ok: true });
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-    (gateway as any).handleMessage(ws, { type: 'message', text: 'Olá' });
+     
+    (gateway as any).handleMessage(ws, {
+      type: 'message',
+      text: 'Olá',
+    } as IncomingMessage);
 
     expect(broadcastSpy).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -158,12 +173,12 @@ describe('ChatGateway', () => {
       .mockImplementation(() => {});
     jest.spyOn(timeUtils, 'dentroHorario').mockReturnValue({ ok: true });
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+     
     (gateway as any).handleMessage(ws, {
       type: 'message',
       text: 'Olá',
       to: 'user-offline',
-    });
+    } as IncomingMessage);
 
     expect(sendSpy).toHaveBeenCalledWith(ws, {
       type: 'status',
@@ -172,7 +187,7 @@ describe('ChatGateway', () => {
   });
 
   it('should join user room on user connect', () => {
-    const fakeSocket: any = {
+    const fakeSocket: MockAuthSocket = {
       disconnect: jest.fn(),
       join: jest.fn(),
     };
@@ -192,13 +207,13 @@ describe('ChatGateway', () => {
       nivel: 1,
       nome: 'Aluno',
       email: 'a@a.com',
-    });
+    } as JwtUserPayload);
 
     (gateway as any).handleConnect(fakeSocket, {
       type: 'connect',
       token: 'valid-token',
       nome: 'Usuário Teste',
-    });
+    } as IncomingMessage);
 
     expect(fakeSocket.join).toHaveBeenCalledWith(
       expect.stringMatching(/^chat:user:user-/),
@@ -212,7 +227,7 @@ describe('ChatGateway', () => {
     };
 
     chatService.users['user-1'] = {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+       
       socket: ws as any,
       nome: 'Usuário de Teste',
       lastActivity: Date.now(),
@@ -233,7 +248,7 @@ describe('ChatGateway', () => {
       type: 'message',
       text: 'Olá agent->user',
       to: 'user-1',
-    });
+    } as IncomingMessage);
 
     expect(gateway.server.to).toHaveBeenCalledWith('chat:user:user-1');
     expect(emitSpy).toHaveBeenCalledWith('chat', {
