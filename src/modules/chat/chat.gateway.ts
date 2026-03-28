@@ -17,7 +17,6 @@ import {
   UserRole,
   AuthSocket,
 } from './utils/types';
-import { JwtUserPayload } from '../../commons/auth.service';
 
 @WebSocketGateway()
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
