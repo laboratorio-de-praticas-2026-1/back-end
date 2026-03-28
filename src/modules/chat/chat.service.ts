@@ -1,90 +1,72 @@
-import { Injectable } from '@nestjs/common';
-import { WebSocket } from 'ws';
-import * as jwt from 'jsonwebtoken';
+import { Injectable, Logger } from '@nestjs/common';
+import { Socket } from 'socket.io';
 import { randomUUID } from 'crypto';
-
-// ================= TYPES =================
-interface JwtUserPayload {
-  id: number;
-  nivel: number;
-  nome?: string;
-  email?: string;
-}
-
-interface ChatMessage {
-  userId: string;
-  fromUserId: string | number;
-  nome: string;
-  text: string;
-  timestamp: string;
-}
-
-interface UserData {
-  ws: WebSocket;
-  nome: string;
-  lastActivity: number;
-  lastMessageAt?: number;
-}
+import { AuthService } from '../../commons/auth.service';
+import { ChatMessage, UserData } from './utils/types';
 
 // ================= SERVICE =================
 @Injectable()
 export class ChatService {
+  constructor(
+    private readonly authService: AuthService,
+    private readonly logger: Logger,
+  ) {}
+
+  private broadcastToAgents?: (data: unknown) => void;
+  private broadcastAgentsList?: () => void;
+
   users: Record<string, UserData> = {};
-  agents: Record<string, WebSocket> = {};
+  agents: Record<string, Socket> = {};
   history: Record<string, ChatMessage[]> = {};
   timeouts: Record<string, NodeJS.Timeout> = {};
 
-  private JWT_SECRET = process.env.JWT_SECRET || 'secret';
   private INACTIVITY_TIMEOUT = 60 * 60 * 1000; // 60 min
+
+  // ================= CALLBACKS =================
+  setBroadcastCallbacks(
+    broadcastToAgents: (data: unknown) => void,
+    broadcastAgentsList: () => void,
+  ) {
+    this.broadcastToAgents = broadcastToAgents;
+    this.broadcastAgentsList = broadcastAgentsList;
+  }
 
   // ================= TOKEN =================
   verifyToken(token?: string): JwtUserPayload | null {
-    if (!token) return null;
-
-    try {
-      const decoded = jwt.verify(token, this.JWT_SECRET);
-
-      if (
-        typeof decoded === 'object' &&
-        'id' in decoded &&
-        'nivel' in decoded
-      ) {
-        return decoded as JwtUserPayload;
-      }
-
-      return null;
-    } catch {
-      return null;
-    }
+    return this.authService.verifyToken(token);
   }
 
   // ================= SOCKET =================
-  send(ws: WebSocket, data: unknown) {
-    if (ws.readyState !== WebSocket.OPEN) return;
-
+  send(socket: Socket, data: unknown) {
+    if (!socket.connected) return;
     try {
-      ws.send(JSON.stringify(data));
+      socket.emit('chat', data);
     } catch (err) {
-      console.error(err);
+      this.logger.error('Erro ao enviar mensagem via socket', err);
     }
   }
 
   broadcastAgents(data: unknown, excludeAgentId?: string) {
-    for (const [id, agent] of Object.entries(this.agents)) {
-      if (excludeAgentId && id === excludeAgentId) continue;
+    if (this.broadcastToAgents) {
+      this.broadcastToAgents(data);
+    } else {
+      // Fallback to direct socket sending if callback not set
+      for (const [id, agent] of Object.entries(this.agents)) {
+        if (excludeAgentId && id === excludeAgentId) continue;
 
-      if (agent.readyState === WebSocket.OPEN) {
-        this.send(agent, data);
+        if (agent.connected) {
+          this.send(agent, data);
+        }
       }
     }
   }
 
   // ================= USERS =================
-  addUser(ws: WebSocket, nome: string) {
+  addUser(socket: Socket, nome: string) {
     const userId = this.getNextUserId();
 
     this.users[userId] = {
-      ws,
+      socket,
       nome,
       lastActivity: Date.now(),
     };
@@ -92,14 +74,14 @@ export class ChatService {
     this.history[userId] = [];
 
     this.resetTimeout(userId);
-    this.broadcastAgentsList();
+    // broadcastAgentsList will be called by gateway
 
     return userId;
   }
 
-  addAgent(agentId: string, ws: WebSocket) {
-    this.agents[agentId] = ws;
-    this.broadcastAgentsList();
+  addAgent(agentId: string, socket: Socket) {
+    this.agents[agentId] = socket;
+    // broadcastAgentsList will be called by gateway
   }
 
   getNextUserId() {
@@ -149,15 +131,17 @@ export class ChatService {
     const user = this.users[userId];
     if (!user) return;
 
-    this.broadcastAgents({
-      type: 'userDisconnected',
-      userId,
-      nome: user.nome,
-      reason,
-    });
+    if (this.broadcastToAgents) {
+      this.broadcastToAgents({
+        type: 'userDisconnected',
+        userId,
+        nome: user.nome,
+        reason,
+      });
+    }
 
-    if (user.ws.readyState === WebSocket.OPEN) {
-      user.ws.close();
+    if (user.socket.connected) {
+      user.socket.disconnect(true);
     }
 
     this.clearUserTimeout(userId);
@@ -170,19 +154,8 @@ export class ChatService {
 
   // ================= LIST =================
   broadcastAgentsList() {
-    const userList = Object.entries(this.users).map(([id, u]) => ({
-      userId: id,
-      nome: u.nome,
-    }));
-
-    this.broadcastAgents({
-      type: 'users',
-      users: userList,
-    });
-
-    this.broadcastAgents({
-      type: 'agents',
-      agents: Object.keys(this.agents),
-    });
+    if (this.broadcastAgentsList) {
+      this.broadcastAgentsList();
+    }
   }
 }

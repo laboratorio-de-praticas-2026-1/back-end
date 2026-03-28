@@ -1,154 +1,190 @@
-import {WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect} from '@nestjs/websockets';
-
-import { Server, WebSocket, RawData } from 'ws';
+import { Logger } from '@nestjs/common';
+import {
+  WebSocketGateway,
+  WebSocketServer,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  SubscribeMessage,
+  MessageBody,
+  ConnectedSocket,
+} from '@nestjs/websockets';
+import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
 import { dentroHorario } from './utils/timeUtils';
-import { logError } from './utils/logger';
-
-interface JwtUserPayload {
-  id: number;
-  nivel: number;
-  nome?: string;
-  email?: string;
-}
-
-interface AuthWebSocket extends WebSocket {
-  userData?: JwtUserPayload;
-  role?: 'agent' | 'user';
-  userId?: string; // 🔥 AGORA STRING
-}
-
-interface ChatMessage {
-  userId: string;
-  fromUserId: string | number;
-  nome: string;
-  text: string;
-  timestamp: string;
-}
-
-interface IncomingMessage {
-  type: 'connect' | 'message';
-  token?: string;
-  nome?: string;
-  text?: string;
-  to?: string;
-}
+import {
+  ChatMessage,
+  IncomingMessage,
+  UserRole,
+  AuthSocket,
+} from './utils/types';
+import { JwtUserPayload } from '../../commons/auth.service';
 
 @WebSocketGateway()
-export class ChatGateway
-  implements OnGatewayConnection, OnGatewayDisconnect
-{
-  constructor(private readonly chatService: ChatService) {}
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  constructor(
+    private readonly chatService: ChatService,
+    private readonly logger: Logger,
+  ) {
+    // Set up broadcast callbacks for the service
+    this.chatService.setBroadcastCallbacks(
+      (data) => this.server.to(this.AGENTS_ROOM).emit('chat', data),
+      () => this.broadcastAgentsList(),
+    );
+  }
 
   @WebSocketServer()
   server: Server;
 
-  handleConnection(ws: AuthWebSocket) {
-    ws.on('message', (msg: RawData) => {
-      let data: IncomingMessage;
+  private readonly AGENTS_ROOM = 'chat:agents';
 
-      try {
-        data = JSON.parse(msg.toString());
-      } catch (err: any) {
-        logError({
-          message: 'JSON inválido',
-          stack: err.stack,
-        });
+  private userRoom(userId: string) {
+    return `chat:user:${userId}`;
+  }
 
-        this.chatService.send(ws, { error: 'Mensagem inválida' });
-        return;
-      }
+  private broadcastAgentsList() {
+    const userList = Object.entries(this.chatService.users).map(([id, u]) => ({
+      userId: id,
+      nome: u.nome,
+    }));
 
-      if (data.type === 'connect') {
-        this.handleConnect(ws, data);
-      }
+    this.server.to(this.AGENTS_ROOM).emit('chat', {
+      type: 'users',
+      users: userList,
+    });
 
-      if (data.type === 'message') {
-        this.handleMessage(ws, data);
-      }
+    const room = this.server.sockets.adapter.rooms.get(this.AGENTS_ROOM);
+    const agents = room
+      ? [...room]
+          .map((socketId) => this.server.sockets.sockets.get(socketId))
+          .filter((s): s is AuthSocket => !!s && !!(s as AuthSocket).userId)
+          .map((s) => (s as AuthSocket).userId)
+      : [];
+
+    this.server.to(this.AGENTS_ROOM).emit('chat', {
+      type: 'agents',
+      agents,
     });
   }
 
-  // ================= CONNECT =================
-  private handleConnect(ws: AuthWebSocket, data: IncomingMessage) {
-    const decoded = this.chatService.verifyToken(data.token);
+  handleConnection(socket: AuthSocket) {
+    // Connection established, authentication will be handled via events
+  }
 
-    if (!decoded) {
-      ws.close(4002, 'Token inválido');
+  @SubscribeMessage('chat')
+  handleChat(
+    @MessageBody() payload: unknown,
+    @ConnectedSocket() socket: AuthSocket,
+  ) {
+    let data: IncomingMessage;
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      data =
+        typeof payload === 'string'
+          ? JSON.parse(payload)
+          : (payload as IncomingMessage);
+    } catch (err: unknown) {
+      this.logger.error(
+        'JSON inválido',
+        err instanceof Error ? err.stack : String(err),
+      );
+
+      this.chatService.send(socket, { error: 'Mensagem inválida' });
       return;
     }
 
-    const roleMap: Record<number, 'agent' | 'user'> = {
-      0: 'agent',
-      1: 'user',
+    if (data.type === 'connect') {
+      this.handleConnect(socket, data);
+    }
+
+    if (data.type === 'message') {
+      this.handleMessage(socket, data);
+    }
+  }
+
+  // ================= CONNECT =================
+  private handleConnect(socket: AuthSocket, data: IncomingMessage) {
+    const decoded = this.chatService.verifyToken(data.token);
+
+    if (!decoded) {
+      socket.disconnect(true);
+      return;
+    }
+
+    const roleMap: Record<number, UserRole> = {
+      0: UserRole.AGENT,
+      1: UserRole.USER,
     };
 
     const role = roleMap[decoded.nivel];
 
     if (!role) {
-      ws.close(4003, 'Role inválido');
+      socket.disconnect(true);
       return;
     }
 
-    ws.role = role;
+    socket.role = role;
 
     const nomeUsuario =
-      decoded.nome ||
-      data.nome ||
-      decoded.email ||
-      `Usuario ${decoded.id}`;
+      decoded.nome || data.nome || decoded.email || `Usuario ${decoded.id}`;
 
     // ================= USER =================
-    if (role === 'user') {
-      const userId = this.chatService.addUser(ws, nomeUsuario);
+    if (role === UserRole.USER) {
+      const userId = this.chatService.addUser(socket, nomeUsuario);
 
-      ws.userId = userId;
+      socket.userId = userId;
+      socket.join(this.userRoom(userId));
 
-      this.chatService.send(ws, {
+      this.chatService.send(socket, {
         type: 'status',
         msg: `✅ Conectado como ${nomeUsuario}`,
       });
 
-      this.chatService.send(ws, {
+      this.chatService.send(socket, {
         type: 'history',
         messages: this.chatService.history[userId],
       });
+
+      this.broadcastAgentsList();
     }
 
     // ================= AGENT =================
-    if (role === 'agent') {
+    if (role === UserRole.AGENT) {
       const agentId = String(decoded.id);
 
-      ws.userId = agentId;
+      socket.userId = agentId;
 
-      this.chatService.addAgent(agentId, ws);
+      this.chatService.addAgent(agentId, socket);
+      socket.join(this.AGENTS_ROOM);
 
-      this.chatService.send(ws, {
+      this.chatService.send(socket, {
         type: 'status',
         msg: 'Conectado como atendente.',
       });
+
+      this.broadcastAgentsList();
     }
   }
 
   // ================= MESSAGE =================
-  private handleMessage(ws: AuthWebSocket, data: IncomingMessage) {
-    const role = ws.role;
-    const currentId = ws.userId;
+  private handleMessage(socket: AuthSocket, data: IncomingMessage) {
+    const role = socket.role;
+    const currentId = socket.userId;
 
     if (!role || !currentId) return;
 
     const horario = dentroHorario();
 
-    if (horario !== true) {
-      this.chatService.send(ws, {
+    if (!horario.ok) {
+      this.chatService.send(socket, {
         type: 'status',
-        msg: horario,
+        msg: horario.message || 'Atendimento indisponível',
       });
       return;
     }
 
     if (!data.text || data.text.trim() === '') {
-      this.chatService.send(ws, {
+      this.chatService.send(socket, {
         type: 'error',
         msg: 'Mensagem inválida',
       });
@@ -158,7 +194,7 @@ export class ChatGateway
     const timestamp = new Date().toISOString();
 
     // ================= USER =================
-    if (role === 'user') {
+    if (role === UserRole.USER) {
       const user = this.chatService.users[currentId];
       if (!user) return;
 
@@ -183,11 +219,11 @@ export class ChatGateway
     }
 
     // ================= AGENT =================
-    if (role === 'agent') {
+    if (role === UserRole.AGENT) {
       const targetUser = data.to;
 
       if (!targetUser || !this.chatService.users[targetUser]) {
-        this.chatService.send(ws, {
+        this.chatService.send(socket, {
           type: 'status',
           msg: `Usuário não está online.`,
         });
@@ -195,7 +231,7 @@ export class ChatGateway
       }
 
       const newMsg: ChatMessage = {
-        userId: currentId,
+        userId: targetUser,
         fromUserId: currentId,
         nome: 'Atendente',
         text: data.text,
@@ -204,36 +240,30 @@ export class ChatGateway
 
       this.chatService.addMessageToHistory(targetUser, newMsg);
 
-      this.chatService.send(
-        this.chatService.users[targetUser].ws,
-        {
-          type: 'message',
-          text: data.text,
-          timestamp,
-        },
-      );
+      this.server.to(this.userRoom(targetUser)).emit('chat', {
+        type: 'message',
+        text: data.text,
+        timestamp,
+      });
     }
   }
 
   // ================= DISCONNECT =================
-  handleDisconnect(ws: AuthWebSocket) {
-    const agentEntry = Object.entries(this.chatService.agents).find(
-      ([_, socket]) => socket === ws,
-    );
-
-    if (agentEntry) {
-      const [agentId] = agentEntry;
-      delete this.chatService.agents[agentId];
+  handleDisconnect(socket: AuthSocket) {
+    if (socket.role === UserRole.AGENT) {
+      // grafo de agentes é mantido por room 'chat:agents'.
+      // ao desconectar, apenas broadcast de lista atualizada.
+      this.broadcastAgentsList();
       return;
     }
 
     const userEntry = Object.entries(this.chatService.users).find(
-      ([_, data]) => data.ws === ws,
+      ([_, data]) => data.socket === socket,
     );
 
     if (userEntry) {
       const [userId] = userEntry;
-      this.chatService.endUserSession(userId, 'disconnect'); // 🔥 agora string
+      this.chatService.endUserSession(userId, 'disconnect');
     }
   }
 }
