@@ -213,7 +213,7 @@ describe('ChatGateway', () => {
 
     chatService.users['user-1'] = {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      ws: ws as any,
+      socket: ws as any,
       nome: 'Usuário de Teste',
       lastActivity: Date.now(),
     };
@@ -221,6 +221,10 @@ describe('ChatGateway', () => {
     const emitSpy = jest.fn();
     gateway.server = {
       to: jest.fn().mockReturnValue({ emit: emitSpy }),
+      sockets: {
+        adapter: { rooms: new Map() },
+        sockets: new Map(),
+      },
     } as unknown as Server;
 
     jest.spyOn(timeUtils, 'dentroHorario').mockReturnValue({ ok: true });
