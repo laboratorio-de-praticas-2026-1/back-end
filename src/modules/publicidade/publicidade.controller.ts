@@ -2,7 +2,9 @@ import {
   Body,
   Controller,
   Logger,
+  Param,
   Post,
+  Put,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -16,11 +18,11 @@ import {
 } from '@nestjs/swagger';
 import { imageFilePipe } from 'src/commons/pipes/file.pipe';
 import { Publicidade } from '../../models/publicidade.model';
-import { PublicidadeService } from './publicidade.service';
 import {
   PublicidadeCreateDto,
   PublicidadeResponseDto,
 } from './dto/publicidade-create.dto';
+import { PublicidadeService } from './publicidade.service';
 
 @ApiTags('Publicidade')
 @Controller('publicidade')
@@ -54,5 +56,13 @@ export class PublicidadeController {
   ): Promise<Publicidade> {
     this.logger.log(`Iniciando criacao de publicidade...`);
     return this.publicidadeService.criarPublicidade(publicidadeDto, file);
+  }
+
+  @Put(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() data: any,
+  ) {
+    return this.publicidadeService.update(Number(id), data);
   }
 }

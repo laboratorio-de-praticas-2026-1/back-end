@@ -2,10 +2,11 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { CloudinaryResponse } from 'src/infra/cloudinary/dto/cloudinary-response';
 import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
+import { CloudinaryResponse } from 'src/infra/cloudinary/dto/cloudinary-response';
 import { Publicidade } from 'src/models/publicidade.model';
 import { PublicidadeCreateDto } from './dto/publicidade-create.dto';
 
@@ -33,6 +34,18 @@ export class PublicidadeService {
     );
   }
 
+  async update(id: number, data: any) {
+    const publicidade = await Publicidade.findByPk(id);
+
+    if (!publicidade) {
+      throw new NotFoundException('Publicidade não encontrada');
+    }
+
+    await publicidade.update(data);
+
+    return publicidade;
+  }
+
   async criarPublicidade(
     publicidadeDto: PublicidadeCreateDto,
     file: Express.Multer.File,
@@ -46,3 +59,4 @@ export class PublicidadeService {
     });
   }
 }
+
