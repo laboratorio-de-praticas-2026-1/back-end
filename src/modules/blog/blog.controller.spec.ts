@@ -23,7 +23,7 @@ describe('BlogController', () => {
     controller = module.get<BlogController>(BlogController);
   });
 
-  it('deve criar post de blog com sucesso!', async () => {
+  it('deve criar post de blog com sucesso!', () => {
     const postData = {
       titulo: 'Título do Post',
       conteudo: 'Conteúdo do post',
@@ -38,7 +38,7 @@ describe('BlogController', () => {
 
     mockBlogService.criarPost.mockResolvedValue(mockPost);
 
-    await expect(controller.criarPost(postData)).resolves.toEqual(mockPost);
+    expect(controller.criarPost(postData)).resolves.toEqual(mockPost);
     expect(mockBlogService.criarPost).toHaveBeenCalledWith(postData);
   });
 });
