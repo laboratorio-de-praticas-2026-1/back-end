@@ -1,25 +1,41 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef, Logger, NotFoundException } from '@nestjs/common';
 import { NotificacaoGateway } from './notificacao.gateway';
 
 @Injectable()
 export class NotificacaoService {
-  constructor(private readonly notificacaoGateway: NotificacaoGateway) {}
+  private readonly logger = new Logger(NotificacaoService.name);
 
-  public notificarVencimentoCNH(usuarioId: number, diasRestantes: number): void {
-    const mensagem = `Sua CNH vence em ${diasRestantes} dias!`;
-    this.notificacaoGateway.enviarNotificacao('alerta_cnh', { usuarioId, mensagem, diasRestantes });
-    console.log(`[Notificação] CNH do usuário ${usuarioId} disparada.`);
+  constructor(
+    @Inject(forwardRef(() => NotificacaoGateway))
+    private readonly notificacaoGateway: NotificacaoGateway,
+    // Se o PrismaService estiver dando erro de import, comente a linha abaixo
+    // private readonly prisma: any, 
+  ) {}
+
+  // --- Função que o Controller está pedindo ---
+  async buscarNotificacoesPorUsuario(usuarioId: number) {
+    this.logger.log(`Buscando notificações para o usuário ${usuarioId}`);
+    return []; // Retorna vazio já que não podemos usar a tabela no banco
   }
 
-  public notificarLicenciamentoProximo(usuarioId: number, placa: string, diasRestantes: number): void {
-    const mensagem = `O licenciamento do veículo ${placa} vence em ${diasRestantes} dias.`;
-    this.notificacaoGateway.enviarNotificacao('alerta_licenciamento', { usuarioId, placa, mensagem, diasRestantes });
-    console.log(`[Notificação] Licenciamento do veículo ${placa} disparada.`);
+  // --- Função que o Controller está pedindo ---
+  async marcarComoLida(id: number) {
+    this.logger.log(`Marcando notificação ${id} como lida`);
+    return { id, lida: true };
   }
 
-  public notificarNovoDebito(usuarioId: number, placa: string, valor: number): void {
-    const mensagem = `Novo débito de R$ ${valor} registrado para o veículo ${placa}.`;
-    this.notificacaoGateway.enviarNotificacao('alerta_debito', { usuarioId, placa, mensagem, valor });
-    console.log(`[Notificação] Novo débito do veículo ${placa} disparada.`);
+  // --- Função que o Gateway está pedindo (CNH) ---
+  async notificarVencimentoCNH(usuarioId: number, dias: number) {
+    this.notificacaoGateway.enviarNotificacao('alerta_cnh', { usuarioId, dias });
+  }
+
+  // --- Função que o Gateway está pedindo (Licenciamento) ---
+  async notificarLicenciamentoProximo(usuarioId: number, placa: string, dias: number) {
+    this.notificacaoGateway.enviarNotificacao('alerta_licenciamento', { usuarioId, placa, dias });
+  }
+
+  // --- Função que o Gateway está pedindo (Débito) ---
+  async notificarNovoDebito(usuarioId: number, placa: string, valor: number) {
+    this.notificacaoGateway.enviarNotificacao('alerta_debito', { usuarioId, placa, valor });
   }
 }

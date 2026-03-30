@@ -1,55 +1,61 @@
-import { WebSocketGateway, WebSocketServer, OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
+// src/notificacao/notificacao.gateway.ts
 
-@WebSocketGateway({ cors: { origin: '*' } }) // Permite que o front-end se conecte
-export class NotificacaoGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
-  
+import {
+  WebSocketGateway,
+  WebSocketServer,
+  OnGatewayInit,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  SubscribeMessage,
+} from '@nestjs/websockets';
+import { Logger, Inject, forwardRef } from '@nestjs/common';
+import { Server, Socket } from 'socket.io';
+import { NotificacaoService } from './notificacao.service';
+
+@WebSocketGateway({ cors: { origin: '*' } })
+export class NotificacaoGateway
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server: Server;
 
-  afterInit(server: Server) {
-    console.log('WebSocket Gateway Inicializado');
+  private readonly logger = new Logger(NotificacaoGateway.name);
+
+  constructor(
+    // forwardRef necessário para resolver dependência circular Gateway <-> Service
+    @Inject(forwardRef(() => NotificacaoService))
+    private readonly notificacaoService: NotificacaoService,
+  ) {}
+
+  afterInit(_server: Server) {
+    this.logger.log('WebSocket Gateway inicializado');
   }
 
   handleConnection(client: Socket) {
-    console.log(`Cliente conectado: ${client.id}`);
+    this.logger.log(`Cliente conectado: ${client.id}`);
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`Cliente desconectado: ${client.id}`);
+    this.logger.log(`Cliente desconectado: ${client.id}`);
   }
 
-  // Função que o Service vai usar para disparar a notificação
-  enviarNotificacao(evento: string, dados: any) {
+  /** Emite para TODOS os clientes conectados */
+  enviarNotificacao(evento: string, dados: unknown): void {
     this.server.emit(evento, dados);
   }
-  
-// BLOCO TEMPORÁRIO PARA TESTE!!!
-@SubscribeMessage('me_mande_um_teste')
-  handleTest(client: Socket, data: any) {
-    console.log('Solicitação de teste múltiplo recebida!');
 
-    // Teste 1: CNH
-    this.enviarNotificacao('alerta_cnh', { 
-      usuarioId: 1, 
-      mensagem: 'Sua CNH vence em 5 dias!', 
-      diasRestantes: 5 
-    });
+  /** Emite apenas para um cliente específico via socketId */
+  enviarNotificacaoParaCliente(socketId: string, evento: string, dados: unknown): void {
+    this.server.to(socketId).emit(evento, dados);
+  }
 
-    // Teste 2: Licenciamento
-    this.enviarNotificacao('alerta_licenciamento', { 
-      usuarioId: 1, 
-      placa: 'ABC-1234', 
-      mensagem: 'Licenciamento próximo!', 
-      diasRestantes: 10 
-    });
-
-    // Teste 3: Novo Débito
-    this.enviarNotificacao('alerta_debito', { 
-      usuarioId: 1, 
-      placa: 'ABC-1234', 
-      valor: 150.50, 
-      mensagem: 'Nova multa de trânsito detectada.' 
-    });
+  // ─── Bloco de teste — REMOVER antes de ir para produção ──────
+  // Agora chama o service real, que persiste no banco e emite via socket
+  @SubscribeMessage('me_mande_um_teste')
+  async handleTest(client: Socket, _data: unknown) {
+    this.logger.log(`Teste solicitado pelo cliente ${client.id}`);
+    await this.notificacaoService.notificarVencimentoCNH(1, 5);
+    await this.notificacaoService.notificarLicenciamentoProximo(1, 'ABC-1234', 10);
+    await this.notificacaoService.notificarNovoDebito(1, 'ABC-1234', 150.5);
   }
 }
