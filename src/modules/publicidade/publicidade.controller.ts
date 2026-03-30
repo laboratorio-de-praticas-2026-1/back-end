@@ -23,6 +23,7 @@ import {
   PublicidadeResponseDto,
 } from './dto/publicidade-create.dto';
 import { PublicidadeService } from './publicidade.service';
+import { Publicidade } from 'src/models/publicidade.model';
 
 @ApiTags('Publicidade')
 @Controller('publicidade')
@@ -59,10 +60,7 @@ export class PublicidadeController {
   }
 
   @Put(':id')
-  async update(
-    @Param('id') id: string,
-    @Body() data: any,
-  ) {
+  async update(@Param('id') id: string, @Body() data: Partial<Publicidade>) {
     return this.publicidadeService.update(Number(id), data);
   }
 }
