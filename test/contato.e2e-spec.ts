@@ -4,7 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 
-describe.skip('ContatoController (e2e)', () => {
+describe('ContatoController (e2e)', () => {
   let app: INestApplication<App>;
 
   beforeEach(async () => {
