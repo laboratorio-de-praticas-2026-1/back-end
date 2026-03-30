@@ -1,8 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { randomUUID } from 'crypto';
-import { AuthService, JwtUserPayload } from '../../commons/auth.service';
+import { AuthService } from '../../commons/auth.service';
 import { ChatMessage, UserData } from './utils/types';
+import { InjectModel } from '@nestjs/sequelize';
+import { Usuario } from 'src/models/usuario.model';
 
 // ================= SERVICE =================
 @Injectable()
@@ -10,10 +12,11 @@ export class ChatService {
   constructor(
     private readonly authService: AuthService,
     private readonly logger: Logger,
+    @InjectModel(Usuario) private usuarioModel: typeof Usuario,
   ) {}
 
   private broadcastToAgents?: (data: unknown) => void;
-  private broadcastAgentsList?: () => void;
+  private broadcastAgentsListCallback?: () => void;
 
   users: Record<string, UserData> = {};
   agents: Record<string, Socket> = {};
@@ -28,12 +31,7 @@ export class ChatService {
     broadcastAgentsList: () => void,
   ) {
     this.broadcastToAgents = broadcastToAgents;
-    this.broadcastAgentsList = broadcastAgentsList;
-  }
-
-  // ================= TOKEN =================
-  verifyToken(token?: string): JwtUserPayload | null {
-    return this.authService.verifyToken(token);
+    this.broadcastAgentsListCallback = broadcastAgentsList;
   }
 
   // ================= SOCKET =================
@@ -154,8 +152,12 @@ export class ChatService {
 
   // ================= LIST =================
   broadcastAgentsList() {
-    if (this.broadcastAgentsList) {
-      this.broadcastAgentsList();
+    if (this.broadcastAgentsListCallback) {
+      this.broadcastAgentsListCallback();
     }
+  }
+
+  async buscarUsuarioPeloId(userId: string): Promise<Usuario | null> {
+    return this.usuarioModel.findByPk(userId);
   }
 }

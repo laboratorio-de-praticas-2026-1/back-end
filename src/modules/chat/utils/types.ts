@@ -1,14 +1,11 @@
 import { Socket } from 'socket.io';
-import { JwtUserPayload } from '../../commons/auth.service';
-
-export enum UserRole {
-  AGENT = 'agent',
-  USER = 'user',
-}
+import { JwtUserPayload } from 'src/commons/auth.service';
+import { NivelUsuarioEnum } from 'src/commons/constantes/nivel-usuario-enum';
 
 export interface AuthSocket extends Socket {
   userData?: JwtUserPayload;
-  role?: UserRole;
+  role?: NivelUsuarioEnum;
+  name?: string;
   userId?: string;
 }
 
@@ -27,10 +24,8 @@ export interface UserData {
   lastMessageAt?: number;
 }
 
-export interface IncomingMessage {
-  type: 'connect' | 'message';
-  token?: string;
-  nome?: string;
-  text?: string;
+export type IncomingMessage = {
+  type: 'message';
+  text: string;
   to?: string;
-}
+};

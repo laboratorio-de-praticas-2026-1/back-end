@@ -1,28 +1,27 @@
 import { Logger } from '@nestjs/common';
 import {
-  WebSocketGateway,
-  WebSocketServer,
+  ConnectedSocket,
+  MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
   SubscribeMessage,
-  MessageBody,
-  ConnectedSocket,
+  WebSocketGateway,
+  WebSocketServer,
 } from '@nestjs/websockets';
 import { Server } from 'socket.io';
+import { AuthService } from 'src/commons/auth.service';
 import { ChatService } from './chat.service';
 import { dentroHorario } from './utils/timeUtils';
-import {
-  ChatMessage,
-  IncomingMessage,
-  UserRole,
-  AuthSocket,
-} from './utils/types';
+import { ChatMessage, IncomingMessage } from './utils/types';
+import { NivelUsuarioEnum } from 'src/commons/constantes/nivel-usuario-enum';
+import type { AuthSocket } from './utils/types';
 
 @WebSocketGateway()
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly chatService: ChatService,
     private readonly logger: Logger,
+    private readonly authService: AuthService,
   ) {
     // Set up broadcast callbacks for the service
     this.chatService.setBroadcastCallbacks(
@@ -36,8 +35,74 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private readonly AGENTS_ROOM = 'chat:agents';
 
+  async handleConnection(socket: AuthSocket) {
+    const token = (socket.handshake.auth?.token ||
+      socket.handshake.headers?.token) as string;
+
+    const decoded = this.authService.verifyToken(token);
+
+    if (!decoded) {
+      socket.disconnect(true);
+      return;
+    }
+
+    if (decoded.id && decoded.nivel) {
+      const usuario = await this.chatService.buscarUsuarioPeloId(
+        String(decoded.id),
+      );
+
+      if (
+        !usuario ||
+        usuario.nivel !== (decoded.nivel as typeof usuario.nivel)
+      ) {
+        socket.disconnect(true);
+        return;
+      }
+
+      if (usuario.nivel === NivelUsuarioEnum.administrador.toString()) {
+        socket.role = NivelUsuarioEnum.administrador;
+        await socket.join(this.AGENTS_ROOM);
+
+        const agentId = String(decoded.id);
+        socket.userId = agentId;
+        this.chatService.addAgent(agentId, socket);
+
+        void this.chatService.send(socket, {
+          type: 'status',
+          msg: 'Conectado como atendente.',
+        });
+
+        this.broadcastAgentsList();
+      } else {
+        socket.role = NivelUsuarioEnum.cliente;
+        socket.name = usuario.nome || `Cliente ${decoded.id}`;
+        await socket.join(this.userRoom(String(decoded.id)));
+
+        const userIdGerado = this.chatService.addUser(socket, socket.name);
+        socket.userId = userIdGerado;
+        await socket.join(this.userRoom(userIdGerado));
+
+        void this.chatService.send(socket, {
+          type: 'status',
+          msg: `✅ Conectado como ${socket.name}`,
+        });
+
+        void this.chatService.send(socket, {
+          type: 'history',
+          messages: this.chatService.history[userIdGerado],
+        });
+
+        this.broadcastAgentsList();
+      }
+    }
+  }
+
   private userRoom(userId: string) {
     return `chat:user:${userId}`;
+  }
+
+  private adminRoom(userId: string) {
+    return `chat:admin:${userId}`;
   }
 
   private broadcastAgentsList() {
@@ -52,6 +117,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
 
     const room = this.server.sockets.adapter.rooms.get(this.AGENTS_ROOM);
+    console.log('Sockets na room:', room);
     const agents = room
       ? [...room]
           .map((socketId) => this.server.sockets.sockets.get(socketId))
@@ -65,10 +131,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 
-  handleConnection(_socket: AuthSocket) {
-    // Connection established, authentication will be handled via events
-  }
-
   @SubscribeMessage('chat')
   handleChat(
     @MessageBody() payload: unknown,
@@ -76,24 +138,29 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     let data: IncomingMessage;
 
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      data =
-        typeof payload === 'string'
-          ? JSON.parse(payload)
-          : (payload as IncomingMessage);
-    } catch (err: unknown) {
-      this.logger.error(
-        'JSON inválido',
-        err instanceof Error ? err.stack : String(err),
-      );
+    const horario = dentroHorario();
 
-      this.chatService.send(socket, { error: 'Mensagem inválida' });
+    if (!horario.ok) {
+      socket.emit('chat', {
+        type: 'status',
+        msg: horario.message,
+      });
+
+      socket.disconnect(true);
       return;
     }
 
-    if (data.type === 'connect') {
-      this.handleConnect(socket, data);
+    try {
+      const parsed: unknown =
+        typeof payload === 'string' ? JSON.parse(payload) : payload;
+      data = parsed as IncomingMessage;
+    } catch (err: unknown) {
+      this.logger.error(
+        'JSON inválido',
+        err instanceof Error ? (err.stack ?? err.message) : String(err),
+      );
+      socket.emit('chat', { error: 'Mensagem inválida' });
+      return;
     }
 
     if (data.type === 'message') {
@@ -101,126 +168,41 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  // ================= CONNECT =================
-  private handleConnect(socket: AuthSocket, data: IncomingMessage) {
-    const decoded = this.chatService.verifyToken(data.token);
-
-    if (!decoded) {
-      socket.disconnect(true);
-      return;
-    }
-
-    const roleMap: Record<number, UserRole> = {
-      0: UserRole.AGENT,
-      1: UserRole.USER,
-    };
-
-    const role = roleMap[decoded.nivel];
-
-    if (!role) {
-      socket.disconnect(true);
-      return;
-    }
-
-    socket.role = role;
-
-    const nomeUsuario =
-      decoded.nome || data.nome || decoded.email || `Usuario ${decoded.id}`;
-
-    // ================= USER =================
-    if (role === UserRole.USER) {
-      const userId = this.chatService.addUser(socket, nomeUsuario);
-
-      socket.userId = userId;
-      socket.join(this.userRoom(userId));
-
-      void this.chatService.send(socket, {
-        type: 'status',
-        msg: `✅ Conectado como ${nomeUsuario}`,
-      });
-
-      void this.chatService.send(socket, {
-        type: 'history',
-        messages: this.chatService.history[userId],
-      });
-
-      this.broadcastAgentsList();
-    }
-
-    // ================= AGENT =================
-    if (role === UserRole.AGENT) {
-      const agentId = String(decoded.id);
-
-      socket.userId = agentId;
-
-      this.chatService.addAgent(agentId, socket);
-      socket.join(this.AGENTS_ROOM);
-
-      void this.chatService.send(socket, {
-        type: 'status',
-        msg: 'Conectado como atendente.',
-      });
-
-      this.broadcastAgentsList();
-    }
-  }
-
-  // ================= MESSAGE =================
   private handleMessage(socket: AuthSocket, data: IncomingMessage) {
     const role = socket.role;
-    const currentId = socket.userId;
+    const userId = socket.userId;
 
-    if (!role || !currentId) return;
-
-    const horario = dentroHorario();
-
-    if (!horario.ok) {
-      this.chatService.send(socket, {
-        type: 'status',
-        msg: horario.message || 'Atendimento indisponível',
-      });
-      return;
-    }
+    if (!role || !userId) return;
 
     if (!data.text || data.text.trim() === '') {
       this.chatService.send(socket, {
         type: 'error',
-        msg: 'Mensagem inválida',
+        msg: 'Mande uma mensagem contendo alguma dúvida ou comentário para que possamos ajudar.',
       });
       return;
     }
 
     const timestamp = new Date().toISOString();
 
-    // ================= USER =================
-    if (role === UserRole.USER) {
-      const user = this.chatService.users[currentId];
-      if (!user) return;
-
+    // ================= CLIENTE =================
+    if (role === NivelUsuarioEnum.cliente) {
       const newMsg: ChatMessage = {
-        userId: currentId,
-        fromUserId: currentId,
-        nome: user.nome,
+        userId: userId,
+        fromUserId: userId,
+        nome: socket.name || `Cliente ${userId}`,
         text: data.text,
         timestamp,
       };
 
-      this.chatService.addMessageToHistory(currentId, newMsg);
-      this.chatService.updateUserActivity(currentId);
+      this.chatService.addMessageToHistory(userId, newMsg);
+      this.chatService.updateUserActivity(userId);
 
-      this.chatService.broadcastAgents({
-        type: 'message',
-        userId: currentId,
-        nome: user.nome,
-        text: data.text,
-        timestamp,
-      });
+      this.chatService.broadcastAgents(newMsg);
     }
 
-    // ================= AGENT =================
-    if (role === UserRole.AGENT) {
+    // ================= ADMINISTRADOR =================
+    if (role === NivelUsuarioEnum.administrador) {
       const targetUser = data.to;
-
       if (!targetUser || !this.chatService.users[targetUser]) {
         this.chatService.send(socket, {
           type: 'status',
@@ -228,10 +210,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         });
         return;
       }
-
       const newMsg: ChatMessage = {
-        userId: targetUser,
-        fromUserId: currentId,
+        userId: targetUser || 'unknown',
+        fromUserId: userId,
         nome: 'Atendente',
         text: data.text,
         timestamp,
@@ -249,7 +230,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   // ================= DISCONNECT =================
   handleDisconnect(socket: AuthSocket) {
-    if (socket.role === UserRole.AGENT) {
+    if (socket.role === NivelUsuarioEnum.administrador) {
       // grafo de agentes é mantido por room 'chat:agents'.
       // ao desconectar, apenas broadcast de lista atualizada.
       this.broadcastAgentsList();
