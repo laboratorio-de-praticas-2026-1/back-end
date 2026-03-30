@@ -34,7 +34,7 @@ export class PublicidadeService {
     );
   }
 
-  async update(id: number, data: Partial<Publicidade>) {
+  async update(id: number, data: any) {
     const publicidade = await Publicidade.findByPk(id);
 
     if (!publicidade) {
