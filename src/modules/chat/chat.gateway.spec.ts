@@ -5,6 +5,8 @@ import { ChatGateway } from './chat.gateway';
 import { ChatService } from './chat.service';
 import { AuthService, JwtUserPayload } from '../../commons/auth.service';
 import { Logger } from '@nestjs/common';
+import { getModelToken } from '@nestjs/sequelize';
+import { Usuario } from 'src/models/usuario.model';
 import * as timeUtils from './utils/timeUtils';
 
 type MockSocket = { disconnect: jest.Mock };
@@ -38,6 +40,12 @@ describe('ChatGateway', () => {
           provide: Logger,
           useValue: {
             error: jest.fn(),
+          },
+        },
+        {
+          provide: getModelToken(Usuario),
+          useValue: {
+            findByPk: jest.fn(),
           },
         },
       ],
