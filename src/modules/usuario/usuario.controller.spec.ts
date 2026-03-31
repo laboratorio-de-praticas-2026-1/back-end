@@ -50,13 +50,17 @@ describe('UsuarioController', () => {
     it('deve propagar NotFoundException quando service lançar', async () => {
       mockUsuarioService.update.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.update(99, {})).rejects.toThrow(NotFoundException);
+      await expect(controller.update(99, {})).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('deve propagar ForbiddenException quando service lançar', async () => {
       mockUsuarioService.update.mockRejectedValue(new ForbiddenException());
 
-      await expect(controller.update(1, {})).rejects.toThrow(ForbiddenException);
+      await expect(controller.update(1, {})).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 });

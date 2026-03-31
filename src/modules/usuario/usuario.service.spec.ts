@@ -93,7 +93,10 @@ describe('UsuarioService', () => {
 
     it('deve lançar ConflictException se e-mail já estiver em uso por outro usuário', async () => {
       mockUsuarioModel.findByPk.mockResolvedValue(mockUsuario);
-      mockUsuarioModel.findOne.mockResolvedValue({ id: 2, email: 'outro@email.com' });
+      mockUsuarioModel.findOne.mockResolvedValue({
+        id: 2,
+        email: 'outro@email.com',
+      });
 
       await expect(
         service.update(1, { email: 'outro@email.com' }),
@@ -102,7 +105,10 @@ describe('UsuarioService', () => {
 
     it('deve permitir que o usuário reenvie seu próprio e-mail sem conflito', async () => {
       mockUsuarioModel.findByPk.mockResolvedValue(mockUsuario);
-      mockUsuarioModel.findOne.mockResolvedValue({ id: 1, email: 'davi@example.com' });
+      mockUsuarioModel.findOne.mockResolvedValue({
+        id: 1,
+        email: 'davi@example.com',
+      });
       mockUsuario.update.mockResolvedValue(mockUsuario);
 
       await expect(

@@ -47,7 +47,9 @@ export class UsuarioService {
     });
 
     if (usuarioExistente && usuarioExistente.id !== idAtual) {
-      throw new ConflictException('Este e-mail já está em uso por outro usuário!');
+      throw new ConflictException(
+        'Este e-mail já está em uso por outro usuário!',
+      );
     }
   }
 }
