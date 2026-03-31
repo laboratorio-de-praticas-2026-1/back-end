@@ -11,6 +11,10 @@ export class UpdateFaqDto {
   resposta?: string;
 
   @IsOptional()
-  @IsBoolean({ message: 'O status deve ser um valor booleano (verdadeiro ou falso).' })
+  @IsString({ message: 'A categoria deve ser um texto.' })
+  categoria?: string;
+
+  @IsOptional()
+  @IsBoolean({ message: 'O status deve ser verdadeiro ou falso.' })
   status?: boolean;
 }

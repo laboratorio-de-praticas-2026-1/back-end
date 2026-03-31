@@ -13,37 +13,38 @@ export class FaqService {
   ) {}
 
   async getFaqs(): Promise<Faq[]> {
+    return this.faqModel.findAll({
+      where: { status: true },
+    });
+  }
+
+  async getAllFaqsAdmin(): Promise<Faq[]> {
     return this.faqModel.findAll();
   }
 
   async getFaqById(id: number): Promise<Faq> {
     const faq = await this.faqModel.findByPk(id);
-
     if (!faq) {
-      throw new NotFoundException('FAQ não encontrada');
+      throw new NotFoundException(`FAQ com ID ${id} não encontrada.`);
     }
-
     return faq;
   }
 
   async createFaq(dto: CreateFaqDto): Promise<Faq> {
     return this.faqModel.create({
-      pergunta: dto.pergunta,
-      resposta: dto.resposta,
+      ...dto,
+      status: dto.status ?? true, 
     });
   }
 
   async updateFaq(id: number, dto: UpdateFaqDto): Promise<Faq> {
     const faq = await this.getFaqById(id);
-
     await faq.update(dto);
-
-    return await faq.reload(); // garante dados atualizados
+    return faq;
   }
 
   async deleteFaq(id: number): Promise<void> {
     const faq = await this.getFaqById(id);
-
     await faq.destroy();
   }
 }
