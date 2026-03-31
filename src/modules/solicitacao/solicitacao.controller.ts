@@ -13,6 +13,7 @@ import {
   ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
+  ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
 import { CreateSolicitacaoDto } from './dto/create-solicitacao.dto';
@@ -20,9 +21,10 @@ import { CreateSolicitacaoResponseDto } from './dto/create-solicitacao-response.
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 import { SolicitacaoService } from './solicitacao.service';
 import { CreateDocumentoDto } from './dto/create-documento.dto';
+import { ListSolicitacoesResponseDto } from './dto/list-solicitacoes-response.dto';
 
 @ApiTags('solicitacao')
-@Controller('solicitacao')
+@Controller('solicitacoes')
 export class SolicitacaoController {
   private readonly logger: Logger = new Logger(SolicitacaoController.name);
 
@@ -41,46 +43,16 @@ export class SolicitacaoController {
   }
 
   @Get()
+  @ApiOperation({
+    summary: 'Listar todas as solicitações',
+    description:
+      'Retorna uma lista com todas as solicitações do sistema com dados do cliente e serviço',
+  })
   @ApiOkResponse({
     description: 'Lista de solicitações retornada com sucesso',
-    schema: {
-      type: 'object',
-      properties: {
-        total: {
-          type: 'number',
-          example: 10,
-        },
-        solicitacoes: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              id: { type: 'number', example: 1 },
-              status: { type: 'string', example: 'PENDENTE' },
-              cliente: {
-                type: 'object',
-                properties: {
-                  id: { type: 'number', example: 1 },
-                  nome: { type: 'string', example: 'João da Silva' },
-                },
-              },
-              servico: {
-                type: 'object',
-                properties: {
-                  id: { type: 'number', example: 2 },
-                  nome: { type: 'string', example: 'Instalação' },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
+    type: ListSolicitacoesResponseDto,
   })
-  async listarSolicitacoes(): Promise<{
-    total: number;
-    solicitacoes: any[];
-  }> {
+  async listarSolicitacoes(): Promise<ListSolicitacoesResponseDto> {
     this.logger.log('Buscando lista de solicitações...');
     return this.solicitacaoService.listarSolicitacoes();
   }
