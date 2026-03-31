@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import * as bcrypt from 'bcrypt';
-import { Usuario } from '../../models/usuario.model';
+import { Usuario } from 'src/models/usuario.model';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 
 @Injectable()
