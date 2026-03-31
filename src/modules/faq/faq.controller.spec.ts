@@ -10,6 +10,7 @@ describe('FaqController', () => {
   const faqServiceMock = {
     getFaqs: jest.fn(),
     getFaqById: jest.fn(),
+    getAllFaqsAdmin: jest.fn(),
     createFaq: jest.fn(),
     updateFaq:jest.fn(),
     deleteFaq: jest.fn(),
@@ -59,12 +60,12 @@ describe('FaqController', () => {
       { id: 2 },
     ];
 
-    faqServiceMock.getFaqs.mockResolvedValue(mockFaqs);
+    faqServiceMock.getAllFaqsAdmin.mockResolvedValue(mockFaqs);
 
     const result = await controller.getAllFaqsAdmin();
 
     expect(result).toEqual(mockFaqs);
-    expect(faqServiceMock.getFaqs).toHaveBeenCalled();
+    expect(faqServiceMock.getAllFaqsAdmin).toHaveBeenCalled();
   });
 
   // GET /faq/:id

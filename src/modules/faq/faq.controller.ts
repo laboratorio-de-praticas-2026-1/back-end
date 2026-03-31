@@ -17,7 +17,7 @@ export class FaqController {
   // GET /faq/admin
   @Get('admin')
   async getAllFaqsAdmin() {
-    return this.faqService.getFaqs();
+    return this.faqService.getAllFaqsAdmin();
   }
 
   // GET /faq/:id
