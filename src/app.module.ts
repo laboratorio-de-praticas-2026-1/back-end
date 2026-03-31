@@ -51,7 +51,6 @@ import { SolicitacaoModule } from './modules/solicitacao/solicitacao.module';
     ServicosModule,
     SolicitacaoModule,
     PublicidadeModule,
-    SolicitacaoModule,
   ],
 
   controllers: [],

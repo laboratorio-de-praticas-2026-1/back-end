@@ -9,12 +9,12 @@ import { NotificacaoService } from '../notificacao/notificacao.service';
 import { SolicitacaoService } from './solicitacao.service';
 
 interface MockModel {
-  create?: jest.Mock;
-  findByPk?: jest.Mock;
+  create: jest.Mock;
+  findByPk: jest.Mock;
 }
 
 interface MockNotificacao {
-  enviarConfirmacaoSolicitacao?: jest.Mock;
+  enviarConfirmacaoSolicitacao: jest.Mock;
 }
 
 describe('SolicitacaoService', () => {
@@ -39,21 +39,26 @@ describe('SolicitacaoService', () => {
   beforeEach(async () => {
     mockSolicitacaoModel = {
       create: jest.fn(),
+      findByPk: jest.fn(),
     };
 
     mockDocumentoModel = {
+      create: jest.fn(),
       findByPk: jest.fn(),
     };
 
     mockUsuarioModel = {
+      create: jest.fn(),
       findByPk: jest.fn(),
     };
 
     mockVeiculoModel = {
+      create: jest.fn(),
       findByPk: jest.fn(),
     };
 
     mockServicoModel = {
+      create: jest.fn(),
       findByPk: jest.fn(),
     };
 
