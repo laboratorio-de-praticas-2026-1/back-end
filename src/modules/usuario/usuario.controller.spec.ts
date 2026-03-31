@@ -1,6 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsuarioController } from './usuario.controller';
 import { UsuarioService } from './usuario.service';
+import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { UsuarioOwnerGuard } from './guards/usuario-owner.guard';
+
+const mockUsuarioService = {
+  update: jest.fn(),
+};
+
+const mockGuard = { canActivate: jest.fn().mockReturnValue(true) };
 
 describe('UsuarioController', () => {
   let controller: UsuarioController;
@@ -8,13 +16,47 @@ describe('UsuarioController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UsuarioController],
-      providers: [UsuarioService],
-    }).compile();
+      providers: [
+        {
+          provide: UsuarioService,
+          useValue: mockUsuarioService,
+        },
+      ],
+    })
+      .overrideGuard(UsuarioOwnerGuard)
+      .useValue(mockGuard)
+      .compile();
 
     controller = module.get<UsuarioController>(UsuarioController);
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('update', () => {
+    it('deve chamar o service com o id e dto corretos', async () => {
+      const dto = { nome: 'João Atualizado' };
+      const usuarioAtualizado = { id: 1, nome: 'João Atualizado' };
+
+      mockUsuarioService.update.mockResolvedValue(usuarioAtualizado);
+
+      const result = await controller.update(1, dto);
+
+      expect(mockUsuarioService.update).toHaveBeenCalledWith(1, dto);
+      expect(result).toEqual(usuarioAtualizado);
+    });
+
+    it('deve propagar NotFoundException quando service lançar', async () => {
+      mockUsuarioService.update.mockRejectedValue(new NotFoundException());
+
+      await expect(controller.update(99, {})).rejects.toThrow(NotFoundException);
+    });
+
+    it('deve propagar ForbiddenException quando service lançar', async () => {
+      mockUsuarioService.update.mockRejectedValue(new ForbiddenException());
+
+      await expect(controller.update(1, {})).rejects.toThrow(ForbiddenException);
+    });
   });
 });
