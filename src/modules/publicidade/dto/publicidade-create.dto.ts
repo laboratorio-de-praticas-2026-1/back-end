@@ -1,5 +1,5 @@
-import { IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsString } from 'class-validator';
 
 export class PublicidadeCreateDto {
   @IsString()
@@ -10,15 +10,9 @@ export class PublicidadeCreateDto {
 
   @IsString()
   @ApiProperty({
-    example: 'Proteja seu veículo com nosso parceiro credenciado.',
+    example: 'Proteja seu veiculo com nosso parceiro credenciado.',
   })
   conteudo: string;
-
-  @IsString()
-  @ApiProperty({
-    example: 'https://img.com/pub1.jpg',
-  })
-  urlImagem: string;
 }
 
 export class PublicidadeResponseDto {
