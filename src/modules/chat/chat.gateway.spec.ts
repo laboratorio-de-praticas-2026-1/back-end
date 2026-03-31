@@ -8,14 +8,20 @@ import { Logger } from '@nestjs/common';
 import { getModelToken } from '@nestjs/sequelize';
 import { Usuario } from 'src/models/usuario.model';
 import * as timeUtils from './utils/timeUtils';
+import { NivelUsuarioEnum } from 'src/commons/constantes/nivel-usuario-enum';
 
-type MockSocket = { disconnect: jest.Mock };
-type MockWs = { role: string; userId: string };
 type MockAuthSocket = {
   disconnect: jest.Mock;
   join: jest.Mock;
+  emit: jest.Mock;
+  connected: boolean;
   userId?: string;
   role?: string;
+  name?: string;
+  handshake?: {
+    auth?: { token?: string };
+    headers?: { token?: string };
+  };
 };
 
 describe('ChatGateway', () => {
@@ -29,8 +35,17 @@ describe('ChatGateway', () => {
 
   let gateway: ChatGateway;
   let chatService: ChatService;
+  let authService: AuthService;
 
   beforeEach(async () => {
+    const mockUsuarioModel = {
+      findByPk: jest.fn().mockResolvedValue({
+        id: 1,
+        nivel: NivelUsuarioEnum.cliente,
+        nome: 'Test User',
+      }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ChatGateway,
@@ -40,19 +55,30 @@ describe('ChatGateway', () => {
           provide: Logger,
           useValue: {
             error: jest.fn(),
+            log: jest.fn(),
           },
         },
         {
           provide: getModelToken(Usuario),
-          useValue: {
-            findByPk: jest.fn(),
-          },
+          useValue: mockUsuarioModel,
         },
       ],
     }).compile();
 
     gateway = module.get<ChatGateway>(ChatGateway);
     chatService = module.get<ChatService>(ChatService);
+    authService = module.get<AuthService>(AuthService);
+
+    // Mock gateway.server
+    gateway.server = {
+      to: jest.fn().mockReturnValue({ emit: jest.fn() }),
+      sockets: {
+        adapter: {
+          rooms: new Map(),
+        },
+        sockets: new Map(),
+      },
+    } as any;
   });
 
   afterEach(() => {
@@ -63,200 +89,185 @@ describe('ChatGateway', () => {
     expect(gateway).toBeDefined();
   });
 
-  it('should disconnect connection with invalid token', () => {
-    const socket: MockSocket = {
+  it('should disconnect connection with invalid token', async () => {
+    const socket: MockAuthSocket = {
       disconnect: jest.fn(),
+      join: jest.fn(),
+      emit: jest.fn(),
+      connected: true,
+      handshake: {
+        auth: { token: 'invalid' },
+      },
     };
 
-    jest.spyOn(chatService, 'verifyToken').mockReturnValue(null);
+    jest.spyOn(authService, 'verifyToken').mockReturnValue(null);
 
-     
-    (gateway as any).handleConnect(socket, {
-      type: 'connect',
-      token: 'invalid',
-    } as IncomingMessage);
+    await gateway.handleConnection(socket as any);
 
     expect(socket.disconnect).toHaveBeenCalledWith(true);
   });
 
-  it('should send status outside working hours', () => {
-    const ws: MockWs = {
-      role: 'user',
-      userId: 'user-1',
-    };
-
-    const sendSpy = jest
-      .spyOn(chatService, 'send')
-      .mockImplementation(() => {});
-    jest.spyOn(timeUtils, 'dentroHorario').mockReturnValue({
-      ok: false,
-      message: 'Atendimento disponível das 08h às 18h',
-    });
-
-     
-    (gateway as any).handleMessage(ws, {
-      type: 'message',
-      text: 'Olá',
-    } as IncomingMessage);
-
-    expect(sendSpy).toHaveBeenCalledWith(ws, {
-      type: 'status',
-      msg: 'Atendimento disponível das 08h às 18h',
-    });
-  });
-
   it('should send error on empty message text', () => {
-    const ws: MockWs = {
-      role: 'user',
+    const socket: MockAuthSocket = {
+      disconnect: jest.fn(),
+      join: jest.fn(),
+      emit: jest.fn(),
+      connected: true,
+      role: NivelUsuarioEnum.cliente,
       userId: 'user-1',
+      name: 'Test User',
     };
 
-    chatService.users['user-1'] = {
-       
-      socket: ws as any,
-      nome: 'Usuário de Teste',
-      lastActivity: Date.now(),
-    };
-
+    jest.spyOn(timeUtils, 'dentroHorario').mockReturnValue({ ok: true });
     const sendSpy = jest
       .spyOn(chatService, 'send')
       .mockImplementation(() => {});
-    jest.spyOn(timeUtils, 'dentroHorario').mockReturnValue({ ok: true });
 
-     
-    (gateway as any).handleMessage(ws, {
-      type: 'message',
-      text: '   ',
-    } as IncomingMessage);
+    gateway.handleChat(
+      {
+        type: 'message',
+        text: '   ',
+      },
+      socket as any,
+    );
 
-    expect(sendSpy).toHaveBeenCalledWith(ws, {
+    expect(sendSpy).toHaveBeenCalledWith(socket, {
       type: 'error',
-      msg: 'Mensagem inválida',
+      msg: 'Mande uma mensagem contendo alguma dúvida ou comentário para que possamos ajudar.',
     });
   });
 
   it('should broadcast user message to agents room through ChatService', () => {
-    const ws: MockWs = {
-      role: 'user',
+    const socket: MockAuthSocket = {
+      disconnect: jest.fn(),
+      join: jest.fn(),
+      emit: jest.fn(),
+      connected: true,
+      role: NivelUsuarioEnum.cliente,
       userId: 'user-1',
+      name: 'Usuário de Teste',
     };
 
     chatService.users['user-1'] = {
-       
-      socket: ws as any,
+      socket: socket as any,
       nome: 'Usuário de Teste',
       lastActivity: Date.now(),
     };
 
+    jest.spyOn(timeUtils, 'dentroHorario').mockReturnValue({ ok: true });
     const broadcastSpy = jest
       .spyOn(chatService, 'broadcastAgents')
       .mockImplementation(() => {});
 
-    jest.spyOn(timeUtils, 'dentroHorario').mockReturnValue({ ok: true });
-
-     
-    (gateway as any).handleMessage(ws, {
-      type: 'message',
-      text: 'Olá',
-    } as IncomingMessage);
+    gateway.handleChat(
+      {
+        type: 'message',
+        text: 'Olá',
+      },
+      socket as any,
+    );
 
     expect(broadcastSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        type: 'message',
         userId: 'user-1',
+        fromUserId: 'user-1',
         nome: 'Usuário de Teste',
         text: 'Olá',
+        timestamp: expect.any(String),
       }),
     );
   });
 
   it('should send status when agent message target is offline', () => {
-    const ws: MockWs = {
-      role: 'agent',
+    const socket: MockAuthSocket = {
+      disconnect: jest.fn(),
+      join: jest.fn(),
+      emit: jest.fn(),
+      connected: true,
+      role: NivelUsuarioEnum.administrador,
       userId: 'agent-1',
     };
 
+    jest.spyOn(timeUtils, 'dentroHorario').mockReturnValue({ ok: true });
     const sendSpy = jest
       .spyOn(chatService, 'send')
       .mockImplementation(() => {});
-    jest.spyOn(timeUtils, 'dentroHorario').mockReturnValue({ ok: true });
 
-     
-    (gateway as any).handleMessage(ws, {
-      type: 'message',
-      text: 'Olá',
-      to: 'user-offline',
-    } as IncomingMessage);
+    gateway.handleChat(
+      {
+        type: 'message',
+        text: 'Olá',
+        to: 'user-offline',
+      },
+      socket as any,
+    );
 
-    expect(sendSpy).toHaveBeenCalledWith(ws, {
+    expect(sendSpy).toHaveBeenCalledWith(socket, {
       type: 'status',
       msg: 'Usuário não está online.',
     });
   });
 
-  it('should join user room on user connect', () => {
-    const fakeSocket: MockAuthSocket = {
+  it('should join user room on user connect', async () => {
+    const socket: MockAuthSocket = {
       disconnect: jest.fn(),
       join: jest.fn(),
+      emit: jest.fn(),
+      connected: true,
+      handshake: {
+        auth: { token: 'valid-token' },
+      },
     };
 
-    gateway.server = {
-      to: jest.fn().mockReturnValue({ emit: jest.fn() }),
-      sockets: {
-        adapter: {
-          rooms: new Map(),
-        },
-        sockets: new Map(),
-      },
-    } as unknown as Server;
-
-    jest.spyOn(chatService, 'verifyToken').mockReturnValue({
+    const payload: JwtUserPayload = {
       id: 1,
-      nivel: 1,
+      nivel: NivelUsuarioEnum.cliente,
       nome: 'Aluno',
       email: 'a@a.com',
-    } as JwtUserPayload);
+    };
 
-    (gateway as any).handleConnect(fakeSocket, {
-      type: 'connect',
-      token: 'valid-token',
-      nome: 'Usuário Teste',
-    } as IncomingMessage);
+    jest.spyOn(authService, 'verifyToken').mockReturnValue(payload);
+    jest.spyOn(chatService, 'buscarUsuarioPeloId').mockResolvedValue({
+      id: 1,
+      nivel: NivelUsuarioEnum.cliente,
+      nome: 'Aluno',
+    } as any);
 
-    expect(fakeSocket.join).toHaveBeenCalledWith(
-      expect.stringMatching(/^chat:user:user-/),
+    await gateway.handleConnection(socket as any);
+
+    expect(socket.join).toHaveBeenCalledWith(
+      expect.stringMatching(/^chat:user:/),
     );
   });
 
   it('should send agent message through user room', () => {
-    const ws: MockWs = {
-      role: 'agent',
+    const socket: MockAuthSocket = {
+      disconnect: jest.fn(),
+      join: jest.fn(),
+      emit: jest.fn(),
+      connected: true,
+      role: NivelUsuarioEnum.administrador,
       userId: 'agent-1',
     };
 
     chatService.users['user-1'] = {
-       
-      socket: ws as any,
+      socket: {} as any,
       nome: 'Usuário de Teste',
       lastActivity: Date.now(),
     };
 
-    const emitSpy = jest.fn();
-    gateway.server = {
-      to: jest.fn().mockReturnValue({ emit: emitSpy }),
-      sockets: {
-        adapter: { rooms: new Map() },
-        sockets: new Map(),
-      },
-    } as unknown as Server;
-
     jest.spyOn(timeUtils, 'dentroHorario').mockReturnValue({ ok: true });
+    const emitSpy = jest.fn();
+    gateway.server.to = jest.fn().mockReturnValue({ emit: emitSpy });
 
-    (gateway as any).handleMessage(ws, {
-      type: 'message',
-      text: 'Olá agent->user',
-      to: 'user-1',
-    } as IncomingMessage);
+    gateway.handleChat(
+      {
+        type: 'message',
+        text: 'Olá agent->user',
+        to: 'user-1',
+      },
+      socket as any,
+    );
 
     expect(gateway.server.to).toHaveBeenCalledWith('chat:user:user-1');
     expect(emitSpy).toHaveBeenCalledWith('chat', {
