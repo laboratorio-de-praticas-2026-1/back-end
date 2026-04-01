@@ -3,18 +3,17 @@ import {
   HttpStatus,
   Injectable,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Empresa } from 'src/models/empresa.model';
 import { EmpresaDto } from './dto/empresa-response.dto';
-import {
-  ConnectionError,
-  ConnectionRefusedError,
-  HostNotFoundError,
-} from 'sequelize';
+import { ConnectionError, ConnectionRefusedError, HostNotFoundError } from 'sequelize';
 
 @Injectable()
 export class ContatoService {
+  private readonly logger = new Logger(ContatoService.name);
+
   constructor(@InjectModel(Empresa) private empresaModel: typeof Empresa) {}
 
   private formatarCnpj(cnpj: string | null): string {
@@ -29,6 +28,14 @@ export class ContatoService {
     return cnpj;
   }
 
+  private construirEnderecoCompleto(empresa: Empresa): string {
+    const partes = [];
+    if (empresa.endereco) partes.push(empresa.endereco);
+    if (empresa.cidade) partes.push(empresa.cidade);
+    if (empresa.estado) partes.push(empresa.estado);
+    return partes.join(', ') || '';
+  }
+
   async buscarContato(): Promise<EmpresaDto> {
     try {
       const empresa: Empresa | null = await this.empresaModel.findOne();
@@ -41,6 +48,7 @@ export class ContatoService {
       }
 
       const cnpjFormatado = this.formatarCnpj(empresa.cnpj);
+      const enderecoCompleto = this.construirEnderecoCompleto(empresa);
 
       return new EmpresaDto(
         empresa.id,
@@ -48,12 +56,14 @@ export class ContatoService {
         cnpjFormatado,
         empresa.telefone ?? '',
         empresa.email ?? '',
-        empresa.endereco ?? '',
+        enderecoCompleto,
         empresa.cidade ?? '',
         empresa.estado ?? '',
         empresa.site ?? '',
       );
     } catch (error) {
+      this.logger.error(`Erro ao buscar contato: ${error.message}`);
+      
       if (
         error instanceof ConnectionError ||
         error instanceof ConnectionRefusedError ||
@@ -77,6 +87,7 @@ export class ContatoService {
       }
 
       const cnpjFormatado = this.formatarCnpj(empresa.cnpj);
+      const enderecoCompleto = this.construirEnderecoCompleto(empresa);
 
       return new EmpresaDto(
         empresa.id,
@@ -84,12 +95,14 @@ export class ContatoService {
         cnpjFormatado,
         empresa.telefone ?? '',
         empresa.email ?? '',
-        empresa.endereco ?? '',
+        enderecoCompleto,
         empresa.cidade ?? '',
         empresa.estado ?? '',
         empresa.site ?? '',
       );
     } catch (error) {
+      this.logger.error(`Erro ao buscar contato por ID ${id}: ${error.message}`);
+      
       if (
         error instanceof ConnectionError ||
         error instanceof ConnectionRefusedError ||
