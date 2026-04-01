@@ -29,6 +29,8 @@ describe('MapaService', () => {
     findAll: jest.fn(),
   };
 
+  const coordenadasValidas = { [Op.notIn]: [null, ''] };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -56,7 +58,9 @@ describe('MapaService', () => {
       mockEmpresaModel.findAll.mockResolvedValue(mockEmpresas);
       const result = await service.findAll();
       expect(result).toEqual(mockEmpresas);
-      expect(mockEmpresaModel.findAll).toHaveBeenCalled();
+      expect(mockEmpresaModel.findAll).toHaveBeenCalledWith({
+        where: { latitude: coordenadasValidas, longitude: coordenadasValidas },
+      });
     });
   });
 
@@ -80,8 +84,8 @@ describe('MapaService', () => {
       await service.findByCidade('São Paulo');
       expect(mockEmpresaModel.findAll).toHaveBeenCalledWith({
         where: {
-          latitude: { [Op.ne]: null },
-          longitude: { [Op.ne]: null },
+          latitude: coordenadasValidas,
+          longitude: coordenadasValidas,
           cidade: { [Op.like]: '%São Paulo%' },
         },
       });
@@ -89,13 +93,37 @@ describe('MapaService', () => {
   });
 
   describe('findComFiltro', () => {
+    it('deve filtrar simultaneamente por tipo e cidade', async () => {
+      mockEmpresaModel.findAll.mockResolvedValue([mockEmpresas[0]]);
+      await service.findComFiltro('clinica', 'Registro');
+      expect(mockEmpresaModel.findAll).toHaveBeenCalledWith({
+        where: {
+          latitude: coordenadasValidas,
+          longitude: coordenadasValidas,
+          tipo: 'clinica',
+          cidade: { [Op.like]: '%Registro%' },
+        },
+      });
+    });
+
+    it('deve retornar todos os registros válidos quando nenhum parâmetro for informado', async () => {
+      mockEmpresaModel.findAll.mockResolvedValue(mockEmpresas);
+      await service.findComFiltro(undefined, undefined);
+      expect(mockEmpresaModel.findAll).toHaveBeenCalledWith({
+        where: {
+          latitude: coordenadasValidas,
+          longitude: coordenadasValidas,
+        },
+      });
+    });
+
     it('deve filtrar apenas por tipo', async () => {
       mockEmpresaModel.findAll.mockResolvedValue([mockEmpresas[1]]);
       await service.findComFiltro('detran', undefined);
       expect(mockEmpresaModel.findAll).toHaveBeenCalledWith({
         where: {
-          latitude: { [Op.ne]: null },
-          longitude: { [Op.ne]: null },
+          latitude: coordenadasValidas,
+          longitude: coordenadasValidas,
           tipo: 'detran',
         },
       });
@@ -106,8 +134,8 @@ describe('MapaService', () => {
       await service.findComFiltro(undefined, 'Registro');
       expect(mockEmpresaModel.findAll).toHaveBeenCalledWith({
         where: {
-          latitude: { [Op.ne]: null },
-          longitude: { [Op.ne]: null },
+          latitude: coordenadasValidas,
+          longitude: coordenadasValidas,
           cidade: { [Op.like]: '%Registro%' },
         },
       });

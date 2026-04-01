@@ -14,9 +14,19 @@ export class MapaService {
 
   private get defaultFiltroMapa() {
     return {
-      latitude: { [Op.ne]: null },
-      longitude: { [Op.ne]: null },
+      latitude: { [Op.notIn]: [null, ''] },
+      longitude: { [Op.notIn]: [null, ''] },
     };
+  }
+
+  private validateTipo(tipo: string): string {
+    const tipoFormatado = tipo.toLowerCase();
+    if (!tipos_empresas.includes(tipoFormatado)) {
+      throw new BadRequestException(
+        `O tipo '${tipo}' não é válido para o mapa`,
+      );
+    }
+    return tipoFormatado;
   }
 
   async findAll(): Promise<Empresa[]> {
@@ -26,13 +36,7 @@ export class MapaService {
   }
 
   async findByTipo(tipo: string): Promise<Empresa[]> {
-    const tipoFormatado = tipo.toLowerCase();
-
-    if (!tipos_empresas.includes(tipoFormatado)) {
-      throw new BadRequestException(
-        `O tipo '${tipo}' não é válido para o mapa`,
-      );
-    }
+    const tipoFormatado = this.validateTipo(tipo);
 
     return this.empresaModel.findAll({
       where: {
@@ -59,13 +63,7 @@ export class MapaService {
     };
 
     if (tipo) {
-      const tipoFormatado = tipo.toLowerCase();
-      if (!tipos_empresas.includes(tipoFormatado)) {
-        throw new BadRequestException(
-          `O tipo '${tipo}' não é válido para o mapa`,
-        );
-      }
-      condicoesFiltro.tipo = tipoFormatado;
+      condicoesFiltro.tipo = this.validateTipo(tipo);
     }
 
     if (cidade) {
