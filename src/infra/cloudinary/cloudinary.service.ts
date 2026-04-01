@@ -23,6 +23,7 @@ export class CloudinaryService {
         const uploadStream = this.cloudinary.uploader.upload_stream(
           {
             folder: process.env.CLOUDINARY_FOLDER || 'app_despachante',
+            format: 'webp',
           },
           (error, result) => {
             if (error) {
