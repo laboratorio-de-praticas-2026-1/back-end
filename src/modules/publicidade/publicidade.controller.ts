@@ -31,9 +31,7 @@ import { PublicidadeService } from './publicidade.service';
 export class PublicidadeController {
   private readonly logger = new Logger(PublicidadeController.name);
 
-  constructor(
-    private readonly publicidadeService: PublicidadeService,
-  ) {}
+  constructor(private readonly publicidadeService: PublicidadeService) {}
 
   @ApiOperation({ summary: 'Criar uma nova publicidade' })
   @ApiResponse({ status: 201, type: PublicidadeResponseDto })
@@ -62,9 +60,8 @@ export class PublicidadeController {
     return this.publicidadeService.criarPublicidade(publicidadeDto, file);
   }
 
-  
   @Put(':id')
-   @ApiBody({
+  @ApiBody({
     schema: {
       type: 'object',
       properties: {

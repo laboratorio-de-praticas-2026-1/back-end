@@ -48,15 +48,15 @@ export class PublicidadeService {
       throw new NotFoundException('Publicidade não encontrada');
     }
 
-    const updateData: any = { ...dto };
+    const updateData: Partial<Publicidade> = { ...dto };
 
     if (file) {
-      updateData.imagemUrl = await this.uploadImageFile(file);
+      updateData.urlImagem = await this.uploadImageFile(file);
     }
 
-    await publicidade.update(updateData);
+    const updated = await publicidade.update(updateData);
 
-    return publicidade;
+    return updated;
   }
 
   async criarPublicidade(
@@ -72,4 +72,3 @@ export class PublicidadeService {
     });
   }
 }
-
