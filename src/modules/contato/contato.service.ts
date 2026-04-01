@@ -3,14 +3,24 @@ import {
   HttpStatus,
   Injectable,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Empresa } from 'src/models/empresa.model';
+import { ContatoMensagem } from 'src/models/contato-mensagem.model';
 import { EmpresaDto } from './dto/empresa-response.dto';
+import { EnviarEmailDto } from './dto/enviar-email.dto';
+import { EmailService } from './email.service';
 
 @Injectable()
 export class ContatoService {
-  constructor(@InjectModel(Empresa) private empresaModel: typeof Empresa) {}
+  private readonly logger = new Logger(ContatoService.name);
+
+  constructor(
+    @InjectModel(Empresa) private empresaModel: typeof Empresa,
+    @InjectModel(ContatoMensagem) private contatoMensagemModel: typeof ContatoMensagem,
+    private readonly emailService: EmailService,
+  ) {}
 
   async buscarContato(): Promise<EmpresaDto> {
     const empresa: Empresa | null = await this.empresaModel.findOne();
@@ -53,5 +63,35 @@ export class ContatoService {
       empresa.estado ?? '',
       empresa.site ?? '',
     );
+  }
+
+  async enviarEmail(dados: EnviarEmailDto): Promise<{ message: string }> {
+    try {
+      const dataEnvio = new Date();
+
+      await this.contatoMensagemModel.create({
+        nome: dados.nome,
+        email: dados.email,
+        telefone: dados.telefone || null,
+        mensagem: dados.mensagem,
+        dataEnvio: dataEnvio,
+      });
+
+      await this.emailService.enviarEmailContato({
+        nome: dados.nome,
+        email: dados.email,
+        telefone: dados.telefone,
+        mensagem: dados.mensagem,
+        dataEnvio: dataEnvio,
+      });
+
+      return { message: 'Mensagem enviada com sucesso!' };
+    } catch (error) {
+      this.logger.error(`Erro ao processar envio: ${error.message}`);
+      throw new HttpException(
+        error.message || 'Erro ao enviar mensagem',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }
