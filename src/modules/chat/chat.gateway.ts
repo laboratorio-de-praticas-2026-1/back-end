@@ -182,6 +182,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
+    // 🚨 BLOQUEIO DE MENSAGENS DUPLICADAS (3 segundos)
+    if (this.chatService.isDuplicateMessage(userId, data.text)) {
+      this.chatService.send(socket, {
+        type: 'error',
+        msg: 'Mensagem duplicada enviada muito rápido.',
+      });
+      return;
+    }
     const timestamp = new Date().toISOString();
 
     // ================= CLIENTE =================
