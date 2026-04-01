@@ -12,11 +12,11 @@ export class PublicidadeUpdateDto {
   titulo?: string;
 
   @ApiProperty({
-    example: 'Descrição da publicidade',
+    example: 'Conteúdo da publicidade',
     required: false,
     nullable: true,
   })
   @IsOptional()
   @IsString()
-  descricao?: string;
+  conteudo?: string;
 }
