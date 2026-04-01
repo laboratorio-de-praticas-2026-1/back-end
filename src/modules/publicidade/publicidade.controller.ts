@@ -3,6 +3,7 @@ import {
   Controller,
   Logger,
   Param,
+  ParseIntPipe,
   Post,
   Put,
   UploadedFile,
@@ -22,6 +23,7 @@ import {
   PublicidadeCreateDto,
   PublicidadeResponseDto,
 } from './dto/publicidade-create.dto';
+import { PublicidadeUpdateDto } from './dto/publicidade-update.dto';
 import { PublicidadeService } from './publicidade.service';
 
 @ApiTags('Publicidade')
@@ -29,7 +31,9 @@ import { PublicidadeService } from './publicidade.service';
 export class PublicidadeController {
   private readonly logger = new Logger(PublicidadeController.name);
 
-  constructor(private readonly publicidadeService: PublicidadeService) {}
+  constructor(
+    private readonly publicidadeService: PublicidadeService,
+  ) {}
 
   @ApiOperation({ summary: 'Criar uma nova publicidade' })
   @ApiResponse({ status: 201, type: PublicidadeResponseDto })
@@ -59,7 +63,27 @@ export class PublicidadeController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() data: any) {
-    return this.publicidadeService.update(Number(id), data);
+  @ApiOperation({ summary: 'Atualizar publicidade' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        titulo: { type: 'string', nullable: true },
+        descricao: { type: 'string', nullable: true },
+        imagem: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @UseInterceptors(FileInterceptor('imagem'))
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: PublicidadeUpdateDto,
+    @UploadedFile(imageFilePipe)
+    imagem?: Express.Multer.File,
+  ): Promise<Publicidade> {
+    this.logger.log(`Atualizando publicidade...`);
+
+    return this.publicidadeService.update(id, dto, imagem);
   }
 }

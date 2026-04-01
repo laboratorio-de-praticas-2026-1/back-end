@@ -9,6 +9,7 @@ import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
 import { CloudinaryResponse } from 'src/infra/cloudinary/dto/cloudinary-response';
 import { Publicidade } from 'src/models/publicidade.model';
 import { PublicidadeCreateDto } from './dto/publicidade-create.dto';
+import { PublicidadeUpdateDto } from './dto/publicidade-update.dto';
 
 @Injectable()
 export class PublicidadeService {
@@ -34,14 +35,26 @@ export class PublicidadeService {
     );
   }
 
-  async update(id: number, data: any) {
-    const publicidade = await Publicidade.findByPk(id);
+  async update(
+    id: number,
+    dto: PublicidadeUpdateDto,
+    file?: Express.Multer.File,
+  ): Promise<Publicidade> {
+    this.logger.log(`Atualizando publicidade ID: ${id}`);
+
+    const publicidade = await this.publicidadeModel.findByPk(id);
 
     if (!publicidade) {
       throw new NotFoundException('Publicidade não encontrada');
     }
 
-    await publicidade.update(data);
+    const updateData: any = { ...dto };
+
+    if (file) {
+      updateData.imagemUrl = await this.uploadImageFile(file);
+    }
+
+    await publicidade.update(updateData);
 
     return publicidade;
   }
