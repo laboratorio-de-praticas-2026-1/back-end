@@ -1,16 +1,17 @@
-// No arquivo notificacao.module.ts
+// src/notificacao/notificacao.module.ts
+
 import { Module } from '@nestjs/common';
+import { SequelizeModule } from '@nestjs/sequelize';
 import { NotificacaoService } from './notificacao.service';
-import { NotificacaoGateway } from './notificacao.gateway';
 import { NotificacaoController } from './notificacao.controller';
+import { EmailModule } from '../email/email.module';
+import { Usuario } from '../models/usuario.model';
+import { Veiculo } from '../models/veiculo.model';
 
 @Module({
+  imports: [SequelizeModule.forFeature([Usuario, Veiculo]), EmailModule],
   controllers: [NotificacaoController],
-  providers: [
-    NotificacaoGateway, 
-    NotificacaoService,
-    // Se o seu projeto já tem um serviço de banco de dados, coloque o nome dele aqui
-  ],
+  providers: [NotificacaoService],
   exports: [NotificacaoService],
 })
 export class NotificacaoModule {}

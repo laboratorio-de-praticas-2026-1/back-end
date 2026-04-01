@@ -32,4 +32,62 @@ export class Usuario extends Model {
     defaultValue: DataType.NOW,
   })
   declare dataCadastro: Date;
+
+  // ==================== NOVOS ATRIBUTOS PARA NOTIFICAÇÃO ====================
+
+  @Column({
+    field: 'data_vencimento_cnh',
+    type: DataType.DATE,
+    allowNull: true,
+  })
+  declare dataVencimentoCnh: Date | null;
+
+  @Column({
+    field: 'data_renovacao_cnh_proxima',
+    type: DataType.DATE,
+    allowNull: true,
+  })
+  declare dataRenovacaoCnhProxima: Date | null;
+
+  @Column({
+    field: 'notificacoes_ativas',
+    type: DataType.BOOLEAN,
+    defaultValue: true,
+  })
+  declare notificacoesAtivas: boolean;
+
+  @Column({
+    field: 'dias_aviso_cnh',
+    type: DataType.INTEGER,
+    defaultValue: 30,
+  })
+  declare diasAvisoCnh: number;
+
+  @Column({
+    field: 'dias_aviso_licenciamento',
+    type: DataType.INTEGER,
+    defaultValue: 30,
+  })
+  declare diasAvisoLicenciamento: number;
+
+  @Column({
+    field: 'notificar_debitos',
+    type: DataType.BOOLEAN,
+    defaultValue: true,
+  })
+  declare notificarDebitos: boolean;
+
+  @Column({
+    field: 'enviar_email',
+    type: DataType.BOOLEAN,
+    defaultValue: true,
+  })
+  declare enviarEmail: boolean;
+
+  @Column({
+    field: 'ultima_notificacao_enviada',
+    type: DataType.DATE,
+    allowNull: true,
+  })
+  declare ultimaNotificacaoEnviada: Date | null;
 }
