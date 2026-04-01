@@ -17,6 +17,9 @@ import { HeaderModule } from './modules/header/header.module';
 import { BuscaModule } from './modules/busca/busca.module';
 import { ServicosModule } from './modules/servicos/servicos.module';
 import { PublicidadeModule } from './modules/publicidade/publicidade.module';
+import { EmailModule } from './modules/notificacao/email.module';
+import { ScheduleModule } from './modules/notificacao/schedule.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({ envFilePath: '.env', isGlobal: true }),
@@ -50,6 +53,8 @@ import { PublicidadeModule } from './modules/publicidade/publicidade.module';
     BuscaModule,
     ServicosModule,
     PublicidadeModule,
+    EmailModule,
+    ScheduleModule,
   ],
 
   controllers: [],

@@ -1,8 +1,8 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { Usuario } from '../models/usuario.model';
-import { Veiculo } from '../models/veiculo.model';
-import { EmailService } from '../email/email.service';
+import { Usuario } from '../../models/usuario.model';
+import { Veiculo } from '../../models/veiculo.model';
+import { EmailService } from './email.service';
 
 export interface NotificacaoDTO {
   usuarioId: number;
@@ -126,7 +126,7 @@ export class NotificacaoService {
         (dataVencimento.getTime() - agora.getTime()) / (1000 * 60 * 60 * 24),
       );
 
-      if (diasRestantes > 0 && diasRestantes <= usuario.diasAvisoLicenciamento) {
+      if (diasRestantes > 0 && diasRestantes <= usuario!.diasAvisoLicenciamento) {
         notificacoes.push({
           usuarioId,
           tipo: 'ALERTA_LICENCIAMENTO',
