@@ -48,7 +48,6 @@ describe('FaqService', () => {
     expect(faqModelMock.findAll).toHaveBeenCalled();
   });
 
-  // ✅ NOVO TESTE (GET /faq/admin)
   it('getAllFaqsAdmin deve retornar lista', async () => {
     const result = await service.getAllFaqsAdmin();
 
