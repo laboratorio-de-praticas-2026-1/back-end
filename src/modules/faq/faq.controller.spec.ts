@@ -41,8 +41,8 @@ describe('FaqController', () => {
   // GET /faq
   it('deve retornar todas as FAQs', async () => {
     const mockFaqs = [
-      { id: 1, pergunta: 'P1', resposta: 'R1' },
-      { id: 2, pergunta: 'P2', resposta: 'R2' },
+      { id: 1, pergunta: 'P1', resposta: 'R1', categoria: 'C1', status: true },
+      { id: 2, pergunta: 'P2', resposta: 'R2', categoria: 'C2', status: false },
     ];
 
     faqServiceMock.getFaqs.mockResolvedValue(mockFaqs);
@@ -56,8 +56,8 @@ describe('FaqController', () => {
   // GET /faq/admin
   it('deve retornar todas as FAQs (admin)', async () => {
     const mockFaqs = [
-      { id: 1 },
-      { id: 2 },
+      { id: 1, pergunta: 'P1', resposta: 'R1', categoria: 'C1', status: true },
+      { id: 2, pergunta: 'P2', resposta: 'R2', categoria: 'C2', status: false },
     ];
 
     faqServiceMock.getAllFaqsAdmin.mockResolvedValue(mockFaqs);
@@ -70,7 +70,7 @@ describe('FaqController', () => {
 
   // GET /faq/:id
   it('deve retornar uma FAQ por ID', async () => {
-    const faq = { id: 1, pergunta: 'P1', resposta: 'R1' };
+    const faq = { id: 1, pergunta: 'P1', resposta: 'R1', categoria: 'C1', status: true };
 
     faqServiceMock.getFaqById.mockResolvedValue(faq);
 
@@ -93,7 +93,7 @@ describe('FaqController', () => {
 
   // POST /faq/admin
   it('deve criar uma FAQ', async () => {
-    const dto = { pergunta: 'P1', resposta: 'R1'};
+    const dto = { pergunta: 'P1', resposta: 'R1', categoria: 'C1', status: true };
     const createdFaq = { id: 1, ...dto };
 
     faqServiceMock.createFaq.mockResolvedValue(createdFaq);
@@ -106,7 +106,7 @@ describe('FaqController', () => {
 
   // POST erro
   it('deve lançar erro ao criar uma FAQ', async () => {
-    const dto = { pergunta: 'Teste', resposta: 'Resposta' };
+    const dto = { pergunta: 'Teste', resposta: 'Resposta', categoria: 'Categoria', status: true };
 
     faqServiceMock.createFaq.mockRejectedValue(new NotFoundException());
 
@@ -116,7 +116,7 @@ describe('FaqController', () => {
   // PATCH /faq/admin/:id
   it('deve atualizar uma FAQ', async () => {
     const dto = { resposta: 'Resposta atualizada' };
-    const updatedFaq = { id: 1, pergunta: 'P1', resposta: 'Resposta atualizada' };
+    const updatedFaq = { id: 1, pergunta: 'P1', resposta: 'Resposta atualizada', categoria: 'C1', status: true };
 
     faqServiceMock.updateFaq.mockResolvedValue(updatedFaq);
 
