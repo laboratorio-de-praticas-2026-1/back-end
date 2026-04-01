@@ -57,7 +57,18 @@ describe('UsuarioService', () => {
 
       expect(mockUsuarioModel.findByPk).toHaveBeenCalledWith(1);
       expect(mockUsuario.update).toHaveBeenCalledWith(dto);
-      expect(result).toEqual(mockUsuario);
+
+      expect(result).toMatchObject({
+        id: mockUsuario.id,
+        nome: mockUsuario.nome,
+        email: mockUsuario.email,
+        nivel: mockUsuario.nivel,
+        cpf_cnpj: mockUsuario.cpfCnpj ?? null,
+        celular: mockUsuario.celular,
+        data_cadastro: mockUsuario.dataCadastro,
+      });
+
+      expect(result).not.toHaveProperty('senha');
     });
 
     it('deve lançar NotFoundException se usuário não existir', async () => {

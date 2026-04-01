@@ -7,6 +7,8 @@ import { InjectModel } from '@nestjs/sequelize';
 import * as bcrypt from 'bcrypt';
 import { Usuario } from 'src/models/usuario.model';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
+import { ResponseUsuarioDto } from './dto/response-usuario.dto';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class UsuarioService {
@@ -26,9 +28,11 @@ export class UsuarioService {
       updateUsuarioDto.senha = await bcrypt.hash(updateUsuarioDto.senha, 10);
     }
 
-    await usuario.update(updateUsuarioDto);
+    const usuarioAtualizado = await usuario.update(updateUsuarioDto);
 
-    return usuario;
+    return plainToInstance(ResponseUsuarioDto, usuarioAtualizado, {
+      excludeExtraneousValues: true,
+    });
   }
 
   private async findOneOrFail(id: number) {
