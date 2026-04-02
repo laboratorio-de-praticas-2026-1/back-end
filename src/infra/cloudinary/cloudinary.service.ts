@@ -79,8 +79,7 @@ export class CloudinaryService {
             folder: process.env.CLOUDINARY_FOLDER,
             resource_type: 'raw',
             type: 'authenticated',
-            public_id: nomeOriginal,
-            use_filename: true,
+            display_name: nomeOriginal,
             unique_filename: true,
           },
           (error, result) => {

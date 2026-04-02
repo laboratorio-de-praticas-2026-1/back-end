@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
@@ -256,7 +257,7 @@ export class SolicitacaoService {
 
     const publicId = urlDocRestricted.public_id as string;
     if (!publicId) {
-      throw new BadRequestException(
+      throw new InternalServerErrorException(
         'Resposta inválida do Cloudinary: public_id ausente',
       );
     }
