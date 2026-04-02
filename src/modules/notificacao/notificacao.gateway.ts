@@ -22,7 +22,6 @@ export class NotificacaoGateway
   private readonly logger = new Logger(NotificacaoGateway.name);
 
   constructor(
-    // forwardRef necessário para resolver dependência circular Gateway <-> Service
     @Inject(forwardRef(() => NotificacaoService))
     private readonly notificacaoService: NotificacaoService,
   ) {}
@@ -49,13 +48,54 @@ export class NotificacaoGateway
     this.server.to(socketId).emit(evento, dados);
   }
 
-  // ─── Bloco de teste — REMOVER antes de ir para produção ──────
-  // Agora chama o service real, que persiste no banco e emite via socket
+  // ─── Bloco de teste corrigido ──────
   @SubscribeMessage('me_mande_um_teste')
-  async handleTest(client: Socket, _data: unknown) {
-    this.logger.log(`Teste solicitado pelo cliente ${client.id}`);
-    await this.notificacaoService.notificarVencimentoCNH(1, 5);
-    await this.notificacaoService.notificarLicenciamentoProximo(1, 'ABC-1234', 10);
-    await this.notificacaoService.notificarNovoDebito(1, 'ABC-1234', 150.5);
+  async handleTest(client: Socket, data: { usuarioId?: number } = {}) {
+    const usuarioId = data?.usuarioId || 1; // Usuário padrão para teste
+    
+    this.logger.log(`Teste solicitado pelo cliente ${client.id} para usuário ${usuarioId}`);
+    
+    try {
+      // Busca todas as notificações do usuário
+      const notificacoes = await this.notificacaoService.buscarNotificacoesDoUsuario(usuarioId);
+      
+      // Envia cada notificação encontrada
+      for (const notificacao of notificacoes) {
+        // Emite via socket
+        client.emit('nova-notificacao', notificacao);
+        
+        // Envia email se configurado
+        await this.notificacaoService.enviarNotificacao(notificacao);
+        
+        this.logger.log(`Notificação enviada: ${notificacao.tipo} - ${notificacao.titulo}`);
+      }
+      
+      if (notificacoes.length === 0) {
+        client.emit('teste-concluido', { message: 'Nenhuma notificação pendente encontrada' });
+      } else {
+        client.emit('teste-concluido', { message: `${notificacoes.length} notificações enviadas` });
+      }
+      
+    } catch (error) {
+      this.logger.error(`Erro no teste: ${error.message}`);
+      client.emit('erro', { message: error.message });
+    }
+  }
+  
+  // Métodos adicionais úteis para o frontend
+  @SubscribeMessage('verificar-minhas-notificacoes')
+  async handleVerificarNotificacoes(client: Socket, data: { usuarioId: number }) {
+    try {
+      const notificacoes = await this.notificacaoService.buscarNotificacoesDoUsuario(data.usuarioId);
+      
+      for (const notificacao of notificacoes) {
+        client.emit('nova-notificacao', notificacao);
+        await this.notificacaoService.enviarNotificacao(notificacao);
+      }
+      
+      client.emit('notificacoes-verificadas', { total: notificacoes.length });
+    } catch (error) {
+      client.emit('erro', { message: error.message });
+    }
   }
 }
