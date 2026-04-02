@@ -60,7 +60,7 @@ export class PublicidadeController {
     return this.publicidadeService.criarPublicidade(publicidadeDto, file);
   }
 
-  @Put(':id')  
+  @Put(':id')
   @ApiOperation({ summary: 'Atualizar publicidade' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
