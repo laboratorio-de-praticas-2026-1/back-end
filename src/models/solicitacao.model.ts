@@ -3,12 +3,14 @@ import {
   Column,
   DataType,
   ForeignKey,
+  HasMany,
   Model,
   Table,
 } from 'sequelize-typescript';
 import { Servico } from './servico.model';
 import { Usuario } from './usuario.model';
 import { Veiculo } from './veiculo.model';
+import { DocumentoSolicitacao } from './documento-solicitacao.model';
 
 @Table({ tableName: 'solicitacao' })
 export class Solicitacao extends Model {
@@ -35,6 +37,9 @@ export class Solicitacao extends Model {
 
   @BelongsTo(() => Servico)
   declare servico: Servico;
+
+  @HasMany(() => DocumentoSolicitacao)
+  declare documentos: DocumentoSolicitacao[];
 
   @Column({
     type: DataType.ENUM(

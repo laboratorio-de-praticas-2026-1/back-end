@@ -32,6 +32,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.4",
     "cloudinary": "^2.9.0",
+    "crypto": "^1.0.1",
     "multer": "^2.1.1",
     "mysql2": "^3.19.0",
     "reflect-metadata": "^0.2.2",

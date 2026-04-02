@@ -6,20 +6,23 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { StatusSolicitacaoEnum } from 'src/commons/enums/status-solicitacao.enum';
+import { CryptoUtil } from 'src/commons/utils/crypto';
+import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
+import { CloudinaryResponse } from 'src/infra/cloudinary/dto/cloudinary-response';
+import { DocumentoSolicitacao } from 'src/models/documento-solicitacao.model';
 import { Servico } from 'src/models/servico.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
 import { Usuario } from 'src/models/usuario.model';
 import { Veiculo } from 'src/models/veiculo.model';
 import { NotificacaoService } from '../notificacao/notificacao.service';
-import { CreateSolicitacaoDto } from './dto/create-solicitacao.dto';
+import { CreateDocumentoDto } from './dto/create-documento.dto';
 import {
   CreateSolicitacaoResponseDto,
   ProtocoloSolicitacaoDto,
 } from './dto/create-solicitacao-response.dto';
-import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
+import { CreateSolicitacaoDto } from './dto/create-solicitacao.dto';
 import { ListSolicitacoesResponseDto } from './dto/list-solicitacoes-response.dto';
-import { DocumentoSolicitacao } from 'src/models/documento-solicitacao.model';
-import { CreateDocumentoDto } from './dto/create-documento.dto';
+import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 
 @Injectable()
 export class SolicitacaoService {
@@ -37,6 +40,8 @@ export class SolicitacaoService {
     @InjectModel(Servico)
     private readonly servicoModel: typeof Servico,
     private readonly notificacaoService: NotificacaoService,
+    private readonly cloudinaryService: CloudinaryService,
+    private readonly cryptoUtil: CryptoUtil,
   ) {}
 
   async criarSolicitacao(
@@ -222,17 +227,38 @@ export class SolicitacaoService {
   async enviarDocumento(
     solicitacaoId: number,
     data: CreateDocumentoDto,
+    documento: Express.Multer.File,
   ): Promise<{ message: string }> {
-    if (!data.tipo_documento || !data.url_criptografada) {
+    if (!data.tipo_documento) {
       throw new BadRequestException('Dados inválidos');
     }
     const solicitacao = await this.solicitacaoModel.findByPk(solicitacaoId);
     if (!solicitacao) {
       throw new NotFoundException('Solicitação não encontrada');
     }
+
+    let urlDocRestricted: CloudinaryResponse;
+
+    try {
+      urlDocRestricted = await this.cloudinaryService.uploadDocument(documento);
+    } catch (error) {
+      const mensagemErro =
+        error instanceof Error ? error.message : 'Erro desconhecido';
+
+      this.logger.error(
+        `Falha ao enviar documento para a solicitacao ${solicitacaoId}: ${mensagemErro}`,
+      );
+
+      throw new BadRequestException(
+        `Erro ao enviar documento: ${mensagemErro}`,
+      );
+    }
+
+    const nomeHash = this.cryptoUtil.encrypt(urlDocRestricted.public_id);
+
     await this.documentoModel.create({
       solicitacaoId: solicitacaoId,
-      nomeHash: data.url_criptografada,
+      nomeHash: nomeHash,
       tipoDocumento: data.tipo_documento,
       dataUpload: new Date(),
       statusValidacao: 'pendente',

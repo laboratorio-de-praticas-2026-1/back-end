@@ -1,27 +1,32 @@
 import {
   Body,
   Controller,
+  Get,
   Logger,
   Param,
   ParseIntPipe,
   Post,
   Put,
-  Get,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBody,
+  ApiConsumes,
   ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { CreateSolicitacaoDto } from './dto/create-solicitacao.dto';
+import { DocumentoFilePipe } from 'src/commons/pipes/file.pipe';
+import { CreateDocumentoDto } from './dto/create-documento.dto';
 import { CreateSolicitacaoResponseDto } from './dto/create-solicitacao-response.dto';
+import { CreateSolicitacaoDto } from './dto/create-solicitacao.dto';
+import { ListSolicitacoesResponseDto } from './dto/list-solicitacoes-response.dto';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 import { SolicitacaoService } from './solicitacao.service';
-import { CreateDocumentoDto } from './dto/create-documento.dto';
-import { ListSolicitacoesResponseDto } from './dto/list-solicitacoes-response.dto';
 
 @ApiTags('solicitacao')
 @Controller('solicitacoes')
@@ -99,6 +104,7 @@ export class SolicitacaoController {
   }
 
   @Post(':id/documentos')
+  @ApiConsumes('multipart/form-data')
   @ApiCreatedResponse({
     description: 'Documento enviado com sucesso',
     schema: {
@@ -114,10 +120,26 @@ export class SolicitacaoController {
   @ApiNotFoundResponse({
     description: 'Solicitação não encontrada',
   })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        tipo_documento: {
+          type: 'string',
+          example: 'RG',
+        },
+        documento: { type: 'string', format: 'binary' },
+      },
+      required: ['tipo_documento', 'documento'],
+    },
+  })
+  @UseInterceptors(FileInterceptor('documento'))
   enviarDocumento(
     @Param('id', ParseIntPipe) id: number,
     @Body() data: CreateDocumentoDto,
+    @UploadedFile(DocumentoFilePipe)
+    documento: Express.Multer.File,
   ): Promise<{ message: string }> {
-    return this.solicitacaoService.enviarDocumento(id, data);
+    return this.solicitacaoService.enviarDocumento(id, data, documento);
   }
 }
