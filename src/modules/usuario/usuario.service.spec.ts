@@ -19,6 +19,16 @@ const mockUsuario = {
   celular: null,
   dataCadastro: new Date(),
   update: jest.fn(),
+  get: jest.fn().mockReturnValue({
+    id: 1,
+    nome: 'Davi Mathais',
+    email: 'davi@example.com',
+    senha: 'hashed_password',
+    nivel: 'cliente',
+    cpfCnpj: null,
+    celular: null,
+    dataCadastro: new Date(),
+  }),
 };
 
 const mockUsuarioModel = {

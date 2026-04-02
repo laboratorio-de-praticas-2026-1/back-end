@@ -17,7 +17,10 @@ export class UsuarioService {
     private readonly usuarioModel: typeof Usuario,
   ) {}
 
-  async update(id: number, updateUsuarioDto: UpdateUsuarioDto) {
+  async update(
+    id: number,
+    updateUsuarioDto: UpdateUsuarioDto,
+  ): Promise<ResponseUsuarioDto> {
     const usuario = await this.findOneOrFail(id);
 
     if (updateUsuarioDto.email) {
@@ -28,9 +31,9 @@ export class UsuarioService {
       updateUsuarioDto.senha = await bcrypt.hash(updateUsuarioDto.senha, 10);
     }
 
-    const usuarioAtualizado = await usuario.update(updateUsuarioDto);
+    await usuario.update(updateUsuarioDto);
 
-    return plainToInstance(ResponseUsuarioDto, usuarioAtualizado, {
+    return plainToInstance(ResponseUsuarioDto, usuario.get({ plain: true }), {
       excludeExtraneousValues: true,
     });
   }

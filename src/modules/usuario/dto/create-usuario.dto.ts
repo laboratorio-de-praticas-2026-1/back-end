@@ -6,6 +6,7 @@ import {
   MinLength,
   MaxLength,
 } from 'class-validator';
+import { Expose, Transform } from 'class-transformer';
 
 export enum NivelUsuario {
   cliente = 'cliente',
@@ -31,6 +32,17 @@ export class CreateUsuarioDto {
   nivel?: NivelUsuario;
 
   @IsOptional()
+  @Expose({ name: 'cpf_cnpj' })
+  @Transform(
+    ({
+      obj,
+      value,
+    }: {
+      obj: { cpfCnpj?: string; cpf_cnpj?: string };
+      value?: string;
+    }) => obj.cpf_cnpj ?? obj.cpfCnpj ?? value,
+    { toClassOnly: true },
+  )
   @IsString()
   @MaxLength(20)
   cpfCnpj?: string;
