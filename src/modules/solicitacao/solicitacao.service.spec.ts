@@ -99,19 +99,24 @@ describe('SolicitacaoService', () => {
           provide: CloudinaryService,
           useValue: {
             uploadDocument: jest.fn(),
-            generateTemporaryUrl: jest.fn((publicId) => `https://temp-url/${publicId}`),
+            generateTemporaryUrl: jest.fn(
+              (publicId) => `https://temp-url/${publicId}`,
+            ),
           },
         },
         {
           provide: CryptoUtil,
           useValue: {
-            encrypt: jest.fn((input) => `${Buffer.from(input).toString('hex')}:encrypteddata`),
-            decrypt: jest.fn((encrypted) => {
+            encrypt: jest.fn(
+              (input: string) =>
+                `${Buffer.from(input).toString('hex')}:encrypteddata`,
+            ),
+            decrypt: jest.fn((encrypted: string) => {
               const [hex] = encrypted.split(':');
               return Buffer.from(hex, 'hex').toString();
             }),
           },
-        }
+        },
       ],
     }).compile();
 

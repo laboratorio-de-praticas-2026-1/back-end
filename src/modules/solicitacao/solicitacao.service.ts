@@ -254,7 +254,14 @@ export class SolicitacaoService {
       );
     }
 
-    const nomeHash = this.cryptoUtil.encrypt(urlDocRestricted.public_id);
+    const publicId = urlDocRestricted.public_id as string;
+    if (!publicId) {
+      throw new BadRequestException(
+        'Resposta inválida do Cloudinary: public_id ausente',
+      );
+    }
+
+    const nomeHash = this.cryptoUtil.encrypt(publicId);
 
     await this.documentoModel.create({
       solicitacaoId: solicitacaoId,
