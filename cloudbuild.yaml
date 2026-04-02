@@ -6,7 +6,7 @@ steps:
       - -c
       - |
           SAFE_BRANCH=$(printf '%s' "$BRANCH_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')
-          docker build -t "southamerica-east1-docker.pkg.dev/$PROJECT_ID/backend-repo/backend-${SAFE_BRANCH}:$COMMIT_SHA" .
+          docker build -t "southamerica-east1-docker.pkg.dev/$PROJECT_ID/backend-repo/backend-$${SAFE_BRANCH}:$COMMIT_SHA" .
 
   # Push para o Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
@@ -15,7 +15,7 @@ steps:
       - -c
       - |
           SAFE_BRANCH=$(printf '%s' "$BRANCH_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')
-          docker push "southamerica-east1-docker.pkg.dev/$PROJECT_ID/backend-repo/backend-${SAFE_BRANCH}:$COMMIT_SHA"
+          docker push "southamerica-east1-docker.pkg.dev/$PROJECT_ID/backend-repo/backend-$${SAFE_BRANCH}:$COMMIT_SHA"
 
   # Deploy no Cloud Run (serviço nomeado pela branch)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -24,8 +24,8 @@ steps:
       - -c
       - |
           SAFE_BRANCH=$(printf '%s' "$BRANCH_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')
-          gcloud run deploy "backend-${SAFE_BRANCH}" \
-            --image="southamerica-east1-docker.pkg.dev/$PROJECT_ID/backend-repo/backend-${SAFE_BRANCH}:$COMMIT_SHA" \
+          gcloud run deploy "backend-$${SAFE_BRANCH}" \
+            --image="southamerica-east1-docker.pkg.dev/$PROJECT_ID/backend-repo/backend-$${SAFE_BRANCH}:$COMMIT_SHA" \
             --region="southamerica-east1" \
             --platform="managed" \
             --allow-unauthenticated
