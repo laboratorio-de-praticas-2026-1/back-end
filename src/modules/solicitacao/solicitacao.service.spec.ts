@@ -1,5 +1,7 @@
 import { getModelToken } from '@nestjs/sequelize';
 import { Test, TestingModule } from '@nestjs/testing';
+import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
+import { CryptoUtil } from 'src/commons/utils/crypto';
 import { DocumentoSolicitacao } from 'src/models/documento-solicitacao.model';
 import { Servico } from 'src/models/servico.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
@@ -93,6 +95,23 @@ describe('SolicitacaoService', () => {
           provide: NotificacaoService,
           useValue: mockNotificacaoService,
         },
+        {
+          provide: CloudinaryService,
+          useValue: {
+            uploadDocument: jest.fn(),
+            generateTemporaryUrl: jest.fn((publicId) => `https://temp-url/${publicId}`),
+          },
+        },
+        {
+          provide: CryptoUtil,
+          useValue: {
+            encrypt: jest.fn((input) => `${Buffer.from(input).toString('hex')}:encrypteddata`),
+            decrypt: jest.fn((encrypted) => {
+              const [hex] = encrypted.split(':');
+              return Buffer.from(hex, 'hex').toString();
+            }),
+          },
+        }
       ],
     }).compile();
 
