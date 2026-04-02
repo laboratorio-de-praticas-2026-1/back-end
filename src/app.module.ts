@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
+import { UtilsModule } from './commons/utils/utils.module';
 import { CloudinaryModule } from './infra/cloudinary/cloudinary.module';
 import { BlogModule } from './modules/blog/blog.module';
 import { BuscaModule } from './modules/busca/busca.module';
@@ -54,6 +55,7 @@ import { UsuarioModule } from './modules/usuario/usuario.module';
     PublicidadeModule,
     CloudinaryModule,
     SolicitacaoModule,
+    UtilsModule,
   ],
 
   controllers: [],
