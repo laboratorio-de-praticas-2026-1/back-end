@@ -28,6 +28,12 @@ export class EmpresaDto {
   @ApiProperty()
   site: string;
 
+  @ApiProperty()
+  longitude: string;
+
+  @ApiProperty()
+  latitude: string;
+
   @ApiProperty({
     description: 'Endereço completo (endereço + cidade + estado)',
   })

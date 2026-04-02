@@ -68,6 +68,98 @@ export class ContatoService {
     }
   }
 
+  async criarContato(empresaDto: EmpresaDto): Promise<EmpresaDto> {
+    try {
+      const empresa = await this.empresaModel.create({
+        nome_fantasia: empresaDto.nomeFantasia,
+        cnpj: empresaDto.cnpj,
+        telefone: empresaDto.telefone,
+        email: empresaDto.email,
+        endereco: empresaDto.endereco,
+        cidade: empresaDto.cidade,
+        estado: empresaDto.estado,
+        longitude: empresaDto.longitude,
+        latitude: empresaDto.latitude,
+        site: empresaDto.site,
+      });
+
+      return new EmpresaDto(
+        empresa.id,
+        empresa.nomeFantasia ?? '',
+        empresa.cnpj ?? '',
+        empresa.telefone ?? '',
+        empresa.email ?? '',
+        empresa.endereco ?? '',
+        empresa.cidade ?? '',
+        empresa.estado ?? '',
+        empresa.site ?? '',
+      );
+    } catch (error) {
+      if (
+        error instanceof ConnectionError ||
+        error instanceof ConnectionRefusedError ||
+        error instanceof HostNotFoundError
+      ) {
+        throw new HttpException(
+          'Banco de dados indisponível',
+          HttpStatus.SERVICE_UNAVAILABLE,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async atualizarContato(
+    id: number,
+    data: Partial<EmpresaDto>,
+  ): Promise<EmpresaDto> {
+    try {
+      const empresa: Empresa | null = await this.empresaModel.findByPk(id);
+
+      if (!empresa) {
+        throw new NotFoundException('Dados de contato não encontrados');
+      }
+
+      await empresa.update({
+        nome_fantasia: data.nomeFantasia,
+        cnpj: data.cnpj,
+        telefone: data.telefone,
+        email: data.email,
+        endereco: data.endereco,
+        cidade: data.cidade,
+        estado: data.estado,
+        longitude: data.longitude,
+        latitude: data.latitude,
+        site: data.site,
+      });
+
+      const cnpjFormatado = this.formatarCnpj(empresa.cnpj);
+
+      return new EmpresaDto(
+        empresa.id,
+        empresa.nomeFantasia ?? '',
+        cnpjFormatado,
+        empresa.telefone ?? '',
+        empresa.email ?? '',
+        empresa.endereco ?? '',
+        empresa.cidade ?? '',
+        empresa.estado ?? '',
+        empresa.site ?? '',
+      );
+    } catch (error) {
+      if (
+        error instanceof ConnectionError ||
+        error instanceof ConnectionRefusedError ||
+        error instanceof HostNotFoundError
+      ) {
+        throw new HttpException(
+          'Banco de dados indisponível',
+          HttpStatus.SERVICE_UNAVAILABLE,
+        );
+      }
+      throw error;
+    }
+  }
   async buscarContatoById(id: number): Promise<EmpresaDto> {
     try {
       const empresa: Empresa | null = await this.empresaModel.findByPk(id);
@@ -89,6 +181,29 @@ export class ContatoService {
         empresa.estado ?? '',
         empresa.site ?? '',
       );
+    } catch (error) {
+      if (
+        error instanceof ConnectionError ||
+        error instanceof ConnectionRefusedError ||
+        error instanceof HostNotFoundError
+      ) {
+        throw new HttpException(
+          'Banco de dados indisponível',
+          HttpStatus.SERVICE_UNAVAILABLE,
+        );
+      }
+      throw error;
+    }
+  }
+  async deletarContato(id: number): Promise<void> {
+    try {
+      const empresa: Empresa | null = await this.empresaModel.findByPk(id);
+
+      if (!empresa) {
+        throw new NotFoundException('Dados de contato não encontrados');
+      }
+
+      await empresa.destroy();
     } catch (error) {
       if (
         error instanceof ConnectionError ||
