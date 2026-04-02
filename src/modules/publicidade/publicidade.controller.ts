@@ -2,7 +2,10 @@ import {
   Body,
   Controller,
   Logger,
+  Param,
+  ParseIntPipe,
   Post,
+  Put,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -16,11 +19,12 @@ import {
 } from '@nestjs/swagger';
 import { imageFilePipe } from 'src/commons/pipes/file.pipe';
 import { Publicidade } from '../../models/publicidade.model';
-import { PublicidadeService } from './publicidade.service';
 import {
   PublicidadeCreateDto,
   PublicidadeResponseDto,
 } from './dto/publicidade-create.dto';
+import { PublicidadeUpdateDto } from './dto/publicidade-update.dto';
+import { PublicidadeService } from './publicidade.service';
 
 @ApiTags('Publicidade')
 @Controller('publicidade')
@@ -54,5 +58,30 @@ export class PublicidadeController {
   ): Promise<Publicidade> {
     this.logger.log(`Iniciando criacao de publicidade...`);
     return this.publicidadeService.criarPublicidade(publicidadeDto, file);
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Atualizar publicidade' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        titulo: { type: 'string', nullable: true },
+        conteudo: { type: 'string', nullable: true },
+        imagem: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @UseInterceptors(FileInterceptor('imagem'))
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: PublicidadeUpdateDto,
+    @UploadedFile(imageFilePipe)
+    imagem?: Express.Multer.File,
+  ): Promise<Publicidade> {
+    this.logger.log(`Atualizando publicidade...`);
+
+    return this.publicidadeService.update(id, dto, imagem);
   }
 }

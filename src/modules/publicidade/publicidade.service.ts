@@ -2,12 +2,14 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { CloudinaryResponse } from 'src/infra/cloudinary/dto/cloudinary-response';
 import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
+import { CloudinaryResponse } from 'src/infra/cloudinary/dto/cloudinary-response';
 import { Publicidade } from 'src/models/publicidade.model';
 import { PublicidadeCreateDto } from './dto/publicidade-create.dto';
+import { PublicidadeUpdateDto } from './dto/publicidade-update.dto';
 
 @Injectable()
 export class PublicidadeService {
@@ -31,6 +33,30 @@ export class PublicidadeService {
     throw new InternalServerErrorException(
       'Erro ao executar upload do arquivo: resposta inesperada',
     );
+  }
+
+  async update(
+    id: number,
+    dto: PublicidadeUpdateDto,
+    file?: Express.Multer.File,
+  ): Promise<Publicidade> {
+    this.logger.log(`Atualizando publicidade ID: ${id}`);
+
+    const publicidade = await this.publicidadeModel.findByPk(id);
+
+    if (!publicidade) {
+      throw new NotFoundException('Publicidade não encontrada');
+    }
+
+    const updateData: Partial<Publicidade> = { ...dto };
+
+    if (file) {
+      updateData.urlImagem = await this.uploadImageFile(file);
+    }
+
+    const updated = await publicidade.update(updateData);
+
+    return updated;
   }
 
   async criarPublicidade(
