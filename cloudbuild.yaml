@@ -1,0 +1,29 @@
+steps:
+  # Build da imagem
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - build
+      - '-t'
+      - 'southamerica-east1-docker.pkg.dev/$PROJECT_ID/backend-repo/backend-$BRANCH_NAME:$COMMIT_SHA'
+      - '.'
+
+  # Push para o Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - push
+      - 'southamerica-east1-docker.pkg.dev/$PROJECT_ID/backend-repo/backend-$BRANCH_NAME:$COMMIT_SHA'
+
+  # Deploy no Cloud Run (serviço nomeado pela branch)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - 'backend-$BRANCH_NAME'
+      - '--image=southamerica-east1-docker.pkg.dev/$PROJECT_ID/backend-repo/backend-$BRANCH_NAME:$COMMIT_SHA'
+      - '--region=southamerica-east1'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+
+images:
+  - 'southamerica-east1-docker.pkg.dev/$PROJECT_ID/backend-repo/backend-$BRANCH_NAME:$COMMIT_SHA'
