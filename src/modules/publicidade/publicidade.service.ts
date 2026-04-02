@@ -1,19 +1,3 @@
-<<<<<<< HEAD
-import { Injectable, NotFoundException } from '@nestjs/common';
-
-@Injectable()
-export class PublicidadeService {
-  remove(id: number) {
-    if (!id) {
-      throw new NotFoundException('Publicidade não encontrada');
-    }
-    
-    return {
-      message: `Publicidade com ID ${id} removida com sucesso`,
-    };
-  }
-}
-=======
 import {
   Injectable,
   InternalServerErrorException,
@@ -61,7 +45,7 @@ export class PublicidadeService {
     const publicidade = await this.publicidadeModel.findByPk(id);
 
     if (!publicidade) {
-      throw new NotFoundException('Publicidade não encontrada');
+      throw new NotFoundException('Publicidade n�o encontrada');
     }
 
     const updateData: Partial<Publicidade> = { ...dto };
@@ -87,5 +71,16 @@ export class PublicidadeService {
       urlImagem,
     });
   }
+
+  async remove(id: number): Promise<void> {
+    this.logger.log(`Removendo publicidade ID: ${id}`);
+
+    const publicidade = await this.publicidadeModel.findByPk(id);
+
+    if (!publicidade) {
+      throw new NotFoundException('Publicidade n�o encontrada');
+    }
+
+    await publicidade.destroy();
+  }
 }
->>>>>>> short-release/publicidade
