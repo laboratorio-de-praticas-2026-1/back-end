@@ -261,8 +261,8 @@ export class SolicitacaoService {
         'Resposta inválida do Cloudinary: public_id ausente',
       );
     }
-
-    const nomeHash = this.cryptoUtil.encrypt(publicId);
+    const resourceType = urlDocRestricted.resource_type as 'raw' | 'image';
+    const nomeHash = this.cryptoUtil.encrypt(`${resourceType}|${publicId}`);
 
     await this.documentoModel.create({
       solicitacaoId: solicitacaoId,
