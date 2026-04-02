@@ -35,6 +35,23 @@ export class PublicidadeService {
     );
   }
 
+  async getAll(): Promise<Publicidade[]> {
+    this.logger.log('Listando todas as publicidades...');
+    return this.publicidadeModel.findAll();
+  }
+
+  async getById(id: number): Promise<Publicidade> {
+    this.logger.log(`Buscando publicidade ID: ${id}`);
+
+    const publicidade = await this.publicidadeModel.findByPk(id);
+
+    if (!publicidade) {
+      throw new NotFoundException('Publicidade nï¿½o encontrada');
+    }
+
+    return publicidade;
+  }
+
   async update(
     id: number,
     dto: PublicidadeUpdateDto,

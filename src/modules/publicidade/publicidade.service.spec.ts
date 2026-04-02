@@ -11,6 +11,7 @@ describe('PublicidadeService', () => {
 
   const mockPublicidadeModel = {
     create: jest.fn(),
+    findAll: jest.fn(),
     findByPk: jest.fn(),
   };
 
@@ -80,6 +81,45 @@ describe('PublicidadeService', () => {
       ...publicidadeData,
       urlImagem: 'http://example.com/publicidade',
     });
+  });
+
+  it('deve listar publicidades com sucesso!', async () => {
+    const mockPublicidade = [
+      {
+        id: 1,
+        titulo: 'Nova publicidade',
+        conteudo: 'Conteudo da publicidade',
+        urlImagem: 'http://example.com/publicidade',
+      },
+    ];
+
+    mockPublicidadeModel.findAll.mockResolvedValue(mockPublicidade);
+
+    await expect(service.getAll()).resolves.toEqual(mockPublicidade);
+    expect(mockPublicidadeModel.findAll).toHaveBeenCalled();
+  });
+
+  it('deve buscar publicidade por ID com sucesso!', async () => {
+    const mockPublicidade = {
+      id: 1,
+      titulo: 'Nova publicidade',
+      conteudo: 'Conteudo da publicidade',
+      urlImagem: 'http://example.com/publicidade',
+    };
+
+    mockPublicidadeModel.findByPk.mockResolvedValue(mockPublicidade);
+
+    await expect(service.getById(1)).resolves.toEqual(mockPublicidade);
+    expect(mockPublicidadeModel.findByPk).toHaveBeenCalledWith(1);
+  });
+
+  it('deve falhar ao buscar publicidade inexistente!', async () => {
+    mockPublicidadeModel.findByPk.mockResolvedValue(null);
+
+    await expect(service.getById(999)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    expect(mockPublicidadeModel.findByPk).toHaveBeenCalledWith(999);
   });
 
   it('deve remover publicidade com sucesso!', async () => {
