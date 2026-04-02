@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { CloudinaryModule } from './infra/cloudinary/cloudinary.module';
+import { FileConversorModule } from './infra/conversor/file-conversor/file-conversor.module';
 import { AgendamentoModule } from './modules/agendamento/agendamento.module';
 import { BlogModule } from './modules/blog/blog.module';
 import { BuscaModule } from './modules/busca/busca.module';
@@ -53,6 +54,7 @@ import { UsuarioModule } from './modules/usuario/usuario.module';
     ServicosModule,
     PublicidadeModule,
     CloudinaryModule,
+    FileConversorModule,
   ],
 
   controllers: [],
