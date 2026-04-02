@@ -17,7 +17,15 @@ export const imageFilePipe = new ParseFilePipe({
   ],
 });
 
-const DOCUMENTO_MIME_TYPES = ['application/pdf'] as const;
+const DOCUMENTO_MIME_TYPES = [
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/pdf',
+  'image/png',
+  'image/jpeg',
+  'image/svg+xml',
+  'image/webp',
+] as const;
 
 export class DocumentoFilePipe implements PipeTransform {
   private readonly maxSize = 10 * 1024 * 1024; // 10mb
@@ -33,7 +41,7 @@ export class DocumentoFilePipe implements PipeTransform {
 
     if (!DOCUMENTO_MIME_TYPES.includes(file.mimetype as any)) {
       throw new BadRequestException(
-        `Tipo de arquivo inválido. Tipos permitidos: PDF`,
+        `Tipo de arquivo inválido. Tipos permitidos: ${DOCUMENTO_MIME_TYPES.join(', ')}`,
       );
     }
 

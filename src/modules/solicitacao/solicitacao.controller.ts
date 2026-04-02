@@ -139,15 +139,6 @@ export class SolicitacaoController {
       limits: {
         fileSize: 10 * 1024 * 1024, // Limite de 10MB
       },
-      fileFilter: (req, file, callback) => {
-        if (file.mimetype !== 'application/pdf') {
-          return callback(
-            new BadRequestException('Apenas arquivos PDF são permitidos'),
-            false,
-          );
-        }
-        callback(null, true);
-      },
     }),
   )
   enviarDocumento(
