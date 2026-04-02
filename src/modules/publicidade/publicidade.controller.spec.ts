@@ -77,7 +77,7 @@ describe('PublicidadeController', () => {
     expect(mockPublicidadeService.getById).toHaveBeenCalledWith(1);
   });
 
-  it('deve criar publicidade com sucesso!', () => {
+  it('deve criar publicidade com sucesso!', async () => {
     const publicidadeData = {
       titulo: 'Nova publicidade',
       conteudo: 'Conteudo da publicidade',
@@ -91,7 +91,7 @@ describe('PublicidadeController', () => {
 
     mockPublicidadeService.criarPublicidade.mockResolvedValue(mockPublicidade);
 
-    expect(
+    await expect(
       controller.criarPublicidade(publicidadeData, mockFile),
     ).resolves.toEqual(mockPublicidade);
     expect(mockPublicidadeService.criarPublicidade).toHaveBeenCalledWith(

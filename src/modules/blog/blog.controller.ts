@@ -1,10 +1,7 @@
 import {
   Body,
   Controller,
-  FileTypeValidator,
   Logger,
-  MaxFileSizeValidator,
-  ParseFilePipe,
   Get,
   Post,
   UseInterceptors,
