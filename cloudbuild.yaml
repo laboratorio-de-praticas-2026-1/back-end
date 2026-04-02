@@ -27,3 +27,7 @@ steps:
 
 images:
   - 'southamerica-east1-docker.pkg.dev/$PROJECT_ID/backend-repo/backend-$BRANCH_NAME:$COMMIT_SHA'
+
+# Solução Service Account:
+options:
+  logging: CLOUD_LOGGING_ONLY
