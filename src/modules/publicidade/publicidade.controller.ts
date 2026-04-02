@@ -60,21 +60,7 @@ export class PublicidadeController {
     return this.publicidadeService.criarPublicidade(publicidadeDto, file);
   }
 
-  @Put(':id')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        titulo: { type: 'string', example: 'Seguro Auto Completo' },
-        conteudo: {
-          type: 'string',
-          example: 'Proteja seu veiculo com nosso parceiro credenciado.',
-        },
-        file: { type: 'string', format: 'binary' },
-      },
-      required: ['titulo', 'conteudo', 'file'],
-    },
-  })
+  @Put(':id')  
   @ApiOperation({ summary: 'Atualizar publicidade' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -92,10 +78,10 @@ export class PublicidadeController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: PublicidadeUpdateDto,
     @UploadedFile(imageFilePipe)
-    file?: Express.Multer.File,
+    imagem?: Express.Multer.File,
   ): Promise<Publicidade> {
     this.logger.log(`Atualizando publicidade...`);
 
-    return this.publicidadeService.update(id, dto, file);
+    return this.publicidadeService.update(id, dto, imagem);
   }
 }
