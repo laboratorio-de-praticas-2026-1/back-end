@@ -20,7 +20,7 @@ export const imageFilePipe = new ParseFilePipe({
 const DOCUMENTO_MIME_TYPES = ['application/pdf'] as const;
 
 export class DocumentoFilePipe implements PipeTransform {
-  private readonly maxSize = 2 * 1024 * 1024; // 2MB
+  private readonly maxSize = 10 * 1024 * 1024; // 10mb
 
   transform(file: Express.Multer.File) {
     if (!file) {
@@ -28,7 +28,7 @@ export class DocumentoFilePipe implements PipeTransform {
     }
 
     if (file.size > this.maxSize) {
-      throw new BadRequestException('Arquivo excede o tamanho máximo de 2MB');
+      throw new BadRequestException('Arquivo excede o tamanho máximo de 10MB');
     }
 
     if (!DOCUMENTO_MIME_TYPES.includes(file.mimetype as any)) {
