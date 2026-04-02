@@ -1,5 +1,6 @@
 import { getModelToken } from '@nestjs/sequelize';
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
 import { Readable } from 'stream';
 import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
 import { Publicidade } from 'src/models/publicidade.model';
@@ -10,6 +11,7 @@ describe('PublicidadeService', () => {
 
   const mockPublicidadeModel = {
     create: jest.fn(),
+    findByPk: jest.fn(),
   };
 
   const mockCloudinaryService = {
@@ -78,5 +80,22 @@ describe('PublicidadeService', () => {
       ...publicidadeData,
       urlImagem: 'http://example.com/publicidade',
     });
+  });
+
+  it('deve remover publicidade com sucesso!', async () => {
+    const destroy = jest.fn().mockResolvedValue(undefined);
+
+    mockPublicidadeModel.findByPk.mockResolvedValue({ destroy });
+
+    await expect(service.remove(1)).resolves.toBeUndefined();
+    expect(mockPublicidadeModel.findByPk).toHaveBeenCalledWith(1);
+    expect(destroy).toHaveBeenCalled();
+  });
+
+  it('deve falhar ao remover publicidade inexistente!', async () => {
+    mockPublicidadeModel.findByPk.mockResolvedValue(null);
+
+    await expect(service.remove(999)).rejects.toBeInstanceOf(NotFoundException);
+    expect(mockPublicidadeModel.findByPk).toHaveBeenCalledWith(999);
   });
 });

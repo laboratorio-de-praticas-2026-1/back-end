@@ -8,6 +8,7 @@ describe('PublicidadeController', () => {
 
   const mockPublicidadeService = {
     criarPublicidade: jest.fn(),
+    remove: jest.fn(),
   };
 
   const mockFile: Express.Multer.File = {
@@ -64,5 +65,14 @@ describe('PublicidadeController', () => {
       publicidadeData,
       mockFile,
     );
+  });
+
+  it('deve remover publicidade com sucesso!', async () => {
+    mockPublicidadeService.remove.mockResolvedValue(undefined);
+
+    await expect(controller.remove(1)).resolves.toEqual({
+      message: 'Publicidade com ID 1 removida com sucesso',
+    });
+    expect(mockPublicidadeService.remove).toHaveBeenCalledWith(1);
   });
 });
