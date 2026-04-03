@@ -1,6 +1,8 @@
 import {
   Body,
   Controller,
+  Delete,
+  Get,
   Logger,
   Param,
   ParseIntPipe,
@@ -32,6 +34,22 @@ export class PublicidadeController {
   private readonly logger = new Logger(PublicidadeController.name);
 
   constructor(private readonly publicidadeService: PublicidadeService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Listar todas as publicidades' })
+  @ApiResponse({ status: 200, type: PublicidadeResponseDto, isArray: true })
+  getAll(): Promise<Publicidade[]> {
+    this.logger.log('Listando todas as publicidades...');
+    return this.publicidadeService.getAll();
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Buscar publicidade por ID' })
+  @ApiResponse({ status: 200, type: PublicidadeResponseDto })
+  getById(@Param('id', ParseIntPipe) id: number): Promise<Publicidade> {
+    this.logger.log(`Buscando publicidade ID: ${id}`);
+    return this.publicidadeService.getById(id);
+  }
 
   @ApiOperation({ summary: 'Criar uma nova publicidade' })
   @ApiResponse({ status: 201, type: PublicidadeResponseDto })
@@ -83,5 +101,14 @@ export class PublicidadeController {
     this.logger.log(`Atualizando publicidade...`);
 
     return this.publicidadeService.update(id, dto, imagem);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Remover publicidade por ID' })
+  @ApiResponse({ status: 200, description: 'Publicidade removida com sucesso' })
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    this.logger.log(`Removendo publicidade ID: ${id}`);
+    await this.publicidadeService.remove(id);
+    return { message: `Publicidade com ID ${id} removida com sucesso` };
   }
 }

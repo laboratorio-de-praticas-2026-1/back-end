@@ -35,6 +35,23 @@ export class PublicidadeService {
     );
   }
 
+  async getAll(): Promise<Publicidade[]> {
+    this.logger.log('Listando todas as publicidades...');
+    return this.publicidadeModel.findAll();
+  }
+
+  async getById(id: number): Promise<Publicidade> {
+    this.logger.log(`Buscando publicidade ID: ${id}`);
+
+    const publicidade = await this.publicidadeModel.findByPk(id);
+
+    if (!publicidade) {
+      throw new NotFoundException('Publicidade não encontrada');
+    }
+
+    return publicidade;
+  }
+
   async update(
     id: number,
     dto: PublicidadeUpdateDto,
@@ -70,5 +87,17 @@ export class PublicidadeService {
       conteudo: publicidadeDto.conteudo,
       urlImagem,
     });
+  }
+
+  async remove(id: number): Promise<void> {
+    this.logger.log(`Removendo publicidade ID: ${id}`);
+
+    const publicidade = await this.publicidadeModel.findByPk(id);
+
+    if (!publicidade) {
+      throw new NotFoundException('Publicidade não encontrada');
+    }
+
+    await publicidade.destroy();
   }
 }
