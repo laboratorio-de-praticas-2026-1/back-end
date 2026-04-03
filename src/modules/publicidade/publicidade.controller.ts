@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import {
   Body,
   Controller,
@@ -27,11 +28,18 @@ import { PublicidadeUpdateDto } from './dto/publicidade-update.dto';
 import { PublicidadeService } from './publicidade.service';
 
 @ApiTags('Publicidade')
+=======
+import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
+import { PublicidadeService } from './publicidade.service';
+import { Publicidade } from 'src/models/publicidade.model';
+ 
+>>>>>>> Stashed changes
 @Controller('publicidade')
 export class PublicidadeController {
   private readonly logger = new Logger(PublicidadeController.name);
 
   constructor(private readonly publicidadeService: PublicidadeService) {}
+<<<<<<< Updated upstream
 
   @ApiOperation({ summary: 'Criar uma nova publicidade' })
   @ApiResponse({ status: 201, type: PublicidadeResponseDto })
@@ -83,5 +91,17 @@ export class PublicidadeController {
     this.logger.log(`Atualizando publicidade...`);
 
     return this.publicidadeService.update(id, dto, imagem);
+=======
+ 
+  @Get()
+  async getAll(): Promise<Publicidade[]> {
+    return this.publicidadeService.getAll();
+  }
+ 
+  @Get(':id')
+  async getById(@Param('id', ParseIntPipe) id: number): Promise<Publicidade> {
+    return this.publicidadeService.getById(id);
+>>>>>>> Stashed changes
   }
 }
+ 

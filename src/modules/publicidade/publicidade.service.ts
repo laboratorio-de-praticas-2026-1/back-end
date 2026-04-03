@@ -1,15 +1,22 @@
 import {
   Injectable,
+<<<<<<< Updated upstream
   InternalServerErrorException,
+=======
+>>>>>>> Stashed changes
   Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
+<<<<<<< Updated upstream
 import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
 import { CloudinaryResponse } from 'src/infra/cloudinary/dto/cloudinary-response';
 import { Publicidade } from 'src/models/publicidade.model';
 import { PublicidadeCreateDto } from './dto/publicidade-create.dto';
 import { PublicidadeUpdateDto } from './dto/publicidade-update.dto';
+=======
+import { Publicidade } from 'src/models/publicidade.model';
+>>>>>>> Stashed changes
 
 @Injectable()
 export class PublicidadeService {
@@ -18,6 +25,7 @@ export class PublicidadeService {
   constructor(
     @InjectModel(Publicidade)
     private publicidadeModel: typeof Publicidade,
+<<<<<<< Updated upstream
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
@@ -42,12 +50,24 @@ export class PublicidadeService {
   ): Promise<Publicidade> {
     this.logger.log(`Atualizando publicidade ID: ${id}`);
 
+=======
+  ) {}
+
+  async getAll(): Promise<Publicidade[]> {
+    this.logger.log('Buscando todas as publicidades...');
+    return this.publicidadeModel.findAll();
+  }
+
+  async getById(id: number): Promise<Publicidade> {
+    this.logger.log(`Buscando publicidade com ID: ${id}`);
+>>>>>>> Stashed changes
     const publicidade = await this.publicidadeModel.findByPk(id);
 
     if (!publicidade) {
       throw new NotFoundException('Publicidade não encontrada');
     }
 
+<<<<<<< Updated upstream
     const updateData: Partial<Publicidade> = { ...dto };
 
     if (file) {
@@ -72,3 +92,8 @@ export class PublicidadeService {
     });
   }
 }
+=======
+    return publicidade;
+  }
+}
+>>>>>>> Stashed changes
