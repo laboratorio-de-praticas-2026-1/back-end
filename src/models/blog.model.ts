@@ -1,6 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Column, DataType, Model, Table } from 'sequelize-typescript';
 
+export enum CategoriaBlog {
+  Documentacao = 'Documentacao',
+}
+
 @Table({ tableName: 'blog' })
 export class Blog extends Model {
   @ApiProperty({ description: 'Id do Post de blog', example: 1 })
@@ -42,4 +46,42 @@ export class Blog extends Model {
     allowNull: true,
   })
   declare urlImagem: string | null;
+
+  @ApiProperty({
+    description: 'Status do post',
+    example: true,
+    default: true,
+  })
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+    defaultValue: true,
+  })
+  declare ativo: boolean;
+
+  @ApiProperty({
+    description: 'Resumo do conteúdo',
+    example: 'Resumo do post',
+    required: false,
+    nullable: true,
+  })
+  @Column({
+    field: 'olho_do_texto',
+    type: DataType.STRING(255),
+    allowNull: true,
+  })
+  declare olhoDoTexto: string | null;
+
+  @ApiProperty({
+    description: 'Categoria do post',
+    example: CategoriaBlog.Documentacao,
+    enum: CategoriaBlog,
+    default: CategoriaBlog.Documentacao,
+  })
+  @Column({
+    type: DataType.STRING(50),
+    allowNull: false,
+    defaultValue: CategoriaBlog.Documentacao,
+  })
+  declare categoria: CategoriaBlog;
 }

@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Readable } from 'stream';
 import { BlogController } from './blog.controller';
 import { BlogService } from './blog.service';
+import { CategoriaBlog } from 'src/models/blog.model';
 
 describe('BlogController', () => {
   let controller: BlogController;
@@ -41,16 +42,20 @@ describe('BlogController', () => {
     controller = module.get<BlogController>(BlogController);
   });
 
-  it('deve criar post de blog com sucesso!', async () => {
+  it('deve criar post de blog com sucesso', async () => {
     const postData = {
       titulo: 'Título do Post',
       conteudo: 'Conteúdo do post',
       dataPublicacao: new Date(),
+      olhoDoTexto: 'Resumo curto',
+      categoria: CategoriaBlog.Documentacao,
+      ativo: true,
     };
 
     const mockPost = {
       id: 1,
       ...postData,
+      urlImagem: 'http://example.com/post',
     };
 
     mockBlogService.criarPost.mockResolvedValue(mockPost);
@@ -61,7 +66,7 @@ describe('BlogController', () => {
     expect(mockBlogService.criarPost).toHaveBeenCalledWith(postData, mockFile);
   });
 
-  it('deve buscar todos os posts do blog com sucesso!', async () => {
+  it('deve buscar todos os posts do blog com sucesso', async () => {
     const mockPosts = [
       {
         id: 1,
@@ -69,6 +74,9 @@ describe('BlogController', () => {
         conteudo: 'Conteúdo 1',
         dataPublicacao: new Date(),
         urlImagem: 'http://example.com/1',
+        ativo: true,
+        categoria: 'Documentacao',
+        olhoDoTexto: 'Resumo 1',
       },
       {
         id: 2,
@@ -76,6 +84,9 @@ describe('BlogController', () => {
         conteudo: 'Conteúdo 2',
         dataPublicacao: new Date(),
         urlImagem: 'http://example.com/2',
+        ativo: true,
+        categoria: 'Documentacao',
+        olhoDoTexto: 'Resumo 2',
       },
     ];
 
@@ -85,13 +96,16 @@ describe('BlogController', () => {
     expect(mockBlogService.getAll).toHaveBeenCalledTimes(1);
   });
 
-  it('deve buscar um post do blog por id com sucesso!', async () => {
+  it('deve buscar um post do blog por id com sucesso', async () => {
     const mockPost = {
       id: 1,
       titulo: 'Título do Post',
       conteudo: 'Conteúdo do post',
       dataPublicacao: new Date(),
       urlImagem: 'http://example.com/post',
+      ativo: true,
+      categoria: 'Documentacao',
+      olhoDoTexto: 'Resumo',
     };
 
     mockBlogService.getById.mockResolvedValue(mockPost);
@@ -100,18 +114,21 @@ describe('BlogController', () => {
     expect(mockBlogService.getById).toHaveBeenCalledWith(1);
   });
 
-  it('deve deletar um post do blog com sucesso!', async () => {
+  it('deve deletar um post do blog com sucesso', async () => {
     mockBlogService.deleteById.mockResolvedValue(undefined);
 
     await expect(controller.deleteById(1)).resolves.toBeUndefined();
     expect(mockBlogService.deleteById).toHaveBeenCalledWith(1);
   });
 
-  it('deve atualizar post de blog com sucesso!', async () => {
+  it('deve atualizar post de blog com sucesso', async () => {
     const postData = {
       titulo: 'Título do Post',
       conteudo: 'Conteúdo do post',
       dataPublicacao: new Date(),
+      olhoDoTexto: 'Resumo atualizado',
+      categoria: CategoriaBlog.Documentacao,
+      ativo: false,
     };
 
     const mockPostAtualizado = {
