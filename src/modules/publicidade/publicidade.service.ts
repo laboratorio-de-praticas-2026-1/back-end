@@ -46,7 +46,7 @@ export class PublicidadeService {
     const publicidade = await this.publicidadeModel.findByPk(id);
 
     if (!publicidade) {
-      throw new NotFoundException('Publicidade nï¿½o encontrada');
+      throw new NotFoundException('Publicidade não encontrada');
     }
 
     return publicidade;
@@ -62,7 +62,7 @@ export class PublicidadeService {
     const publicidade = await this.publicidadeModel.findByPk(id);
 
     if (!publicidade) {
-      throw new NotFoundException('Publicidade n�o encontrada');
+      throw new NotFoundException('Publicidade não encontrada');
     }
 
     const updateData: Partial<Publicidade> = { ...dto };
@@ -95,7 +95,7 @@ export class PublicidadeService {
     const publicidade = await this.publicidadeModel.findByPk(id);
 
     if (!publicidade) {
-      throw new NotFoundException('Publicidade n�o encontrada');
+      throw new NotFoundException('Publicidade não encontrada');
     }
 
     await publicidade.destroy();
