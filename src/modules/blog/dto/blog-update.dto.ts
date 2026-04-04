@@ -6,6 +6,7 @@ import {
   IsString,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import { CategoriaBlog } from 'src/models/blog.model';
 
 export class BlogUpdateDto {
@@ -55,6 +56,7 @@ export class BlogUpdateDto {
   @IsEnum(CategoriaBlog)
   categoria?: CategoriaBlog;
 
+  @Transform(({ value }) => value === 'true' || value === true)
   @ApiProperty({
     example: true,
     required: false,

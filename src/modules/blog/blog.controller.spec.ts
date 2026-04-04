@@ -75,7 +75,7 @@ describe('BlogController', () => {
         dataPublicacao: new Date(),
         urlImagem: 'http://example.com/1',
         ativo: true,
-        categoria: 'Documentacao',
+        categoria: CategoriaBlog.Documentacao,
         olhoDoTexto: 'Resumo 1',
       },
       {
@@ -85,7 +85,7 @@ describe('BlogController', () => {
         dataPublicacao: new Date(),
         urlImagem: 'http://example.com/2',
         ativo: true,
-        categoria: 'Documentacao',
+        categoria: CategoriaBlog.Documentacao,
         olhoDoTexto: 'Resumo 2',
       },
     ];
@@ -104,7 +104,7 @@ describe('BlogController', () => {
       dataPublicacao: new Date(),
       urlImagem: 'http://example.com/post',
       ativo: true,
-      categoria: 'Documentacao',
+      categoria: CategoriaBlog.Documentacao,
       olhoDoTexto: 'Resumo',
     };
 
@@ -127,7 +127,7 @@ describe('BlogController', () => {
       conteudo: 'Conteúdo do post',
       dataPublicacao: new Date(),
       olhoDoTexto: 'Resumo atualizado',
-      categoria: CategoriaBlog.Documentacao,
+      categoria: CategoriaBlog.Multas,
       ativo: false,
     };
 

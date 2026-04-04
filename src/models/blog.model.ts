@@ -3,6 +3,10 @@ import { Column, DataType, Model, Table } from 'sequelize-typescript';
 
 export enum CategoriaBlog {
   Documentacao = 'Documentacao',
+  Debitos = 'Debitos',
+  Multas = 'Multas',
+  Legislacao = 'Legislacao',
+  Condutor = 'Condutor',
 }
 
 @Table({ tableName: 'blog' })
