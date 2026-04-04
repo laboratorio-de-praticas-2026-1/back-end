@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class EnviarEmailDto {
+
   @ApiProperty({ description: 'Nome completo do usuário', example: 'Victor Silva' })
   @IsNotEmpty({ message: 'O nome é obrigatório' })
   @IsString()
@@ -12,13 +13,18 @@ export class EnviarEmailDto {
   @IsEmail({}, { message: 'E-mail inválido' })
   email: string;
 
-  @ApiProperty({ description: 'Telefone/Celular do usuário', required: false, example: '(13) 99999-8888' })
-  @IsOptional()
+  @ApiProperty({ description: 'Assunto do e-mail', example: 'Orçamento' })
+  @IsNotEmpty({ message: 'O assunto é obrigatório' })
   @IsString()
-  telefone?: string;
+  assunto: string;
 
   @ApiProperty({ description: 'Mensagem do usuário', example: 'Olá, gostaria de saber mais sobre os serviços...' })
   @IsNotEmpty({ message: 'A mensagem é obrigatória' })
   @IsString()
   mensagem: string;
+
+  @ApiProperty({ description: 'Telefone/Celular do usuário', required: false, example: '(13) 99999-8888' })
+  @IsOptional()
+  @IsString()
+  telefone?: string;
 }
