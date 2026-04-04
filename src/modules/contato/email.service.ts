@@ -21,7 +21,7 @@ export class EmailService {
     try {
       let conteudoFinal = corpo;
 
-      const logoPath = path.resolve(process.cwd(), 'test', 'logo.png');
+      const logoPath = path.resolve(process.cwd(), 'images', 'logo.png');
 
       const logoExiste = fs.existsSync(logoPath);
 
