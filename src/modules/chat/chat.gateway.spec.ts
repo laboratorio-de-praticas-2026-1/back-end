@@ -272,7 +272,7 @@ describe('ChatGateway', () => {
     expect(gateway.server.to).toHaveBeenCalledWith('chat:user:user-1');
     expect(emitSpy).toHaveBeenCalledWith('chat', {
       type: 'message',
-      text: 'Olá agent->user',
+      text: 'Olá agent-&gt;user',
       timestamp: expect.any(String),
     });
   });
