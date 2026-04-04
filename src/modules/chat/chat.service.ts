@@ -24,7 +24,8 @@ export class ChatService {
   timeouts: Record<string, NodeJS.Timeout> = {};
 
   // 🚨 NOVO: controle de última mensagem
-  private lastMessages: Record<string, { text: string; timestamp: number }> = {};
+  private lastMessages: Record<string, { text: string; timestamp: number }> =
+    {};
 
   private INACTIVITY_TIMEOUT = 60 * 60 * 1000; // 60 min
 
