@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 
 export class PublicidadeCreateDto {
   @IsString()
@@ -13,6 +14,16 @@ export class PublicidadeCreateDto {
     example: 'Proteja seu veiculo com nosso parceiro credenciado.',
   })
   conteudo: string;
+
+  @ApiProperty({
+    example: 'true',
+    required: false,
+    default: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  ativo?: boolean;
 }
 
 export class PublicidadeResponseDto {
@@ -27,4 +38,7 @@ export class PublicidadeResponseDto {
 
   @ApiProperty()
   urlImagem: string;
+
+  @ApiProperty()
+  ativo: boolean;
 }

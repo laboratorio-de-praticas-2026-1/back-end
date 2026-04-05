@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -51,6 +52,21 @@ export class PublicidadeController {
     return this.publicidadeService.getById(id);
   }
 
+  @Get('/status/:status')
+  @ApiOperation({ summary: 'Buscar publicidade por status (ativo, inativo)' })
+  @ApiResponse({ status: 200, type: PublicidadeResponseDto })
+  getByStatus(@Param('status') status: string): Promise<Publicidade[]> {
+    this.logger.log(`Buscando publicidade por status: ${status}`);
+    if (status !== 'ativo' && status !== 'inativo') {
+      throw new BadRequestException(
+        "Status inválido. Use 'ativo' ou 'inativo'.",
+      );
+    }
+    return this.publicidadeService.getByStatus(
+      status === 'ativo' ? true : false,
+    );
+  }
+
   @ApiOperation({ summary: 'Criar uma nova publicidade' })
   @ApiResponse({ status: 201, type: PublicidadeResponseDto })
   @ApiBody({
@@ -61,6 +77,11 @@ export class PublicidadeController {
         conteudo: {
           type: 'string',
           example: 'Proteja seu veiculo com nosso parceiro credenciado.',
+        },
+        ativo: {
+          type: 'boolean',
+          example: true,
+          default: true,
         },
         file: { type: 'string', format: 'binary' },
       },
@@ -87,6 +108,7 @@ export class PublicidadeController {
       properties: {
         titulo: { type: 'string', nullable: true },
         conteudo: { type: 'string', nullable: true },
+        ativo: { type: 'boolean', nullable: true },
         imagem: { type: 'string', format: 'binary' },
       },
     },
