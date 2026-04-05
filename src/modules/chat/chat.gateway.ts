@@ -40,19 +40,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private readonly MAX_MESSAGES_PER_MINUTE = 10;
   private readonly COOLDOWN_MS = 3000;
-
-  // SANITIZAÇÃO
-  private sanitizeMessage(text: string): string {
-    const normalized = text.replace(/\s+/g, ' ').trim();
-
-    return normalized
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#x27;')
-      .replace(/\//g, '&#x2F;');
-  }
+  private readonly DUPLICATE_WINDOW_MS = 10000;
 
   async handleConnection(socket: AuthSocket) {
     const token = (socket.handshake.auth?.token ||
@@ -200,17 +188,26 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    //  SANITIZAÇÃO
-    const sanitizedText = this.sanitizeMessage(data.text);
+    //  NORMALIZAÇÃO
+    const normalizedText = data.text.replace(/\s+/g, ' ').trim();
 
     //  VALIDAÇÃO TAMANHO
-    if (sanitizedText.length < 1 || sanitizedText.length > 200) {
+    if (normalizedText.length < 1 || normalizedText.length > 200) {
       this.chatService.send(socket, {
         type: 'error',
         msg: 'A mensagem deve ter entre 1 e 200 caracteres.',
       });
       return;
     }
+
+    //  SANITIZAÇÃO
+    const sanitizedText = normalizedText
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;')
+      .replace(/\//g, '&#x2F;');
 
     const now = Date.now();
 
@@ -242,7 +239,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.messageTimestamps.set(userId, recentMessages);
 
     // 🚨 DUPLICADAS
-    if (this.chatService.isDuplicateMessage(userId, sanitizedText)) {
+    if (
+      this.chatService.isDuplicateMessage(
+        userId,
+        sanitizedText,
+        this.DUPLICATE_WINDOW_MS,
+      )
+    ) {
       this.chatService.send(socket, {
         type: 'error',
         msg: 'Mensagem duplicada enviada muito rápido.',
@@ -297,7 +300,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   handleDisconnect(socket: AuthSocket) {
+    // Limpar controles de rate limit e cooldown
+    if (socket.userId) {
+      this.messageTimestamps.delete(socket.userId);
+      this.lastMessageTime.delete(socket.userId);
+    }
+
     if (socket.role === NivelUsuarioEnum.administrador) {
+      if (socket.userId) {
+        this.chatService.removeAgent(socket.userId);
+      }
       this.broadcastAgentsList();
       return;
     }

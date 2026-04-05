@@ -63,7 +63,7 @@ export class ChatService {
   }
 
   // ================= 🚨 DETECÇÃO DE DUPLICADAS =================
-  isDuplicateMessage(userId: string, text: string): boolean {
+  isDuplicateMessage(userId: string, text: string, windowMs: number): boolean {
     const now = Date.now();
     const last = this.lastMessages[userId];
 
@@ -71,7 +71,7 @@ export class ChatService {
 
     if (last) {
       const isSame = last.text === normalizedText;
-      const isFast = now - last.timestamp < 3000;
+      const isFast = now - last.timestamp < windowMs;
 
       if (isSame && isFast) {
         return true; // 🚫 bloqueia
@@ -106,6 +106,11 @@ export class ChatService {
 
   addAgent(agentId: string, socket: Socket) {
     this.agents[agentId] = socket;
+  }
+
+  removeAgent(agentId: string) {
+    delete this.agents[agentId];
+    delete this.lastMessages[agentId]; // 🚨 limpa cache de duplicadas
   }
 
   getNextUserId() {
