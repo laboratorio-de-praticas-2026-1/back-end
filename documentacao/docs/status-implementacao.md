@@ -2,24 +2,24 @@
 
 ## Panorama atual
 
-| Módulo | Status do service | Endpoints HTTP |
-| --- | --- | --- |
-| agendamento | stub | não |
-| blog | implementado | sim |
-| busca | stub | não |
-| chat | stub (gateway base) | não |
-| contato | implementado | sim |
-| dashboard | stub | não |
-| faq | stub | não |
-| header | stub | não |
-| mapa | stub | não |
-| notificacao | stub | não |
-| publicidade | stub | não |
-| recomendacao | stub | não |
-| reports | stub | não |
-| servicos | stub | não |
-| simulador | stub | não |
-| usuario | stub | não |
+| Módulo       | Status do service   | Endpoints HTTP |
+| ------------ | ------------------- | -------------- |
+| agendamento  | stub                | não            |
+| blog         | implementado        | sim            |
+| busca        | stub                | não            |
+| chat         | stub (gateway base) | não            |
+| contato      | implementado        | sim            |
+| dashboard    | stub                | não            |
+| faq          | stub                | não            |
+| header       | stub                | não            |
+| mapa         | stub                | não            |
+| notificacao  | stub                | não            |
+| publicidade  | stub                | não            |
+| recomendacao | stub                | não            |
+| reports      | stub                | não            |
+| servicos     | stub                | não            |
+| simulador    | stub                | não            |
+| usuario      | stub                | não            |
 
 ## DTOs existentes
 

@@ -17,10 +17,10 @@ export class ContatoMensagem extends Model {
   @Column({ type: DataType.TEXT, allowNull: false })
   declare mensagem: string;
 
-  @Column({ 
-    field: 'data_envio', 
-    type: DataType.DATE, 
-    defaultValue: DataType.NOW 
+  @Column({
+    field: 'data_envio',
+    type: DataType.DATE,
+    defaultValue: DataType.NOW,
   })
   declare dataEnvio: Date;
 }

@@ -16,7 +16,7 @@ import { EmailService } from './email.service';
         port: parseInt(process.env.EMAIL_PORT || '587', 10),
         secure: process.env.EMAIL_SECURE === 'true',
         auth: {
-          user: '',//Email base
+          user: '', //Email base
           pass: '', //Chave acesso
         },
       },

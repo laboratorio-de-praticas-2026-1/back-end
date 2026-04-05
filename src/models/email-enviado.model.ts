@@ -2,43 +2,42 @@ import { Column, DataType, Model, Table } from 'sequelize-typescript';
 
 @Table({ tableName: 'emails_enviados', timestamps: false })
 export class EmailEnviado extends Model {
-  
   @Column({ primaryKey: true, autoIncrement: true, allowNull: false })
   declare id: number;
 
-  @Column({ 
+  @Column({
     field: 'nome_usuario',
-    type: DataType.STRING(255), 
-    allowNull: false 
+    type: DataType.STRING(255),
+    allowNull: false,
   })
   declare nomeUsuario: string;
 
-  @Column({ 
+  @Column({
     field: 'email_usuario',
-    type: DataType.STRING(255), 
-    allowNull: false 
+    type: DataType.STRING(255),
+    allowNull: false,
   })
   declare emailUsuario: string;
 
-  @Column({ 
+  @Column({
     field: 'texto_digitado',
-    type: DataType.TEXT, 
-    allowNull: false 
+    type: DataType.TEXT,
+    allowNull: false,
   })
   declare textoDigitado: string;
 
-  @Column({ 
+  @Column({
     field: 'assunto',
-    type: DataType.STRING(255), 
-    allowNull: false 
+    type: DataType.STRING(255),
+    allowNull: false,
   })
   declare assunto: string;
 
-  @Column({ 
-    field: 'data_envio', 
-    type: DataType.DATE(3), 
+  @Column({
+    field: 'data_envio',
+    type: DataType.DATE(3),
     allowNull: false,
-    defaultValue: DataType.NOW 
+    defaultValue: DataType.NOW,
   })
   declare dataEnvio: Date;
 }

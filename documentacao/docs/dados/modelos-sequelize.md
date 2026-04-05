@@ -1,7 +1,9 @@
 # Modelos Sequelize
 
 ## Documentação Detalhada do Banco de Dados
- Documentação: [https://laboratorio-de-praticas-2026-1.github.io/database/]
+
+Documentação: [https://laboratorio-de-praticas-2026-1.github.io/database/]
+
 ## Visão geral
 
 Modelos mapeados em `src/models` usando `sequelize-typescript`.

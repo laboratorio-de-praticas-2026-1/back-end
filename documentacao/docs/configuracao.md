@@ -47,11 +47,11 @@ http://localhost:3000/swagger
 
 ## Scripts úteis
 
-| Script | Função |
-| --- | --- |
-| `npm run start:dev` | Executa API em modo watch |
-| `npm run build` | Build de produção |
+| Script               | Função                       |
+| -------------------- | ---------------------------- |
+| `npm run start:dev`  | Executa API em modo watch    |
+| `npm run build`      | Build de produção            |
 | `npm run start:prod` | Roda build gerado em `dist/` |
-| `npm run lint` | Lint com correção automática |
-| `npm test` | Testes unitários |
-| `npm run test:e2e` | Testes end-to-end |
+| `npm run lint`       | Lint com correção automática |
+| `npm test`           | Testes unitários             |
+| `npm run test:e2e`   | Testes end-to-end            |

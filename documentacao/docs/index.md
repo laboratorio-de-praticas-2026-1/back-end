@@ -14,14 +14,14 @@ Esta documentação cobre exclusivamente o back-end atual do repositório, imple
 
 ## Tecnologias
 
-| Tecnologia | Função |
-| --- | --- |
-| NestJS 11 | Framework principal da API |
-| Sequelize + sequelize-typescript | ORM e mapeamento de modelos |
-| MySQL | Banco de dados |
-| class-validator / class-transformer | Validação de DTOs |
-| Swagger (`/swagger`) | Exploração e teste de endpoints |
-| Socket.IO via `@nestjs/websockets` | Comunicação em tempo real |
+| Tecnologia                          | Função                          |
+| ----------------------------------- | ------------------------------- |
+| NestJS 11                           | Framework principal da API      |
+| Sequelize + sequelize-typescript    | ORM e mapeamento de modelos     |
+| MySQL                               | Banco de dados                  |
+| class-validator / class-transformer | Validação de DTOs               |
+| Swagger (`/swagger`)                | Exploração e teste de endpoints |
+| Socket.IO via `@nestjs/websockets`  | Comunicação em tempo real       |
 
 ## Início rápido
 
