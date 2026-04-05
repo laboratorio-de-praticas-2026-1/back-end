@@ -1,4 +1,9 @@
 import {
+  ConnectionError,
+  ConnectionRefusedError,
+  HostNotFoundError,
+} from 'sequelize';
+import {
   HttpException,
   HttpStatus,
   Injectable,
@@ -136,7 +141,6 @@ export class ContatoService {
       });
 
       return { message: 'Mensagem enviada com sucesso!' };
-
     } catch (error) {
       this.logger.error(`Erro ao processar envio: ${error.message}`);
 
