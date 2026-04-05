@@ -7,7 +7,7 @@ import {
 import { InjectModel } from '@nestjs/sequelize';
 import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
 import { CloudinaryResponse } from 'src/infra/cloudinary/dto/cloudinary-response';
-import { Blog } from 'src/models/blog.model';
+import { Blog, CategoriaBlog } from 'src/models/blog.model';
 import { BlogCreateDto } from './dto/blog-create.dto';
 import { BlogUpdateDto } from './dto/blog-update.dto';
 
@@ -43,6 +43,8 @@ export class BlogService {
 
     return await this.blogModel.create({
       ...blogDto,
+      ativo: blogDto.ativo ?? true,
+      categoria: blogDto.categoria ?? CategoriaBlog.Documentacao,
       urlImagem,
     });
   }
