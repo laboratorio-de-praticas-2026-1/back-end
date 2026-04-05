@@ -29,13 +29,16 @@ export class ContatoService {
 
   private formatarCnpj(cnpj: string | null): string {
     if (!cnpj) return '';
+
     const apenasNumeros = cnpj.replace(/\D/g, '');
+
     if (apenasNumeros.length === 14) {
       return apenasNumeros.replace(
         /^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,
         '$1.$2.$3/$4-$5',
       );
     }
+
     return cnpj;
   }
 
@@ -63,7 +66,7 @@ export class ContatoService {
         empresa.estado ?? '',
         empresa.site ?? '',
       );
-    } catch (error) {
+    } catch (error: unknown) {
       if (
         error instanceof ConnectionError ||
         error instanceof ConnectionRefusedError ||
@@ -74,6 +77,7 @@ export class ContatoService {
           HttpStatus.SERVICE_UNAVAILABLE,
         );
       }
+
       throw error;
     }
   }
@@ -99,7 +103,7 @@ export class ContatoService {
         empresa.estado ?? '',
         empresa.site ?? '',
       );
-    } catch (error) {
+    } catch (error: unknown) {
       if (
         error instanceof ConnectionError ||
         error instanceof ConnectionRefusedError ||
@@ -110,6 +114,7 @@ export class ContatoService {
           HttpStatus.SERVICE_UNAVAILABLE,
         );
       }
+
       throw error;
     }
   }
@@ -118,7 +123,6 @@ export class ContatoService {
     try {
       const dataEnvio = new Date();
 
-      // Salva no banco
       await this.emailEnviadoModel.create({
         nomeUsuario: dados.nome,
         emailUsuario: dados.email,
@@ -127,7 +131,6 @@ export class ContatoService {
         dataEnvio: dataEnvio,
       });
 
-      // Envia e-mail para a empresa
       await this.emailService.enviarEmail({
         to: 'contato@suaempresa.com',
         corpo: `
@@ -141,13 +144,17 @@ export class ContatoService {
       });
 
       return { message: 'Mensagem enviada com sucesso!' };
-    } catch (error) {
-      this.logger.error(`Erro ao processar envio: ${error.message}`);
+    } catch (error: unknown) {
+      let mensagemErro = 'Erro ao enviar mensagem';
 
-      throw new HttpException(
-        error.message || 'Erro ao enviar mensagem',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      if (error instanceof Error) {
+        mensagemErro = error.message;
+        this.logger.error(`Erro ao processar envio: ${error.message}`);
+      } else {
+        this.logger.error('Erro desconhecido ao processar envio');
+      }
+
+      throw new HttpException(mensagemErro, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }

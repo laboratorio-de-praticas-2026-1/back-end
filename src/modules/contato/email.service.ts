@@ -22,7 +22,6 @@ export class EmailService {
       let conteudoFinal = corpo;
 
       const logoPath = path.resolve(process.cwd(), 'images', 'logo.png');
-
       const logoExiste = fs.existsSync(logoPath);
 
       if (cabecalho && logoExiste) {
@@ -43,25 +42,30 @@ export class EmailService {
         to,
         subject: 'Nova mensagem de contato',
         html: conteudoFinal,
-
-        attachments: cabecalho && logoExiste
-          ? [
-              {
-                filename: 'logo.png',
-                path: logoPath,
-                cid: 'logo_img',
-              },
-            ]
-          : [],
+        attachments:
+          cabecalho && logoExiste
+            ? [
+                {
+                  filename: 'logo.png',
+                  path: logoPath,
+                  cid: 'logo_img',
+                },
+              ]
+            : [],
       });
 
       if (cabecalho && !logoExiste) {
-        this.logger.warn('Imagem do cabeçalho NÃO encontrada em: ' + logoPath);
+        this.logger.warn(`Imagem do cabeçalho NÃO encontrada em: ${logoPath}`);
       }
 
       this.logger.log(`E-mail enviado com sucesso para ${to}`);
-    } catch (error) {
-      this.logger.error(`Erro ao enviar e-mail: ${error.message}`);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(`Erro ao enviar e-mail: ${error.message}`);
+      } else {
+        this.logger.error('Erro desconhecido ao enviar e-mail');
+      }
+
       throw new Error('Erro ao enviar e-mail.');
     }
   }
