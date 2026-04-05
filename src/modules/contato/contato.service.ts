@@ -1,31 +1,44 @@
 import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import { InjectModel } from '@nestjs/sequelize';
-import { Empresa } from 'src/models/empresa.model';
-import { EmpresaDto } from './dto/empresa-response.dto';
-import {
   ConnectionError,
   ConnectionRefusedError,
   HostNotFoundError,
 } from 'sequelize';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+  Logger,
+} from '@nestjs/common';
+import { InjectModel } from '@nestjs/sequelize';
+import { Empresa } from 'src/models/empresa.model';
+import { EmailEnviado } from 'src/models/email-enviado.model';
+import { EmpresaDto } from './dto/empresa-response.dto';
+import { EnviarEmailDto } from './dto/enviar-email.dto';
+import { EmailService } from './email.service';
 
 @Injectable()
 export class ContatoService {
-  constructor(@InjectModel(Empresa) private empresaModel: typeof Empresa) {}
+  private readonly logger = new Logger(ContatoService.name);
+
+  constructor(
+    @InjectModel(Empresa) private empresaModel: typeof Empresa,
+    @InjectModel(EmailEnviado) private emailEnviadoModel: typeof EmailEnviado,
+    private readonly emailService: EmailService,
+  ) {}
 
   private formatarCnpj(cnpj: string | null): string {
     if (!cnpj) return '';
+
     const apenasNumeros = cnpj.replace(/\D/g, '');
+
     if (apenasNumeros.length === 14) {
       return apenasNumeros.replace(
         /^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,
         '$1.$2.$3/$4-$5',
       );
     }
+
     return cnpj;
   }
 
@@ -53,7 +66,7 @@ export class ContatoService {
         empresa.estado ?? '',
         empresa.site ?? '',
       );
-    } catch (error) {
+    } catch (error: unknown) {
       if (
         error instanceof ConnectionError ||
         error instanceof ConnectionRefusedError ||
@@ -64,6 +77,7 @@ export class ContatoService {
           HttpStatus.SERVICE_UNAVAILABLE,
         );
       }
+
       throw error;
     }
   }
@@ -89,7 +103,7 @@ export class ContatoService {
         empresa.estado ?? '',
         empresa.site ?? '',
       );
-    } catch (error) {
+    } catch (error: unknown) {
       if (
         error instanceof ConnectionError ||
         error instanceof ConnectionRefusedError ||
@@ -100,7 +114,47 @@ export class ContatoService {
           HttpStatus.SERVICE_UNAVAILABLE,
         );
       }
+
       throw error;
+    }
+  }
+
+  async enviarEmail(dados: EnviarEmailDto): Promise<{ message: string }> {
+    try {
+      const dataEnvio = new Date();
+
+      await this.emailEnviadoModel.create({
+        nomeUsuario: dados.nome,
+        emailUsuario: dados.email,
+        assunto: dados.assunto,
+        textoDigitado: dados.mensagem,
+        dataEnvio: dataEnvio,
+      });
+
+      await this.emailService.enviarEmail({
+        to: 'contato@suaempresa.com',
+        corpo: `
+          <h2>Nova mensagem recebida</h2>
+          <p><strong>Nome:</strong> ${dados.nome}</p>
+          <p><strong>Email:</strong> ${dados.email}</p>
+          <p><strong>Assunto:</strong> ${dados.assunto}</p>
+          <p><strong>Mensagem:</strong><br/> ${dados.mensagem}</p>
+        `,
+        cabecalho: true,
+      });
+
+      return { message: 'Mensagem enviada com sucesso!' };
+    } catch (error: unknown) {
+      let mensagemErro = 'Erro ao enviar mensagem';
+
+      if (error instanceof Error) {
+        mensagemErro = error.message;
+        this.logger.error(`Erro ao processar envio: ${error.message}`);
+      } else {
+        this.logger.error('Erro desconhecido ao processar envio');
+      }
+
+      throw new HttpException(mensagemErro, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }
