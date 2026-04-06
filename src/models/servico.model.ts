@@ -25,6 +25,10 @@ export class Servico extends Model {
   })
   declare prazoEstimadoDias: number | null;
 
-  @Column({ allowNull: true, defaultValue: true })
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: true,
+    defaultValue: true,
+  })
   declare ativo: boolean | null;
 }
