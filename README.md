@@ -9,9 +9,9 @@ Este documento descreve o fluxo de trabalho adotado neste repositório. Siga as 
  
 | Branch | URL |
 |---|---|
-| `main` | https://despachante-bortone-main-production.up.railway.app |
-| `develop` | https://despachante-bortone-develop-production.up.railway.app |
-| `release` | https://despachante-bortone-release-production.up.railway.app |
+| `main` | https://backend-main-412027788376.southamerica-east1.run.app |
+| `develop` | https://backend-develop-412027788376.southamerica-east1.run.app |
+| `release` | https://backend-release-entrega-09-04-412027788376.southamerica-east1.run.app |
  
 ---
 
