@@ -30,10 +30,6 @@ export class Empresa extends Model {
   @Column({ type: DataType.STRING(2), allowNull: true })
   declare estado: string | null;
 
-  @Column({ type: DataType.STRING(255), allowNull: true })
-  declare longitude: string | null;
-  @Column({ type: DataType.STRING(255), allowNull: true })
-  declare latitude: string | null;
   @Column({ type: DataType.STRING(100), allowNull: true })
   declare site: string | null;
 }
