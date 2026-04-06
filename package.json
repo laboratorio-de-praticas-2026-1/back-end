@@ -32,6 +32,7 @@
     "@nestjs/websockets": "^11.1.16",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.4",
+    "ejs": "^5.0.1",
     "mysql2": "^3.19.0",
     "nodemailer": "^8.0.4",
     "reflect-metadata": "^0.2.2",

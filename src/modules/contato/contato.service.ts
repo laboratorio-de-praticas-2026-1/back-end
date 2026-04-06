@@ -14,8 +14,8 @@ import { InjectModel } from '@nestjs/sequelize';
 import { Empresa } from 'src/models/empresa.model';
 import { EmailEnviado } from 'src/models/email-enviado.model';
 import { EmpresaDto } from './dto/empresa-response.dto';
-import { EnviarEmailDto } from './dto/enviar-email.dto';
-import { EmailService } from './email.service';
+import { EnviarEmailDto } from '../../commons/email/dto/enviar-email.dto';
+import { EmailService } from '../../commons/email/email.service';
 
 @Injectable()
 export class ContatoService {
@@ -29,30 +29,20 @@ export class ContatoService {
 
   private formatarCnpj(cnpj: string | null): string {
     if (!cnpj) return '';
-
     const apenasNumeros = cnpj.replace(/\D/g, '');
-
     if (apenasNumeros.length === 14) {
       return apenasNumeros.replace(
         /^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,
         '$1.$2.$3/$4-$5',
       );
     }
-
     return cnpj;
   }
 
   async buscarContato(): Promise<EmpresaDto> {
     try {
       const empresa: Empresa | null = await this.empresaModel.findOne();
-
-      if (!empresa) {
-        throw new HttpException(
-          'Dados de contato não encontrados',
-          HttpStatus.NOT_FOUND,
-        );
-      }
-
+      if (!empresa) throw new HttpException('Dados de contato não encontrados', HttpStatus.NOT_FOUND);
       const cnpjFormatado = this.formatarCnpj(empresa.cnpj);
 
       return new EmpresaDto(
@@ -72,12 +62,8 @@ export class ContatoService {
         error instanceof ConnectionRefusedError ||
         error instanceof HostNotFoundError
       ) {
-        throw new HttpException(
-          'Banco de dados indisponível',
-          HttpStatus.SERVICE_UNAVAILABLE,
-        );
+        throw new HttpException('Banco de dados indisponível', HttpStatus.SERVICE_UNAVAILABLE);
       }
-
       throw error;
     }
   }
@@ -85,11 +71,7 @@ export class ContatoService {
   async buscarContatoById(id: number): Promise<EmpresaDto> {
     try {
       const empresa: Empresa | null = await this.empresaModel.findByPk(id);
-
-      if (!empresa) {
-        throw new NotFoundException('Dados de contato não encontrados');
-      }
-
+      if (!empresa) throw new NotFoundException('Dados de contato não encontrados');
       const cnpjFormatado = this.formatarCnpj(empresa.cnpj);
 
       return new EmpresaDto(
@@ -109,12 +91,8 @@ export class ContatoService {
         error instanceof ConnectionRefusedError ||
         error instanceof HostNotFoundError
       ) {
-        throw new HttpException(
-          'Banco de dados indisponível',
-          HttpStatus.SERVICE_UNAVAILABLE,
-        );
+        throw new HttpException('Banco de dados indisponível', HttpStatus.SERVICE_UNAVAILABLE);
       }
-
       throw error;
     }
   }
@@ -123,6 +101,7 @@ export class ContatoService {
     try {
       const dataEnvio = new Date();
 
+      // Salva no banco
       await this.emailEnviadoModel.create({
         nomeUsuario: dados.nome,
         emailUsuario: dados.email,
@@ -131,29 +110,18 @@ export class ContatoService {
         dataEnvio: dataEnvio,
       });
 
-      await this.emailService.enviarEmail({
-        to: 'contato@suaempresa.com',
-        corpo: `
-          <h2>Nova mensagem recebida</h2>
-          <p><strong>Nome:</strong> ${dados.nome}</p>
-          <p><strong>Email:</strong> ${dados.email}</p>
-          <p><strong>Assunto:</strong> ${dados.assunto}</p>
-          <p><strong>Mensagem:</strong><br/> ${dados.mensagem}</p>
-        `,
-        cabecalho: true,
-      });
+      // Envia e-mail usando EmailService
+      await this.emailService.enviarEmail(dados); // passa apenas o DTO
 
       return { message: 'Mensagem enviada com sucesso!' };
     } catch (error: unknown) {
       let mensagemErro = 'Erro ao enviar mensagem';
-
       if (error instanceof Error) {
         mensagemErro = error.message;
         this.logger.error(`Erro ao processar envio: ${error.message}`);
       } else {
         this.logger.error('Erro desconhecido ao processar envio');
       }
-
       throw new HttpException(mensagemErro, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }

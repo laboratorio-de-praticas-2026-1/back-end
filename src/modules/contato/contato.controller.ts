@@ -16,7 +16,7 @@ import {
 } from '@nestjs/swagger';
 import { ContatoService } from './contato.service';
 import { EmpresaDto } from './dto/empresa-response.dto';
-import { EnviarEmailDto } from './dto/enviar-email.dto';
+import { EnviarEmailDto } from '../../commons/email/dto/enviar-email.dto';
 
 @Controller('contato')
 export class ContatoController {
@@ -42,7 +42,7 @@ export class ContatoController {
     return this.contatoService.buscarContatoById(id);
   }
 
-  @Post('enviar')
+  @Post('enviar-email')
   @ApiCreatedResponse({ description: 'Mensagem enviada com sucesso' })
   @ApiBadRequestResponse({ description: 'Dados inválidos' })
   async enviarEmail(
