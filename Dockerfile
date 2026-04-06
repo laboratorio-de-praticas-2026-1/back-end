@@ -17,4 +17,4 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 
 EXPOSE 8080
-CMD ["node", "dist/main.js"]   # <-- adiciona o .js
+CMD ["node", "dist/main.js"]
