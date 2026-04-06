@@ -1,5 +1,6 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 
 export class PublicidadeUpdateDto {
   @ApiProperty({
@@ -19,4 +20,14 @@ export class PublicidadeUpdateDto {
   @IsOptional()
   @IsString()
   conteudo?: string;
+
+  @ApiProperty({
+    example: 'true',
+    required: false,
+    default: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  ativo?: boolean;
 }

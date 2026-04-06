@@ -52,6 +52,14 @@ export class PublicidadeService {
     return publicidade;
   }
 
+  async getByStatus(ativo: boolean): Promise<Publicidade[]> {
+    this.logger.log(
+      `Buscando publicidades por status: ${ativo ? 'ativo' : 'inativo'}`,
+    );
+
+    return this.publicidadeModel.findAll({ where: { ativo } });
+  }
+
   async update(
     id: number,
     dto: PublicidadeUpdateDto,
