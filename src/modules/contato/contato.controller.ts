@@ -1,4 +1,13 @@
-import { Controller, Get, Logger, Param, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Put,
+  Body,
+  Logger,
+  Param,
+  ParseIntPipe,
+  ForbiddenException,
+} from '@nestjs/common';
 import { ApiNotFoundResponse, ApiOkResponse } from '@nestjs/swagger';
 import { ContatoService } from './contato.service';
 import { EmpresaDto } from './dto/empresa-response.dto';
@@ -7,14 +16,19 @@ import { EmpresaDto } from './dto/empresa-response.dto';
 export class ContatoController {
   private readonly logger = new Logger(ContatoController.name);
 
+  private readonly CNPJ_EMPRESA = '12.345.678/0001-99';
+
   constructor(private readonly contatoService: ContatoService) {}
 
   @Get()
   @ApiOkResponse({ type: EmpresaDto })
   @ApiNotFoundResponse({ description: 'Dados de contato não encontrados' })
   buscarContato(): Promise<EmpresaDto> {
-    this.logger.log(`Iniciando busca de dados de contato...`);
-    return this.contatoService.buscarContato();
+    const cnpj = this.getCnpjValido();
+
+    this.logger.log(`Buscando contato para CNPJ: ${cnpj}`);
+
+    return this.contatoService.buscarContato(cnpj);
   }
 
   @Get(':id')
@@ -23,7 +37,32 @@ export class ContatoController {
   buscarContatoById(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<EmpresaDto> {
-    this.logger.log(`Iniciando busca de dados de contato por Id...`);
-    return this.contatoService.buscarContatoById(id);
+    const cnpj = this.getCnpjValido();
+
+    this.logger.log(`Buscando contato ID ${id} para CNPJ: ${cnpj}`);
+
+    return this.contatoService.buscarContatoById(id, cnpj);
+  }
+
+  @Put(':id')
+  @ApiOkResponse({ description: 'Contato atualizado com sucesso' })
+  @ApiNotFoundResponse({ description: 'Contato não encontrado' })
+  async atualizarContato(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() data: Partial<EmpresaDto>,
+  ): Promise<void> {
+    const cnpj = this.getCnpjValido();
+
+    this.logger.log(`Atualizando contato ID ${id} para CNPJ: ${cnpj}`);
+
+    return this.contatoService.atualizarContato(id, cnpj, data);
+  }
+
+  private getCnpjValido(): string {
+    if (!this.CNPJ_EMPRESA) {
+      throw new ForbiddenException('CNPJ inválido');
+    }
+
+    return this.CNPJ_EMPRESA;
   }
 }

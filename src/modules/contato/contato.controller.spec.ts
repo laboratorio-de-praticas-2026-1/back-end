@@ -63,3 +63,4 @@ describe('ContatoController', () => {
     expect(mockContatoService.buscarContato).toHaveBeenCalledTimes(1);
   });
 });
+
