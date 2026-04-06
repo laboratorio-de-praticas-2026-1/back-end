@@ -1,102 +1,75 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ContatoService } from './contato.service';
-import { getModelToken } from '@nestjs/sequelize';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectModel } from '@nestjs/sequelize';
 import { Empresa } from 'src/models/empresa.model';
+import { EmpresaDto } from './dto/empresa-response.dto';
 
-describe('ContatoService', () => {
-  let service: ContatoService;
+@Injectable()
+export class ContatoService {
+  constructor(@InjectModel(Empresa) private empresaModel: typeof Empresa) {}
 
-  const mockEmpresaModel = {
-    findOne: jest.fn(),
-    update: jest.fn(),
-  };
-
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        ContatoService,
-        {
-          provide: getModelToken(Empresa),
-          useValue: mockEmpresaModel,
-        },
-      ],
-    }).compile();
-
-    service = module.get<ContatoService>(ContatoService);
-  });
-
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
-  it('deve retornar os dados de contato pelo CNPJ', async () => {
-    const empresaMock = {
-      id: 1,
-      nomeFantasia: 'Empresa Teste',
-      cnpj: '12345678000100',
-      telefone: '9999',
-      email: 'teste@email.com',
-      endereco: 'Rua A',
-      cidade: 'SP',
-      estado: 'SP',
-      site: 'empresa.com',
-    };
-
-    mockEmpresaModel.findOne.mockResolvedValue(empresaMock);
-
-    const result = await service.buscarContato('12345678000100');
-
-    expect(result).toMatchObject({
-      id: 1,
-      nomeFantasia: 'Empresa Teste',
-      cnpj: '12345678000100',
+  // Buscar contato pelo CNPJ exato
+  async buscarContato(cnpj: string): Promise<EmpresaDto> {
+    const empresa: Empresa | null = await this.empresaModel.findOne({
+      where: { cnpj },
     });
 
-    expect(mockEmpresaModel.findOne).toHaveBeenCalledWith({
-      where: { cnpj: '12345678000100' },
-    });
-  });
+    if (!empresa) {
+      throw new HttpException(
+        'Dados de contato não encontrados',
+        HttpStatus.NOT_FOUND,
+      );
+    }
 
-  it('deve buscar empresa por ID e CNPJ', async () => {
-    const empresaMock = {
-      id: 1,
-      cnpj: '12345678000100',
-    };
+    return this.toDto(empresa);
+  }
 
-    mockEmpresaModel.findOne.mockResolvedValue(empresaMock);
-
-    const result = await service.buscarContatoById(1, '12345678000100');
-
-    expect(result).toMatchObject({
-      id: 1,
-      cnpj: '12345678000100',
+  // Buscar contato pelo ID e CNPJ exato
+  async buscarContatoById(id: number, cnpj: string): Promise<EmpresaDto> {
+    const empresa: Empresa | null = await this.empresaModel.findOne({
+      where: { id, cnpj },
     });
 
-    expect(mockEmpresaModel.findOne).toHaveBeenCalledWith({
-      where: { id: 1, cnpj: '12345678000100' },
+    if (!empresa) {
+      throw new NotFoundException('Dados de contato não encontrados');
+    }
+
+    return this.toDto(empresa);
+  }
+
+  // Atualizar contato pelo ID e CNPJ exato
+  async atualizarContato(
+    id: number,
+    cnpj: string,
+    data: Partial<EmpresaDto>,
+  ): Promise<void> {
+    const [updated] = await this.empresaModel.update(data, {
+      where: { id, cnpj },
     });
-  });
 
-  it('deve atualizar contato com sucesso', async () => {
-    mockEmpresaModel.update.mockResolvedValue([1]); // 1 linha afetada
+    if (updated === 0) {
+      throw new NotFoundException(
+        'Contato não encontrado ou não pertence à empresa',
+      );
+    }
+  }
 
-    await service.atualizarContato(1, '12345678000100', {
-      nomeFantasia: 'Novo Nome',
-    });
-
-    expect(mockEmpresaModel.update).toHaveBeenCalledWith(
-      { nomeFantasia: 'Novo Nome' },
-      {
-        where: { id: 1, cnpj: '12345678000100' },
-      },
+  // Converte o model em DTO
+  private toDto(empresa: Empresa): EmpresaDto {
+    return new EmpresaDto(
+      empresa.id,
+      empresa.nomeFantasia ?? '',
+      empresa.cnpj ?? '',
+      empresa.telefone ?? '',
+      empresa.email ?? '',
+      empresa.endereco ?? '',
+      empresa.cidade ?? '',
+      empresa.estado ?? '',
+      empresa.site ?? '',
     );
-  });
-
-  it('deve lançar erro se não encontrar empresa no update', async () => {
-    mockEmpresaModel.update.mockResolvedValue([0]);
-
-    await expect(
-      service.atualizarContato(1, '12345678000100', {}),
-    ).rejects.toThrow('Contato não encontrado');
-  });
-});
+  }
+}
