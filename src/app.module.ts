@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { UtilsModule } from './commons/utils/utils.module';
 import { CloudinaryModule } from './infra/cloudinary/cloudinary.module';
+import { FileConversorModule } from './infra/conversor/file-conversor/file-conversor.module';
 import { BlogModule } from './modules/blog/blog.module';
 import { BuscaModule } from './modules/busca/busca.module';
 import { ChatModule } from './modules/chat/chat.module';
@@ -55,6 +56,7 @@ import { UsuarioModule } from './modules/usuario/usuario.module';
     CloudinaryModule,
     SolicitacaoModule,
     UtilsModule,
+    FileConversorModule,
   ],
 
   controllers: [],

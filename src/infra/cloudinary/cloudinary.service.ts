@@ -60,9 +60,7 @@ export class CloudinaryService {
         }
 
         reject(
-          new InternalServerErrorException(
-            `Erro ao iniciar upload no Cloudinary`,
-          ),
+          new InternalServerErrorException(`Erro ao iniciar upload da imagem.`),
         );
       }
     });

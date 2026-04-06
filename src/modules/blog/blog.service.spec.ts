@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BlogService } from './blog.service';
 import { getModelToken } from '@nestjs/sequelize';
-import { Blog } from 'src/models/blog.model';
+import { Blog, CategoriaBlog } from 'src/models/blog.model';
 import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
 import { Readable } from 'stream';
 
@@ -50,17 +50,20 @@ describe('BlogService', () => {
     service = module.get<BlogService>(BlogService);
   });
 
-  it('deve criar post de blog com sucesso!', async () => {
+  it('deve criar post de blog com sucesso', async () => {
     const postData = {
       titulo: 'Título do Post',
       conteudo: 'Conteúdo do post',
       dataPublicacao: new Date(),
-      urlImagem: 'http://example.com/post',
+      olhoDoTexto: 'Resumo curto',
+      categoria: CategoriaBlog.Documentacao,
+      ativo: true,
     };
 
     const mockPost = {
       id: 1,
       ...postData,
+      urlImagem: 'http://example.com/post',
     };
 
     mockBlogModel.create.mockResolvedValue(mockPost);
@@ -68,16 +71,50 @@ describe('BlogService', () => {
       secure_url: 'http://example.com/post',
     });
 
-    await service.criarPost(postData, mockFile);
-
-    expect(mockCloudinaryService.uploadFile).toHaveBeenCalledWith(mockFile);
     await expect(service.criarPost(postData, mockFile)).resolves.toEqual(
       mockPost,
     );
-    expect(mockBlogModel.create).toHaveBeenCalledWith(postData);
+
+    expect(mockCloudinaryService.uploadFile).toHaveBeenCalledWith(mockFile);
+    expect(mockBlogModel.create).toHaveBeenCalledWith({
+      ...postData,
+      urlImagem: 'http://example.com/post',
+    });
   });
 
-  it('deve buscar todos os posts do blog com sucesso!', async () => {
+  it('deve criar post de blog com ativo e categoria padrao no create quando nao fornecidos', async () => {
+    const postData = {
+      titulo: 'Título do Post',
+      conteudo: 'Conteúdo do post',
+      dataPublicacao: new Date(),
+    };
+
+    const mockPost = {
+      id: 2,
+      ...postData,
+      ativo: true,
+      categoria: CategoriaBlog.Documentacao,
+      urlImagem: 'http://example.com/post',
+    };
+
+    mockBlogModel.create.mockResolvedValue(mockPost);
+    mockCloudinaryService.uploadFile.mockResolvedValue({
+      secure_url: 'http://example.com/post',
+    });
+
+    await expect(service.criarPost(postData, mockFile)).resolves.toEqual(
+      mockPost,
+    );
+
+    expect(mockBlogModel.create).toHaveBeenCalledWith({
+      ...postData,
+      ativo: true,
+      categoria: CategoriaBlog.Documentacao,
+      urlImagem: 'http://example.com/post',
+    });
+  });
+
+  it('deve buscar todos os posts do blog com sucesso', async () => {
     const mockPosts = [
       {
         id: 1,
@@ -85,6 +122,9 @@ describe('BlogService', () => {
         conteudo: 'Conteúdo 1',
         dataPublicacao: new Date(),
         urlImagem: 'http://example.com/1',
+        ativo: true,
+        categoria: CategoriaBlog.Documentacao,
+        olhoDoTexto: 'Resumo 1',
       },
       {
         id: 2,
@@ -92,6 +132,9 @@ describe('BlogService', () => {
         conteudo: 'Conteúdo 2',
         dataPublicacao: new Date(),
         urlImagem: 'http://example.com/2',
+        ativo: true,
+        categoria: CategoriaBlog.Documentacao,
+        olhoDoTexto: 'Resumo 2',
       },
     ];
 
@@ -101,13 +144,16 @@ describe('BlogService', () => {
     expect(mockBlogModel.findAll).toHaveBeenCalledTimes(1);
   });
 
-  it('deve buscar um post do blog por id com sucesso!', async () => {
+  it('deve buscar um post do blog por id com sucesso', async () => {
     const mockPost = {
       id: 1,
       titulo: 'Título do Post',
       conteudo: 'Conteúdo do post',
       dataPublicacao: new Date(),
       urlImagem: 'http://example.com/post',
+      ativo: true,
+      categoria: CategoriaBlog.Documentacao,
+      olhoDoTexto: 'Resumo',
     };
 
     mockBlogModel.findByPk.mockResolvedValue(mockPost);
@@ -123,7 +169,7 @@ describe('BlogService', () => {
     expect(mockBlogModel.findByPk).toHaveBeenCalledWith(999);
   });
 
-  it('deve deletar um post do blog com sucesso!', async () => {
+  it('deve deletar um post do blog com sucesso', async () => {
     const mockPost = {
       destroy: jest.fn(),
     };
@@ -146,20 +192,29 @@ describe('BlogService', () => {
     expect(mockBlogModel.findByPk).toHaveBeenCalledWith(999);
   });
 
-  it('deve atualizar um post do blog com sucesso!', async () => {
+  it('deve atualizar um post do blog com sucesso', async () => {
     const postData = {
       titulo: 'Título do Post',
       conteudo: 'Conteúdo do post',
       dataPublicacao: new Date(),
+      olhoDoTexto: 'Resumo atualizado',
+      categoria: CategoriaBlog.Documentacao,
+      ativo: false,
     };
 
     const mockPost = {
       id: 1,
       update: jest.fn(),
-      ...postData,
+      titulo: 'Título Antigo',
+      conteudo: 'Conteúdo Antigo',
+      dataPublicacao: new Date(),
+      urlImagem: 'http://example.com/old',
+      ativo: true,
+      categoria: CategoriaBlog.Documentacao,
+      olhoDoTexto: 'Resumo antigo',
     };
 
-    mockPost.update.mockResolvedValue(mockPost);
+    mockPost.update.mockResolvedValue({ ...mockPost, ...postData });
     mockBlogModel.findByPk.mockResolvedValue(mockPost);
 
     await expect(service.updateBlog(1, postData)).resolves.toEqual(mockPost);
