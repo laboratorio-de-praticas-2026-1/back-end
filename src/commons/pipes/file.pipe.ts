@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 
 export const imageFilePipe = new ParseFilePipe({
-  fileIsRequired: true,
+  fileIsRequired: false,
   errorHttpStatusCode: 400,
   validators: [
     new MaxFileSizeValidator({ maxSize: 2 * 1024 * 1024 }),
