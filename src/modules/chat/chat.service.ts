@@ -23,6 +23,10 @@ export class ChatService {
   history: Record<string, ChatMessage[]> = {};
   timeouts: Record<string, NodeJS.Timeout> = {};
 
+  // 🚨 NOVO: controle de última mensagem
+  private lastMessages: Record<string, { text: string; timestamp: number }> =
+    {};
+
   private INACTIVITY_TIMEOUT = 60 * 60 * 1000; // 60 min
 
   // ================= CALLBACKS =================
@@ -48,7 +52,6 @@ export class ChatService {
     if (this.broadcastToAgents) {
       this.broadcastToAgents(data);
     } else {
-      // Fallback to direct socket sending if callback not set
       for (const [id, agent] of Object.entries(this.agents)) {
         if (excludeAgentId && id === excludeAgentId) continue;
 
@@ -57,6 +60,31 @@ export class ChatService {
         }
       }
     }
+  }
+
+  // ================= 🚨 DETECÇÃO DE DUPLICADAS =================
+  isDuplicateMessage(userId: string, text: string, windowMs: number): boolean {
+    const now = Date.now();
+    const last = this.lastMessages[userId];
+
+    const normalizedText = text.trim().toLowerCase();
+
+    if (last) {
+      const isSame = last.text === normalizedText;
+      const isFast = now - last.timestamp < windowMs;
+
+      if (isSame && isFast) {
+        return true; // 🚫 bloqueia
+      }
+    }
+
+    // atualiza última mensagem
+    this.lastMessages[userId] = {
+      text: normalizedText,
+      timestamp: now,
+    };
+
+    return false;
   }
 
   // ================= USERS =================
@@ -72,14 +100,17 @@ export class ChatService {
     this.history[userId] = [];
 
     this.resetTimeout(userId);
-    // broadcastAgentsList will be called by gateway
 
     return userId;
   }
 
   addAgent(agentId: string, socket: Socket) {
     this.agents[agentId] = socket;
-    // broadcastAgentsList will be called by gateway
+  }
+
+  removeAgent(agentId: string) {
+    delete this.agents[agentId];
+    delete this.lastMessages[agentId]; // 🚨 limpa cache de duplicadas
   }
 
   getNextUserId() {
@@ -146,6 +177,7 @@ export class ChatService {
 
     delete this.users[userId];
     delete this.history[userId];
+    delete this.lastMessages[userId]; // 🚨 limpa cache
 
     this.broadcastAgentsList();
   }

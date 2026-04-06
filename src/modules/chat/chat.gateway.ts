@@ -23,7 +23,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly logger: Logger,
     private readonly authService: AuthService,
   ) {
-    // Set up broadcast callbacks for the service
     this.chatService.setBroadcastCallbacks(
       (data) => this.server.to(this.AGENTS_ROOM).emit('chat', data),
       () => this.broadcastAgentsList(),
@@ -34,6 +33,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   server: Server;
 
   private readonly AGENTS_ROOM = 'chat:agents';
+
+  // CONTROLE DE RATE LIMIT E COOLDOWN
+  private messageTimestamps: Map<string, number[]> = new Map();
+  private lastMessageTime: Map<string, number> = new Map();
+
+  private readonly MAX_MESSAGES_PER_MINUTE = 10;
+  private readonly COOLDOWN_MS = 3000;
+  private readonly DUPLICATE_WINDOW_MS = 10000;
 
   async handleConnection(socket: AuthSocket) {
     const token = (socket.handshake.auth?.token ||
@@ -117,7 +124,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
 
     const room = this.server.sockets.adapter.rooms.get(this.AGENTS_ROOM);
-    console.log('Sockets na room:', room);
     const agents = room
       ? [...room]
           .map((socketId) => this.server.sockets.sockets.get(socketId))
@@ -174,33 +180,97 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     if (!role || !userId) return;
 
-    if (!data.text || data.text.trim() === '') {
+    if (!data.text) {
       this.chatService.send(socket, {
         type: 'error',
-        msg: 'Mande uma mensagem contendo alguma dúvida ou comentário para que possamos ajudar.',
+        msg: 'Mensagem vazia não é permitida.',
+      });
+      return;
+    }
+
+    //  NORMALIZAÇÃO
+    const normalizedText = data.text.replace(/\s+/g, ' ').trim();
+
+    //  VALIDAÇÃO TAMANHO
+    if (normalizedText.length < 1 || normalizedText.length > 200) {
+      this.chatService.send(socket, {
+        type: 'error',
+        msg: 'A mensagem deve ter entre 1 e 200 caracteres.',
+      });
+      return;
+    }
+
+    //  SANITIZAÇÃO
+    const sanitizedText = normalizedText
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;')
+      .replace(/\//g, '&#x2F;');
+
+    const now = Date.now();
+
+    //  COOLDOWN (3s)
+    const lastTime = this.lastMessageTime.get(userId) || 0;
+    if (now - lastTime < this.COOLDOWN_MS) {
+      this.chatService.send(socket, {
+        type: 'error',
+        msg: 'Aguarde 3 segundos entre mensagens.',
+      });
+      return;
+    }
+    this.lastMessageTime.set(userId, now);
+
+    //  RATE LIMIT (10/min)
+    const timestamps = this.messageTimestamps.get(userId) || [];
+    const oneMinuteAgo = now - 60000;
+    const recentMessages = timestamps.filter((t) => t > oneMinuteAgo);
+
+    if (recentMessages.length >= this.MAX_MESSAGES_PER_MINUTE) {
+      this.chatService.send(socket, {
+        type: 'error',
+        msg: 'Limite de 10 mensagens por minuto atingido.',
+      });
+      return;
+    }
+
+    recentMessages.push(now);
+    this.messageTimestamps.set(userId, recentMessages);
+
+    // 🚨 DUPLICADAS
+    if (
+      this.chatService.isDuplicateMessage(
+        userId,
+        sanitizedText,
+        this.DUPLICATE_WINDOW_MS,
+      )
+    ) {
+      this.chatService.send(socket, {
+        type: 'error',
+        msg: 'Mensagem duplicada enviada muito rápido.',
       });
       return;
     }
 
     const timestamp = new Date().toISOString();
 
-    // ================= CLIENTE =================
+    // CLIENTE
     if (role === NivelUsuarioEnum.cliente) {
       const newMsg: ChatMessage = {
         userId: userId,
         fromUserId: userId,
         nome: socket.name || `Cliente ${userId}`,
-        text: data.text,
+        text: sanitizedText,
         timestamp,
       };
 
       this.chatService.addMessageToHistory(userId, newMsg);
       this.chatService.updateUserActivity(userId);
-
       this.chatService.broadcastAgents(newMsg);
     }
 
-    // ================= ADMINISTRADOR =================
+    // ADMIN
     if (role === NivelUsuarioEnum.administrador) {
       const targetUser = data.to;
       if (!targetUser || !this.chatService.users[targetUser]) {
@@ -210,11 +280,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         });
         return;
       }
+
       const newMsg: ChatMessage = {
-        userId: targetUser || 'unknown',
+        userId: targetUser,
         fromUserId: userId,
         nome: 'Atendente',
-        text: data.text,
+        text: sanitizedText,
         timestamp,
       };
 
@@ -222,17 +293,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       this.server.to(this.userRoom(targetUser)).emit('chat', {
         type: 'message',
-        text: data.text,
+        text: sanitizedText,
         timestamp,
       });
     }
   }
 
-  // ================= DISCONNECT =================
   handleDisconnect(socket: AuthSocket) {
+    // Limpar controles de rate limit e cooldown
+    if (socket.userId) {
+      this.messageTimestamps.delete(socket.userId);
+      this.lastMessageTime.delete(socket.userId);
+    }
+
     if (socket.role === NivelUsuarioEnum.administrador) {
-      // grafo de agentes é mantido por room 'chat:agents'.
-      // ao desconectar, apenas broadcast de lista atualizada.
+      if (socket.userId) {
+        this.chatService.removeAgent(socket.userId);
+      }
       this.broadcastAgentsList();
       return;
     }

@@ -133,7 +133,7 @@ describe('ChatGateway', () => {
 
     expect(sendSpy).toHaveBeenCalledWith(socket, {
       type: 'error',
-      msg: 'Mande uma mensagem contendo alguma dúvida ou comentário para que possamos ajudar.',
+      msg: 'A mensagem deve ter entre 1 e 200 caracteres.',
     });
   });
 
@@ -272,7 +272,7 @@ describe('ChatGateway', () => {
     expect(gateway.server.to).toHaveBeenCalledWith('chat:user:user-1');
     expect(emitSpy).toHaveBeenCalledWith('chat', {
       type: 'message',
-      text: 'Olá agent->user',
+      text: 'Olá agent-&gt;user',
       timestamp: expect.any(String),
     });
   });
