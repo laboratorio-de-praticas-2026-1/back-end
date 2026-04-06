@@ -11,6 +11,7 @@ import {
 import { ApiNotFoundResponse, ApiOkResponse } from '@nestjs/swagger';
 import { ContatoService } from './contato.service';
 import { EmpresaDto } from './dto/empresa-response.dto';
+import { ContatoUpdateDto } from './dto/contato-update.dto';
 
 @Controller('contato')
 export class ContatoController {
@@ -49,7 +50,7 @@ export class ContatoController {
   @ApiNotFoundResponse({ description: 'Contato não encontrado' })
   async atualizarContato(
     @Param('id', ParseIntPipe) id: number,
-    @Body() data: Partial<EmpresaDto>,
+    @Body() data: ContatoUpdateDto,
   ): Promise<void> {
     const cnpj = this.getCnpjValido();
 
