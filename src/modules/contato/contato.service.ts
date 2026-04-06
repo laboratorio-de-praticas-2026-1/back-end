@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Empresa } from 'src/models/empresa.model';
 import { EmpresaDto } from './dto/empresa-response.dto';
@@ -22,10 +19,7 @@ export class ContatoService {
     return this.toDto(empresa);
   }
 
-  async buscarContatoById(
-    id: number,
-    cnpj: string,
-  ): Promise<EmpresaDto> {
+  async buscarContatoById(id: number, cnpj: string): Promise<EmpresaDto> {
     const empresa: Empresa | null = await this.empresaModel.findOne({
       where: { id, cnpj },
     });
@@ -42,7 +36,6 @@ export class ContatoService {
     cnpj: string,
     data: Partial<EmpresaDto>,
   ): Promise<void> {
-    
     const { cnpj: _, ...safeData } = data;
 
     const [updated] = await this.empresaModel.update(safeData, {
