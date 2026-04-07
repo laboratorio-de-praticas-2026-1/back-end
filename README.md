@@ -9,9 +9,9 @@ Este documento descreve o fluxo de trabalho adotado neste repositório. Siga as 
  
 | Branch | URL |
 |---|---|
-| `main` | https://backend-main-412027788376.southamerica-east1.run.app |
-| `develop` | https://backend-develop-412027788376.southamerica-east1.run.app |
-| `release` | https://backend-release-entrega-09-04-412027788376.southamerica-east1.run.app |
+| `main` | https://backend-main-412027788376.southamerica-east1.run.app/swagger |
+| `develop` | https://backend-develop-412027788376.southamerica-east1.run.app/swagger |
+| `release` | https://backend-release-entrega-09-04-412027788376.southamerica-east1.run.app/swagger |
  
 ---
 
