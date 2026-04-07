@@ -17,6 +17,12 @@ export class UsuarioService {
     private readonly usuarioModel: typeof Usuario,
   ) {}
 
+  async remove(id: number): Promise<{ mensagem: string }> {
+    const usuario = await this.findOneOrFail(id);
+    await usuario.destroy();
+    return { mensagem: 'Usuário removido com sucesso!' };
+  }
+
   async update(
     id: number,
     updateUsuarioDto: UpdateUsuarioDto,

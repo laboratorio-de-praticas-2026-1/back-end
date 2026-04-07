@@ -1,6 +1,18 @@
-import { Column, DataType, Model, Table } from 'sequelize-typescript';
+import {
+  Column,
+  DataType,
+  DeletedAt,
+  Model,
+  Table,
+} from 'sequelize-typescript';
 
-@Table({ tableName: 'usuario' })
+@Table({
+  tableName: 'usuario',
+  paranoid: true,
+  createdAt: false,
+  updatedAt: false,
+  deletedAt: 'deleted_at',
+})
 export class Usuario extends Model {
   @Column({ primaryKey: true, autoIncrement: true, allowNull: false })
   declare id: number;
@@ -32,4 +44,7 @@ export class Usuario extends Model {
     defaultValue: DataType.NOW,
   })
   declare dataCadastro: Date;
+
+  @DeletedAt
+  declare deletedAt: Date | null;
 }
