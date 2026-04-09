@@ -44,7 +44,7 @@ export class RecomendacaoService {
       }
 
       console.log('Solicitações encontradas:', solicitacoes);
-      
+
       return solicitacoes.map((s: SolicitacaoComServico) => ({
         nome: s.servico.nome,
         descricao: s.servico.descricao,
