@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
-import { Empresa } from 'src/models/empresa.model';
 import { EmailEnviado } from 'src/models/email-enviado.model';
+import { Empresa } from 'src/models/empresa.model';
 import { ContatoController } from './contato.controller';
 import { ContatoService } from './contato.service';
 
@@ -11,5 +11,6 @@ import { ContatoService } from './contato.service';
   ],
   controllers: [ContatoController],
   providers: [ContatoService],
+  exports: [ContatoService],
 })
 export class ContatoModule {}

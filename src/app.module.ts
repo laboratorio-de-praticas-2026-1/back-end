@@ -1,23 +1,26 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
+import { UtilsModule } from './commons/utils/utils.module';
+import { CloudinaryModule } from './infra/cloudinary/cloudinary.module';
+import { FileConversorModule } from './infra/conversor/file-conversor/file-conversor.module';
+import { BlogModule } from './modules/blog/blog.module';
+import { BuscaModule } from './modules/busca/busca.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { ContatoModule } from './modules/contato/contato.module';
-import { FaqModule } from './modules/faq/faq.module';
-import { BlogModule } from './modules/blog/blog.module';
-import { SimuladorModule } from './modules/simulador/simulador.module';
-import { NotificacaoModule } from './modules/notificacao/notificacao.module';
-import { MapaModule } from './modules/mapa/mapa.module';
-import { ReportsModule } from './modules/reports/reports.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
-import { RecomendacaoModule } from './modules/recomendacao/recomendacao.module';
-import { AgendamentoModule } from './modules/agendamento/agendamento.module';
-import { UsuarioModule } from './modules/usuario/usuario.module';
+import { FaqModule } from './modules/faq/faq.module';
 import { HeaderModule } from './modules/header/header.module';
-import { BuscaModule } from './modules/busca/busca.module';
-import { ServicosModule } from './modules/servicos/servicos.module';
+import { MapaModule } from './modules/mapa/mapa.module';
+import { NotificacaoModule } from './modules/notificacao/notificacao.module';
 import { PublicidadeModule } from './modules/publicidade/publicidade.module';
 import { EmailModule } from './commons/email/email.module';
+import { RecomendacaoModule } from './modules/recomendacao/recomendacao.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { ServicosModule } from './modules/servicos/servicos.module';
+import { SimuladorModule } from './modules/simulador/simulador.module';
+import { SolicitacaoModule } from './modules/solicitacao/solicitacao.module';
+import { UsuarioModule } from './modules/usuario/usuario.module';
 
 @Module({
   imports: [
@@ -46,13 +49,16 @@ import { EmailModule } from './commons/email/email.module';
     ReportsModule,
     DashboardModule,
     RecomendacaoModule,
-    AgendamentoModule,
     UsuarioModule,
     HeaderModule,
     BuscaModule,
     ServicosModule,
     PublicidadeModule,
-    EmailModule
+    EmailModule,
+    CloudinaryModule,
+    SolicitacaoModule,
+    UtilsModule,
+    FileConversorModule,
   ],
 
   controllers: [],

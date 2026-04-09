@@ -21,8 +21,6 @@ describe('ContatoController (e2e)', () => {
   });
 
   it('GET /contato', () => {
-    return request(app.getHttpServer())
-      .get('/contato')
-      .expect(200);
+    return request(app.getHttpServer()).get('/contato').expect(200);
   });
 });
