@@ -4,6 +4,7 @@ import { RecomendacaoService } from './recomendacao.service';
 import { Servico } from 'src/models/servico.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
 import { NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { raw } from 'express';
 
 describe('RecomendacaoService', () => {
   let service: RecomendacaoService;
@@ -54,15 +55,17 @@ describe('RecomendacaoService', () => {
           'servico.nome',
           'servico.descricao',
           'servico.valor_base',
-          'servico.ativo'
+          ['servico.ativo', 'ativo']
         ],
         where: {
           usuarioId: usuarioId,
         },
         include: [{
-          model: Servico,
+          model: mockServicoModel,
           attributes: []
-        }]
+        }],
+        raw: true,
+        nest: true
       });
     });
 

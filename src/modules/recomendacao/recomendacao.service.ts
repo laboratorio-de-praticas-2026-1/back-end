@@ -27,7 +27,7 @@ export class RecomendacaoService {
                     'servico.nome',
                     'servico.descricao',
                     'servico.valor_base',
-                    'servico.ativo'
+                    ['servico.ativo', 'ativo'],
                 ],
         
                 where: {
@@ -42,15 +42,39 @@ export class RecomendacaoService {
                 nest: true
                 // limit: 5 -> possível implementacao posterior
             });
-        
-            if(!atributos ||atributos.length == 0){
+
+            let isEmpty = false;
+            
+            if (!atributos) {
+                isEmpty = true;
+            } else if (atributos.length === 0) {
+                isEmpty = true;
+            } else if (atributos.length === 1) {
+                const primeiroElemento = atributos[0];
+                if (!primeiroElemento || Object.keys(primeiroElemento).length === 0) {
+                    isEmpty = true;
+                }
+            }
+            
+            if (isEmpty) {
                 this.logger.warn(`Nenhum serviço com perfil de recomendação encontrado para usuário ${usuarioId}`);
-        
                 throw new NotFoundException(`Nenhum serviço encontrado para o usuário com id ${usuarioId}`);
             }
-            return atributos;
+            
+            const resultadosValidos = atributos.filter(attr => attr && Object.keys(attr).length > 0);
+            
+            if (resultadosValidos.length === 0) {
+                this.logger.warn(`Nenhum serviço válido encontrado para usuário ${usuarioId}`);
+                throw new NotFoundException(`Nenhum serviço encontrado para o usuário com id ${usuarioId}`);
+            }
+            
+            return resultadosValidos;
 
         } catch(error){
+            if (error instanceof NotFoundException) {
+                throw error;
+            }
+            
             this.logger.error(`Erro ao buscar serviços para o user com id ${usuarioId}`);
         
             throw new InternalServerErrorException('Erro ao buscar serviços para recomendação');
