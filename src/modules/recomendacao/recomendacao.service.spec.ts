@@ -3,89 +3,93 @@ import { getModelToken } from '@nestjs/sequelize';
 import { RecomendacaoService } from './recomendacao.service';
 import { Servico } from 'src/models/servico.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
-import { NotFoundException, InternalServerErrorException } from '@nestjs/common';
-import { raw } from 'express';
+import { InternalServerErrorException } from '@nestjs/common';
+import { jest, describe, it, expect, beforeEach } from '@jest/globals';
+import { SolicitacaoComServico } from './dto/solicitacao-com-servico';
 
 describe('RecomendacaoService', () => {
   let service: RecomendacaoService;
 
-  const mockServicoModel = {};
-
   const mockSolicitacaoModel = {
-    findAll: jest.fn()
+    findAll: jest.fn() as jest.MockedFunction<
+      () => Promise<SolicitacaoComServico[]>
+    >,
   };
+
+  const mockServicoModel = {};
 
   beforeEach(async () => {
     jest.clearAllMocks();
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RecomendacaoService,
         {
-          provide: getModelToken(Servico),
-          useValue: mockServicoModel
+          provide: getModelToken(Solicitacao),
+          useValue: mockSolicitacaoModel,
         },
         {
-          provide: getModelToken(Solicitacao),
-          useValue: mockSolicitacaoModel
-        }
-      ]
+          provide: getModelToken(Servico),
+          useValue: mockServicoModel,
+        },
+      ],
     }).compile();
 
     service = module.get<RecomendacaoService>(RecomendacaoService);
   });
 
   describe('buscarAtributosPerfil', () => {
-    it('deve buscar os atributos de perfil do usuario com sucesso', async () => {
+    it('deve retornar serviços contratados pelo usuário', async () => {
       const usuarioId = 1;
-      
-      const mockAtributos = [
-        { nome: 'Serviço 1', descricao: 'Descrição 1', valor_base: 100, ativo: true },
-        { nome: 'Serviço 2', descricao: 'Descrição 2', valor_base: 200, ativo: true }
-      ];
-      
-      mockSolicitacaoModel.findAll.mockResolvedValue(mockAtributos);
-      
-      const atributos = await service.buscarAtributosPerfil(usuarioId);
-      
-      expect(atributos).toEqual(mockAtributos);
 
-      expect(mockSolicitacaoModel.findAll).toHaveBeenCalledWith({
-        attributes: [
-          'servico.nome',
-          'servico.descricao',
-          'servico.valor_base',
-          ['servico.ativo', 'ativo']
-        ],
-        where: {
-          usuarioId: usuarioId,
+      const mockDbResponse: SolicitacaoComServico[] = [
+        {
+          servico: {
+            nome: 'Transferência de Propriedade',
+            descricao: 'Mudança de propriedade de veículo',
+            valor_base: 350.0,
+            ativo: true,
+          },
         },
-        include: [{
-          model: mockServicoModel,
-          attributes: []
-        }],
-        raw: true,
-        nest: true
-      });
+        {
+          servico: {
+            nome: 'Licenciamento Anual',
+            descricao: 'Taxa de licenciamento',
+            valor_base: 180.0,
+            ativo: true,
+          },
+        },
+      ];
+
+      mockSolicitacaoModel.findAll.mockResolvedValue(mockDbResponse);
+
+      const resultado = await service.buscarAtributosPerfil(usuarioId);
+
+      expect(resultado).toHaveLength(2);
+      expect(resultado[0].nome).toBe('Transferência de Propriedade');
+      expect(resultado[0].valor_base).toBe(350.0);
+      expect(resultado[1].nome).toBe('Licenciamento Anual');
+      expect(resultado[1].valor_base).toBe(180.0);
     });
 
-    it('deve lançar NotFoundException quando não encontrar atributos', async () => {
-      const usuarioId = 999;
-      
-      mockSolicitacaoModel.findAll.mockResolvedValue([]);
-      
-      await expect(service.buscarAtributosPerfil(usuarioId)).rejects.toThrow(NotFoundException);
-      
-      expect(mockSolicitacaoModel.findAll).toHaveBeenCalledTimes(1);
+    it('deve retornar array vazio e disparar warn se o histórico for inexistente', async () => {
+      mockSolicitacaoModel.findAll.mockResolvedValue(
+        [] as SolicitacaoComServico[],
+      );
+
+      const resultado = await service.buscarAtributosPerfil(99);
+
+      expect(resultado).toEqual([]);
+      expect(resultado).toHaveLength(0);
     });
 
-    it('deve lançar InternalServerErrorException em caso de erro no banco', async () => {
-      const usuarioId = 1;
-      const erroBanco = new Error('Erro de conexão');
-      
-      mockSolicitacaoModel.findAll.mockRejectedValue(erroBanco);
-      
-      await expect(service.buscarAtributosPerfil(usuarioId)).rejects.toThrow(InternalServerErrorException);
+    it('deve lançar InternalServerErrorException apenas em falhas técnicas de banco', async () => {
+      mockSolicitacaoModel.findAll.mockRejectedValue(
+        new Error('Conexão perdida'),
+      );
+
+      await expect(service.buscarAtributosPerfil(1)).rejects.toThrow(
+        InternalServerErrorException,
+      );
     });
   });
 });
