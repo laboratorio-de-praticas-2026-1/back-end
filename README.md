@@ -1,18 +1,30 @@
 # Back-end
 
-# Guia de Contribuição
+Esse repositório corresponde ao back-end do projeto Laboratório de Práticas 2026-1. <br>
 
-Este documento descreve o fluxo de trabalho adotado neste repositório. Siga as etapas abaixo para contribuir de forma organizada.
----
+Ele é responsável por fornecer uma API completa para o front-end consumir, além de gerenciar a lógica de negócios e a comunicação com o banco de dados.
  
-## Ambientes de Produção
+## Links
  
+### Documentação (mkdocs):
+
+| | |
+|--- | --- |
+| `URL`  | https://laboratorio-de-praticas-2026-1.github.io/back-end/ |
+
+### API (swagger):
+
 | Branch | URL |
 |---|---|
 | `main` | https://backend-main-412027788376.southamerica-east1.run.app/swagger |
 | `develop` | https://backend-develop-412027788376.southamerica-east1.run.app/swagger |
 | `release` | https://backend-release-entrega-09-04-412027788376.southamerica-east1.run.app/swagger |
  
+---
+
+# Guia de Contribuição
+
+Este documento descreve o fluxo de trabalho adotado neste repositório. Siga as etapas abaixo para contribuir de forma organizada.
 ---
 
 ## Estrutura de Branches
@@ -136,22 +148,42 @@ chore/      →  develop  →  main
 ---
 
 ## Setup Local
-``` 
-Caso seja necessário rodar o banco de dados localmente, utilize o repositório abaixo:
-https://github.com/laboratorio-de-praticas-2026-1/database
-Inicialize o banco utilizando Docker Compose e depois siga os passos para iniciar o back-end.
-```
+
+⚠️ Caso seja necessário rodar o banco de dados localmente siga os passos abaixo (1 e 2). Caso contrário pule para o item `3. (Clone o repositório do back-end)`.
 
 
-### 1. Clone o repositório
+### 1. Clone o repositório do banco de dados
 
 ```bash
-git clone https://github.com/laboratorio-de-praticas-2026-1/back-end.git
+git clone https://github.com/laboratorio-de-praticas-2026-1/database.git
+cd database
 ```
 
 ---
 
-### 2. Instale as dependências
+### 2. Inicialize o banco de dados com Docker
+#### 2.1 Crie o .env seguindo o modelo do .env.example
+```bash
+cp .env.example .env
+```
+
+#### 2.2 Inicialize o container do banco de dados
+```bash
+docker compose -f compose.dev.yml up --build -d
+```
+> Nota: o arquivo `compose.dev.yml` sobe o banco de dados local **junto com** o container `prisma-migration`, que irá automaticamente instalar as dependências, gerar o Prisma Client, aplicar as migrations existentes e executar o script de seed para popular o banco.
+---
+
+### 3. Clone o repositório do back-end
+
+```bash
+git clone https://github.com/laboratorio-de-praticas-2026-1/back-end.git
+cd back-end
+```
+
+---
+
+### 4. Instale as dependências do back-end
 
 ```bash
 npm install
@@ -159,7 +191,14 @@ npm install
 
 ---
 
-### 3. Crie um arquivo ``` .env ``` seguindo a estrutura de variáveis do ``` .env.example ```
+### 4. Crie um arquivo ``` .env ``` seguindo a estrutura de variáveis do ``` .env.example ```
+
+```bash
+cp .env.example .env
+```
+> **Nota:** Caso estiver rodando o banco de dados localmente, lembre-se de modificar o .env para apontar para a URL do banco local. Basta descomentar a aba `## BANCO LOCAL ` e comentar a aba `## BANCO DE DESENVOLVIMENTO` no arquivo .env criado.
+
+> **Importante:** alguns dados como a credencial para o cloudinary não são públicas, então peça para o responsável do seu produto compartilhar essas credenciais caso precise interagir com rotas que trabalham com upload de arquivos (ex: criação/edição de produto, criação/edição de usuário, etc).
 
 ---
 
@@ -167,3 +206,5 @@ npm install
 ```bash
 npm run start:dev
 ```
+
+---
