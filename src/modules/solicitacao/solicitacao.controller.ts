@@ -35,12 +35,13 @@ import { SolicitacaoService } from './solicitacao.service';
 export class SolicitacaoController {
   private readonly logger: Logger = new Logger(SolicitacaoController.name);
 
-  constructor(private readonly solicitacaoService: SolicitacaoService) { }
+  constructor(private readonly solicitacaoService: SolicitacaoService) {}
 
   @Post()
   @ApiOperation({
     summary: 'Criar uma solicitação',
-    description: 'Criar uma nova solicitação com dados básicos iniciais. Id de usuário, Id do Veículo (Opcional), Id do serviço, Observação do Cliente (Opcional).'
+    description:
+      'Criar uma nova solicitação com dados básicos iniciais. Id de usuário, Id do Veículo (Opcional), Id do serviço, Observação do Cliente (Opcional).',
   })
   @ApiCreatedResponse({
     description: 'Solicitação criada com sucesso com retorno de protocolo',
@@ -116,7 +117,8 @@ export class SolicitacaoController {
   @Post(':id/documentos')
   @ApiOperation({
     summary: 'Adicionar um documento novo em uma solicitação existente.',
-    description: 'Adicionar um documento em uma solicitação com o status PENDENTE.',
+    description:
+      'Adicionar um documento em uma solicitação com o status PENDENTE.',
   })
   @ApiConsumes('multipart/form-data')
   @ApiCreatedResponse({
