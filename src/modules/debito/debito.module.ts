@@ -8,7 +8,9 @@ import { DebitoController } from './debito.controller';
 import { DebitoService } from './debito.service';
 
 @Module({
-  imports: [SequelizeModule.forFeature([Veiculo, Debito, DebitoVeiculo, Usuario])],
+  imports: [
+    SequelizeModule.forFeature([Veiculo, Debito, DebitoVeiculo, Usuario]),
+  ],
   controllers: [DebitoController],
   providers: [DebitoService],
 })

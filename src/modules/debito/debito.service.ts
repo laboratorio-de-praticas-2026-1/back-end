@@ -34,7 +34,10 @@ export class DebitoService {
       status: dv.debito.status,
     }));
 
-    const total = debitos.reduce((acc: number, d: DebitoItemDto) => acc + d.valor, 0);
+    const total = debitos.reduce(
+      (acc: number, d: DebitoItemDto) => acc + d.valor,
+      0,
+    );
 
     return { placa, debitos, total };
   }

@@ -8,7 +8,12 @@ const mockVeiculo = {
   placa: 'ABC1234',
   debitoVeiculos: [
     {
-      debito: { id: 1, descricao: 'IPVA 2026', valor: 1500.0, status: 'PENDENTE' },
+      debito: {
+        id: 1,
+        descricao: 'IPVA 2026',
+        valor: 1500.0,
+        status: 'PENDENTE',
+      },
     },
     {
       debito: { id: 2, descricao: 'Multa', valor: 300.0, status: 'PENDENTE' },
@@ -60,9 +65,7 @@ describe('DebitoService', () => {
   });
 
   it('deve lançar 404 quando veículo não existe', async () => {
-    jest
-      .spyOn(service['veiculoModel'], 'findOne')
-      .mockResolvedValue(null);
+    jest.spyOn(service['veiculoModel'], 'findOne').mockResolvedValue(null);
 
     await expect(service.buscarDebitosPorPlaca('XXX9999')).rejects.toThrow(
       NotFoundException,
