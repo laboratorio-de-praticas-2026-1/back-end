@@ -533,6 +533,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/swagger-embed/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Swagger (Embed)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -776,23 +804,18 @@
 </thead>
 <tbody>
 <tr>
-<td>agendamento</td>
-<td>stub</td>
-<td>não</td>
-</tr>
-<tr>
 <td>blog</td>
 <td>implementado</td>
 <td>sim</td>
 </tr>
 <tr>
 <td>busca</td>
-<td>stub</td>
-<td>não</td>
+<td>implementado</td>
+<td>sim</td>
 </tr>
 <tr>
 <td>chat</td>
-<td>stub (gateway base)</td>
+<td>implementado parcial (gateway ativo)</td>
 <td>não</td>
 </tr>
 <tr>
@@ -812,8 +835,8 @@
 </tr>
 <tr>
 <td>header</td>
-<td>stub</td>
-<td>não</td>
+<td>implementado</td>
+<td>sim</td>
 </tr>
 <tr>
 <td>mapa</td>
@@ -827,8 +850,8 @@
 </tr>
 <tr>
 <td>publicidade</td>
-<td>stub</td>
-<td>não</td>
+<td>implementado</td>
+<td>sim</td>
 </tr>
 <tr>
 <td>recomendacao</td>
@@ -851,6 +874,11 @@
 <td>não</td>
 </tr>
 <tr>
+<td>solicitacao</td>
+<td>implementado</td>
+<td>sim</td>
+</tr>
+<tr>
 <td>usuario</td>
 <td>stub</td>
 <td>não</td>
@@ -861,6 +889,15 @@
 <ul>
 <li><code>blog/dto/blog-create.dto.ts</code></li>
 <li><code>contato/dto/empresa-response.dto.ts</code></li>
+<li><code>busca/dto/busca-blog-intervalo.dto.ts</code></li>
+<li><code>busca/dto/busca-banner-status.dto.ts</code></li>
+<li><code>header/dto/header-create.dto.ts</code></li>
+<li><code>header/dto/header-update.dto.ts</code></li>
+<li><code>publicidade/dto/publicidade-create.dto.ts</code></li>
+<li><code>publicidade/dto/publicidade-update.dto.ts</code></li>
+<li><code>solicitacao/dto/create-solicitacao.dto.ts</code></li>
+<li><code>solicitacao/dto/update-solicitacao-status.dto.ts</code></li>
+<li><code>solicitacao/dto/create-documento.dto.ts</code></li>
 </ul>
 <h2 id="testes">Testes</h2>
 <ul>
@@ -869,10 +906,10 @@
 </ul>
 <h2 id="prioridades-tecnicas-sugeridas">Prioridades técnicas sugeridas</h2>
 <ol>
-<li>Definir endpoints mínimos para módulos stubs com contrato claro de DTO.</li>
-<li>Padronizar documentação Swagger com <code>@ApiTags</code> em todos os controllers.</li>
-<li>Aumentar cobertura de testes para services com regra de negócio.</li>
-<li>Documentar eventos do chat quando os handlers WebSocket forem implementados.</li>
+<li>Definir endpoints mínimos para módulos ainda em stub (<code>dashboard</code>, <code>faq</code>, <code>mapa</code>, <code>notificacao</code>, <code>recomendacao</code>, <code>reports</code>, <code>servicos</code>, <code>simulador</code>, <code>usuario</code>).</li>
+<li>Padronizar respostas de erro e contratos de sucesso entre os módulos já ativos.</li>
+<li>Aumentar cobertura de testes para services com regra de negócio e fluxos de upload.</li>
+<li>Formalizar documentação de eventos do chat (payloads, autenticação e regras de uso).</li>
 </ol>
 
 

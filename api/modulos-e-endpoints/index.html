@@ -583,10 +583,54 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#busca" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Busca
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#contato" class="md-nav__link">
     <span class="md-ellipsis">
       
         Contato
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#header" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Header
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#publicidade" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Publicidade
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#solicitacoes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Solicitacoes
       
     </span>
   </a>
@@ -644,6 +688,34 @@
     
   
     WebSocket (Chat)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../swagger-embed/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Swagger (Embed)
   
 
     
@@ -799,14 +871,100 @@
 
 <h1 id="modulos-e-endpoints">Módulos e endpoints</h1>
 <h2 id="resumo">Resumo</h2>
-<p>Atualmente, o projeto possui <strong>15 controllers</strong> registrados. Destes, <strong>2 controllers</strong> possuem endpoints HTTP implementados no código.</p>
+<p>Atualmente, o projeto possui <strong>15 controllers</strong> registrados no <code>AppModule</code> e <strong>1 gateway WebSocket</strong> (<code>chat</code>).</p>
+<p>Dos controllers HTTP, <strong>6 módulos</strong> possuem rotas implementadas no código.</p>
 <h2 id="endpoints-implementados">Endpoints implementados</h2>
 <h3 id="blog">Blog</h3>
 <ul>
 <li><code>POST /blog</code></li>
 <li>Método: <code>criarPost()</code></li>
-<li>Body: <code>BlogCreateDto</code></li>
-<li>Objetivo: criar uma postagem de blog</li>
+<li>Body: <code>BlogCreateDto</code> (multipart/form-data com campo <code>imagem</code>)</li>
+<li>
+<p>Objetivo: criar uma postagem de blog</p>
+</li>
+<li>
+<p><code>GET /blog</code></p>
+</li>
+<li>Método: <code>getAll()</code></li>
+<li>
+<p>Objetivo: listar todos os posts</p>
+</li>
+<li>
+<p><code>GET /blog/:id</code></p>
+</li>
+<li>Método: <code>getById(id)</code></li>
+<li>Parâmetros:<ul>
+<li><code>id</code> (number, validado com <code>ParseIntPipe</code>)</li>
+</ul>
+</li>
+<li>
+<p>Objetivo: buscar post por identificador</p>
+</li>
+<li>
+<p><code>PUT /blog/:id</code></p>
+</li>
+<li>Método: <code>updateBlog(id)</code></li>
+<li>Parâmetros:<ul>
+<li><code>id</code> (number)</li>
+</ul>
+</li>
+<li>Body: <code>BlogUpdateDto</code> (multipart/form-data, <code>imagem</code> opcional)</li>
+<li>
+<p>Objetivo: atualizar dados do post</p>
+</li>
+<li>
+<p><code>DELETE /blog/:id</code></p>
+</li>
+<li>Método: <code>deleteById(id)</code></li>
+<li>Parâmetros:<ul>
+<li><code>id</code> (number)</li>
+</ul>
+</li>
+<li>Objetivo: remover post por identificador</li>
+</ul>
+<h3 id="busca">Busca</h3>
+<ul>
+<li><code>GET /busca/blog/periodo</code></li>
+<li>Método: <code>buscarBlogsPorIntervaloDeData()</code></li>
+<li>Query params:<ul>
+<li><code>de</code> (date string <code>YYYY-MM-DD</code>, opcional)</li>
+<li><code>ate</code> (date string <code>YYYY-MM-DD</code>, opcional)</li>
+</ul>
+</li>
+<li>
+<p>Objetivo: filtrar posts de blog por intervalo de data</p>
+</li>
+<li>
+<p><code>GET /busca/banner/status</code></p>
+</li>
+<li>Método: <code>buscarBannerPorStatus()</code></li>
+<li>Query params:<ul>
+<li><code>status</code> (<code>ativo</code> | <code>inativo</code>)</li>
+</ul>
+</li>
+<li>
+<p>Objetivo: filtrar banners por status</p>
+</li>
+<li>
+<p><code>GET /busca/blog/termo</code></p>
+</li>
+<li>Método: <code>listarBlog()</code></li>
+<li>Query params:<ul>
+<li><code>termo</code> (string, opcional)</li>
+</ul>
+</li>
+<li>
+<p>Objetivo: buscar posts por termo no titulo/conteudo</p>
+</li>
+<li>
+<p><code>GET /busca/carrossel/termo</code></p>
+</li>
+<li>Método: <code>listarCarrossel()</code></li>
+<li>Query params:<ul>
+<li><code>termo</code> (string, opcional)</li>
+</ul>
+</li>
+<li>Objetivo: buscar banners por termo na descricao</li>
 </ul>
 <h3 id="contato">Contato</h3>
 <ul>
@@ -823,19 +981,187 @@
 <li><code>id</code> (number, validado com <code>ParseIntPipe</code>)</li>
 </ul>
 </li>
-<li>Objetivo: retornar registro de contato por identificador</li>
+<li>
+<p>Objetivo: retornar registro de contato por identificador</p>
+</li>
+<li>
+<p><code>PUT /contato/:id</code></p>
+</li>
+<li>Método: <code>atualizarContato(id)</code></li>
+<li>Parâmetros:<ul>
+<li><code>id</code> (number, validado com <code>ParseIntPipe</code>)</li>
+</ul>
+</li>
+<li>Body: <code>ContatoUpdateDto</code></li>
+<li>Objetivo: atualizar dados de contato</li>
+</ul>
+<h3 id="header">Header</h3>
+<ul>
+<li><code>GET /header/carrossel</code></li>
+<li>Método: <code>getCarrossel()</code></li>
+<li>
+<p>Objetivo: retornar banners ativos para exibição no carrossel</p>
+</li>
+<li>
+<p><code>GET /header</code></p>
+</li>
+<li>Método: <code>getAll()</code></li>
+<li>
+<p>Objetivo: listar banners</p>
+</li>
+<li>
+<p><code>GET /header/:id</code></p>
+</li>
+<li>Método: <code>getById(id)</code></li>
+<li>Parâmetros:<ul>
+<li><code>id</code> (number)</li>
+</ul>
+</li>
+<li>
+<p>Objetivo: buscar banner por identificador</p>
+</li>
+<li>
+<p><code>POST /header</code></p>
+</li>
+<li>Método: <code>create()</code></li>
+<li>Body: <code>HeaderCreateDto</code> (multipart/form-data com campo <code>imagem</code>)</li>
+<li>
+<p>Objetivo: criar banner</p>
+</li>
+<li>
+<p><code>PATCH /header/:id</code></p>
+</li>
+<li>Método: <code>update(id)</code></li>
+<li>Parâmetros:<ul>
+<li><code>id</code> (number, validado com <code>ParseIntPipe</code>)</li>
+</ul>
+</li>
+<li>Body: <code>HeaderUpdateDto</code> (multipart/form-data, <code>imagem</code> opcional)</li>
+<li>
+<p>Objetivo: atualizar banner</p>
+</li>
+<li>
+<p><code>DELETE /header/:id</code></p>
+</li>
+<li>Método: <code>delete(id)</code></li>
+<li>Parâmetros:<ul>
+<li><code>id</code> (number, validado com <code>ParseIntPipe</code>)</li>
+</ul>
+</li>
+<li>Objetivo: remover banner</li>
+</ul>
+<h3 id="publicidade">Publicidade</h3>
+<ul>
+<li><code>GET /publicidade</code></li>
+<li>Método: <code>getAll()</code></li>
+<li>
+<p>Objetivo: listar publicidades</p>
+</li>
+<li>
+<p><code>GET /publicidade/:id</code></p>
+</li>
+<li>Método: <code>getById(id)</code></li>
+<li>Parâmetros:<ul>
+<li><code>id</code> (number, validado com <code>ParseIntPipe</code>)</li>
+</ul>
+</li>
+<li>
+<p>Objetivo: buscar publicidade por identificador</p>
+</li>
+<li>
+<p><code>GET /publicidade/status/:status</code></p>
+</li>
+<li>Método: <code>getByStatus(status)</code></li>
+<li>Parâmetros:<ul>
+<li><code>status</code> (<code>ativo</code> | <code>inativo</code>)</li>
+</ul>
+</li>
+<li>
+<p>Objetivo: filtrar publicidades por status</p>
+</li>
+<li>
+<p><code>POST /publicidade</code></p>
+</li>
+<li>Método: <code>criarPublicidade()</code></li>
+<li>Body: <code>PublicidadeCreateDto</code> (multipart/form-data com campo <code>file</code>)</li>
+<li>
+<p>Objetivo: criar publicidade</p>
+</li>
+<li>
+<p><code>PUT /publicidade/:id</code></p>
+</li>
+<li>Método: <code>update(id)</code></li>
+<li>Parâmetros:<ul>
+<li><code>id</code> (number, validado com <code>ParseIntPipe</code>)</li>
+</ul>
+</li>
+<li>Body: <code>PublicidadeUpdateDto</code> (multipart/form-data, <code>imagem</code> opcional)</li>
+<li>
+<p>Objetivo: atualizar publicidade</p>
+</li>
+<li>
+<p><code>DELETE /publicidade/:id</code></p>
+</li>
+<li>Método: <code>remove(id)</code></li>
+<li>Parâmetros:<ul>
+<li><code>id</code> (number, validado com <code>ParseIntPipe</code>)</li>
+</ul>
+</li>
+<li>Objetivo: remover publicidade</li>
+</ul>
+<h3 id="solicitacoes">Solicitacoes</h3>
+<ul>
+<li><code>POST /solicitacoes</code></li>
+<li>Método: <code>criarSolicitacao()</code></li>
+<li>Body: <code>CreateSolicitacaoDto</code></li>
+<li>
+<p>Objetivo: criar solicitacao e retornar protocolo</p>
+</li>
+<li>
+<p><code>GET /solicitacoes</code></p>
+</li>
+<li>Método: <code>listarSolicitacoes()</code></li>
+<li>
+<p>Objetivo: listar solicitacoes do sistema</p>
+</li>
+<li>
+<p><code>PUT /solicitacoes/:id</code></p>
+</li>
+<li>Método: <code>updateSolicitacaoStatus(id)</code></li>
+<li>Parâmetros:<ul>
+<li><code>id</code> (number, validado com <code>ParseIntPipe</code>)</li>
+</ul>
+</li>
+<li>Body: <code>UpdateSolicitacaoStatusDto</code><ul>
+<li><code>status</code>: <code>recebido</code> | <code>aguardando_pagamento</code> | <code>aguardando_documento</code> | <code>em_andamento</code> | <code>concluido</code> | <code>cancelado</code></li>
+<li><code>observacaoAdmin</code> (opcional)</li>
+</ul>
+</li>
+<li>
+<p>Objetivo: atualizar status da solicitacao</p>
+</li>
+<li>
+<p><code>POST /solicitacoes/:id/documentos</code></p>
+</li>
+<li>Método: <code>enviarDocumento(id)</code></li>
+<li>Parâmetros:<ul>
+<li><code>id</code> (number, validado com <code>ParseIntPipe</code>)</li>
+</ul>
+</li>
+<li>Body: multipart/form-data<ul>
+<li><code>tipo_documento</code> (string)</li>
+<li><code>documento</code> (arquivo)</li>
+</ul>
+</li>
+<li>Objetivo: anexar documento a solicitacao</li>
 </ul>
 <h2 id="controllers-sem-endpoints-http-estrutura-base">Controllers sem endpoints HTTP (estrutura base)</h2>
 <p>Os controllers abaixo existem e estão registrados no módulo raiz, mas ainda sem rotas HTTP declaradas:</p>
 <ul>
-<li><code>agendamento</code></li>
-<li><code>busca</code></li>
 <li><code>dashboard</code></li>
 <li><code>faq</code></li>
-<li><code>header</code></li>
 <li><code>mapa</code></li>
 <li><code>notificacao</code></li>
-<li><code>publicidade</code></li>
 <li><code>recomendacao</code></li>
 <li><code>reports</code></li>
 <li><code>servicos</code></li>
@@ -845,8 +1171,8 @@
 <h2 id="observacoes-de-documentacao-da-api">Observações de documentação da API</h2>
 <ul>
 <li>Swagger está configurado globalmente em <code>/swagger</code>.</li>
-<li>Decorators Swagger por endpoint estão presentes principalmente em <code>contato</code>.</li>
-<li>Recomendação: adicionar <code>@ApiTags</code> e respostas padronizadas em todos os controllers conforme os módulos avançarem.</li>
+<li>A maior parte dos endpoints ativos já possui decorators Swagger (<code>@ApiOperation</code>, <code>@ApiBody</code>, <code>@ApiResponse</code>).</li>
+<li>Alguns endpoints usam upload multipart/form-data; validar tamanho/tipo de arquivo também no front-end para reduzir erros de integração.</li>
 </ul>
 
 
