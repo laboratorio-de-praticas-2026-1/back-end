@@ -14,18 +14,15 @@ export class ServicosService {
   private servicos: Servico[] = [];
   private idAtual = 1;
 
-  async criarServico(
+  criarServico(
     nome: string,
     descricao: string,
     valor_base: number,
     prazo_estimado_dias: number,
     ativo: boolean,
-  ): Promise<Servico> {
-    // validação
+  ): Servico {
     if (!nome || !descricao) {
-      throw new BadRequestException(
-        'Nome e descrição são obrigatórios',
-      );
+      throw new BadRequestException('Nome e descrição são obrigatórios');
     }
 
     if (valor_base === undefined || prazo_estimado_dias === undefined) {

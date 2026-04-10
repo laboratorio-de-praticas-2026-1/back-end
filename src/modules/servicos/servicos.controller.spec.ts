@@ -17,4 +17,18 @@ describe('ServicosController', () => {
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
+
+  it('deve retornar mensagem de sucesso', () => {
+    const resposta = controller.criar({
+      nome: 'Troca de óleo',
+      descricao: 'Troca completa do óleo do motor',
+      valor_base: 120.5,
+      prazo_estimado_dias: 2,
+      ativo: true,
+    });
+
+    expect(resposta).toEqual({
+      message: 'Serviço criado com sucesso',
+    });
+  });
 });
