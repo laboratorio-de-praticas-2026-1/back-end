@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Documentacao tecnica do back-end NestJS do projeto Bortone">
+        <meta name="description" content="Documentação técnica do back-end NestJS do projeto Bortone">
       
       
       
@@ -25,7 +25,7 @@
     
     
       
-        <title>Configuracao do Ambiente - Back-end Bortone - Documentacao Tecnica</title>
+        <title>Configuracao do Ambiente - Back-end Bortone - Documentação Técnica</title>
       
     
     
@@ -92,7 +92,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Cabeçalho">
-    <a href=".." title="Back-end Bortone - Documentacao Tecnica" class="md-header__button md-logo" aria-label="Back-end Bortone - Documentacao Tecnica" data-md-component="logo">
+    <a href=".." title="Back-end Bortone - Documentação Técnica" class="md-header__button md-logo" aria-label="Back-end Bortone - Documentação Técnica" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -106,7 +106,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            Back-end Bortone - Documentacao Tecnica
+            Back-end Bortone - Documentação Técnica
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -333,13 +333,13 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navegação" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="Back-end Bortone - Documentacao Tecnica" class="md-nav__button md-logo" aria-label="Back-end Bortone - Documentacao Tecnica" data-md-component="logo">
+    <a href=".." title="Back-end Bortone - Documentação Técnica" class="md-nav__button md-logo" aria-label="Back-end Bortone - Documentação Técnica" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
-    Back-end Bortone - Documentacao Tecnica
+    Back-end Bortone - Documentação Técnica
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -452,7 +452,7 @@
   <a href="#instalar-dependencias" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instalar dependencias
+        Instalar dependências
       
     </span>
   </a>
@@ -463,19 +463,19 @@
   <a href="#variaveis-de-ambiente" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Variaveis de ambiente
+        Variáveis de ambiente
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Variaveis de ambiente">
+    <nav class="md-nav" aria-label="Variáveis de ambiente">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#exemplo-de-configuracao-desenvolvimento" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Exemplo de configuracao (desenvolvimento)
+        Exemplo de configuração (desenvolvimento)
       
     </span>
   </a>
@@ -510,10 +510,21 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#swagger-em-ambientes-deployados" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Swagger em ambientes deployados
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#scripts-uteis" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Scripts uteis
+        Scripts úteis
       
     </span>
   </a>
@@ -652,6 +663,34 @@
     
   
     WebSocket (Chat)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/swagger-embed/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Swagger (Embed)
   
 
     
@@ -805,19 +844,19 @@
 
 
 
-<h1 id="configuracao-do-ambiente">Configuracao do ambiente</h1>
+<h1 id="configuracao-do-ambiente">Configuração do ambiente</h1>
 <h2 id="pre-requisitos">Pre-requisitos</h2>
 <ul>
 <li>Node.js 20+</li>
 <li>npm 10+</li>
-<li>Banco MySQL acessivel (local via repositorio database ou remoto)</li>
+<li>Banco MySQL acessível (local via repositório database ou remoto)</li>
 </ul>
-<h2 id="instalar-dependencias">Instalar dependencias</h2>
+<h2 id="instalar-dependencias">Instalar dependências</h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>npm<span class="w"> </span>install
 </code></pre></div>
-<h2 id="variaveis-de-ambiente">Variaveis de ambiente</h2>
+<h2 id="variaveis-de-ambiente">Variáveis de ambiente</h2>
 <p>Crie um arquivo <code>.env</code> na raiz com base em <code>.env.example</code>.</p>
-<h3 id="exemplo-de-configuracao-desenvolvimento">Exemplo de configuracao (desenvolvimento)</h3>
+<h3 id="exemplo-de-configuracao-desenvolvimento">Exemplo de configuração (desenvolvimento)</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>DATABASE_HOST=mysql-banco-dev-lp.alwaysdata.net
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>DATABASE_USERNAME=USERNAME
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>DATABASE_PASSWORD=SENHA
@@ -826,22 +865,46 @@
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>PORT=3000
 </code></pre></div>
 <blockquote>
-<p>Para banco local, use o compose do repositorio de database e ajuste host/credenciais conforme seu ambiente.</p>
+<p>Para banco local, use o compose do repositório de database e ajuste host/credenciais conforme seu ambiente.</p>
 </blockquote>
 <h2 id="executar-a-api">Executar a API</h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>npm<span class="w"> </span>run<span class="w"> </span>start:dev
 </code></pre></div>
-<p>A aplicacao sobe em <code>http://localhost:3000</code> por padrao.</p>
+<p>A aplicação sobe em <code>http://localhost:3000</code> por padrão.</p>
 <h2 id="swagger">Swagger</h2>
-<p>Com a API em execucao, acesse:</p>
+<p>Com a API em execução, acesse:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>http://localhost:3000/swagger
 </code></pre></div>
-<h2 id="scripts-uteis">Scripts uteis</h2>
+<h2 id="swagger-em-ambientes-deployados">Swagger em ambientes deployados</h2>
+<table>
+<thead>
+<tr>
+<th>Branch</th>
+<th>URL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>main</code></td>
+<td>https://backend-main-412027788376.southamerica-east1.run.app/swagger</td>
+</tr>
+<tr>
+<td><code>develop</code></td>
+<td>https://backend-develop-412027788376.southamerica-east1.run.app/swagger</td>
+</tr>
+<tr>
+<td><code>release</code></td>
+<td>https://backend-release-entrega-09-04-412027788376.southamerica-east1.run.app/swagger</td>
+</tr>
+</tbody>
+</table>
+<p>Esses endpoints sao uteis para validacao integrada apos merge/deploy.</p>
+<h2 id="scripts-uteis">Scripts úteis</h2>
 <table>
 <thead>
 <tr>
 <th>Script</th>
-<th>Funcao</th>
+<th>Função</th>
 </tr>
 </thead>
 <tbody>
@@ -851,7 +914,7 @@
 </tr>
 <tr>
 <td><code>npm run build</code></td>
-<td>Build de producao</td>
+<td>Build de produção</td>
 </tr>
 <tr>
 <td><code>npm run start:prod</code></td>
@@ -859,11 +922,11 @@
 </tr>
 <tr>
 <td><code>npm run lint</code></td>
-<td>Lint com correcao automatica</td>
+<td>Lint com correção automática</td>
 </tr>
 <tr>
 <td><code>npm test</code></td>
-<td>Testes unitarios</td>
+<td>Testes unitários</td>
 </tr>
 <tr>
 <td><code>npm run test:e2e</code></td>

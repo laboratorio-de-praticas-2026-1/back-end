@@ -35,6 +35,7 @@ nav:
   - API:
       - Modulos e Endpoints: api/modulos-e-endpoints.md
       - WebSocket (Chat): api/websocket-chat.md
+      - Swagger (Embed): api/swagger-embed.md
   - Dados:
       - Modelos Sequelize: dados/modelos-sequelize.md
   - Status de Implementacao: status-implementacao.md
