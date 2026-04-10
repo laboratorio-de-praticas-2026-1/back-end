@@ -1,6 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { Debito } from '../../models/debito.model';
+import { Debito, TipoDebito } from '../../models/debito.model';
 import { DebitoVeiculo } from '../../models/debito-veiculo.model';
 import { Veiculo } from '../../models/veiculo.model';
 import { DebitoItemDto, DebitoResponseDto } from './dto/debito-response.dto';
@@ -27,7 +31,20 @@ export class DebitoService {
       throw new NotFoundException(`Veículo com placa ${placa} não encontrado`);
     }
 
-    const debitos = (veiculo.debitoVeiculos ?? []).map((dv: DebitoVeiculo) => ({
+    const debitosVeiculo = (veiculo.debitoVeiculos ?? []).filter(
+      (dv: DebitoVeiculo) => dv.debito?.tipo === TipoDebito.VEICULO,
+    );
+
+    if (
+      (veiculo.debitoVeiculos ?? []).length > 0 &&
+      debitosVeiculo.length === 0
+    ) {
+      throw new BadRequestException(
+        'Nenhum débito do tipo veículo encontrado para esta placa',
+      );
+    }
+
+    const debitos = debitosVeiculo.map((dv: DebitoVeiculo) => ({
       id: dv.debito.id,
       descricao: dv.debito.descricao,
       valor: Number(dv.debito.valor),
