@@ -5,14 +5,14 @@ import { Servico } from 'src/models/servico.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
 import { InternalServerErrorException } from '@nestjs/common';
 import { jest, describe, it, expect, beforeEach } from '@jest/globals';
-import { SolicitacaoComServico } from './dto/solicitacao-com-servico';
+import { SolicitacaoComServicoDto } from './dto/solicitacao-com-servico.dto';
 
 describe('RecomendacaoService', () => {
   let service: RecomendacaoService;
 
   const mockSolicitacaoModel = {
     findAll: jest.fn() as jest.MockedFunction<
-      () => Promise<SolicitacaoComServico[]>
+      () => Promise<SolicitacaoComServicoDto[]>
     >,
   };
 
@@ -41,7 +41,7 @@ describe('RecomendacaoService', () => {
     it('deve retornar serviços contratados pelo usuário', async () => {
       const usuarioId = 1;
 
-      const mockDbResponse: SolicitacaoComServico[] = [
+      const mockDbResponse: SolicitacaoComServicoDto[] = [
         {
           servico: {
             nome: 'Transferência de Propriedade',
@@ -73,7 +73,7 @@ describe('RecomendacaoService', () => {
 
     it('deve retornar array vazio e disparar warn se o histórico for inexistente', async () => {
       mockSolicitacaoModel.findAll.mockResolvedValue(
-        [] as SolicitacaoComServico[],
+        [] as SolicitacaoComServicoDto[],
       );
 
       const resultado = await service.buscarAtributosPerfil(99);
