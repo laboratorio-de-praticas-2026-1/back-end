@@ -1,4 +1,5 @@
 import {
+  BelongsTo,
   Column,
   DataType,
   ForeignKey,
@@ -15,6 +16,9 @@ export class DocumentoSolicitacao extends Model {
   @ForeignKey(() => Solicitacao)
   @Column({ field: 'solicitacao_id', allowNull: false })
   declare solicitacaoId: number;
+
+  @BelongsTo(() => Solicitacao)
+  declare solicitacao: Solicitacao;
 
   @Column({ field: 'nome_hash', type: DataType.STRING(255), allowNull: true })
   declare nomeHash: string | null;

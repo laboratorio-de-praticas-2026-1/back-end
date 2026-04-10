@@ -1,10 +1,7 @@
 import {
   Body,
   Controller,
-  FileTypeValidator,
   Logger,
-  MaxFileSizeValidator,
-  ParseFilePipe,
   Get,
   Post,
   UseInterceptors,
@@ -17,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiBody, ApiOperation } from '@nestjs/swagger';
-import { Blog } from 'src/models/blog.model';
+import { Blog, CategoriaBlog } from 'src/models/blog.model';
 import { BlogService } from './blog.service';
 import { BlogCreateDto } from './dto/blog-create.dto';
 import { BlogUpdateDto } from './dto/blog-update.dto';
@@ -40,6 +37,22 @@ export class BlogController {
           type: 'string',
           format: 'date',
           example: '2026-03-21',
+        },
+        olhoDoTexto: {
+          type: 'string',
+          nullable: true,
+          example: 'Resumo do conteúdo',
+        },
+        categoria: {
+          type: 'string',
+          enum: Object.values(CategoriaBlog),
+          default: CategoriaBlog.Documentacao,
+          example: CategoriaBlog.Documentacao,
+        },
+        ativo: {
+          type: 'boolean',
+          default: true,
+          example: true,
         },
         imagem: { type: 'string', format: 'binary' },
       },
@@ -103,6 +116,22 @@ export class BlogController {
           format: 'date',
           nullable: true,
           example: '2026-03-21',
+        },
+        olhoDoTexto: {
+          type: 'string',
+          nullable: true,
+          example: 'Resumo atualizado',
+        },
+        categoria: {
+          type: 'string',
+          enum: Object.values(CategoriaBlog),
+          nullable: true,
+          example: CategoriaBlog.Documentacao,
+        },
+        ativo: {
+          type: 'boolean',
+          nullable: true,
+          example: true,
         },
         imagem: { type: 'string', format: 'binary' },
       },
