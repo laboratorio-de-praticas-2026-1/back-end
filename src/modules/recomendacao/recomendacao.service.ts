@@ -6,8 +6,8 @@ import {
 import { InjectModel } from '@nestjs/sequelize';
 import { Servico } from 'src/models/servico.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
-import { PerfilUsuarioDto } from './dto/recomendacao-perfil-usuario';
-import { SolicitacaoComServico } from './dto/solicitacao-com-servico';
+import { PerfilUsuarioDto } from './dto/recomendacao-perfil-usuario.dto';
+import { SolicitacaoComServicoDto } from './dto/solicitacao-com-servico.dto';
 
 @Injectable()
 export class RecomendacaoService {
@@ -36,14 +36,14 @@ export class RecomendacaoService {
         ],
         raw: true,
         nest: true,
-      })) as unknown as SolicitacaoComServico[];
+      })) as unknown as SolicitacaoComServicoDto[];
 
       if (!solicitacoes || solicitacoes.length === 0) {
         this.logger.warn(`Nenhum serviço encontrado para usuário ${usuarioId}`);
         return [];
       }
 
-      return solicitacoes.map((s: SolicitacaoComServico) => ({
+      return solicitacoes.map((s: SolicitacaoComServicoDto) => ({
         nome: s.servico.nome,
         descricao: s.servico.descricao,
         valor_base: s.servico.valor_base,
