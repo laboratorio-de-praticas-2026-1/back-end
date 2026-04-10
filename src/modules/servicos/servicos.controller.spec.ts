@@ -1,17 +1,34 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ServicosController } from './servicos.controller';
 import { ServicosService } from './servicos.service';
+import { NotFoundException } from '@nestjs/common';
 
 describe('ServicosController', () => {
   let controller: ServicosController;
 
+  const mockServicosService = {
+    findAll: jest.fn(),
+    findOne: jest.fn(),
+    updateServico: jest.fn(),
+    deleteServico: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ServicosController],
-      providers: [ServicosService],
+      providers: [
+        {
+          provide: ServicosService,
+          useValue: mockServicosService,
+        },
+      ],
     }).compile();
 
     controller = module.get<ServicosController>(ServicosController);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   it('should be defined', () => {

@@ -1,5 +1,6 @@
 import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { ServicosService } from './servicos.service';
+import { Servico } from 'src/models/servico.model';
 
 @Controller('servicos')
 export class ServicosController {
