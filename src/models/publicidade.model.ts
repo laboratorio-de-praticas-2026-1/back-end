@@ -13,4 +13,11 @@ export class Publicidade extends Model {
 
   @Column({ field: 'url_imagem', type: DataType.STRING(255), allowNull: true })
   declare urlImagem: string | null;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+    defaultValue: true,
+  })
+  declare ativo: boolean;
 }

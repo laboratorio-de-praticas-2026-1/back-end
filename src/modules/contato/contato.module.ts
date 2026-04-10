@@ -9,5 +9,6 @@ import { ContatoService } from './contato.service';
   imports: [SequelizeModule.forFeature([Empresa])],
   controllers: [ContatoController],
   providers: [ContatoService],
+  exports: [ContatoService],
 })
 export class ContatoModule {}
