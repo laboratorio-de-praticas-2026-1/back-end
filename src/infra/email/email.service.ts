@@ -23,7 +23,7 @@ export class EmailService {
         throw new BadRequestException('Parâmetros de e-mail incompletos');
       }
 
-      const info = await this.mailerService.sendMail({
+      await this.mailerService.sendMail({
         to: params.to,
         subject: params.assunto,
         template: params.template,
@@ -39,9 +39,7 @@ export class EmailService {
         ],
       });
 
-      this.logger.log(
-        `E-mail enviado com sucesso para ${params.to}: ${info.messageId}`,
-      );
+      this.logger.log(`E-mail enviado com sucesso para ${params.to}.`);
     } catch (error) {
       this.logger.error('Erro ao enviar e-mail', error);
       throw new InternalServerErrorException('Erro ao enviar e-mail');

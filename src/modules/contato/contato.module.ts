@@ -6,9 +6,7 @@ import { ContatoController } from './contato.controller';
 import { ContatoService } from './contato.service';
 
 @Module({
-  imports: [
-    SequelizeModule.forFeature([Empresa, EmailEnviado]),
-  ],
+  imports: [SequelizeModule.forFeature([Empresa, EmailEnviado])],
   controllers: [ContatoController],
   providers: [ContatoService],
   exports: [ContatoService],

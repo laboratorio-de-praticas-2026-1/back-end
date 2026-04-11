@@ -24,7 +24,7 @@ import { UsuarioModule } from './modules/usuario/usuario.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ envFilePath: '.env', isGlobal: true }),    
+    ConfigModule.forRoot({ envFilePath: '.env', isGlobal: true }),
     SequelizeModule.forRoot({
       dialect: 'mysql',
       host: process.env.DATABASE_HOST,
