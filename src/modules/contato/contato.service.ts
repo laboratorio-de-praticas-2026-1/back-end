@@ -94,14 +94,6 @@ export class ContatoService {
         );
       }
 
-      if (!destinatario) {
-        this.logger.error('CONTACT_EMAIL não definido no ambiente');
-        throw new HttpException(
-          'Destinatário de e-mail não configurado',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
-
       // Envia e-mail usando EmailService
       const emailParams = this.montarEmailParams(dadosDto);
 
