@@ -1,21 +1,26 @@
 import {
-  Controller,
-  Get,
-  Put,
   Body,
+  Controller,
+  ForbiddenException,
+  Get,
   Logger,
   Param,
   ParseIntPipe,
-  ForbiddenException,
+  Post,
+  Put,
+  ValidationPipe,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
+  ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
 } from '@nestjs/swagger';
 import { ContatoService } from './contato.service';
-import { EmpresaDto } from './dto/empresa-response.dto';
 import { ContatoUpdateDto } from './dto/contato-update.dto';
+import { EmpresaDto } from './dto/empresa-response.dto';
+import { EnviarEmailDto } from './dto/enviar-email-dto';
 
 @Controller('contato')
 export class ContatoController {
@@ -80,5 +85,17 @@ export class ContatoController {
     }
 
     return this.CNPJ_EMPRESA;
+  }
+
+  @Post('enviar-email')
+  @ApiCreatedResponse({ description: 'Mensagem enviada com sucesso' })
+  @ApiBadRequestResponse({ description: 'Dados inválidos' })
+  async enviarMensagemContato(
+    @Body(ValidationPipe) dados: EnviarEmailDto,
+  ): Promise<{ message: string }> {
+    this.logger.log(
+      `Recebendo mensagem de contato de: ${dados.nome} (${dados.email})`,
+    );
+    return this.contatoService.enviarMensagemContato(dados);
   }
 }
