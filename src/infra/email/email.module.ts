@@ -15,7 +15,7 @@ import { EmailService } from './email.service';
           secure: process.env.EMAIL_SECURE === 'true',
           auth: {
             user: process.env.EMAIL_USER,
-            pass: 'hhav ermw hxzu xsro',
+            pass: process.env.EMAIL_PASS,
           },
         },
         defaults: {

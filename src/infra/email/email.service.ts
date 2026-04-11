@@ -15,9 +15,7 @@ export class EmailService {
   constructor(private readonly mailerService: MailerService) {}
 
   async enviarEmail(params: EmailParams): Promise<void> {
-    try {
-      console.log(process.env.EMAIL_USER);
-      console.log(process.env.EMAIL_PASS);
+    try {      
       if (!params.assunto || !params.to || !params.template) {
         this.logger.warn('Parâmetros de e-mail incompletos', params);
         throw new BadRequestException('Parâmetros de e-mail incompletos');
