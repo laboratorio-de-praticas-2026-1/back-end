@@ -78,7 +78,6 @@ export class ContatoController {
     if (!this.CNPJ_EMPRESA) {
       throw new ForbiddenException('CNPJ inválido');
     }
-
     return this.CNPJ_EMPRESA;
   }
 }
