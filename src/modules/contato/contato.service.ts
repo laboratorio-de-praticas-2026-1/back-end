@@ -6,11 +6,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
+import { EmailParams } from 'src/infra/email/dto/email-params';
+import { CONTATO_DUVIDA_CLIENTE } from 'src/infra/email/templates/templates-names';
 import { EmailEnviado } from 'src/models/email-enviado.model';
 import { Empresa } from 'src/models/empresa.model';
-import { EnviarEmailDto } from '../../commons/email/dto/enviar-email.dto';
-import { EmailService } from '../../commons/email/email.service';
+import { EmailService } from '../../infra/email/email.service';
 import { EmpresaDto } from './dto/empresa-response.dto';
+import { EnviarEmailDto } from './dto/enviar-email-dto';
 
 @Injectable()
 export class ContatoService {
@@ -78,23 +80,43 @@ export class ContatoService {
     );
   }
 
-  async enviarEmail(dados: EnviarEmailDto): Promise<{ message: string }> {
+  async enviarMensagemContato(
+    dadosDto: EnviarEmailDto,
+  ): Promise<{ message: string }> {
     try {
       const dataEnvio = new Date();
 
-      // Salva no banco
+      const destinatario = process.env.CONTACT_EMAIL;
+      if (!destinatario) {
+        throw new HttpException(
+          'Não foi possível enviar a mensagem. Contato da empresa não configurado.',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+
+      if (!destinatario) {
+        this.logger.error('CONTACT_EMAIL não definido no ambiente');
+        throw new HttpException(
+          'Destinatário de e-mail não configurado',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+
+      // Envia e-mail usando EmailService
+      const emailParams = this.montarEmailParams(dadosDto);
+
+      await this.emailService.enviarEmail(emailParams);
+
+      // Salva no banco após enviar o e-mail
       await this.emailEnviadoModel.create({
-        nomeUsuario: dados.nome,
-        emailUsuario: dados.email,
-        assunto: dados.assunto,
-        textoDigitado: dados.mensagem,
+        nomeUsuario: dadosDto.nome,
+        emailUsuario: dadosDto.email,
+        assunto: dadosDto.assunto,
+        textoDigitado: dadosDto.mensagem,
         dataEnvio: dataEnvio,
       });
 
-      // Envia e-mail usando EmailService
-      await this.emailService.enviarEmail(dados); // passa apenas o DTO
-
-      return { message: 'Mensagem enviada com sucesso!' };
+      return { message: 'Mensagem de contato enviada com sucesso!' };
     } catch (error: unknown) {
       let mensagemErro = 'Erro ao enviar mensagem';
       if (error instanceof Error) {
@@ -105,5 +127,22 @@ export class ContatoService {
       }
       throw new HttpException(mensagemErro, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+  }
+
+  private montarEmailParams(dadosDto: EnviarEmailDto): EmailParams {
+    return new EmailParams(
+      process.env.CONTACT_EMAIL!,
+      CONTATO_DUVIDA_CLIENTE,
+      dadosDto.assunto,
+      {
+        nome: dadosDto.nome,
+        email: dadosDto.email,
+        mensagem: dadosDto.mensagem,
+        dataEnvio: new Date().toLocaleString(),
+        telefone: dadosDto.telefone || 'Não fornecido',
+        assunto: dadosDto.assunto,
+      },
+      false,
+    );
   }
 }

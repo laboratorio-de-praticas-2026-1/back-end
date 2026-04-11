@@ -11,10 +11,11 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { ApiBadRequestResponse, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse } from '@nestjs/swagger';
-import { EnviarEmailDto } from 'src/commons/email/dto/enviar-email.dto';
+
 import { ContatoService } from './contato.service';
 import { ContatoUpdateDto } from './dto/contato-update.dto';
 import { EmpresaDto } from './dto/empresa-response.dto';
+import { EnviarEmailDto } from './dto/enviar-email-dto';
 
 @Controller('contato')
 export class ContatoController {
@@ -73,12 +74,12 @@ export class ContatoController {
   @Post('enviar-email')
   @ApiCreatedResponse({ description: 'Mensagem enviada com sucesso' })
   @ApiBadRequestResponse({ description: 'Dados inválidos' })
-  async enviarEmail(
+  async enviarMensagemContato(
     @Body(ValidationPipe) dados: EnviarEmailDto,
   ): Promise<{ message: string }> {
     this.logger.log(
       `Recebendo mensagem de contato de: ${dados.nome} (${dados.email})`,
     );
-    return this.contatoService.enviarEmail(dados);
+    return this.contatoService.enviarMensagemContato(dados);
   }
 }
