@@ -10,8 +10,7 @@ import {
   Put,
   ValidationPipe,
 } from '@nestjs/common';
-import { ApiBadRequestResponse, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse } from '@nestjs/swagger';
-
+import { ApiBadRequestResponse, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
 import { ContatoService } from './contato.service';
 import { ContatoUpdateDto } from './dto/contato-update.dto';
 import { EmpresaDto } from './dto/empresa-response.dto';
@@ -26,6 +25,9 @@ export class ContatoController {
   constructor(private readonly contatoService: ContatoService) {}
 
   @Get()
+  @ApiOperation({
+    summary: 'Retorna dados do contato da empresa bortone',
+  })
   @ApiOkResponse({ type: EmpresaDto })
   @ApiNotFoundResponse({ description: 'Dados de contato não encontrados' })
   buscarContato(): Promise<EmpresaDto> {
@@ -37,6 +39,11 @@ export class ContatoController {
   }
 
   @Get(':id')
+  @ApiOperation({
+    summary: 'Retorna dados do contato da empresa bortone. (Fallback)',
+    description:
+      'Busca dados do contato da empresa bortone por ID. Usado caso o dado no banco tenha id diferente de 1.',
+  })
   @ApiOkResponse({ type: EmpresaDto })
   @ApiNotFoundResponse({ description: 'Dados de contato não encontrados' })
   buscarContatoById(
@@ -50,6 +57,9 @@ export class ContatoController {
   }
 
   @Put(':id')
+  @ApiOperation({
+    summary: 'Atualiza dados de contato da empresa bortone pelo Id.',
+  })
   @ApiOkResponse({ description: 'Contato atualizado com sucesso' })
   @ApiNotFoundResponse({ description: 'Contato não encontrado' })
   async atualizarContato(

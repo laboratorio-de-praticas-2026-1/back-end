@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Documentacao tecnica do back-end NestJS do projeto Bortone">
+        <meta name="description" content="Documentação técnica do back-end NestJS do projeto Bortone">
       
       
       
@@ -23,7 +23,7 @@
     
     
       
-        <title>Status de Implementacao - Back-end Bortone - Documentacao Tecnica</title>
+        <title>Status de Implementacao - Back-end Bortone - Documentação Técnica</title>
       
     
     
@@ -90,7 +90,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Cabeçalho">
-    <a href=".." title="Back-end Bortone - Documentacao Tecnica" class="md-header__button md-logo" aria-label="Back-end Bortone - Documentacao Tecnica" data-md-component="logo">
+    <a href=".." title="Back-end Bortone - Documentação Técnica" class="md-header__button md-logo" aria-label="Back-end Bortone - Documentação Técnica" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -104,7 +104,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            Back-end Bortone - Documentacao Tecnica
+            Back-end Bortone - Documentação Técnica
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -331,13 +331,13 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navegação" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="Back-end Bortone - Documentacao Tecnica" class="md-nav__button md-logo" aria-label="Back-end Bortone - Documentacao Tecnica" data-md-component="logo">
+    <a href=".." title="Back-end Bortone - Documentação Técnica" class="md-nav__button md-logo" aria-label="Back-end Bortone - Documentação Técnica" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
-    Back-end Bortone - Documentacao Tecnica
+    Back-end Bortone - Documentação Técnica
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -520,6 +520,34 @@
     
   
     WebSocket (Chat)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/swagger-embed/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Swagger (Embed)
   
 
     
@@ -732,7 +760,7 @@
   <a href="#prioridades-tecnicas-sugeridas" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Prioridades tecnicas sugeridas
+        Prioridades técnicas sugeridas
       
     </span>
   </a>
@@ -764,22 +792,17 @@
 
 
 
-<h1 id="status-de-implementacao">Status de implementacao</h1>
+<h1 id="status-de-implementacao">Status de implementação</h1>
 <h2 id="panorama-atual">Panorama atual</h2>
 <table>
 <thead>
 <tr>
-<th>Modulo</th>
+<th>Módulo</th>
 <th>Status do service</th>
 <th>Endpoints HTTP</th>
 </tr>
 </thead>
 <tbody>
-<tr>
-<td>agendamento</td>
-<td>stub</td>
-<td>nao</td>
-</tr>
 <tr>
 <td>blog</td>
 <td>implementado</td>
@@ -787,13 +810,13 @@
 </tr>
 <tr>
 <td>busca</td>
-<td>stub</td>
-<td>nao</td>
+<td>implementado</td>
+<td>sim</td>
 </tr>
 <tr>
 <td>chat</td>
-<td>stub (gateway base)</td>
-<td>nao</td>
+<td>implementado parcial (gateway ativo)</td>
+<td>não</td>
 </tr>
 <tr>
 <td>contato</td>
@@ -803,57 +826,62 @@
 <tr>
 <td>dashboard</td>
 <td>stub</td>
-<td>nao</td>
+<td>não</td>
 </tr>
 <tr>
 <td>faq</td>
 <td>stub</td>
-<td>nao</td>
+<td>não</td>
 </tr>
 <tr>
 <td>header</td>
-<td>stub</td>
-<td>nao</td>
+<td>implementado</td>
+<td>sim</td>
 </tr>
 <tr>
 <td>mapa</td>
 <td>stub</td>
-<td>nao</td>
+<td>não</td>
 </tr>
 <tr>
 <td>notificacao</td>
 <td>stub</td>
-<td>nao</td>
+<td>não</td>
 </tr>
 <tr>
 <td>publicidade</td>
-<td>stub</td>
-<td>nao</td>
+<td>implementado</td>
+<td>sim</td>
 </tr>
 <tr>
 <td>recomendacao</td>
 <td>stub</td>
-<td>nao</td>
+<td>não</td>
 </tr>
 <tr>
 <td>reports</td>
 <td>stub</td>
-<td>nao</td>
+<td>não</td>
 </tr>
 <tr>
 <td>servicos</td>
 <td>stub</td>
-<td>nao</td>
+<td>não</td>
 </tr>
 <tr>
 <td>simulador</td>
 <td>stub</td>
-<td>nao</td>
+<td>não</td>
+</tr>
+<tr>
+<td>solicitacao</td>
+<td>implementado</td>
+<td>sim</td>
 </tr>
 <tr>
 <td>usuario</td>
 <td>stub</td>
-<td>nao</td>
+<td>não</td>
 </tr>
 </tbody>
 </table>
@@ -861,18 +889,27 @@
 <ul>
 <li><code>blog/dto/blog-create.dto.ts</code></li>
 <li><code>contato/dto/empresa-response.dto.ts</code></li>
+<li><code>busca/dto/busca-blog-intervalo.dto.ts</code></li>
+<li><code>busca/dto/busca-banner-status.dto.ts</code></li>
+<li><code>header/dto/header-create.dto.ts</code></li>
+<li><code>header/dto/header-update.dto.ts</code></li>
+<li><code>publicidade/dto/publicidade-create.dto.ts</code></li>
+<li><code>publicidade/dto/publicidade-update.dto.ts</code></li>
+<li><code>solicitacao/dto/create-solicitacao.dto.ts</code></li>
+<li><code>solicitacao/dto/update-solicitacao-status.dto.ts</code></li>
+<li><code>solicitacao/dto/create-documento.dto.ts</code></li>
 </ul>
 <h2 id="testes">Testes</h2>
 <ul>
-<li>Ha arquivos unitarios <code>.spec.ts</code> por modulo.</li>
+<li>Há arquivos unitários <code>.spec.ts</code> por módulo.</li>
 <li>Existe suite e2e em <code>test/</code>.</li>
 </ul>
-<h2 id="prioridades-tecnicas-sugeridas">Prioridades tecnicas sugeridas</h2>
+<h2 id="prioridades-tecnicas-sugeridas">Prioridades técnicas sugeridas</h2>
 <ol>
-<li>Definir endpoints minimos para modulos stubs com contrato claro de DTO.</li>
-<li>Padronizar documentacao Swagger com <code>@ApiTags</code> em todos os controllers.</li>
-<li>Aumentar cobertura de testes para services com regra de negocio.</li>
-<li>Documentar eventos do chat quando os handlers WebSocket forem implementados.</li>
+<li>Definir endpoints mínimos para módulos ainda em stub (<code>dashboard</code>, <code>faq</code>, <code>mapa</code>, <code>notificacao</code>, <code>recomendacao</code>, <code>reports</code>, <code>servicos</code>, <code>simulador</code>, <code>usuario</code>).</li>
+<li>Padronizar respostas de erro e contratos de sucesso entre os módulos já ativos.</li>
+<li>Aumentar cobertura de testes para services com regra de negócio e fluxos de upload.</li>
+<li>Formalizar documentação de eventos do chat (payloads, autenticação e regras de uso).</li>
 </ol>
 
 

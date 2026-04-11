@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Documentacao tecnica do back-end NestJS do projeto Bortone">
+        <meta name="description" content="Documentação técnica do back-end NestJS do projeto Bortone">
       
       
       
@@ -25,7 +25,7 @@
     
     
       
-        <title>Arquitetura Back-end - Back-end Bortone - Documentacao Tecnica</title>
+        <title>Arquitetura Back-end - Back-end Bortone - Documentação Técnica</title>
       
     
     
@@ -92,7 +92,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Cabeçalho">
-    <a href=".." title="Back-end Bortone - Documentacao Tecnica" class="md-header__button md-logo" aria-label="Back-end Bortone - Documentacao Tecnica" data-md-component="logo">
+    <a href=".." title="Back-end Bortone - Documentação Técnica" class="md-header__button md-logo" aria-label="Back-end Bortone - Documentação Técnica" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -106,7 +106,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            Back-end Bortone - Documentacao Tecnica
+            Back-end Bortone - Documentação Técnica
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -333,13 +333,13 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navegação" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="Back-end Bortone - Documentacao Tecnica" class="md-nav__button md-logo" aria-label="Back-end Bortone - Documentacao Tecnica" data-md-component="logo">
+    <a href=".." title="Back-end Bortone - Documentação Técnica" class="md-nav__button md-logo" aria-label="Back-end Bortone - Documentação Técnica" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
-    Back-end Bortone - Documentacao Tecnica
+    Back-end Bortone - Documentação Técnica
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -468,7 +468,7 @@
   <a href="#visao-geral" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Visao geral
+        Visão geral
       
     </span>
   </a>
@@ -479,7 +479,7 @@
   <a href="#bootstrap-da-aplicacao" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Bootstrap da aplicacao
+        Bootstrap da aplicação
       
     </span>
   </a>
@@ -490,7 +490,7 @@
   <a href="#modulo-raiz" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Modulo raiz
+        Módulo raiz
       
     </span>
   </a>
@@ -501,7 +501,7 @@
   <a href="#camadas-e-convencoes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Camadas e convencoes
+        Camadas e convenções
       
     </span>
   </a>
@@ -512,7 +512,7 @@
   <a href="#persistencia" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Persistencia
+        Persistência
       
     </span>
   </a>
@@ -523,7 +523,7 @@
   <a href="#integracoes-expostas" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Integracoes expostas
+        Integrações expostas
       
     </span>
   </a>
@@ -534,7 +534,7 @@
   <a href="#modulos-registrados-atualmente" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Modulos registrados atualmente
+        Módulos registrados atualmente
       
     </span>
   </a>
@@ -646,6 +646,34 @@
     
   
     WebSocket (Chat)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/swagger-embed/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Swagger (Embed)
   
 
     
@@ -800,49 +828,48 @@
 
 
 <h1 id="arquitetura-do-back-end">Arquitetura do back-end</h1>
-<h2 id="visao-geral">Visao geral</h2>
-<p>A aplicacao segue o padrao modular do NestJS, com separacao por contexto de negocio em <code>src/modules</code>.</p>
-<h2 id="bootstrap-da-aplicacao">Bootstrap da aplicacao</h2>
-<p>No <code>main.ts</code>, a aplicacao:</p>
+<h2 id="visao-geral">Visão geral</h2>
+<p>A aplicação segue o padrão modular do NestJS, com separação por contexto de negócio em <code>src/modules</code>.</p>
+<h2 id="bootstrap-da-aplicacao">Bootstrap da aplicação</h2>
+<p>No <code>main.ts</code>, a aplicação:</p>
 <ol>
-<li>Cria a instancia Nest</li>
+<li>Cria a instância Nest</li>
 <li>Configura Swagger em <code>/swagger</code></li>
 <li>Habilita CORS aberto</li>
-<li>Aplica pipe global de validacao</li>
+<li>Aplica pipe global de validação</li>
 <li>Inicia na porta <code>PORT</code> (fallback <code>3000</code>)</li>
 </ol>
-<h2 id="modulo-raiz">Modulo raiz</h2>
-<p>No <code>app.module.ts</code>, sao carregados:</p>
+<h2 id="modulo-raiz">Módulo raiz</h2>
+<p>No <code>app.module.ts</code>, são carregados:</p>
 <ul>
 <li><code>ConfigModule</code> global com <code>.env</code></li>
 <li><code>SequelizeModule.forRoot(...)</code> com MySQL</li>
-<li>Modulos de dominio (contato, blog, faq, chat, etc.)</li>
+<li>Módulos de domínio (contato, blog, faq, chat, etc.)</li>
 </ul>
-<h2 id="camadas-e-convencoes">Camadas e convencoes</h2>
-<p>Cada modulo segue a estrutura tipica:</p>
+<h2 id="camadas-e-convencoes">Camadas e convenções</h2>
+<p>Cada módulo segue a estrutura típica:</p>
 <ul>
-<li><code>*.module.ts</code>: declaracao do modulo</li>
-<li><code>*.controller.ts</code>: exposicao de endpoints</li>
-<li><code>*.service.ts</code>: regra de negocio</li>
-<li><code>dto/</code>: contratos de entrada/saida (quando aplicavel)</li>
+<li><code>*.module.ts</code>: declaração do módulo</li>
+<li><code>*.controller.ts</code>: exposição de endpoints</li>
+<li><code>*.service.ts</code>: regra de negócio</li>
+<li><code>dto/</code>: contratos de entrada/saída (quando aplicável)</li>
 </ul>
-<h2 id="persistencia">Persistencia</h2>
+<h2 id="persistencia">Persistência</h2>
 <ul>
 <li>ORM: Sequelize (<code>sequelize-typescript</code>)</li>
 <li>Modelos em <code>src/models/*.model.ts</code></li>
 <li><code>autoLoadModels: true</code></li>
-<li><code>synchronize: false</code> (nao altera schema automaticamente)</li>
-<li><code>timestamps: false</code> por padrao global</li>
+<li><code>synchronize: false</code> (não altera schema automaticamente)</li>
+<li><code>timestamps: false</code> por padrão global</li>
 </ul>
-<h2 id="integracoes-expostas">Integracoes expostas</h2>
+<h2 id="integracoes-expostas">Integrações expostas</h2>
 <ul>
 <li>API HTTP REST via controllers</li>
-<li>Swagger para documentacao interativa</li>
-<li>WebSocket gateway no modulo <code>chat</code></li>
+<li>Swagger para documentação interativa</li>
+<li>WebSocket gateway no módulo <code>chat</code></li>
 </ul>
-<h2 id="modulos-registrados-atualmente">Modulos registrados atualmente</h2>
+<h2 id="modulos-registrados-atualmente">Módulos registrados atualmente</h2>
 <ul>
-<li>agendamento</li>
 <li>blog</li>
 <li>busca</li>
 <li>chat</li>
@@ -857,6 +884,7 @@
 <li>reports</li>
 <li>servicos</li>
 <li>simulador</li>
+<li>solicitacao</li>
 <li>usuario</li>
 </ul>
 
