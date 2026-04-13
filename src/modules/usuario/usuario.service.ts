@@ -17,6 +17,12 @@ export class UsuarioService {
     private readonly usuarioModel: typeof Usuario,
   ) {}
 
+  async remove(id: number): Promise<{ message: string }> {
+    const usuario = await this.findOneOrFail(id);
+    await usuario.destroy();
+    return { message: 'Usuário removido com sucesso!' };
+  }
+
   async update(
     id: number,
     updateUsuarioDto: UpdateUsuarioDto,
@@ -42,7 +48,7 @@ export class UsuarioService {
     const usuario = await this.usuarioModel.findByPk(id);
 
     if (!usuario) {
-      throw new NotFoundException(`Usuário com o ID ${id} não encontrado!`);
+      throw new NotFoundException(`Usuário não encontrado!`);
     }
 
     return usuario;

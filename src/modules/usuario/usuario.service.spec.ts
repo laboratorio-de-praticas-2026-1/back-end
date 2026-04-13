@@ -18,6 +18,7 @@ const mockUsuario = {
   cpfCnpj: null,
   celular: null,
   dataCadastro: new Date(),
+  destroy: jest.fn(),
   update: jest.fn(),
   get: jest.fn().mockReturnValue({
     id: 1,
@@ -55,6 +56,25 @@ describe('UsuarioService', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+  });
+
+  describe('remove', () => {
+    it('deve remover o usuário do banco e retornar mensagem de sucesso', async () => {
+      mockUsuarioModel.findByPk.mockResolvedValue(mockUsuario);
+      mockUsuario.destroy.mockResolvedValue(undefined);
+
+      const result = await service.remove(1);
+
+      expect(mockUsuarioModel.findByPk).toHaveBeenCalledWith(1);
+      expect(mockUsuario.destroy).toHaveBeenCalled();
+      expect(result).toEqual({ message: 'Usuário removido com sucesso!' });
+    });
+
+    it('deve lançar NotFoundException se usuário não existir', async () => {
+      mockUsuarioModel.findByPk.mockResolvedValue(null);
+
+      await expect(service.remove(99)).rejects.toThrow(NotFoundException);
+    });
   });
 
   describe('update', () => {

@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   Patch,
   Param,
   Body,
@@ -13,6 +14,12 @@ import { UsuarioOwnerGuard } from './guards/usuario-owner.guard';
 @Controller('usuario')
 export class UsuarioController {
   constructor(private readonly usuarioService: UsuarioService) {}
+
+  @Delete(':id')
+  @UseGuards(UsuarioOwnerGuard)
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.usuarioService.remove(id);
+  }
 
   @Patch(':id')
   @UseGuards(UsuarioOwnerGuard)
