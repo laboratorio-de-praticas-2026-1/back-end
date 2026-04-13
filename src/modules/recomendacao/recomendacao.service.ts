@@ -4,8 +4,11 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
+import { InteracaoUsuario } from 'src/models/interacao-usuario.model';
 import { Servico } from 'src/models/servico.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
+import { RecomendacaoInteracaoRequestDto } from './dto/recomendacao-interacao-request.dto';
+import { RecomendacaoInteracaoResponseDto } from './dto/recomendacao-interacao-response.dto';
 import { PerfilUsuarioDto } from './dto/recomendacao-perfil-usuario.dto';
 import { SolicitacaoComServicoDto } from './dto/solicitacao-com-servico.dto';
 
@@ -18,7 +21,48 @@ export class RecomendacaoService {
     private servicoModel: typeof Servico,
     @InjectModel(Solicitacao)
     private solicitacaoModel: typeof Solicitacao,
+    @InjectModel(InteracaoUsuario)
+    private interacaoUsuarioModel: typeof InteracaoUsuario,
   ) {}
+
+  async criarInteracao(
+    usuarioId: number,
+    interacaoDto: RecomendacaoInteracaoRequestDto,
+  ): Promise<RecomendacaoInteracaoResponseDto> {
+    try {
+      this.logger.log(
+        `Registrando interação do usuário ${usuarioId} na categoria ${interacaoDto.categoriaBlog}`,
+      );
+
+      const interacao = await this.interacaoUsuarioModel.create({
+        usuarioId,
+        categoriaBlog: interacaoDto.categoriaBlog,
+        dataInteracao: interacaoDto.dataInteracao,
+      });
+
+      this.logger.log(
+        `Interação registrada com sucesso. ID ${interacao.id} para usuário ${usuarioId}`,
+      );
+
+      return {
+        id: interacao.id,
+        usuarioId,
+        categoriaBlog: interacao.categoriaBlog,
+        dataInteracao: String(interacao.dataInteracao),
+      };
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido';
+
+      this.logger.error(
+        `Falha ao salvar interação do usuário ${usuarioId}: ${errorMessage}`,
+      );
+
+      throw new InternalServerErrorException(
+        'Não foi possível registrar a interação com o blog neste momento.',
+      );
+    }
+  }
 
   async buscarAtributosPerfil(usuarioId: number): Promise<PerfilUsuarioDto[]> {
     try {
