@@ -21,6 +21,7 @@ export class ServicosService {
     prazo_estimado_dias: number,
     ativo: boolean,
   ): Servico {
+    // Validações pedidas pelo Diego
     if (!nome || !descricao) {
       throw new BadRequestException('Nome e descrição são obrigatórios');
     }
@@ -41,7 +42,6 @@ export class ServicosService {
     };
 
     this.servicos.push(novoServico);
-
     return novoServico;
   }
 }

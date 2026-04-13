@@ -1,6 +1,5 @@
 import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { ServicosService } from './servicos.service';
-import { Servico } from 'src/models/servico.model';
 
 @Controller('servicos')
 export class ServicosController {
@@ -18,6 +17,7 @@ export class ServicosController {
       ativo: boolean;
     },
   ) {
+    // Chama o service passando os campos individualmente ou o objeto body completo
     this.servicosService.criarServico(
       body.nome,
       body.descricao,

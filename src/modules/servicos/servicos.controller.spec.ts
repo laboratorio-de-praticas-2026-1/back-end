@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ServicosController } from './servicos.controller';
 import { ServicosService } from './servicos.service';
-import { NotFoundException } from '@nestjs/common';
 
 describe('ServicosController', () => {
   let controller: ServicosController;
@@ -11,6 +10,7 @@ describe('ServicosController', () => {
     findOne: jest.fn(),
     updateServico: jest.fn(),
     deleteServico: jest.fn(),
+    criarServico: jest.fn(),
   };
 
   beforeEach(async () => {

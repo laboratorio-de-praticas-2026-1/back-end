@@ -1,42 +1,22 @@
-/* eslint-disable @typescript-eslint/unbound-method */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Test, TestingModule } from '@nestjs/testing';
 import { ServicosService } from './servicos.service';
-import { getModelToken } from '@nestjs/sequelize';
-import { Servico } from 'src/models/servico.model';
-import { NotFoundException } from '@nestjs/common';
 
 describe('ServicosService', () => {
   let service: ServicosService;
 
-  const mockServicoModel = {
-    findAll: jest.fn(),
-    findByPk: jest.fn(),
-  };
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        ServicosService,
-        {
-          provide: getModelToken(Servico),
-          useValue: mockServicoModel,
-        },
-      ],
+      providers: [ServicosService], // Como você usa array, não precisa do Mock do Sequelize aqui
     }).compile();
 
     service = module.get<ServicosService>(ServicosService);
-  });
-
-  afterEach(() => {
-    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  it('deve criar um novo serviço', () => {
+  it('deve criar um novo serviço com ID autoincrementado', () => {
     const resultado = service.criarServico(
       'Troca de óleo',
       'Troca completa do óleo do motor',
@@ -45,8 +25,17 @@ describe('ServicosService', () => {
       true,
     );
 
-    expect(resultado).toBeDefined();
-    expect(resultado.nome).toBe('Troca de óleo');
-    expect(resultado.valor_base).toBe(120.5);
+    // Verifica se o objeto retornado tem as propriedades certas
+    expect(resultado).toMatchObject({
+      nome: 'Troca de óleo',
+      descricao: 'Troca completa do óleo do motor',
+      valor_base: 120.5,
+      prazo_estimado_dias: 2,
+      ativo: true,
+    });
+
+    // Verifica se o ID foi gerado corretamente
+    expect(resultado.id).toBeDefined();
+    expect(typeof resultado.id).toBe('number');
   });
 });
