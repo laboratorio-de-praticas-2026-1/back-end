@@ -10,7 +10,7 @@ import { RecomendacaoController } from './recomendacao.controller';
 import { RecomendacaoService } from './recomendacao.service';
 
 @Module({
-  imports: [
+  imports: [    
     SequelizeModule.forFeature([
       Servico,
       Solicitacao,
