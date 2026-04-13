@@ -1,7 +1,13 @@
-import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
-import { ApiTags, ApiResponse, ApiOperation } from '@nestjs/swagger';
-import { Body, Controller, Logger, Post } from '@nestjs/common';
-import { ApiBody, ApiOperation } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Get,
+  Logger,
+  Param,
+  ParseIntPipe,
+  Post,
+} from '@nestjs/common';
+import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { RecomendacaoInteracaoRequestDto } from './dto/recomendacao-interacao-request.dto';
 import { RecomendacaoInteracaoResponseDto } from './dto/recomendacao-interacao-response.dto';
 import { RecomendacaoService } from './recomendacao.service';
@@ -19,14 +25,12 @@ export class RecomendacaoController {
     status: 200,
     description: 'Lista de serviços recomendados retornada com sucesso.',
     type: RecomendacaoRespostaDto,
-    isArray: true, 
+    isArray: true,
   })
-  async getRecomendacao(
-    @Param('usuarioId', ParseIntPipe) usuarioId: number,
-  ) {
-    return await this.recomendacaoService.obterRecomendacoes(usuarioId);
+  async getRecomendacao(@Param('usuarioId', ParseIntPipe) usuarioId: number) {
+    return this.recomendacaoService.obterRecomendacoes(usuarioId);
   }
-}
+
   @Post()
   @ApiOperation({ summary: 'Registrar interação do usuário com o blog' })
   @ApiBody({
@@ -51,6 +55,8 @@ export class RecomendacaoController {
     // @Req() req: Request & { user?: { id?: number } },
     @Body() interacaoDto: RecomendacaoInteracaoRequestDto,
   ): Promise<RecomendacaoInteracaoResponseDto> {
+    // import de @nestjs/common: Req, UnauthorizedException
+    // import { Request } from 'express';
     // const usuarioId = req.user?.id;
     // if (!usuarioId) {
     //   throw new UnauthorizedException('Usuário não autenticado.');

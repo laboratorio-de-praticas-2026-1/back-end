@@ -1,33 +1,26 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { InternalServerErrorException } from '@nestjs/common';
+import { jest, describe, it, expect, beforeEach } from '@jest/globals';
 import { RecomendacaoController } from './recomendacao.controller';
 import { RecomendacaoService } from './recomendacao.service';
 import { RecomendacaoRespostaDto } from './dto/recomendacao-resposta.dto';
-import { InternalServerErrorException } from '@nestjs/common';
-import { jest, describe, it, expect, beforeEach } from '@jest/globals';
-import { getModelToken } from '@nestjs/sequelize';
-import { Servico } from 'src/models/servico.model';
-import { Solicitacao } from 'src/models/solicitacao.model';
 import { RecomendacaoInteracaoRequestDto } from './dto/recomendacao-interacao-request.dto';
 import { RecomendacaoInteracaoResponseDto } from './dto/recomendacao-interacao-response.dto';
 import { RecomendacaoCategoriaBlogEnum } from './enums/recomendacao-categoria-blog.enum';
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 
 describe('RecomendacaoController', () => {
   let controller: RecomendacaoController;
-  let service: RecomendacaoService;
 
   const mockRecomendacaoService = {
-    obterRecomendacoes: jest.fn(),
-  };
-
-  const mockRecomendacaoService = {
+    obterRecomendacoes: jest.fn() as jest.MockedFunction<
+      (usuarioId: number) => Promise<RecomendacaoRespostaDto[]>
+    >,
     criarInteracao: jest.fn() as jest.MockedFunction<
       (
         usuarioId: number,
         interacaoDto: RecomendacaoInteracaoRequestDto,
       ) => Promise<RecomendacaoInteracaoResponseDto>
     >,
-    buscarAtributosPerfil: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -39,30 +32,20 @@ describe('RecomendacaoController', () => {
           provide: RecomendacaoService,
           useValue: mockRecomendacaoService,
         },
-        {
-          provide: getModelToken(Servico),
-          useValue: {},
-        },
-        {
-          provide: RecomendacaoService,
-          useValue: mockRecomendacaoService,
-        },
       ],
     }).compile();
 
     controller = module.get<RecomendacaoController>(RecomendacaoController);
-    service = module.get<RecomendacaoService>(RecomendacaoService);
-
     jest.clearAllMocks();
   });
 
-  it('deve estar definido', () => {
+  it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
   describe('getRecomendacao', () => {
     it('deve retornar uma lista de recomendações com sucesso', async () => {
-      // Dados de exemplo que o Service "fingiria" retornar
+      const mockUsuarioId = 1;
       const mockResult: RecomendacaoRespostaDto[] = [
         {
           id: 7,
@@ -74,11 +57,15 @@ describe('RecomendacaoController', () => {
 
       mockRecomendacaoService.obterRecomendacoes.mockResolvedValue(mockResult);
 
-      const resultado = await controller.getRecomendacao(1);
+      const resultado = await controller.getRecomendacao(mockUsuarioId);
 
       expect(resultado).toEqual(mockResult);
-      expect(mockRecomendacaoService.obterRecomendacoes).toHaveBeenCalledWith(1);
-      expect(mockRecomendacaoService.obterRecomendacoes).toHaveBeenCalledTimes(1);
+      expect(mockRecomendacaoService.obterRecomendacoes).toHaveBeenCalledWith(
+        mockUsuarioId,
+      );
+      expect(mockRecomendacaoService.obterRecomendacoes).toHaveBeenCalledTimes(
+        1,
+      );
     });
 
     it('deve repassar exceções do service (ex: erro 500)', async () => {
@@ -91,26 +78,31 @@ describe('RecomendacaoController', () => {
       );
     });
   });
-});
-  it('deve criar interação com o blog', async () => {
-    const interacaoDto: RecomendacaoInteracaoRequestDto = {
-      categoriaBlog: RecomendacaoCategoriaBlogEnum.DOCUMENTACAO,
-      dataInteracao: '2024-05-20',
-    };
-    // const req = { user: { id: 1 } };
 
-    mockRecomendacaoService.criarInteracao.mockResolvedValue({
-      id: 1,
-      usuarioId: 1,
-      categoriaBlog: RecomendacaoCategoriaBlogEnum.DOCUMENTACAO,
-      dataInteracao: '2024-05-20',
-    } as RecomendacaoInteracaoResponseDto);
+  describe('criarInteracao', () => {
+    it('deve criar interação com o blog', async () => {
+      const usuarioId = 1;
+      const interacaoDto: RecomendacaoInteracaoRequestDto = {
+        categoriaBlog: RecomendacaoCategoriaBlogEnum.DOCUMENTACAO,
+        dataInteracao: '2024-05-20',
+      };
+      // const req = { user: { id: usuarioId } };
 
-    await controller.criarInteracao(interacaoDto);
+      mockRecomendacaoService.criarInteracao.mockResolvedValue({
+        id: 7,
+        usuarioId: usuarioId,
+        categoriaBlog: RecomendacaoCategoriaBlogEnum.DOCUMENTACAO,
+        dataInteracao: '2024-05-20',
+      } as RecomendacaoInteracaoResponseDto);
 
-    expect(mockRecomendacaoService.criarInteracao).toHaveBeenCalledWith(
-      1,
-      interacaoDto,
-    );
+      const resultado = await controller.criarInteracao(interacaoDto);
+      // const resultado = await controller.criarInteracao(req, interacaoDto);
+
+      expect(mockRecomendacaoService.criarInteracao).toHaveBeenCalledWith(
+        usuarioId,
+        interacaoDto,
+      );
+      expect(resultado.usuarioId).toBe(usuarioId);
+    });
   });
 });
