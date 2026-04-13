@@ -11,6 +11,7 @@ import { RecomendacaoInteracaoRequestDto } from './dto/recomendacao-interacao-re
 import { RecomendacaoInteracaoResponseDto } from './dto/recomendacao-interacao-response.dto';
 import { PerfilUsuarioDto } from './dto/recomendacao-perfil-usuario.dto';
 import { SolicitacaoComServicoDto } from './dto/solicitacao-com-servico.dto';
+import { Op, fn, col, literal } from 'sequelize';
 
 @Injectable()
 export class RecomendacaoService {
@@ -24,6 +25,68 @@ export class RecomendacaoService {
     @InjectModel(InteracaoUsuario)
     private interacaoUsuarioModel: typeof InteracaoUsuario,
   ) {}
+
+  async obterRecomendacoes(usuarioId: number) {
+    try {
+      const historico = await this.buscarAtributosPerfil(usuarioId);
+
+      if (historico.length > 0) {
+        const idsUsados = historico.map((s) => s.id);
+
+        const servicos = await this.servicoModel.findAll({
+          where: {
+            ativo: true,
+            id: { [Op.notIn]: idsUsados },
+          },
+        });
+
+        return servicos.map((s) => ({
+          id: s.id,
+          nome: s.nome,
+          descricao: s.descricao,
+        }));
+      }
+
+      return await this.buscarServicosPopulares();
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido';
+
+      this.logger.error(`Erro ao gerar recomendações: ${errorMessage}`);
+      throw new InternalServerErrorException('Erro no processar recomendações');
+    }
+  }
+
+  private async buscarServicosPopulares() {
+    const populares = (await this.solicitacaoModel.findAll({
+      attributes: [
+        'servico_id',
+        [fn('COUNT', col('servico_id')), 'quantidade'],
+      ],
+      group: ['servico_id'],
+      order: [[literal('quantidade'), 'DESC']],
+      limit: 5,
+      include: [
+        {
+          model: this.servicoModel,
+          attributes: ['id', 'nome', 'descricao'],
+          where: { ativo: true },
+        },
+      ],
+    })) as unknown as Array<{
+      servico: Pick<Servico, 'id' | 'nome' | 'descricao'>;
+    }>;
+
+    return populares.map((p) => {
+      const servico = p.servico;
+
+      return {
+        id: servico.id,
+        nome: servico.nome,
+        descricao: servico.descricao,
+      };
+    });
+  }
 
   async criarInteracao(
     usuarioId: number,
@@ -74,7 +137,7 @@ export class RecomendacaoService {
         include: [
           {
             model: this.servicoModel,
-            attributes: ['nome', 'descricao', 'valor_base', 'ativo'],
+            attributes: ['id', 'nome', 'descricao', 'valor_base', 'ativo'],
             required: true,
           },
         ],
@@ -88,6 +151,7 @@ export class RecomendacaoService {
       }
 
       return solicitacoes.map((s: SolicitacaoComServicoDto) => ({
+        id: s.servico.id,
         nome: s.servico.nome,
         descricao: s.servico.descricao,
         valor_base: s.servico.valor_base,
