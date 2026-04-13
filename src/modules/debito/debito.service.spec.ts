@@ -1,6 +1,7 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { getModelToken } from '@nestjs/sequelize';
 import { Test, TestingModule } from '@nestjs/testing';
+import { TipoDebito } from '../../models/debito.model';
 import { Veiculo } from '../../models/veiculo.model';
 import { DebitoService } from './debito.service';
 
@@ -13,10 +14,17 @@ const mockVeiculo = {
         descricao: 'IPVA 2026',
         valor: 1500.0,
         status: 'PENDENTE',
+        tipo: TipoDebito.VEICULO,
       },
     },
     {
-      debito: { id: 2, descricao: 'Multa', valor: 300.0, status: 'PENDENTE' },
+      debito: {
+        id: 2,
+        descricao: 'Multa',
+        valor: 300.0,
+        status: 'PENDENTE',
+        tipo: TipoDebito.VEICULO,
+      },
     },
   ],
 };
@@ -69,6 +77,27 @@ describe('DebitoService', () => {
 
     await expect(service.buscarDebitosPorPlaca('XXX9999')).rejects.toThrow(
       NotFoundException,
+    );
+  });
+
+  it('deve lançar BadRequestException quando débitos não são do tipo veículo', async () => {
+    jest.spyOn(service['veiculoModel'], 'findOne').mockResolvedValue({
+      placa: 'ABC1234',
+      debitoVeiculos: [
+        {
+          debito: {
+            id: 1,
+            descricao: 'Serviço',
+            valor: 200.0,
+            status: 'PENDENTE',
+            tipo: TipoDebito.SERVICO,
+          },
+        },
+      ],
+    } as any);
+
+    await expect(service.buscarDebitosPorPlaca('ABC1234')).rejects.toThrow(
+      BadRequestException,
     );
   });
 });
