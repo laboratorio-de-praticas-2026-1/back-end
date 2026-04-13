@@ -1,10 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/sequelize';
 import { RecomendacaoService } from './recomendacao.service';
+import { InteracaoUsuario } from 'src/models/interacao-usuario.model';
 import { Servico } from 'src/models/servico.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
 import { InternalServerErrorException } from '@nestjs/common';
 import { jest, describe, it, expect, beforeEach } from '@jest/globals';
+import { RecomendacaoInteracaoRequestDto } from './dto/recomendacao-interacao-request.dto';
+import { RecomendacaoInteracaoResponseDto } from './dto/recomendacao-interacao-response.dto';
+import { RecomendacaoCategoriaBlogEnum } from './enums/recomendacao-categoria-blog.enum';
 import { SolicitacaoComServicoDto } from './dto/solicitacao-com-servico.dto';
 
 describe('RecomendacaoService', () => {
@@ -18,6 +22,16 @@ describe('RecomendacaoService', () => {
 
   const mockServicoModel = {};
 
+  const mockInteracaoUsuarioModel = {
+    create: jest.fn() as jest.MockedFunction<
+      (interacaoRegistro: {
+        usuarioId: number;
+        categoriaBlog: RecomendacaoCategoriaBlogEnum;
+        dataInteracao: string;
+      }) => Promise<RecomendacaoInteracaoResponseDto>
+    >,
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
@@ -30,6 +44,10 @@ describe('RecomendacaoService', () => {
         {
           provide: getModelToken(Servico),
           useValue: mockServicoModel,
+        },
+        {
+          provide: getModelToken(InteracaoUsuario),
+          useValue: mockInteracaoUsuarioModel,
         },
       ],
     }).compile();
@@ -90,6 +108,55 @@ describe('RecomendacaoService', () => {
       await expect(service.buscarAtributosPerfil(1)).rejects.toThrow(
         InternalServerErrorException,
       );
+    });
+  });
+
+  describe('criarInteracao', () => {
+    it('deve registrar a interação com o blog', async () => {
+      const usuarioId = 1;
+      const interacaoDto: RecomendacaoInteracaoRequestDto = {
+        categoriaBlog: RecomendacaoCategoriaBlogEnum.DOCUMENTACAO,
+        dataInteracao: '2024-05-20',
+      };
+
+      mockInteracaoUsuarioModel.create.mockResolvedValue({
+        id: 7,
+        usuarioId,
+        categoriaBlog: RecomendacaoCategoriaBlogEnum.DOCUMENTACAO,
+        dataInteracao: '2024-05-20',
+      });
+
+      const resultado = await service.criarInteracao(usuarioId, interacaoDto);
+
+      expect(mockInteracaoUsuarioModel.create).toHaveBeenCalledWith({
+        usuarioId,
+        categoriaBlog: RecomendacaoCategoriaBlogEnum.DOCUMENTACAO,
+        dataInteracao: '2024-05-20',
+      });
+      expect(resultado).toEqual(
+        expect.objectContaining({
+          id: 7,
+          usuarioId,
+          categoriaBlog: RecomendacaoCategoriaBlogEnum.DOCUMENTACAO,
+          dataInteracao: '2024-05-20',
+        }),
+      );
+    });
+
+    it('deve lançar InternalServerErrorException quando houver falha técnica', async () => {
+      const usuarioId = 1;
+      const interacaoDto: RecomendacaoInteracaoRequestDto = {
+        categoriaBlog: RecomendacaoCategoriaBlogEnum.DOCUMENTACAO,
+        dataInteracao: '2024-05-20',
+      };
+
+      mockInteracaoUsuarioModel.create.mockRejectedValue(
+        new Error('Falha de gravação'),
+      );
+
+      await expect(
+        service.criarInteracao(usuarioId, interacaoDto),
+      ).rejects.toThrow(InternalServerErrorException);
     });
   });
 });
