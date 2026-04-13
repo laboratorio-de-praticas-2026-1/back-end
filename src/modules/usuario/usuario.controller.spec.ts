@@ -37,7 +37,7 @@ describe('UsuarioController', () => {
 
   describe('remove', () => {
     it('deve chamar o service com o id correto e retornar mensagem', async () => {
-      const resposta = { mensagem: 'Usuário removido com sucesso!' };
+      const resposta = { message: 'Usuário removido com sucesso!' };
       mockUsuarioService.remove.mockResolvedValue(resposta);
 
       const result = await controller.remove(1);
