@@ -14,6 +14,7 @@ import { HeaderModule } from './modules/header/header.module';
 import { MapaModule } from './modules/mapa/mapa.module';
 import { NotificacaoModule } from './modules/notificacao/notificacao.module';
 import { PublicidadeModule } from './modules/publicidade/publicidade.module';
+import { EmailModule } from './infra/email/email.module';
 import { RecomendacaoModule } from './modules/recomendacao/recomendacao.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { ServicosModule } from './modules/servicos/servicos.module';
@@ -24,7 +25,6 @@ import { UsuarioModule } from './modules/usuario/usuario.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ envFilePath: '.env', isGlobal: true }),
-
     SequelizeModule.forRoot({
       dialect: 'mysql',
       host: process.env.DATABASE_HOST,
@@ -53,6 +53,7 @@ import { UsuarioModule } from './modules/usuario/usuario.module';
     BuscaModule,
     ServicosModule,
     PublicidadeModule,
+    EmailModule,
     CloudinaryModule,
     SolicitacaoModule,
     UtilsModule,

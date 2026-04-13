@@ -6,12 +6,12 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Documentacao tecnica do back-end NestJS do projeto Bortone">
+        <meta name="description" content="Documentação técnica do back-end NestJS do projeto Bortone">
       
       
       
       
-        <link rel="prev" href="../../api/websocket-chat/">
+        <link rel="prev" href="../../api/swagger-embed/">
       
       
         <link rel="next" href="../../status-implementacao/">
@@ -25,7 +25,7 @@
     
     
       
-        <title>Modelos Sequelize - Back-end Bortone - Documentacao Tecnica</title>
+        <title>Modelos Sequelize - Back-end Bortone - Documentação Técnica</title>
       
     
     
@@ -92,7 +92,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Cabeçalho">
-    <a href="../.." title="Back-end Bortone - Documentacao Tecnica" class="md-header__button md-logo" aria-label="Back-end Bortone - Documentacao Tecnica" data-md-component="logo">
+    <a href="../.." title="Back-end Bortone - Documentação Técnica" class="md-header__button md-logo" aria-label="Back-end Bortone - Documentação Técnica" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -106,7 +106,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            Back-end Bortone - Documentacao Tecnica
+            Back-end Bortone - Documentação Técnica
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -333,13 +333,13 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navegação" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="Back-end Bortone - Documentacao Tecnica" class="md-nav__button md-logo" aria-label="Back-end Bortone - Documentacao Tecnica" data-md-component="logo">
+    <a href="../.." title="Back-end Bortone - Documentação Técnica" class="md-nav__button md-logo" aria-label="Back-end Bortone - Documentação Técnica" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
-    Back-end Bortone - Documentacao Tecnica
+    Back-end Bortone - Documentação Técnica
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -535,6 +535,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/swagger-embed/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Swagger (Embed)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -666,10 +694,21 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#documentacao-detalhada-do-banco-de-dados" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentação Detalhada do Banco de Dados
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#visao-geral" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Visao geral
+        Visão geral
       
     </span>
   </a>
@@ -807,7 +846,7 @@
   <a href="#observacao-sobre-schema" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Observacao sobre schema
+        Observação sobre schema
       
     </span>
   </a>
@@ -875,7 +914,9 @@
 
 
 <h1 id="modelos-sequelize">Modelos Sequelize</h1>
-<h2 id="visao-geral">Visao geral</h2>
+<h2 id="documentacao-detalhada-do-banco-de-dados">Documentação Detalhada do Banco de Dados</h2>
+<p>Documentação: [https://laboratorio-de-praticas-2026-1.github.io/database/]</p>
+<h2 id="visao-geral">Visão geral</h2>
 <p>Modelos mapeados em <code>src/models</code> usando <code>sequelize-typescript</code>.</p>
 <h2 id="entidades-principais">Entidades principais</h2>
 <h3 id="banner-banner">Banner (<code>banner</code>)</h3>
@@ -932,6 +973,7 @@
 <li><code>id</code> (PK)</li>
 <li><code>nome</code></li>
 <li><code>email</code> (unico)</li>
+<li><code>email</code> (único)</li>
 <li><code>senha</code></li>
 <li><code>nivel</code> (<code>cliente</code> | <code>administrador</code>)</li>
 <li><code>cpfCnpj</code></li>
@@ -961,7 +1003,7 @@
 <li><code>dataSolicitacao</code></li>
 <li><code>dataConclusao</code></li>
 </ul>
-<p><strong>Relacoes</strong></p>
+<p><strong>Relações</strong></p>
 <ul>
 <li><code>Solicitacao</code> pertence a <code>Usuario</code></li>
 <li><code>Solicitacao</code> pertence a <code>Veiculo</code></li>
@@ -976,8 +1018,8 @@
 <li><code>statusValidacao</code> (<code>pendente</code>, <code>aprovado</code>, <code>rejeitado</code>)</li>
 <li><code>dataUpload</code></li>
 </ul>
-<h2 id="observacao-sobre-schema">Observacao sobre schema</h2>
-<p>O back-end esta configurado com <code>synchronize: false</code>. Alteracoes de estrutura devem ser feitas via processo oficial do repositorio de banco de dados/migracoes.</p>
+<h2 id="observacao-sobre-schema">Observação sobre schema</h2>
+<p>O back-end está configurado com <code>synchronize: false</code>. Alterações de estrutura devem ser feitas via processo oficial do <a href="https://github.com/laboratorio-de-praticas-2026-1/database.git">repositório de banco de dados</a>/migrações.</p>
 
 
 
