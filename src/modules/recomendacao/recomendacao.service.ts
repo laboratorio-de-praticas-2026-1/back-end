@@ -8,6 +8,7 @@ import { Servico } from 'src/models/servico.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
 import { PerfilUsuarioDto } from './dto/recomendacao-perfil-usuario.dto';
 import { SolicitacaoComServicoDto } from './dto/solicitacao-com-servico.dto';
+import { Op, fn, col, literal } from 'sequelize';
 
 @Injectable()
 export class RecomendacaoService {
@@ -20,6 +21,58 @@ export class RecomendacaoService {
     private solicitacaoModel: typeof Solicitacao,
   ) {}
 
+  async obterRecomendacoes(usuarioId: number) {
+    try {
+      const historico = await this.buscarAtributosPerfil(usuarioId);
+
+      if (historico.length > 0) {
+        const idsUsados  = historico.map(s => s.id);
+        
+        const servicos = await this.servicoModel.findAll({
+          where: {
+            ativo: true,
+            id: { [Op.notIn]: idsUsados }
+          }
+        });
+
+        return servicos.map(s => ({
+          id: s.id,
+          nome: s.nome,
+          descricao: s.descricao,
+        }));
+      }
+
+      return await this.buscarServicosPopulares();
+
+    } catch (error) {
+      this.logger.error(`Erro ao gerar recomendações: ${error.message}`);
+      throw new InternalServerErrorException('Erro no processar recomendações');
+    }
+  }
+
+  private async buscarServicosPopulares() {
+    const populares = await this.solicitacaoModel.findAll({
+      attributes: [
+        'servico_id',
+        [fn('COUNT', col('servico_id')), 'quantidade']
+      ],
+      group: ['servico_id'],
+      order: [[literal('quantidade'), 'DESC']],
+      limit: 5,
+      include: [{ model: this.servicoModel, where: { ativo: true } }],
+    });
+
+    return populares.map(p => {
+      const servico = (p as any).servico;
+
+      return {
+        id: servico.id,
+        nome: servico.nome,
+        descricao: servico.descricao,
+      };
+    });
+  }
+
   async buscarAtributosPerfil(usuarioId: number): Promise<PerfilUsuarioDto[]> {
     try {
       this.logger.log(`Buscando serviços do usuário com id ${usuarioId}`);
@@ -30,7 +83,7 @@ export class RecomendacaoService {
         include: [
           {
             model: this.servicoModel,
-            attributes: ['nome', 'descricao', 'valor_base', 'ativo'],
+            attributes: ['id', 'nome', 'descricao', 'valor_base', 'ativo'],
             required: true,
           },
         ],
@@ -44,6 +97,7 @@ export class RecomendacaoService {
       }
 
       return solicitacoes.map((s: SolicitacaoComServicoDto) => ({
+        id: s.servico.id,
         nome: s.servico.nome,
         descricao: s.servico.descricao,
         valor_base: s.servico.valor_base,
