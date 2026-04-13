@@ -62,6 +62,7 @@ describe('RecomendacaoService', () => {
       const mockDbResponse: SolicitacaoComServicoDto[] = [
         {
           servico: {
+            id: 1,
             nome: 'Transferência de Propriedade',
             descricao: 'Mudança de propriedade de veículo',
             valor_base: 350.0,
@@ -70,6 +71,7 @@ describe('RecomendacaoService', () => {
         },
         {
           servico: {
+            id: 2,
             nome: 'Licenciamento Anual',
             descricao: 'Taxa de licenciamento',
             valor_base: 180.0,

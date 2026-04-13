@@ -31,16 +31,16 @@ export class RecomendacaoService {
       const historico = await this.buscarAtributosPerfil(usuarioId);
 
       if (historico.length > 0) {
-        const idsUsados  = historico.map(s => s.id);
-        
+        const idsUsados = historico.map((s) => s.id);
+
         const servicos = await this.servicoModel.findAll({
           where: {
             ativo: true,
-            id: { [Op.notIn]: idsUsados }
-          }
+            id: { [Op.notIn]: idsUsados },
+          },
         });
 
-        return servicos.map(s => ({
+        return servicos.map((s) => ({
           id: s.id,
           nome: s.nome,
           descricao: s.descricao,
@@ -48,27 +48,37 @@ export class RecomendacaoService {
       }
 
       return await this.buscarServicosPopulares();
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido';
 
-    } catch (error) {
-      this.logger.error(`Erro ao gerar recomendações: ${error.message}`);
+      this.logger.error(`Erro ao gerar recomendações: ${errorMessage}`);
       throw new InternalServerErrorException('Erro no processar recomendações');
     }
   }
 
   private async buscarServicosPopulares() {
-    const populares = await this.solicitacaoModel.findAll({
+    const populares = (await this.solicitacaoModel.findAll({
       attributes: [
         'servico_id',
-        [fn('COUNT', col('servico_id')), 'quantidade']
+        [fn('COUNT', col('servico_id')), 'quantidade'],
       ],
       group: ['servico_id'],
       order: [[literal('quantidade'), 'DESC']],
       limit: 5,
-      include: [{ model: this.servicoModel, where: { ativo: true } }],
-    });
+      include: [
+        {
+          model: this.servicoModel,
+          attributes: ['id', 'nome', 'descricao'],
+          where: { ativo: true },
+        },
+      ],
+    })) as unknown as Array<{
+      servico: Pick<Servico, 'id' | 'nome' | 'descricao'>;
+    }>;
 
-    return populares.map(p => {
-      const servico = (p as any).servico;
+    return populares.map((p) => {
+      const servico = p.servico;
 
       return {
         id: servico.id,
@@ -76,6 +86,8 @@ export class RecomendacaoService {
         descricao: servico.descricao,
       };
     });
+  }
+
   async criarInteracao(
     usuarioId: number,
     interacaoDto: RecomendacaoInteracaoRequestDto,
