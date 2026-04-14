@@ -5,6 +5,8 @@ import {
   IsOptional,
   MinLength,
   MaxLength,
+  IsNotEmpty,
+  Matches,
 } from 'class-validator';
 import { Expose, Transform } from 'class-transformer';
 
@@ -16,16 +18,19 @@ export enum NivelUsuario {
 export class CreateUsuarioDto {
   @IsString()
   @MaxLength(100)
-  nome: string;
+  @IsNotEmpty()
+  nome!: string;
 
   @IsEmail()
   @MaxLength(100)
-  email: string;
+  @IsNotEmpty()
+  email!: string;
 
   @IsString()
   @MinLength(6, { message: 'A senha deve ter no mínimo 6 caracteres' })
   @MaxLength(255)
-  senha: string;
+  @IsNotEmpty()
+  senha!: string;
 
   @IsOptional()
   @IsEnum(NivelUsuario, { message: 'Nível inválido' })
@@ -44,11 +49,15 @@ export class CreateUsuarioDto {
     { toClassOnly: true },
   )
   @IsString()
-  @MaxLength(20)
+  @Matches(/^(\d{11}|\d{14})$/, {
+    message: 'CPF/CNPJ inválido',
+  })
   cpfCnpj?: string;
 
   @IsOptional()
   @IsString()
-  @MaxLength(20)
+  @Matches(/^\d{10,11}$/, {
+    message: 'Celular inválido',
+  })
   celular?: string;
 }
