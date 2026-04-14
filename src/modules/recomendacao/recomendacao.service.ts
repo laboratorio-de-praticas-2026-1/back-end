@@ -12,6 +12,9 @@ import { RecomendacaoInteracaoResponseDto } from './dto/recomendacao-interacao-r
 import { PerfilUsuarioDto } from './dto/recomendacao-perfil-usuario.dto';
 import { SolicitacaoComServicoDto } from './dto/solicitacao-com-servico.dto';
 import { Op, fn, col, literal } from 'sequelize';
+import { Debito } from 'src/models/debito.model';
+import { Veiculo } from 'src/models/veiculo.model';
+import { RecomendacaoRespostaDto } from './dto/recomendacao-resposta.dto';
 
 @Injectable()
 export class RecomendacaoService {
@@ -24,10 +27,17 @@ export class RecomendacaoService {
     private solicitacaoModel: typeof Solicitacao,
     @InjectModel(InteracaoUsuario)
     private interacaoUsuarioModel: typeof InteracaoUsuario,
+    @InjectModel(Debito)
+    private debitoModel: typeof Debito,
   ) {}
 
   async obterRecomendacoes(usuarioId: number) {
     try {
+      const proativo = await this.buscarRecursoMulta(usuarioId);
+      if (proativo) {
+        return [proativo];
+      }
+
       const historico = await this.buscarAtributosPerfil(usuarioId);
 
       if (historico.length > 0) {
@@ -51,10 +61,73 @@ export class RecomendacaoService {
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Erro desconhecido';
-
       this.logger.error(`Erro ao gerar recomendações: ${errorMessage}`);
-      throw new InternalServerErrorException('Erro no processar recomendações');
+      throw new InternalServerErrorException('Erro ao processar recomendações');
     }
+  }
+
+  async buscarRecursoMulta(usuarioId: number): Promise<RecomendacaoRespostaDto | null> {
+    try {
+      const palavrasChave = ['multa', 'infração', 'infracao', 'autuação', 'autuacao', 'radar', 'transitar em velocidade'];
+
+      const debitos = await this.debitoModel.findAll({
+        where: {
+          tipo: 'veiculo',
+          status: 'pendente',
+          [Op.or]: palavrasChave.map((p) => ({
+            descricao: { [Op.like]: `%${p}%` },
+          })),
+        },
+        include: [
+          {
+            model: Veiculo,
+            where: { usuarioId },
+            through: { attributes: [] },
+            required: true,
+          },
+        ],
+      });
+
+      for (const debito of debitos) {
+        for (const veiculo of debito.veiculos || []) {
+          const jaExiste = await this.solicitacaoModel.findOne({
+            where: {
+              servicoId: 6,
+              veiculoId: veiculo.id,
+              status: {
+                [Op.notIn]: ['concluido', 'cancelado'],
+              },
+            },
+          });
+
+          if (!jaExiste) {
+            return {
+              id: 6,
+              nome: 'Recurso de Multa',
+              descricao:
+                'Identificamos uma multa pendente. Você tem o direito de recorrer e evitar pontos na sua CNH.',
+              ativo: true
+            };
+          }
+        }
+      }
+     
+      return await this.buscarParcelamentoDebitos(usuarioId);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido';
+
+      this.logger.error(`Erro na busca proativa de multas: ${errorMessage}`);
+
+      return await this.buscarParcelamentoDebitos(usuarioId);
+    }
+  }
+
+  private async buscarParcelamentoDebitos(usuarioId: number) {
+    this.logger.log(
+      `Seguindo para nível de parcelamento para usuário ${usuarioId}`,
+    );
+    return Promise.resolve(null);
   }
 
   private async buscarServicosPopulares() {
@@ -77,95 +150,54 @@ export class RecomendacaoService {
       servico: Pick<Servico, 'id' | 'nome' | 'descricao'>;
     }>;
 
-    return populares.map((p) => {
-      const servico = p.servico;
+    return populares.map((p) => ({
+      id: p.servico.id,
+      nome: p.servico.nome,
+      descricao: p.servico.descricao,
+    }));
+  }
 
-      return {
-        id: servico.id,
-        nome: servico.nome,
-        descricao: servico.descricao,
-      };
-    });
+  async buscarAtributosPerfil(usuarioId: number): Promise<PerfilUsuarioDto[]> {
+    const solicitacoes = (await this.solicitacaoModel.findAll({
+      attributes: [],
+      where: { usuarioId },
+      include: [
+        {
+          model: this.servicoModel,
+          attributes: ['id', 'nome', 'descricao', 'valor_base', 'ativo'],
+          required: true,
+        },
+      ],
+      raw: true,
+      nest: true,
+    })) as unknown as SolicitacaoComServicoDto[];
+
+    if (!solicitacoes || solicitacoes.length === 0) return [];
+
+    return solicitacoes.map((s) => ({
+      id: s.servico.id,
+      nome: s.servico.nome,
+      descricao: s.servico.descricao,
+      valor_base: s.servico.valor_base,
+      ativo: s.servico.ativo,
+    }));
   }
 
   async criarInteracao(
     usuarioId: number,
     interacaoDto: RecomendacaoInteracaoRequestDto,
   ): Promise<RecomendacaoInteracaoResponseDto> {
-    try {
-      this.logger.log(
-        `Registrando interação do usuário ${usuarioId} na categoria ${interacaoDto.categoriaBlog}`,
-      );
+    const interacao = await this.interacaoUsuarioModel.create({
+      usuarioId,
+      categoriaBlog: interacaoDto.categoriaBlog,
+      dataInteracao: interacaoDto.dataInteracao,
+    });
 
-      const interacao = await this.interacaoUsuarioModel.create({
-        usuarioId,
-        categoriaBlog: interacaoDto.categoriaBlog,
-        dataInteracao: interacaoDto.dataInteracao,
-      });
-
-      this.logger.log(
-        `Interação registrada com sucesso. ID ${interacao.id} para usuário ${usuarioId}`,
-      );
-
-      return {
-        id: interacao.id,
-        usuarioId,
-        categoriaBlog: interacao.categoriaBlog,
-        dataInteracao: String(interacao.dataInteracao),
-      };
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Erro desconhecido';
-
-      this.logger.error(
-        `Falha ao salvar interação do usuário ${usuarioId}: ${errorMessage}`,
-      );
-
-      throw new InternalServerErrorException(
-        'Não foi possível registrar a interação com o blog neste momento.',
-      );
-    }
-  }
-
-  async buscarAtributosPerfil(usuarioId: number): Promise<PerfilUsuarioDto[]> {
-    try {
-      this.logger.log(`Buscando serviços do usuário com id ${usuarioId}`);
-
-      const solicitacoes = (await this.solicitacaoModel.findAll({
-        attributes: [],
-        where: { usuarioId },
-        include: [
-          {
-            model: this.servicoModel,
-            attributes: ['id', 'nome', 'descricao', 'valor_base', 'ativo'],
-            required: true,
-          },
-        ],
-        raw: true,
-        nest: true,
-      })) as unknown as SolicitacaoComServicoDto[];
-
-      if (!solicitacoes || solicitacoes.length === 0) {
-        this.logger.warn(`Nenhum serviço encontrado para usuário ${usuarioId}`);
-        return [];
-      }
-
-      return solicitacoes.map((s: SolicitacaoComServicoDto) => ({
-        id: s.servico.id,
-        nome: s.servico.nome,
-        descricao: s.servico.descricao,
-        valor_base: s.servico.valor_base,
-        ativo: s.servico.ativo,
-      }));
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Erro desconhecido';
-      this.logger.error(
-        `Erro ao buscar serviços para o usuário ${usuarioId}: ${errorMessage}`,
-      );
-      throw new InternalServerErrorException(
-        'Erro ao processar perfil de recomendação',
-      );
-    }
+    return {
+      id: interacao.id,
+      usuarioId,
+      categoriaBlog: interacao.categoriaBlog,
+      dataInteracao: String(interacao.dataInteracao),
+    };
   }
 }
