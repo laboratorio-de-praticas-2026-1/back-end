@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Debito, TipoDebito } from '../../models/debito.model';
 import { DebitoVeiculo } from '../../models/debito-veiculo.model';
@@ -11,6 +7,8 @@ import { DebitoItemDto, DebitoResponseDto } from './dto/debito-response.dto';
 
 @Injectable()
 export class DebitoService {
+  private readonly logger = new Logger(DebitoService.name);
+
   constructor(
     @InjectModel(Veiculo)
     private readonly veiculoModel: typeof Veiculo,
@@ -39,8 +37,8 @@ export class DebitoService {
       (veiculo.debitoVeiculos ?? []).length > 0 &&
       debitosVeiculo.length === 0
     ) {
-      throw new BadRequestException(
-        'Nenhum débito do tipo veículo encontrado para esta placa',
+      this.logger.warn(
+        `Veículo ${placa} possui débitos mas nenhum é do tipo veículo`,
       );
     }
 

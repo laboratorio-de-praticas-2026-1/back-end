@@ -14,14 +14,14 @@ export class DebitoVeiculo extends Model {
   declare id: number;
 
   @ForeignKey(() => Veiculo)
-  @Column({ field: 'veiculo_id', allowNull: false })
+  @Column({ field: 'id_veiculo', allowNull: false })
   declare veiculoId: number;
 
   @BelongsTo(() => Veiculo)
   declare veiculo: Veiculo;
 
   @ForeignKey(() => Debito)
-  @Column({ field: 'debito_id', allowNull: false })
+  @Column({ field: 'id_debito', allowNull: false })
   declare debitoId: number;
 
   @BelongsTo(() => Debito)
