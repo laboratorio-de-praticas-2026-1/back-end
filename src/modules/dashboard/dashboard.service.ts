@@ -8,6 +8,42 @@ import { Parcela } from 'src/models/parcela.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
 import { DashboardReturnDto } from './dto/dashboard-return.dto';
 
+interface ResultadoReceita {
+  total: string | null;
+}
+
+interface ResultadoTicketMedio {
+  media: string | null;
+}
+
+interface ResultadoHistoricoMensal {
+  mes: string;
+  receitaRealizada: string | null;
+}
+
+interface ResultadoInadimplencia {
+  valorTotal: string | null;
+  quantidadePagamentos: string | null;
+  quantidadeParcelas: string | null;
+}
+
+interface ResultadoPrevisaoCaixa {
+  valorTotal: string | null;
+  quantidadeParcelas: string | null;
+}
+
+interface ResultadoDistribuicaoMetodo {
+  metodo: string;
+  quantidade: string | null;
+  valorTotal: string | null;
+}
+
+interface ResultadoDistribuicaoTipo {
+  tipo: 'avista' | 'parcelado';
+  quantidade: string | null;
+  valorTotal: string | null;
+}
+
 @Injectable()
 export class DashboardService {
   constructor(
@@ -27,7 +63,6 @@ export class DashboardService {
     inicioParam?: string,
     fimParam?: string,
   ): Promise<DashboardReturnDto> {
-    //Intervalo de datas
     const dataFim = fimParam ? new Date(fimParam) : new Date();
     dataFim.setHours(23, 59, 59, 999);
 
@@ -39,7 +74,6 @@ export class DashboardService {
     const hoje = new Date();
     const em30Dias = new Date(hoje.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-    //Queries de solicitações
     const solicitacoesQuery = Promise.all([
       this.solicitacaoModel.count({
         where: {
@@ -59,39 +93,26 @@ export class DashboardService {
       }),
     ]);
 
-    //Queries financeiras
     const financeiroQuery = Promise.all([
-
-      // Query 1 — Receita realizada no período
       this.pagamentoModel.findOne({
         attributes: [[fn('SUM', col('debito.valor')), 'total']],
-        include: [{
-          model: Debito,
-          where: { status: 'pago' },
-          attributes: [],
-        }],
+        include: [{ model: Debito, where: { status: 'pago' }, attributes: [] }],
         where: { createdAt: { [Op.between]: [dataInicio, dataFim] } },
         raw: true,
-      }) as Promise<any>,
+      }) as Promise<ResultadoReceita | null>,
 
-      // Query 2 — Receita pendente 
-      this.debitoModel.sum('valor', {
-        where: { status: 'pendente' },
-      }),
+      this.debitoModel.sum('valor', { where: { status: 'pendente' } }),
 
-      // Query 3 — Receita de taxas no período
       this.pagamentoModel.sum('taxa', {
         where: { createdAt: { [Op.between]: [dataInicio, dataFim] } },
       }),
 
-      //Ticket médio no período
       this.pagamentoModel.findOne({
         attributes: [[fn('AVG', col('valor_total')), 'media']],
         where: { createdAt: { [Op.between]: [dataInicio, dataFim] } },
         raw: true,
-      }) as Promise<any>,
+      }) as Promise<ResultadoTicketMedio | null>,
 
-      //Histórico mensal de receita real
       this.pagamentoModel.findAll({
         attributes: [
           [fn('DATE_FORMAT', col('created_at'), '%Y-%m'), 'mes'],
@@ -101,13 +122,12 @@ export class DashboardService {
         group: [fn('DATE_FORMAT', col('created_at'), '%Y-%m')],
         order: [[fn('DATE_FORMAT', col('created_at'), '%Y-%m'), 'ASC']],
         raw: true,
-      }) as Promise<any[]>,
+      }) as unknown as Promise<ResultadoHistoricoMensal[]>,
 
-      //Inadimplência 
       this.parcelaModel.findOne({
         attributes: [
           [fn('SUM', col('valor')), 'valorTotal'],
-          [literal('COUNT(DISTINCT id_pagamento)'), 'quantidadeClientes'],
+          [literal('COUNT(DISTINCT id_pagamento)'), 'quantidadePagamentos'],
           [fn('COUNT', col('id')), 'quantidadeParcelas'],
         ],
         where: {
@@ -115,9 +135,8 @@ export class DashboardService {
           status: { [Op.ne]: 'pago' },
         },
         raw: true,
-      }) as Promise<any>,
+      }) as Promise<ResultadoInadimplencia | null>,
 
-      // Previsão de caixa: parcelas a vencer em 30 dias
       this.parcelaModel.findOne({
         attributes: [
           [fn('SUM', col('valor')), 'valorTotal'],
@@ -128,9 +147,8 @@ export class DashboardService {
           status: { [Op.ne]: 'pago' },
         },
         raw: true,
-      }) as Promise<any>,
+      }) as Promise<ResultadoPrevisaoCaixa | null>,
 
-      // Distribuição por método de pagamento no período
       this.pagamentoModel.findAll({
         attributes: [
           ['metodo_pagamento', 'metodo'],
@@ -140,9 +158,8 @@ export class DashboardService {
         where: { createdAt: { [Op.between]: [dataInicio, dataFim] } },
         group: ['metodo_pagamento'],
         raw: true,
-      }) as Promise<any[]>,
+      }) as unknown as Promise<ResultadoDistribuicaoMetodo[]>,
 
-      //Distribuição por tipo de pagamento no período
       this.pagamentoModel.findAll({
         attributes: [
           ['tipo_pagamento', 'tipo'],
@@ -152,12 +169,15 @@ export class DashboardService {
         where: { createdAt: { [Op.between]: [dataInicio, dataFim] } },
         group: ['tipo_pagamento'],
         raw: true,
-      }) as Promise<any[]>,
+      }) as unknown as Promise<ResultadoDistribuicaoTipo[]>,
     ]);
 
-    // Execução paralela dos dois blocos
     const [
-      [solicitacoesEmAberto, solicitacoesConcluidas, documentosPendentesValidacao],
+      [
+        solicitacoesEmAberto,
+        solicitacoesConcluidas,
+        documentosPendentesValidacao,
+      ],
       [
         receitaRealizadaResult,
         receitaPendenteRaw,
@@ -171,7 +191,6 @@ export class DashboardService {
       ],
     ] = await Promise.all([solicitacoesQuery, financeiroQuery]);
 
-    // Normalização
     const receitaRealizada = Number(receitaRealizadaResult?.total ?? 0);
     const receitaPendente = Number(receitaPendenteRaw ?? 0);
     const receitaTaxa = Number(receitaTaxaRaw ?? 0);
@@ -179,19 +198,24 @@ export class DashboardService {
 
     const totalMeses = historicoMensalResult.length;
     const somaHistorico = historicoMensalResult.reduce(
-      (acc: number, m: any) => acc + Number(m.receitaRealizada ?? 0),
+      (acc: number, m: ResultadoHistoricoMensal) =>
+        acc + Number(m.receitaRealizada ?? 0),
       0,
     );
     const mediaMensalReceita = totalMeses > 0 ? somaHistorico / totalMeses : 0;
 
-    const historicoMensal = historicoMensalResult.map((m: any) => ({
-      mes: m.mes as string,
-      receitaRealizada: Number(m.receitaRealizada ?? 0),
-    }));
+    const historicoMensal = historicoMensalResult.map(
+      (m: ResultadoHistoricoMensal) => ({
+        mes: m.mes,
+        receitaRealizada: Number(m.receitaRealizada ?? 0),
+      }),
+    );
 
     const inadimplencia = {
       valorTotal: Number(inadimplenciaResult?.valorTotal ?? 0),
-      quantidadeClientes: Number(inadimplenciaResult?.quantidadeClientes ?? 0),
+      quantidadePagamentos: Number(
+        inadimplenciaResult?.quantidadePagamentos ?? 0,
+      ),
       quantidadeParcelas: Number(inadimplenciaResult?.quantidadeParcelas ?? 0),
     };
 
@@ -200,19 +224,22 @@ export class DashboardService {
       quantidadeParcelas: Number(previsaoCaixaResult?.quantidadeParcelas ?? 0),
     };
 
-    const porMetodoPagamento = porMetodoResult.map((m: any) => ({
-      metodo: m.metodo as string,
-      quantidade: Number(m.quantidade ?? 0),
-      valorTotal: Number(m.valorTotal ?? 0),
-    }));
+    const porMetodoPagamento = porMetodoResult.map(
+      (m: ResultadoDistribuicaoMetodo) => ({
+        metodo: m.metodo,
+        quantidade: Number(m.quantidade ?? 0),
+        valorTotal: Number(m.valorTotal ?? 0),
+      }),
+    );
 
-    const porTipoPagamento = porTipoResult.map((t: any) => ({
-      tipo: t.tipo as 'avista' | 'parcelado',
-      quantidade: Number(t.quantidade ?? 0),
-      valorTotal: Number(t.valorTotal ?? 0),
-    }));
+    const porTipoPagamento = porTipoResult.map(
+      (t: ResultadoDistribuicaoTipo) => ({
+        tipo: t.tipo,
+        quantidade: Number(t.quantidade ?? 0),
+        valorTotal: Number(t.valorTotal ?? 0),
+      }),
+    );
 
-    // Retorno
     return {
       solicitacoes: {
         solicitacoesEmAberto,

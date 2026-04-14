@@ -20,10 +20,6 @@ import { ServicosModule } from './modules/servicos/servicos.module';
 import { SimuladorModule } from './modules/simulador/simulador.module';
 import { SolicitacaoModule } from './modules/solicitacao/solicitacao.module';
 import { UsuarioModule } from './modules/usuario/usuario.module';
-import { Debito } from './models/debito.model';
-import { Pagamento } from './models/pagamento.model';
-import { Parcela } from './models/parcela.model';
-
 
 @Module({
   imports: [
@@ -61,9 +57,6 @@ import { Parcela } from './models/parcela.model';
     SolicitacaoModule,
     UtilsModule,
     FileConversorModule,
-    Debito,
-    Pagamento,
-    Parcela,
   ],
 
   controllers: [],

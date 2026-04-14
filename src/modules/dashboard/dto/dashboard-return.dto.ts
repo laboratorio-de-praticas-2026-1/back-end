@@ -1,4 +1,3 @@
-
 export class HistoricoMensalDto {
   mes: string;
   receitaRealizada: number;
@@ -7,7 +6,7 @@ export class HistoricoMensalDto {
 /*débitos vencidos e não pagos*/
 export class InadimplenciaDto {
   valorTotal: number;
-  quantidadeClientes: number;
+  quantidadePagamentos: number;
   quantidadeParcelas: number;
 }
 
