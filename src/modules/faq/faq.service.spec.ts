@@ -11,6 +11,11 @@ const mockFaqModel = {
   create: jest.fn(),
 };
 
+const mockCategoriaModel = {
+  findAll: jest.fn(),
+  findByPk: jest.fn(),
+};
+
 describe('FaqService', () => {
   let service: FaqService;
 
@@ -21,6 +26,10 @@ describe('FaqService', () => {
         {
           provide: getModelToken(Faq),
           useValue: mockFaqModel,
+        },
+        {
+          provide: 'CategoriaRepository',
+          useValue: mockCategoriaModel,
         },
       ],
     }).compile();
@@ -44,6 +53,20 @@ describe('FaqService', () => {
     expect(mockFaqModel.findAll).toHaveBeenCalled();
   });
 
+  it('getCategorias deve retornar lista de categorias', async () => {
+    const categorias = [
+      { id: 1, nome: 'Geral' },
+      { id: 2, nome: 'Financeiro' },
+    ];
+
+    mockCategoriaModel.findAll.mockResolvedValueOnce(categorias);
+
+    const result = await service.getCategorias();
+
+    expect(result).toEqual(categorias);
+    expect(mockCategoriaModel.findAll).toHaveBeenCalled();
+  });
+
   it('getFaqById deve retornar FAQ', async () => {
     const fakeFaq = { id: 1 };
     mockFaqModel.findByPk.mockResolvedValueOnce(fakeFaq);
@@ -63,27 +86,57 @@ describe('FaqService', () => {
     const dto = {
       pergunta: 'P?',
       resposta: 'R',
-      categoria: 'geral',
+      categoriaId: 1,
     };
+
+    mockCategoriaModel.findByPk.mockResolvedValueOnce({ id: 1, nome: 'Geral' });
 
     await service.createFaq(dto);
 
+    expect(mockCategoriaModel.findByPk).toHaveBeenCalledWith(1);
     expect(mockFaqModel.create).toHaveBeenCalledWith({
       ...dto,
       status: true,
     });
   });
 
-  it('updateFaq deve atualizar dados', async () => {
+  it('createFaq deve lançar erro quando categoria não existir', async () => {
+    const dto = {
+      pergunta: 'P?',
+      resposta: 'R',
+      categoriaId: 999,
+    };
+
+    mockCategoriaModel.findByPk.mockResolvedValueOnce(null);
+
+    await expect(service.createFaq(dto)).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('updateFaq deve atualizar dados com categoriaId', async () => {
     const fakeFaq = {
       update: jest.fn(),
     };
 
     mockFaqModel.findByPk.mockResolvedValueOnce(fakeFaq);
+    mockCategoriaModel.findByPk.mockResolvedValueOnce({ id: 2, nome: 'Financeiro' });
 
-    await service.updateFaq(1, { categoria: 'nova' });
+    await service.updateFaq(1, { categoriaId: 2 });
 
-    expect(fakeFaq.update).toHaveBeenCalledWith({ categoria: 'nova' });
+    expect(mockCategoriaModel.findByPk).toHaveBeenCalledWith(2);
+    expect(fakeFaq.update).toHaveBeenCalledWith({ categoriaId: 2 });
+  });
+
+  it('updateFaq deve lançar erro quando categoriaId não existir', async () => {
+    const fakeFaq = {
+      update: jest.fn(),
+    };
+
+    mockFaqModel.findByPk.mockResolvedValueOnce(fakeFaq);
+    mockCategoriaModel.findByPk.mockResolvedValueOnce(null);
+
+    await expect(
+      service.updateFaq(1, { categoriaId: 999 }),
+    ).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('deleteFaq deve remover FAQ', async () => {
