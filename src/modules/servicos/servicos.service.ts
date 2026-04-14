@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Servico } from 'src/models/servico.model';
 @Injectable()
@@ -31,4 +31,12 @@ export class ServicosService {
     const servico = await this.findOne(id);
     await servico.destroy();
   }
+
+    async createServico(dados: Partial<Servico>): Promise<Servico> {
+    if (!dados.nome) {
+      throw new BadRequestException('Nome é obrigatório');
+    }
+    return await this.servicoModel.create(dados as any);
+  }
 }
+

@@ -4,7 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ServicosService } from './servicos.service';
 import { getModelToken } from '@nestjs/sequelize';
 import { Servico } from 'src/models/servico.model';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 describe('ServicosService', () => {
   let service: ServicosService;
@@ -12,6 +12,7 @@ describe('ServicosService', () => {
   const mockServicoModel = {
     findAll: jest.fn(),
     findByPk: jest.fn(),
+    create: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -115,6 +116,35 @@ describe('ServicosService', () => {
 
       await expect(service.deleteServico(99)).rejects.toThrow(
         NotFoundException,
+      );
+    });
+  });
+
+  describe('createServico', () => {
+    it('deve criar um serviço com sucesso recebendo um objeto', async () => {
+      const mockServico = {
+        nome: 'Troca de óleo',
+        descricao: 'Troca completa do óleo do motor',
+        valorBase: 120.5,
+        prazoEstimadoDias: 2,
+        ativo: true,
+      };
+      const mockResult = { id: 1, ...mockServico };
+
+      mockServicoModel.create.mockResolvedValue(mockResult);
+
+      const result = await service.createServico(mockServico);
+
+      expect(result).toEqual(mockResult);
+      expect(mockServicoModel.create).toHaveBeenCalledWith(mockServico);
+      expect(result.valorBase).toBe(120.5);
+    });
+
+    it('deve lançar BadRequestException se o nome não for enviado no objeto', async () => {
+      const incompleteDto = { descricao: 'Sem nome' };
+
+      await expect(service.createServico(incompleteDto as any)).rejects.toThrow(
+        BadRequestException,
       );
     });
   });

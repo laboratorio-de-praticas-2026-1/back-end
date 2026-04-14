@@ -11,6 +11,7 @@ describe('ServicosController', () => {
     findOne: jest.fn(),
     updateServico: jest.fn(),
     deleteServico: jest.fn(),
+    createServico: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -107,6 +108,26 @@ describe('ServicosController', () => {
       await expect(controller.deleteServico(99)).rejects.toThrow(
         NotFoundException,
       );
+    });
+  });
+
+   describe('createServico', () => {
+    it('deve criar um serviço com sucesso e retornar os dados', async () => {
+      const dto = {
+        nome: 'Troca de óleo',
+        descricao: 'Troca completa do óleo do motor',
+        valorBase: 120.5,
+        prazoEstimadoDias: 2,
+        ativo: true,
+      };
+      const mockResult = { id: 1, ...dto };
+
+      mockServicosService.createServico.mockResolvedValue(mockResult);
+
+      const result = await controller.createServico(dto);
+
+      expect(mockServicosService.createServico).toHaveBeenCalledWith(dto);
+      expect(result).toEqual(mockResult);
     });
   });
 });

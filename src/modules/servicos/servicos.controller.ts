@@ -1,11 +1,14 @@
 import {
   Controller,
   Get,
+  Post,
   Param,
   ParseIntPipe,
   Body,
   Patch,
   Delete,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ServicosService } from './servicos.service';
 import { Servico } from 'src/models/servico.model';
@@ -35,5 +38,11 @@ export class ServicosController {
   @Delete(':id')
   deleteServico(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.servicosService.deleteServico(id);
+  }
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  createServico(@Body() dados: Partial<Servico>): Promise<Servico> {
+    return this.servicosService.createServico(dados);
   }
 }
