@@ -1,5 +1,6 @@
 import {
   BelongsTo,
+  BelongsToMany,
   Column,
   DataType,
   ForeignKey,
@@ -60,5 +61,5 @@ export class Debito extends Model {
   declare debitoServico: DebitoServico | null;
 
   @HasOne(() => DebitoVeiculo)
-  declare debitoVeiculo: DebitoVeiculo | null;
+  declare debitoVeiculo: DebitoVeiculo | null;  
 }
