@@ -17,7 +17,7 @@ export class DebitoVeiculo extends Model {
   @Column({
     field: 'id_debito',
     type: DataType.INTEGER,
-    allowNull: false,   
+    allowNull: false,
   })
   declare debitoId: number;
 

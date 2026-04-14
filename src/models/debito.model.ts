@@ -12,7 +12,7 @@ import { DebitoVeiculo } from './debito-veiculo.model';
   tableName: 'debito',
   underscored: true,
   timestamps: true,
-  updatedAt: false, // Desativa a busca pela coluna updated_at que não existe no banco
+  updatedAt: false,
 })
 export class Debito extends Model {
   @Column({ primaryKey: true, autoIncrement: true, allowNull: false })
@@ -30,7 +30,7 @@ export class Debito extends Model {
   })
   declare descricao: string | null;
 
-  @Column({   
+  @Column({
     type: DataType.DECIMAL(10, 2),
     allowNull: true,
   })

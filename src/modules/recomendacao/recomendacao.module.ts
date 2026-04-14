@@ -13,8 +13,7 @@ import { DebitoVeiculo } from 'src/models/debito-veiculo.model';
 
 @Module({
   imports: [
-    SequelizeModule.forFeature([Servico, Solicitacao, Usuario, Veiculo]),
-    SequelizeModule.forFeature([   
+    SequelizeModule.forFeature([
       Servico,
       Solicitacao,
       Usuario,

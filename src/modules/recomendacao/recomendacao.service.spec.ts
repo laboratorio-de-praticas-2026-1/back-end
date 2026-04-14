@@ -25,8 +25,7 @@ describe('RecomendacaoService', () => {
   };
 
   const mockServicoModel = {
-    findAll: jest.fn() as jest.MockedFunction<
-    () => Promise<Servico[]>>,
+    findAll: jest.fn() as jest.MockedFunction<() => Promise<Servico[]>>,
   };
 
   const mockInteracaoUsuarioModel = {
@@ -40,9 +39,7 @@ describe('RecomendacaoService', () => {
   };
 
   const mockDebitoModel = {
-    findAll: jest.fn() as jest.MockedFunction<
-      () => Promise<Partial<Debito>[]>
-    >,
+    findAll: jest.fn() as jest.MockedFunction<() => Promise<Partial<Debito>[]>>,
   };
 
   beforeEach(async () => {
@@ -175,7 +172,7 @@ describe('RecomendacaoService', () => {
       };
 
       mockInteracaoUsuarioModel.create.mockRejectedValue(
-        new Error('Falha de gravação'),  
+        new Error('Falha de gravação'),
       );
 
       await expect(
@@ -185,22 +182,20 @@ describe('RecomendacaoService', () => {
   });
 
   describe('buscarRecursoMulta', () => {
-  it('deve retornar recomendação de multa se houver débitos', async () => {
-    mockDebitoModel.findAll.mockResolvedValue([
-      { 
-        descricao: 'MULTA X', 
-        // Cast duplo: remove o erro de tipagem sem usar any
-        veiculos: [{ id: 10 }] as unknown as Debito['veiculos'] 
-      }
-    ]);
-    
-    mockSolicitacaoModel.findOne.mockResolvedValue(null);
+    it('deve retornar recomendação de multa se houver débitos', async () => {
+      mockDebitoModel.findAll.mockResolvedValue([
+        {
+          descricao: 'MULTA X',
+          veiculos: [{ id: 10 }] as unknown as Debito['veiculos'],
+        },
+      ]);
 
-    const resultado = await service.buscarRecursoMulta(1);
-    
-    expect(resultado).not.toBeNull();
-    expect(resultado?.id).toBe(6);
+      mockSolicitacaoModel.findOne.mockResolvedValue(null);
+
+      const resultado = await service.buscarRecursoMulta(1);
+
+      expect(resultado).not.toBeNull();
+      expect(resultado?.id).toBe(6);
+    });
   });
 });
-});
-
