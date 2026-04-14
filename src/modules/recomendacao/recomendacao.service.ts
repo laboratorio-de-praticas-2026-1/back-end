@@ -66,9 +66,19 @@ export class RecomendacaoService {
     }
   }
 
-  async buscarRecursoMulta(usuarioId: number): Promise<RecomendacaoRespostaDto | null> {
+  async buscarRecursoMulta(
+    usuarioId: number,
+  ): Promise<RecomendacaoRespostaDto | null> {
     try {
-      const palavrasChave = ['multa', 'infração', 'infracao', 'autuação', 'autuacao', 'radar', 'transitar em velocidade'];
+      const palavrasChave = [
+        'multa',
+        'infração',
+        'infracao',
+        'autuação',
+        'autuacao',
+        'radar',
+        'transitar em velocidade',
+      ];
 
       const debitos = await this.debitoModel.findAll({
         where: {
@@ -106,12 +116,12 @@ export class RecomendacaoService {
               nome: 'Recurso de Multa',
               descricao:
                 'Identificamos uma multa pendente. Você tem o direito de recorrer e evitar pontos na sua CNH.',
-              ativo: true
+              ativo: true,
             };
           }
         }
       }
-     
+
       return await this.buscarParcelamentoDebitos(usuarioId);
     } catch (error: unknown) {
       const errorMessage =
@@ -158,46 +168,54 @@ export class RecomendacaoService {
   }
 
   async buscarAtributosPerfil(usuarioId: number): Promise<PerfilUsuarioDto[]> {
-    const solicitacoes = (await this.solicitacaoModel.findAll({
-      attributes: [],
-      where: { usuarioId },
-      include: [
-        {
-          model: this.servicoModel,
-          attributes: ['id', 'nome', 'descricao', 'valor_base', 'ativo'],
-          required: true,
-        },
-      ],
-      raw: true,
-      nest: true,
-    })) as unknown as SolicitacaoComServicoDto[];
+    try {
+      const solicitacoes = (await this.solicitacaoModel.findAll({
+        attributes: [],
+        where: { usuarioId },
+        include: [
+          {
+            model: this.servicoModel,
+            attributes: ['id', 'nome', 'descricao', 'valor_base', 'ativo'],
+            required: true,
+          },
+        ],
+        raw: true,
+        nest: true,
+      })) as unknown as SolicitacaoComServicoDto[];
 
-    if (!solicitacoes || solicitacoes.length === 0) return [];
+      if (!solicitacoes || solicitacoes.length === 0) return [];
 
-    return solicitacoes.map((s) => ({
-      id: s.servico.id,
-      nome: s.servico.nome,
-      descricao: s.servico.descricao,
-      valor_base: s.servico.valor_base,
-      ativo: s.servico.ativo,
-    }));
+      return solicitacoes.map((s) => ({
+        id: s.servico.id,
+        nome: s.servico.nome,
+        descricao: s.servico.descricao,
+        valor_base: s.servico.valor_base,
+        ativo: s.servico.ativo,
+      }));
+    } catch {
+      throw new InternalServerErrorException('Conexão perdida');
+    }
   }
 
   async criarInteracao(
     usuarioId: number,
     interacaoDto: RecomendacaoInteracaoRequestDto,
   ): Promise<RecomendacaoInteracaoResponseDto> {
-    const interacao = await this.interacaoUsuarioModel.create({
-      usuarioId,
-      categoriaBlog: interacaoDto.categoriaBlog,
-      dataInteracao: interacaoDto.dataInteracao,
-    });
+    try {
+      const interacao = await this.interacaoUsuarioModel.create({
+        usuarioId,
+        categoriaBlog: interacaoDto.categoriaBlog,
+        dataInteracao: interacaoDto.dataInteracao,
+      });
 
-    return {
-      id: interacao.id,
-      usuarioId,
-      categoriaBlog: interacao.categoriaBlog,
-      dataInteracao: String(interacao.dataInteracao),
-    };
+      return {
+        id: interacao.id,
+        usuarioId,
+        categoriaBlog: interacao.categoriaBlog,
+        dataInteracao: String(interacao.dataInteracao),
+      };
+    } catch {
+      throw new InternalServerErrorException('Falha de gravação');
+    }
   }
 }
