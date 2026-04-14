@@ -1,7 +1,7 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { getModelToken } from '@nestjs/sequelize';
 import { Test, TestingModule } from '@nestjs/testing';
-import { TipoDebito } from '../../models/debito.model';
+import { StatusDebito, TipoDebito } from '../../models/debito.model';
 import { Veiculo } from '../../models/veiculo.model';
 import { DebitoService } from './debito.service';
 
@@ -13,7 +13,7 @@ const mockVeiculo = {
         id: 1,
         descricao: 'IPVA 2026',
         valor: 1500.0,
-        status: 'PENDENTE',
+        status: StatusDebito.PENDENTE,
         tipo: TipoDebito.VEICULO,
       },
     },
@@ -22,7 +22,7 @@ const mockVeiculo = {
         id: 2,
         descricao: 'Multa',
         valor: 300.0,
-        status: 'PENDENTE',
+        status: StatusDebito.PENDENTE,
         tipo: TipoDebito.VEICULO,
       },
     },
@@ -31,16 +31,19 @@ const mockVeiculo = {
 
 describe('DebitoService', () => {
   let service: DebitoService;
+  let mockVeiculoModel: { findOne: jest.Mock };
 
   beforeEach(async () => {
+    mockVeiculoModel = {
+      findOne: jest.fn().mockResolvedValue(mockVeiculo),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         DebitoService,
         {
           provide: getModelToken(Veiculo),
-          useValue: {
-            findOne: jest.fn().mockResolvedValue(mockVeiculo),
-          },
+          useValue: mockVeiculoModel,
         },
       ],
     }).compile();
@@ -54,17 +57,28 @@ describe('DebitoService', () => {
     expect(resultado).toEqual({
       placa: 'ABC1234',
       debitos: [
-        { id: 1, descricao: 'IPVA 2026', valor: 1500, status: 'PENDENTE' },
-        { id: 2, descricao: 'Multa', valor: 300, status: 'PENDENTE' },
+        {
+          id: 1,
+          descricao: 'IPVA 2026',
+          valor: 1500,
+          status: StatusDebito.PENDENTE,
+        },
+        {
+          id: 2,
+          descricao: 'Multa',
+          valor: 300,
+          status: StatusDebito.PENDENTE,
+        },
       ],
       total: 1800,
     });
   });
 
   it('deve retornar lista vazia e total 0 quando não há débitos', async () => {
-    jest
-      .spyOn(service['veiculoModel'], 'findOne')
-      .mockResolvedValue({ placa: 'ABC1234', debitoVeiculos: [] } as any);
+    mockVeiculoModel.findOne.mockResolvedValue({
+      placa: 'ABC1234',
+      debitoVeiculos: [],
+    });
 
     const resultado = await service.buscarDebitosPorPlaca('ABC1234');
 
@@ -73,15 +87,15 @@ describe('DebitoService', () => {
   });
 
   it('deve lançar 404 quando veículo não existe', async () => {
-    jest.spyOn(service['veiculoModel'], 'findOne').mockResolvedValue(null);
+    mockVeiculoModel.findOne.mockResolvedValue(null);
 
     await expect(service.buscarDebitosPorPlaca('XXX9999')).rejects.toThrow(
       NotFoundException,
     );
   });
 
-  it('deve lançar BadRequestException quando débitos não são do tipo veículo', async () => {
-    jest.spyOn(service['veiculoModel'], 'findOne').mockResolvedValue({
+  it('deve retornar lista vazia quando débitos não são do tipo veículo', async () => {
+    mockVeiculoModel.findOne.mockResolvedValue({
       placa: 'ABC1234',
       debitoVeiculos: [
         {
@@ -89,15 +103,16 @@ describe('DebitoService', () => {
             id: 1,
             descricao: 'Serviço',
             valor: 200.0,
-            status: 'PENDENTE',
+            status: StatusDebito.PENDENTE,
             tipo: TipoDebito.SERVICO,
           },
         },
       ],
-    } as any);
+    });
 
-    await expect(service.buscarDebitosPorPlaca('ABC1234')).rejects.toThrow(
-      BadRequestException,
-    );
+    const resultado = await service.buscarDebitosPorPlaca('ABC1234');
+
+    expect(resultado.debitos).toEqual([]);
+    expect(resultado.total).toBe(0);
   });
 });
