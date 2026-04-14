@@ -8,15 +8,15 @@ import { Parcela } from 'src/models/parcela.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
 import { DashboardReturnDto } from './dto/dashboard-return.dto';
 import type { ModelCtor } from 'sequelize-typescript';
-import { DashboardQueries } from './dashboard.types';
-import ResultadoReceita = DashboardQueries.ResultadoReceita;
-import ResultadoTicketMedio = DashboardQueries.ResultadoTicketMedio;
-import ResultadoHistoricoMensal = DashboardQueries.ResultadoHistoricoMensal;
-import ResultadoPrevisaoCaixa = DashboardQueries.ResultadoPrevisaoCaixa;
-import ResultadoInadimplencia = DashboardQueries.ResultadoInadimplencia;
-import ResultadoDistribuicaoTipo = DashboardQueries.ResultadoDistribuicaoTipo;
-import ResultadoDistribuicaoMetodo = DashboardQueries.ResultadoDistribuicaoMetodo;
-
+import type {
+  ResultadoReceita,
+  ResultadoTicketMedio,
+  ResultadoHistoricoMensal,
+  ResultadoInadimplencia,
+  ResultadoPrevisaoCaixa,
+  ResultadoDistribuicaoMetodo,
+  ResultadoDistribuicaoTipo,
+} from './dashboard.types';
 
 @Injectable()
 export class DashboardService {
@@ -67,17 +67,19 @@ export class DashboardService {
       }),
     ]);
 
-    const financeiroQuery: Promise<[
+    const financeiroQuery: Promise<
+      [
         ResultadoReceita | null,
-      number,
-      number,
+        number,
+        number,
         ResultadoTicketMedio | null,
-      ResultadoHistoricoMensal[],
+        ResultadoHistoricoMensal[],
         ResultadoInadimplencia | null,
         ResultadoPrevisaoCaixa | null,
-      ResultadoDistribuicaoMetodo[],
-      ResultadoDistribuicaoTipo[]
-    ]> = Promise.all([
+        ResultadoDistribuicaoMetodo[],
+        ResultadoDistribuicaoTipo[],
+      ]
+    > = Promise.all([
       this.pagamentoModel.findOne({
         attributes: [[fn('SUM', col('debito.valor')), 'total']],
         include: [{ model: Debito, where: { status: 'pago' }, attributes: [] }],
@@ -153,8 +155,7 @@ export class DashboardService {
         where: { createdAt: { [Op.between]: [dataInicio, dataFim] } },
         group: ['tipo_pagamento'],
         raw: true,
-      }) as unknown as Promise<ResultadoDistribuicaoTipo[]>
-
+      }) as unknown as Promise<ResultadoDistribuicaoTipo[]>,
     ]);
 
     const [
