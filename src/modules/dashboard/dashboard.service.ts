@@ -7,56 +7,30 @@ import { Pagamento } from 'src/models/pagamento.model';
 import { Parcela } from 'src/models/parcela.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
 import { DashboardReturnDto } from './dto/dashboard-return.dto';
+import type { ModelCtor } from 'sequelize-typescript';
+import { DashboardQueries } from './dashboard.types';
+import ResultadoReceita = DashboardQueries.ResultadoReceita;
+import ResultadoTicketMedio = DashboardQueries.ResultadoTicketMedio;
+import ResultadoHistoricoMensal = DashboardQueries.ResultadoHistoricoMensal;
+import ResultadoPrevisaoCaixa = DashboardQueries.ResultadoPrevisaoCaixa;
+import ResultadoInadimplencia = DashboardQueries.ResultadoInadimplencia;
+import ResultadoDistribuicaoTipo = DashboardQueries.ResultadoDistribuicaoTipo;
+import ResultadoDistribuicaoMetodo = DashboardQueries.ResultadoDistribuicaoMetodo;
 
-interface ResultadoReceita {
-  total: string | null;
-}
-
-interface ResultadoTicketMedio {
-  media: string | null;
-}
-
-interface ResultadoHistoricoMensal {
-  mes: string;
-  receitaRealizada: string | null;
-}
-
-interface ResultadoInadimplencia {
-  valorTotal: string | null;
-  quantidadePagamentos: string | null;
-  quantidadeParcelas: string | null;
-}
-
-interface ResultadoPrevisaoCaixa {
-  valorTotal: string | null;
-  quantidadeParcelas: string | null;
-}
-
-interface ResultadoDistribuicaoMetodo {
-  metodo: string;
-  quantidade: string | null;
-  valorTotal: string | null;
-}
-
-interface ResultadoDistribuicaoTipo {
-  tipo: 'avista' | 'parcelado';
-  quantidade: string | null;
-  valorTotal: string | null;
-}
 
 @Injectable()
 export class DashboardService {
   constructor(
     @InjectModel(Solicitacao)
-    private readonly solicitacaoModel: typeof Solicitacao,
+    private readonly solicitacaoModel: ModelCtor<Solicitacao>,
     @InjectModel(DocumentoSolicitacao)
-    private readonly documentoSolicitacaoModel: typeof DocumentoSolicitacao,
+    private readonly documentoSolicitacaoModel: ModelCtor<DocumentoSolicitacao>,
     @InjectModel(Debito)
-    private readonly debitoModel: typeof Debito,
+    private readonly debitoModel: ModelCtor<Debito>,
     @InjectModel(Pagamento)
-    private readonly pagamentoModel: typeof Pagamento,
+    private readonly pagamentoModel: ModelCtor<Pagamento>,
     @InjectModel(Parcela)
-    private readonly parcelaModel: typeof Parcela,
+    private readonly parcelaModel: ModelCtor<Parcela>,
   ) {}
 
   async retornarInfosDashboard(
@@ -93,13 +67,23 @@ export class DashboardService {
       }),
     ]);
 
-    const financeiroQuery = Promise.all([
+    const financeiroQuery: Promise<[
+        ResultadoReceita | null,
+      number,
+      number,
+        ResultadoTicketMedio | null,
+      ResultadoHistoricoMensal[],
+        ResultadoInadimplencia | null,
+        ResultadoPrevisaoCaixa | null,
+      ResultadoDistribuicaoMetodo[],
+      ResultadoDistribuicaoTipo[]
+    ]> = Promise.all([
       this.pagamentoModel.findOne({
         attributes: [[fn('SUM', col('debito.valor')), 'total']],
         include: [{ model: Debito, where: { status: 'pago' }, attributes: [] }],
         where: { createdAt: { [Op.between]: [dataInicio, dataFim] } },
         raw: true,
-      }) as Promise<ResultadoReceita | null>,
+      }) as unknown as Promise<ResultadoReceita | null>,
 
       this.debitoModel.sum('valor', { where: { status: 'pendente' } }),
 
@@ -111,7 +95,7 @@ export class DashboardService {
         attributes: [[fn('AVG', col('valor_total')), 'media']],
         where: { createdAt: { [Op.between]: [dataInicio, dataFim] } },
         raw: true,
-      }) as Promise<ResultadoTicketMedio | null>,
+      }) as unknown as Promise<ResultadoTicketMedio | null>,
 
       this.pagamentoModel.findAll({
         attributes: [
@@ -135,7 +119,7 @@ export class DashboardService {
           status: { [Op.ne]: 'pago' },
         },
         raw: true,
-      }) as Promise<ResultadoInadimplencia | null>,
+      }) as unknown as Promise<ResultadoInadimplencia | null>,
 
       this.parcelaModel.findOne({
         attributes: [
@@ -147,7 +131,7 @@ export class DashboardService {
           status: { [Op.ne]: 'pago' },
         },
         raw: true,
-      }) as Promise<ResultadoPrevisaoCaixa | null>,
+      }) as unknown as Promise<ResultadoPrevisaoCaixa | null>,
 
       this.pagamentoModel.findAll({
         attributes: [
@@ -169,7 +153,8 @@ export class DashboardService {
         where: { createdAt: { [Op.between]: [dataInicio, dataFim] } },
         group: ['tipo_pagamento'],
         raw: true,
-      }) as unknown as Promise<ResultadoDistribuicaoTipo[]>,
+      }) as unknown as Promise<ResultadoDistribuicaoTipo[]>
+
     ]);
 
     const [
