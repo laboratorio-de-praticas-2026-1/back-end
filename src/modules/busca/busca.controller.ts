@@ -2,6 +2,7 @@ import { Controller, Get, Logger, Query } from '@nestjs/common';
 import { BuscaService } from './busca.service';
 import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
 import { BuscaBannerStatusDto } from './dto/busca-banner-status.dto';
+import { BuscaPublicidadeStatusDto } from './dto/busca-publicidade-status.dto';
 import { Blog } from 'src/models/blog.model';
 import { ApiOperation } from '@nestjs/swagger';
 
@@ -31,6 +32,16 @@ export class BuscaController {
     this.logger.log(`Buscando banners por status: status=${dto.status}`);
     return this.buscaService.buscarBannerPorStatus(dto);
   }
+
+  @Get('publicidade/status')
+  @ApiOperation({
+    summary: "Buscar publicidades com base em status: 'ativo' e 'inativo'",
+  })
+  buscarPublicidadePorStatus(@Query() dto: BuscaPublicidadeStatusDto) {
+    this.logger.log(`Buscando publicidades por status: status=${dto.status}`);
+    return this.buscaService.buscarPublicidadePorStatus(dto);
+  }
+
   @Get('blog/termo')
   @ApiOperation({
     summary:

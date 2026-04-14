@@ -3,14 +3,16 @@ import { InjectModel } from '@nestjs/sequelize';
 import { col, Op, where } from 'sequelize';
 import { Banner } from 'src/models/banner.model';
 import { Blog } from 'src/models/blog.model';
+import { Publicidade } from 'src/models/publicidade.model';
 import { BuscaBannerStatusDto } from './dto/busca-banner-status.dto';
 import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
-
+import { BuscaPublicidadeStatusDto } from './dto/busca-publicidade-status.dto';
 @Injectable()
 export class BuscaService {
   constructor(
     @InjectModel(Blog) private blogModel: typeof Blog,
     @InjectModel(Banner) private bannerModel: typeof Banner,
+    @InjectModel(Publicidade) private publicidadeModel: typeof Publicidade,
   ) {}
 
   async buscarBlogsPorIntervaloDeData(
@@ -49,6 +51,17 @@ export class BuscaService {
   async buscarBannerPorStatus(dto: BuscaBannerStatusDto): Promise<Banner[]> {
     const ativo = dto.status === 'ativo';
     return await this.bannerModel.findAll({
+      where: {
+        ativo,
+      },
+    });
+  }
+
+  async buscarPublicidadePorStatus(
+    dto: BuscaPublicidadeStatusDto,
+  ): Promise<Publicidade[]> {
+    const ativo = dto.status === 'ativo';
+    return await this.publicidadeModel.findAll({
       where: {
         ativo,
       },

@@ -5,13 +5,14 @@ import { BuscaService } from './busca.service';
 import { BadRequestException } from '@nestjs/common';
 import { Blog } from 'src/models/blog.model';
 import { Banner } from 'src/models/banner.model';
+import { Publicidade } from 'src/models/publicidade.model';
 import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
 
 describe('BuscaService', () => {
   let service: BuscaService;
   const blogFindAllMock = jest.fn();
   const bannerFindAllMock = jest.fn();
-
+  const publicidadeFindAllMock = jest.fn();
   type WhereClause = Partial<Record<symbol, unknown>>;
 
   interface FindAllOptions {
@@ -22,6 +23,7 @@ describe('BuscaService', () => {
   beforeEach(async () => {
     blogFindAllMock.mockReset();
     bannerFindAllMock.mockReset();
+    publicidadeFindAllMock.mockReset();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -36,6 +38,12 @@ describe('BuscaService', () => {
           provide: getModelToken(Banner),
           useValue: {
             findAll: bannerFindAllMock,
+          },
+        },
+        {
+          provide: getModelToken(Publicidade),
+          useValue: {
+            findAll: publicidadeFindAllMock,
           },
         },
       ],
@@ -174,6 +182,38 @@ describe('BuscaService', () => {
 
     expect(bannerFindAllMock).toHaveBeenCalledTimes(1);
     expect(bannerFindAllMock).toHaveBeenCalledWith({
+      where: {
+        ativo: false,
+      },
+    });
+  });
+
+  it('deve buscar publicidades ativas quando status=ativo', async () => {
+    const retorno = [{ id: 1 }];
+    publicidadeFindAllMock.mockResolvedValue(retorno);
+
+    await expect(
+      service.buscarPublicidadePorStatus({ status: 'ativo' }),
+    ).resolves.toEqual(retorno);
+
+    expect(publicidadeFindAllMock).toHaveBeenCalledTimes(1);
+    expect(publicidadeFindAllMock).toHaveBeenCalledWith({
+      where: {
+        ativo: true,
+      },
+    });
+  });
+
+  it('deve buscar publicidades inativas quando status=inativo', async () => {
+    const retorno = [{ id: 1 }];
+    publicidadeFindAllMock.mockResolvedValue(retorno);
+
+    await expect(
+      service.buscarPublicidadePorStatus({ status: 'inativo' }),
+    ).resolves.toEqual(retorno);
+
+    expect(publicidadeFindAllMock).toHaveBeenCalledTimes(1);
+    expect(publicidadeFindAllMock).toHaveBeenCalledWith({
       where: {
         ativo: false,
       },
