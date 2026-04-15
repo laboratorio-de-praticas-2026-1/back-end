@@ -35,7 +35,7 @@ export class UsuarioService {
         nome: dto.nome,
         email: dto.email,
         senha: senhaHash,
-        nivel: dto.nivel ?? 'cliente',
+        nivel: 'cliente',
         cpfCnpj: dto.cpfCnpj ?? null,
         celular: dto.celular ?? null,
       });

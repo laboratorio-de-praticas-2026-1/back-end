@@ -115,7 +115,7 @@ describe('UsuarioService', () => {
       );
     });
 
-  });;
+  });
 
   describe('remove', () => {
     it('deve remover o usuário do banco e retornar mensagem de sucesso', async () => {
