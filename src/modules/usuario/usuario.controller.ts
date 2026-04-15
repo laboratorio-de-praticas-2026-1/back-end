@@ -25,7 +25,6 @@ export class UsuarioController {
   constructor(private readonly usuarioService: UsuarioService) {}
 
   @Post('register')
-  @Post('register')
   @ApiOperation({ summary: 'Cadastra um novo usuário no sistema' })
   @ApiCreatedResponse({
     description: 'Usuário cadastrado com sucesso',
