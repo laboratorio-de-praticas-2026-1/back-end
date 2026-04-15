@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   Patch,
   Param,
   Body,
@@ -19,6 +20,12 @@ export class UsuarioController {
   @Post('register')
   register(@Body() createUsuarioDto: CreateUsuarioDto) {
     return this.usuarioService.create(createUsuarioDto);
+  }
+
+  @Delete(':id')
+  @UseGuards(UsuarioOwnerGuard)
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.usuarioService.remove(id);
   }
 
   @Patch(':id')

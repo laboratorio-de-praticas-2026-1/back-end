@@ -6,6 +6,7 @@ import { UsuarioOwnerGuard } from './guards/usuario-owner.guard';
 
 const mockUsuarioService = {
   create: jest.fn(),
+  remove: jest.fn(),
   update: jest.fn(),
 };
 
@@ -106,6 +107,31 @@ describe('UsuarioController', () => {
       const result = await controller.register(dtoCompleto);
 
       expect(result).toEqual(respostaCompleta);
+    });
+  });
+
+
+  describe('remove', () => {
+    it('deve chamar o service com o id correto e retornar mensagem', async () => {
+      const resposta = { message: 'Usuário removido com sucesso!' };
+      mockUsuarioService.remove.mockResolvedValue(resposta);
+
+      const result = await controller.remove(1);
+
+      expect(mockUsuarioService.remove).toHaveBeenCalledWith(1);
+      expect(result).toEqual(resposta);
+    });
+
+    it('deve propagar NotFoundException quando service lançar', async () => {
+      mockUsuarioService.remove.mockRejectedValue(new NotFoundException());
+
+      await expect(controller.remove(99)).rejects.toThrow(NotFoundException);
+    });
+
+    it('deve propagar ForbiddenException quando guard lançar', async () => {
+      mockUsuarioService.remove.mockRejectedValue(new ForbiddenException());
+
+      await expect(controller.remove(1)).rejects.toThrow(ForbiddenException);
     });
   });
 
