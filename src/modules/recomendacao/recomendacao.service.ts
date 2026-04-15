@@ -12,6 +12,7 @@ import { RecomendacaoInteracaoResponseDto } from './dto/recomendacao-interacao-r
 import { PerfilUsuarioDto } from './dto/recomendacao-perfil-usuario.dto';
 import { SolicitacaoComServicoDto } from './dto/solicitacao-com-servico.dto';
 import { Op, fn, col, literal } from 'sequelize';
+import { error } from 'console';
 
 @Injectable()
 export class RecomendacaoService {
@@ -165,6 +166,49 @@ export class RecomendacaoService {
       );
       throw new InternalServerErrorException(
         'Erro ao processar perfil de recomendação',
+      );
+    }
+  }
+
+  async buscarRenovacaoCNH(usuarioId: number): Promise<any>{
+    try {
+      this.logger.log(`Recomendando renovacao de CNH para o usuário com id ${usuarioId}`);
+
+      const anoCorrente = new Date().getFullYear();
+      const dataInicio = new Date(anoCorrente - 10, 0, 1);  
+      const dataFim = new Date(anoCorrente, 11, 31);       
+
+      const solicitacaoExistente = await this.solicitacaoModel.findOne({
+        where: {
+          usuario_id: usuarioId,
+          servico_id: 4,
+          status: {
+            [Op.notIn]: ['cancelado', 'rejeitado']
+          },
+          data_solicitacao: {
+            [Op.between]: [dataInicio, dataFim]  
+          }
+        }
+      });
+      
+      if (!solicitacaoExistente) {
+        this.logger.warn(`Nenhuma solicitação de renovação de CNH encontrada para usuário ${usuarioId}`);
+        return [{
+          id: 4,
+          nome: 'Renovação de CNH',
+          descricao: 'Renove sua CNH'
+        }];
+      }
+
+      return [];
+
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      this.logger.error(
+        `Erro ao buscar solicitações de renovação de CNH para usuário ${usuarioId}: ${errorMessage}`
+      );
+      throw new InternalServerErrorException(
+        'Erro ao processar verificação de solicitações para renovação de CNH'
       );
     }
   }

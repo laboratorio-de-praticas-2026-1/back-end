@@ -18,6 +18,9 @@ describe('RecomendacaoService', () => {
     findAll: jest.fn() as jest.MockedFunction<
       () => Promise<SolicitacaoComServicoDto[]>
     >,
+    findOne: jest.fn() as jest.MockedFunction<
+      () => Promise<any>
+    >
   };
 
   const mockServicoModel = {};
@@ -161,4 +164,78 @@ describe('RecomendacaoService', () => {
       ).rejects.toThrow(InternalServerErrorException);
     });
   });
+
+  describe('buscarRenovacaoCNH', () => {
+    const usuarioId = 1;
+    const anoCorrente = new Date().getFullYear();
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('deve retornar recomendação de renovação de CNH quando não existir solicitação ativa nos últimos 10 anos', async () => {
+      (mockSolicitacaoModel.findOne as jest.Mock).mockResolvedValue(null);
+
+      const resultado = await service.buscarRenovacaoCNH(usuarioId);
+
+      expect(mockSolicitacaoModel.findOne).toHaveBeenCalled(); 
+      expect(resultado).toHaveLength(1); 
+      expect(resultado[0]).toEqual({
+        id: 4,
+        nome: 'Renovação de CNH',
+        descricao: 'Renove sua CNH'
+      });
+    });
+
+    it('não deve retornar recomendação quando já existir solicitação de renovação de CNH ativa', async () => {
+      (mockSolicitacaoModel.findOne as jest.Mock).mockResolvedValue({
+        id: 3,
+        usuario_id: usuarioId,
+        servico_id: 4,
+        status: 'pendente',
+        data_solicitacao: new Date()
+      });
+
+      const resultado = await service.buscarRenovacaoCNH(usuarioId);
+
+      expect(resultado).toEqual([]);
+    });
+
+    it('deve retornar recomendação quando não houver nenhuma solicitação de CNH para o usuário', async () => {
+      (mockSolicitacaoModel.findOne as jest.Mock).mockResolvedValue(null);
+
+      const resultado = await service.buscarRenovacaoCNH(usuarioId);
+      expect(mockSolicitacaoModel.findOne).toHaveBeenCalled();
+
+      expect(resultado).toHaveLength(1);
+    });
+
+    it('deve retornar recomendação quando a única solicitação de CNH estiver com status cancelado', async () => {
+      (mockSolicitacaoModel.findOne as jest.Mock).mockResolvedValue(null);
+
+      const resultado = await service.buscarRenovacaoCNH(usuarioId);
+
+      expect(resultado).toHaveLength(1);
+      expect(resultado[0].id).toBe(4);
+    });
+
+    it('deve retornar recomendação quando a única solicitação de CNH estiver com status rejeitado', async () => {
+      (mockSolicitacaoModel.findOne as jest.Mock).mockResolvedValue(null);
+
+      const resultado = await service.buscarRenovacaoCNH(usuarioId);
+
+      expect(resultado).toHaveLength(1);
+      expect(resultado[0].id).toBe(4);
+    });
+
+    it('deve lançar InternalServerError quando ocorrer erro inesperado', async () => {
+      const erro = new Error('Erro no banco de dados');
+      (mockSolicitacaoModel.findOne as jest.Mock).mockRejectedValue(erro);
+
+      await expect(service.buscarRenovacaoCNH(usuarioId))
+        .rejects
+        .toThrow(InternalServerErrorException);
+    });
+  });
 });
+  
