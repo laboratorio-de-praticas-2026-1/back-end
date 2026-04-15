@@ -5,10 +5,19 @@ import { DashboardService } from './dashboard.service';
 describe('DashboardController', () => {
   let controller: DashboardController;
 
+  const dashboardServiceMock = {
+    retornarInfosDashboard: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [DashboardController],
-      providers: [DashboardService],
+      providers: [
+        {
+          provide: DashboardService,
+          useValue: dashboardServiceMock,
+        },
+      ],
     }).compile();
 
     controller = module.get<DashboardController>(DashboardController);
