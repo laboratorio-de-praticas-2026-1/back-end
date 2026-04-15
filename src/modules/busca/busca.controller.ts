@@ -1,14 +1,14 @@
 import { Controller, Get, Logger, Query } from '@nestjs/common';
-import { BuscaService } from './busca.service';
-import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
-import { BuscaBannerStatusDto } from './dto/busca-banner-status.dto';
-import { BuscaServicoFiltroDto } from './dto/busca-servico-filtro.dto';
-import { BuscaPublicidadeStatusDto } from './dto/busca-publicidade-status.dto';
-import { BuscaUsuarioFiltroDto } from './dto/busca-usuario-filtro.dto';
+import { ApiOperation } from '@nestjs/swagger';
 import { Blog } from 'src/models/blog.model';
 import { Servico } from 'src/models/servico.model';
 import { Usuario } from 'src/models/usuario.model';
-import { ApiOperation } from '@nestjs/swagger';
+import { BuscaService } from './busca.service';
+import { BuscaBannerStatusDto } from './dto/busca-banner-status.dto';
+import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
+import { BuscaPublicidadeStatusDto } from './dto/busca-publicidade-status.dto';
+import { BuscaServicoFiltroDto } from './dto/busca-servico-filtro.dto';
+import { BuscaUsuarioFiltroDto } from './dto/busca-usuario-filtro.dto';
 
 @Controller('busca')
 export class BuscaController {
@@ -100,5 +100,19 @@ export class BuscaController {
       `Buscando servicos por filtros: valor_base=${dto.valor_base ?? 'n/a'} prazo_estimado=${dto.prazo_estimado ?? 'n/a'} status=${dto.status ?? 'n/a'}`,
     );
     return this.buscaService.buscarServicosPorFiltros(dto);
+  }
+  @Get('usuario/termo')
+  @ApiOperation({
+    summary:
+      'Buscar usuários do CMS por nome, email, CPF/CNPJ, celular ou data de cadastro',
+  })
+  listarUsuarios(@Query('termo') termo?: string): Promise<{
+    itens: Usuario[];
+    mensagem?: string;
+  }> {
+    this.logger.log(
+      `Listando usuarios do CMS com filtro: ${termo ?? 'sem filtro'}`,
+    );
+    return this.buscaService.listarUsuariosByTermo(termo);
   }
 }
