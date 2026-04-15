@@ -33,6 +33,22 @@ export class DashboardService {
     private readonly parcelaModel: ModelCtor<Parcela>,
   ) {}
 
+  //função para gerar os meses no período selecionado
+  private gerarMesesNoPeriodo(inicio: Date, fim: Date): string[] {
+    const meses: string[] = [];
+    const atual = new Date(inicio.getFullYear(), inicio.getMonth(), 1);
+    const fimMes = new Date(fim.getFullYear(), fim.getMonth(), 1);
+
+    while (atual <= fimMes) {
+      const ano = atual.getFullYear();
+      const mes = String(atual.getMonth() + 1).padStart(2, '0');
+      meses.push(`${ano}-${mes}`);
+      atual.setMonth(atual.getMonth() + 1);
+    }
+
+    return meses;
+  }
+
   async retornarInfosDashboard(
     inicioParam?: string,
     fimParam?: string,
@@ -182,20 +198,32 @@ export class DashboardService {
     const receitaTaxa = Number(receitaTaxaRaw ?? 0);
     const ticketMedio = Number(ticketMedioResult?.media ?? 0);
 
-    const totalMeses = historicoMensalResult.length;
+
+    const mesesPeriodo = this.gerarMesesNoPeriodo(dataInicio, dataFim);
+
+    const mapa = new Map(
+      historicoMensalResult.map((m: ResultadoHistoricoMensal) => [
+        m.mes,
+        Number(m.receitaRealizada ?? 0),
+      ]),
+    );
+
+    const historicoMensal = mesesPeriodo.map((mes) => ({
+      mes,
+      receitaRealizada: mapa.get(mes) ?? 0,
+    }));
+
+    const totalMeses = mesesPeriodo.length;
     const somaHistorico = historicoMensalResult.reduce(
       (acc: number, m: ResultadoHistoricoMensal) =>
         acc + Number(m.receitaRealizada ?? 0),
       0,
     );
-    const mediaMensalReceita = totalMeses > 0 ? somaHistorico / totalMeses : 0;
 
-    const historicoMensal = historicoMensalResult.map(
-      (m: ResultadoHistoricoMensal) => ({
-        mes: m.mes,
-        receitaRealizada: Number(m.receitaRealizada ?? 0),
-      }),
-    );
+    const mediaMensalReceita =
+    totalMeses > 0
+    ? Number((somaHistorico / totalMeses).toFixed(2))
+    : 0;
 
     const inadimplencia = {
       valorTotal: Number(inadimplenciaResult?.valorTotal ?? 0),
