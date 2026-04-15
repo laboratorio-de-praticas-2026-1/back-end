@@ -2,11 +2,13 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import * as bcrypt from 'bcrypt';
 import { Usuario } from 'src/models/usuario.model';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
+import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { ResponseUsuarioDto } from './dto/response-usuario.dto';
 import { plainToInstance } from 'class-transformer';
 
@@ -16,6 +18,35 @@ export class UsuarioService {
     @InjectModel(Usuario)
     private readonly usuarioModel: typeof Usuario,
   ) {}
+
+  async create(dto: CreateUsuarioDto): Promise<ResponseUsuarioDto> {
+    const emailExistente = await this.usuarioModel.findOne({
+      where: { email: dto.email },
+    });
+
+    if (emailExistente) {
+      throw new ConflictException('Esse e-mail já está cadastrado no sistema.');
+    }
+
+    const senhaHash = await bcrypt.hash(dto.senha, 10);
+
+    try {
+      const usuario = await this.usuarioModel.create({
+        nome: dto.nome,
+        email: dto.email,
+        senha: senhaHash,
+        nivel: 'cliente',
+        cpfCnpj: dto.cpfCnpj ?? null,
+        celular: dto.celular ?? null,
+      });
+
+      return plainToInstance(ResponseUsuarioDto, usuario.toJSON(), {
+        excludeExtraneousValues: true,
+      });
+    } catch {
+      throw new InternalServerErrorException('Erro ao criar usuário');
+    }
+  }
 
   async remove(id: number): Promise<{ message: string }> {
     const usuario = await this.findOneOrFail(id);

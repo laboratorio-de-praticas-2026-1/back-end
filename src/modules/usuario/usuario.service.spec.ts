@@ -2,12 +2,27 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UsuarioService } from './usuario.service';
 import { getModelToken } from '@nestjs/sequelize';
 import { Usuario } from 'src/models/usuario.model';
-import { NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  NotFoundException,
+  ConflictException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 
 jest.mock('bcrypt', () => ({
   hash: jest.fn().mockResolvedValue('hashed_password'),
 }));
+
+const mockUsuarioToJSON = {
+  id: 1,
+  nome: 'Davi Mathais',
+  email: 'davi@example.com',
+  senha: 'hashed_password',
+  nivel: 'cliente',
+  cpfCnpj: null,
+  celular: null,
+  dataCadastro: new Date(),
+};
 
 const mockUsuario = {
   id: 1,
@@ -20,21 +35,14 @@ const mockUsuario = {
   dataCadastro: new Date(),
   destroy: jest.fn(),
   update: jest.fn(),
-  get: jest.fn().mockReturnValue({
-    id: 1,
-    nome: 'Davi Mathais',
-    email: 'davi@example.com',
-    senha: 'hashed_password',
-    nivel: 'cliente',
-    cpfCnpj: null,
-    celular: null,
-    dataCadastro: new Date(),
-  }),
-};
+  get: jest.fn().mockReturnValue(mockUsuarioToJSON),
+  toJSON: jest.fn().mockReturnValue(mockUsuarioToJSON),
+} as any;
 
 const mockUsuarioModel = {
   findByPk: jest.fn(),
   findOne: jest.fn(),
+  create: jest.fn(),
 };
 
 describe('UsuarioService', () => {
@@ -56,6 +64,60 @@ describe('UsuarioService', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+  });
+
+  describe('create', () => {
+    const dtoBase = {
+      nome: 'Davi Mathais',
+      email: 'davi@example.com',
+      senha: 'senha123',
+    };
+
+    it('deve criar o usuário com sucesso e retornar sem a senha', async () => {
+      mockUsuarioModel.findOne.mockResolvedValue(null);
+      mockUsuarioModel.create.mockResolvedValue(mockUsuario);
+
+      const result = await service.create(dtoBase);
+
+      expect(mockUsuarioModel.findOne).toHaveBeenCalledWith({
+        where: { email: dtoBase.email },
+      });
+      expect(bcrypt.hash).toHaveBeenCalledWith(dtoBase.senha, 10);
+      expect(mockUsuarioModel.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          nome: dtoBase.nome,
+          email: dtoBase.email,
+          senha: 'hashed_password',
+        }),
+      );
+      expect(result).not.toHaveProperty('senha');
+    });
+
+    it('deve retornar os campos no formato correto (snake_case)', async () => {
+      mockUsuarioModel.findOne.mockResolvedValue(null);
+      mockUsuarioModel.create.mockResolvedValue(mockUsuario);
+
+      const result = await service.create(dtoBase);
+
+      expect(result).toHaveProperty('cpf_cnpj');
+      expect(result).toHaveProperty('data_cadastro');
+    });
+
+    it('deve lançar ConflictException se e-mail já estiver cadastrado', async () => {
+      mockUsuarioModel.findOne.mockResolvedValue(mockUsuario);
+
+      await expect(service.create(dtoBase)).rejects.toThrow(ConflictException);
+      expect(mockUsuarioModel.create).not.toHaveBeenCalled();
+    });
+
+    it('deve lançar InternalServerErrorException se o create falhar', async () => {
+      mockUsuarioModel.findOne.mockResolvedValue(null);
+      mockUsuarioModel.create.mockRejectedValue(new Error('DB error'));
+
+      await expect(service.create(dtoBase)).rejects.toThrow(
+        InternalServerErrorException,
+      );
+    });
   });
 
   describe('remove', () => {
