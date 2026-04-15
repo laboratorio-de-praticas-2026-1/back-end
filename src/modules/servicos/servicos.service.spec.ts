@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/unbound-method */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Test, TestingModule } from '@nestjs/testing';
 import { ServicosService } from './servicos.service';
 import { getModelToken } from '@nestjs/sequelize';
 import { Servico } from 'src/models/servico.model';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { CreateServicoDto } from './dto/servico-create.dto';
+import { UpdateServicoDto } from './dto/servico-update.dto';
 
 describe('ServicosService', () => {
   let service: ServicosService;
@@ -77,22 +78,67 @@ describe('ServicosService', () => {
 
   describe('updateServico', () => {
     it('deve atualizar um serviço com sucesso', async () => {
-      const mockServico = {
+      const mockServicoBase = {
         id: 1,
         nome: 'Original',
-        update: jest.fn().mockResolvedValue(undefined),
-        reload: jest.fn().mockResolvedValue({ id: 1, nome: 'Atualizado' }),
+        descricao: 'Descricao Antiga',
+        valorBase: 100,
       };
 
-      jest.spyOn(service, 'findOne').mockResolvedValue(mockServico as any);
+      const mockServico = {
+        ...mockServicoBase,
+        update: jest.fn().mockImplementation((servicoDto: UpdateServicoDto) => {
+          mockServico.nome = servicoDto.nome ?? mockServico.nome;
+          mockServico.descricao = servicoDto.descricao ?? mockServico.descricao;
+          return Promise.resolve();
+        }),
+        reload: jest.fn().mockResolvedValue(undefined),
+      } as unknown as Servico;
 
-      const dadosParaAtualizar = { nome: 'Atualizado' };
-      const resultado = await service.updateServico(1, dadosParaAtualizar);
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockServico);
+
+      const dto: UpdateServicoDto = {
+        nome: 'exemplo',
+        descricao: 'exemplo',
+      };
+
+      const resultado = await service.updateServico(1, dto);
 
       expect(service.findOne).toHaveBeenCalledWith(1);
-      expect(mockServico.update).toHaveBeenCalled();
+
+      expect(mockServico.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          nome: 'exemplo',
+          descricao: 'exemplo',
+        }),
+      );
+
       expect(mockServico.reload).toHaveBeenCalled();
-      expect(resultado.nome).toBe('Atualizado');
+      expect(resultado).toEqual(mockServico);
+    });
+    it('deve manter os valores originais quando o DTO está vazio', async () => {
+      const mockServicoOriginal = {
+        id: 1,
+        nome: 'Original',
+        descricao: 'Descricao Antiga',
+        valorBase: 100,
+        update: jest.fn().mockResolvedValue(undefined),
+        reload: jest.fn().mockResolvedValue(undefined),
+      } as unknown as Servico;
+
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockServicoOriginal);
+
+      const dtoVazio: UpdateServicoDto = {};
+
+      await service.updateServico(1, dtoVazio);
+
+      expect(mockServicoOriginal.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          nome: 'Original',
+          descricao: 'Descricao Antiga',
+          valor_base: 100,
+        }),
+      );
     });
   });
 
@@ -101,9 +147,9 @@ describe('ServicosService', () => {
       const mockServico = {
         id: 1,
         destroy: jest.fn().mockResolvedValue(undefined),
-      };
+      } as unknown as Servico;
 
-      jest.spyOn(service, 'findOne').mockResolvedValue(mockServico as any);
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockServico);
 
       await service.deleteServico(1);
 
@@ -114,37 +160,75 @@ describe('ServicosService', () => {
     it('deve lançar erro se tentar deletar um serviço inexistente', async () => {
       jest.spyOn(service, 'findOne').mockRejectedValue(new NotFoundException());
 
-      await expect(service.deleteServico(99)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.deleteServico(1)).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('createServico', () => {
     it('deve criar um serviço com sucesso recebendo um objeto', async () => {
-      const mockServico = {
+      const dto: CreateServicoDto = {
         nome: 'Troca de óleo',
         descricao: 'Troca completa do óleo do motor',
-        valorBase: 120.5,
-        prazoEstimadoDias: 2,
+        valor_base: 120.5,
+        prazo_estimado_dias: 2,
         ativo: true,
+        exige_veiculo: true,
       };
-      const mockResult = { id: 1, ...mockServico };
-
+      const mockResult = { id: 1, ...dto };
       mockServicoModel.create.mockResolvedValue(mockResult);
-
-      const result = await service.createServico(mockServico);
+      const result = await service.createServico(dto);
 
       expect(result).toEqual(mockResult);
-      expect(mockServicoModel.create).toHaveBeenCalledWith(mockServico);
-      expect(result.valorBase).toBe(120.5);
+      expect(mockServicoModel.create).toHaveBeenCalledWith(dto);
     });
 
-    it('deve lançar BadRequestException se o nome não for enviado no objeto', async () => {
-      const incompleteDto = { descricao: 'Sem nome' };
-
-      await expect(service.createServico(incompleteDto as any)).rejects.toThrow(
+    it('deve lançar BadRequestException se campos obrigatórios faltarem', async () => {
+      const semNome = {
+        valor_base: 100,
+        prazo_estimado_dias: 2,
+      } as unknown as CreateServicoDto;
+      await expect(service.createServico(semNome)).rejects.toThrow(
         BadRequestException,
+      );
+
+      const semValor = {
+        nome: 'Troca de Óleo',
+        prazo_estimado_dias: 2,
+      } as unknown as CreateServicoDto;
+      await expect(service.createServico(semValor)).rejects.toThrow(
+        BadRequestException,
+      );
+
+      const semPrazo = {
+        nome: 'Troca de Óleo',
+        valor_base: 100,
+      } as unknown as CreateServicoDto;
+      await expect(service.createServico(semPrazo)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('deve usar valores padrão no createServico', async () => {
+      const dtoMinimo = {
+        nome: 'Teste',
+        valor_base: 50,
+        prazo_estimado_dias: 1,
+      };
+
+      mockServicoModel.create.mockResolvedValue({
+        id: 1,
+        ...dtoMinimo,
+        ativo: true,
+        exige_veiculo: false,
+      });
+
+      await service.createServico(dtoMinimo as CreateServicoDto);
+
+      expect(mockServicoModel.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ativo: true,
+          exige_veiculo: false,
+        }),
       );
     });
   });
