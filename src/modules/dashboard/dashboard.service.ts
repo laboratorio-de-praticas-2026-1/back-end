@@ -198,7 +198,6 @@ export class DashboardService {
     const receitaTaxa = Number(receitaTaxaRaw ?? 0);
     const ticketMedio = Number(ticketMedioResult?.media ?? 0);
 
-
     const mesesPeriodo = this.gerarMesesNoPeriodo(dataInicio, dataFim);
 
     const mapa = new Map(
@@ -214,16 +213,14 @@ export class DashboardService {
     }));
 
     const totalMeses = mesesPeriodo.length;
-    const somaHistorico = historicoMensalResult.reduce(
-      (acc: number, m: ResultadoHistoricoMensal) =>
-        acc + Number(m.receitaRealizada ?? 0),
+
+    const somaHistorico = historicoMensal.reduce(
+      (acc, m) => acc + m.receitaRealizada,
       0,
     );
 
     const mediaMensalReceita =
-    totalMeses > 0
-    ? Number((somaHistorico / totalMeses).toFixed(2))
-    : 0;
+      totalMeses > 0 ? Number((somaHistorico / totalMeses).toFixed(2)) : 0;
 
     const inadimplencia = {
       valorTotal: Number(inadimplenciaResult?.valorTotal ?? 0),
