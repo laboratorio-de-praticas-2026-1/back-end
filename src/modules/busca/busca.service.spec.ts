@@ -5,12 +5,15 @@ import { BuscaService } from './busca.service';
 import { BadRequestException } from '@nestjs/common';
 import { Blog } from 'src/models/blog.model';
 import { Banner } from 'src/models/banner.model';
+import { Servico } from 'src/models/servico.model';
 import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
+import { BuscaServicoFiltroDto } from './dto/busca-servico-filtro.dto';
 
 describe('BuscaService', () => {
   let service: BuscaService;
   const blogFindAllMock = jest.fn();
   const bannerFindAllMock = jest.fn();
+  const servicoFindAllMock = jest.fn();
 
   type WhereClause = Partial<Record<symbol, unknown>>;
 
@@ -22,6 +25,7 @@ describe('BuscaService', () => {
   beforeEach(async () => {
     blogFindAllMock.mockReset();
     bannerFindAllMock.mockReset();
+    servicoFindAllMock.mockReset();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -36,6 +40,12 @@ describe('BuscaService', () => {
           provide: getModelToken(Banner),
           useValue: {
             findAll: bannerFindAllMock,
+          },
+        },
+        {
+          provide: getModelToken(Servico),
+          useValue: {
+            findAll: servicoFindAllMock,
           },
         },
       ],
@@ -307,6 +317,86 @@ describe('BuscaService', () => {
         },
         order: [['id', 'DESC']],
       });
+    });
+  });
+
+  describe('buscarServicosPorFiltros', () => {
+    it('deve listar servicos sem filtros ordenando por id decrescente', async () => {
+      servicoFindAllMock.mockResolvedValue([]);
+
+      await service.buscarServicosPorFiltros({});
+
+      expect(servicoFindAllMock).toHaveBeenCalledWith({
+        order: [['id', 'DESC']],
+      });
+    });
+
+    it('deve filtrar por valor_base quando informado', async () => {
+      servicoFindAllMock.mockResolvedValue([]);
+
+      await service.buscarServicosPorFiltros({
+        valor_base: 180,
+      } as unknown as BuscaServicoFiltroDto);
+
+      expect(servicoFindAllMock).toHaveBeenCalledTimes(1);
+      const calls = servicoFindAllMock.mock.calls as Array<
+        Array<FindAllOptions>
+      >;
+      const args = calls[0]?.[0];
+      expect(args.where).toBeDefined();
+      const whereClause = args.where as WhereClause;
+      expect(whereClause[Op.and]).toHaveLength(1);
+      expect(args.order).toEqual([['id', 'DESC']]);
+    });
+
+    it('deve filtrar por prazo_estimado quando informado', async () => {
+      servicoFindAllMock.mockResolvedValue([]);
+
+      await service.buscarServicosPorFiltros({
+        prazo_estimado: 5,
+      } as unknown as BuscaServicoFiltroDto);
+
+      expect(servicoFindAllMock).toHaveBeenCalledTimes(1);
+      const calls = servicoFindAllMock.mock.calls as Array<
+        Array<FindAllOptions>
+      >;
+      const args = calls[0]?.[0];
+      const whereClause = args.where as WhereClause;
+      expect(whereClause[Op.and]).toHaveLength(1);
+    });
+
+    it('deve filtrar por status quando informado', async () => {
+      servicoFindAllMock.mockResolvedValue([]);
+
+      await service.buscarServicosPorFiltros({
+        status: 'inativo',
+      } as unknown as BuscaServicoFiltroDto);
+
+      expect(servicoFindAllMock).toHaveBeenCalledTimes(1);
+      const calls = servicoFindAllMock.mock.calls as Array<
+        Array<FindAllOptions>
+      >;
+      const args = calls[0]?.[0];
+      const whereClause = args.where as WhereClause;
+      expect(whereClause[Op.and]).toHaveLength(1);
+    });
+
+    it('deve combinar filtros quando mais de um campo é informado', async () => {
+      servicoFindAllMock.mockResolvedValue([]);
+
+      await service.buscarServicosPorFiltros({
+        valor_base: 350,
+        prazo_estimado: 5,
+        status: 'ativo',
+      } as unknown as BuscaServicoFiltroDto);
+
+      expect(servicoFindAllMock).toHaveBeenCalledTimes(1);
+      const calls = servicoFindAllMock.mock.calls as Array<
+        Array<FindAllOptions>
+      >;
+      const args = calls[0]?.[0];
+      const whereClause = args.where as WhereClause;
+      expect(whereClause[Op.and]).toHaveLength(3);
     });
   });
 });

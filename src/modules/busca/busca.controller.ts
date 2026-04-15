@@ -2,7 +2,9 @@ import { Controller, Get, Logger, Query } from '@nestjs/common';
 import { BuscaService } from './busca.service';
 import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
 import { BuscaBannerStatusDto } from './dto/busca-banner-status.dto';
+import { BuscaServicoFiltroDto } from './dto/busca-servico-filtro.dto';
 import { Blog } from 'src/models/blog.model';
+import { Servico } from 'src/models/servico.model';
 import { ApiOperation } from '@nestjs/swagger';
 
 @Controller('busca')
@@ -53,5 +55,21 @@ export class BuscaController {
       `Listando itens do carrossel com filtro: ${termo ?? 'sem filtro'}`,
     );
     return this.buscaService.listarBannersByTermo(termo);
+  }
+
+  @Get('servico/filtros')
+  @ApiOperation({
+    summary:
+      'Buscar serviços por filtros (valor base, prazo estimado e status)',
+    description:
+      'Parâmetros opcionais: valor_base (decimal), prazo_estimado (inteiro em dias) e status (ativo|inativo).',
+  })
+  buscarServicosPorFiltros(
+    @Query() dto: BuscaServicoFiltroDto,
+  ): Promise<Servico[]> {
+    this.logger.log(
+      `Buscando servicos por filtros: valor_base=${dto.valor_base ?? 'n/a'} prazo_estimado=${dto.prazo_estimado ?? 'n/a'} status=${dto.status ?? 'n/a'}`,
+    );
+    return this.buscaService.buscarServicosPorFiltros(dto);
   }
 }
