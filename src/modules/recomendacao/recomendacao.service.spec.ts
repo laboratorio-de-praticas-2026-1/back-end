@@ -1,17 +1,17 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { InternalServerErrorException } from '@nestjs/common';
 import { getModelToken } from '@nestjs/sequelize';
-import { RecomendacaoService } from './recomendacao.service';
+import { Test, TestingModule } from '@nestjs/testing';
+import { Debito } from 'src/models/debito.model';
 import { InteracaoUsuario } from 'src/models/interacao-usuario.model';
 import { Servico } from 'src/models/servico.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
-import { InternalServerErrorException } from '@nestjs/common';
-import { jest, describe, it, expect, beforeEach } from '@jest/globals';
+import { Veiculo } from 'src/models/veiculo.model';
 import { RecomendacaoInteracaoRequestDto } from './dto/recomendacao-interacao-request.dto';
 import { RecomendacaoInteracaoResponseDto } from './dto/recomendacao-interacao-response.dto';
-import { RecomendacaoCategoriaBlogEnum } from './enums/recomendacao-categoria-blog.enum';
 import { SolicitacaoComServicoDto } from './dto/solicitacao-com-servico.dto';
-import { Debito } from 'src/models/debito.model';
-import { Veiculo } from 'src/models/veiculo.model';
+import { RecomendacaoCategoriaBlogEnum } from './enums/recomendacao-categoria-blog.enum';
+import { RecomendacaoService } from './recomendacao.service';
 
 describe('RecomendacaoService', () => {
   let service: RecomendacaoService;
@@ -29,6 +29,11 @@ describe('RecomendacaoService', () => {
     findAll: jest.fn() as jest.MockedFunction<() => Promise<Servico[]>>,
   };
 
+  const mockVeiculoModel = {
+    findAll: jest.fn() as jest.MockedFunction<() => Promise<any[]>>,
+    findOne: jest.fn() as jest.MockedFunction<() => Promise<any>>,
+  };
+
   const mockInteracaoUsuarioModel = {
     create: jest.fn() as jest.MockedFunction<
       (interacaoRegistro: {
@@ -44,10 +49,6 @@ describe('RecomendacaoService', () => {
 
   const mockDebitoModel = {
     findAll: jest.fn() as jest.MockedFunction<() => Promise<Partial<Debito>[]>>,
-  };
-
-  const mockVeiculoModel = {
-    findAll: jest.fn() as jest.MockedFunction<() => Promise<Veiculo[]>>,
   };
 
   beforeEach(async () => {
@@ -302,6 +303,103 @@ describe('RecomendacaoService', () => {
       const resultado = await service.buscarComunicacaoVenda(6);
 
       expect(resultado).toBeNull();
+    });
+  });
+  
+  describe('buscarLicenciamentoAnual', () => {
+    const usuarioId = 1;
+    const anoCorrente = new Date().getFullYear();
+
+    const mockVeiculos = [
+      { id: 1, placa: 'ABC-1234', ativo: true, usuario_id: usuarioId },
+      { id: 2, placa: 'XYZ-5678', ativo: true, usuario_id: usuarioId },
+    ];
+
+    it('deve retornar array de recomendações para veículos sem licenciamento', async () => {
+      mockVeiculoModel.findAll.mockResolvedValue(mockVeiculos);
+
+      mockSolicitacaoModel.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ id: 2, status: 'aprovado', usuarioId: usuarioId, usuario: null, veiculoId: 2, veiculo: null } as unknown as Solicitacao);
+
+      const resultado = await service.buscarLicenciamentoAnual(usuarioId);
+
+      expect(resultado).toHaveLength(1);
+      expect(resultado[0]).toMatchObject({
+        id: 12,
+        nome: 'Troca de Placa (Mercosul)',
+        descricao:
+          'Substituição da placa antiga pelo novo padrão Mercosul com QR Code.',
+        veiculo_id: 1,
+        placa: 'ABC-1234',
+      });
+    });
+
+    it('deve retornar array vazio quando todos os veículos têm licenciamento', async () => {
+      mockVeiculoModel.findAll.mockResolvedValue(mockVeiculos);
+
+      /*
+      Argument of type '{ id: number; status: "recebido"; }' is not assignable to parameter of type 'Solicitacao'.
+  Type '{ id: number; status: "recebido"; }' is missing the following properties from type 'Solicitacao': usuarioId, usuario, veiculoId, veiculo, and 43 more.ts(2345)
+  */
+      mockSolicitacaoModel.findOne
+        .mockResolvedValueOnce({ id: 1, status: 'recebido', usuarioId: usuarioId, usuario: null, veiculoId: 1, veiculo: null } as unknown as Solicitacao)
+        .mockResolvedValueOnce({ id: 2, status: 'recebido', usuarioId: usuarioId, usuario: null, veiculoId: 2, veiculo: null } as unknown as Solicitacao);
+
+      const resultado = await service.buscarLicenciamentoAnual(usuarioId);
+
+      expect(resultado).toHaveLength(0);
+      expect(resultado).toEqual([]);
+    });
+
+    it('deve retornar array vazio quando usuário não tem veículos', async () => {
+      mockVeiculoModel.findAll.mockResolvedValue([]);
+
+      const resultado = await service.buscarLicenciamentoAnual(usuarioId);
+
+      expect(resultado).toHaveLength(0);
+      expect(resultado).toEqual([]);
+    });
+
+    it('deve ignorar veículos inativos', async () => {
+      const usuarioId = 1;
+      const veiculosComInativos = [
+        { id: 1, placa: 'ABC-1234', ativo: true, usuario_id: usuarioId },
+        { id: 2, placa: 'DEF-9012', ativo: false, usuario_id: usuarioId },
+      ];
+      mockVeiculoModel.findAll.mockResolvedValue(veiculosComInativos);
+      mockSolicitacaoModel.findOne.mockResolvedValue(null);
+
+      await service.buscarLicenciamentoAnual(usuarioId);
+      expect(mockVeiculoModel.findAll).toHaveBeenCalled();
+    });
+
+    it('deve retornar recomendações para todos os veículos sem licenciamento', async () => {
+      mockVeiculoModel.findAll.mockResolvedValue(mockVeiculos);
+
+      mockSolicitacaoModel.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
+
+      const resultado = await service.buscarLicenciamentoAnual(usuarioId);
+
+      expect(resultado).toHaveLength(2);
+      expect(resultado[0]).toMatchObject({
+        id: 12,
+        nome: 'Troca de Placa (Mercosul)',
+        descricao:
+          'Substituição da placa antiga pelo novo padrão Mercosul com QR Code.',
+        veiculo_id: 1,
+        placa: 'ABC-1234',
+      });
+      expect(resultado[1]).toMatchObject({
+        id: 12,
+        nome: 'Troca de Placa (Mercosul)',
+        descricao:
+          'Substituição da placa antiga pelo novo padrão Mercosul com QR Code.',
+        veiculo_id: 2,
+        placa: 'XYZ-5678',
+      });
     });
   });
 });

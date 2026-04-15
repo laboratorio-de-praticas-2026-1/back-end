@@ -7,13 +7,13 @@ import { InjectModel } from '@nestjs/sequelize';
 import { InteracaoUsuario } from 'src/models/interacao-usuario.model';
 import { Servico } from 'src/models/servico.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
+import { Veiculo } from 'src/models/veiculo.model';
 import { RecomendacaoInteracaoRequestDto } from './dto/recomendacao-interacao-request.dto';
 import { RecomendacaoInteracaoResponseDto } from './dto/recomendacao-interacao-response.dto';
 import { PerfilUsuarioDto } from './dto/recomendacao-perfil-usuario.dto';
 import { SolicitacaoComServicoDto } from './dto/solicitacao-com-servico.dto';
 import { Op, fn, col, literal } from 'sequelize';
 import { Debito } from 'src/models/debito.model';
-import { Veiculo } from 'src/models/veiculo.model';
 import { RecomendacaoRespostaDto } from './dto/recomendacao-resposta.dto';
 import { RecomendacaoCategoriaBlogEnum } from './enums/recomendacao-categoria-blog.enum';
 
@@ -315,6 +315,68 @@ export class RecomendacaoService {
       };
     } catch {
       throw new InternalServerErrorException('Falha de gravação');
+    }
+  }
+
+  async buscarLicenciamentoAnual(usuarioId: number): Promise<any[]> {
+    try {
+      this.logger.log(`Buscando licenciamento anual do usuário com id ${usuarioId}`);
+
+      const anoCorrente = new Date().getFullYear();
+      const dataInicio = new Date(anoCorrente, 0, 1);
+      const dataFim = new Date(anoCorrente, 11, 31);
+
+      const veiculosUser = await this.veiculoModel.findAll({
+        where: {
+          usuario_id: usuarioId,
+          ativo: true,
+        },
+        attributes: ['id', 'placa', 'renavam', 'marca', 'modelo', 'anoFabricacao', 'anoModelo'],
+        raw: true,
+      });
+
+      if (!veiculosUser || veiculosUser.length === 0) {
+        this.logger.warn(`Nenhum veículo encontrado para usuário ${usuarioId}`);
+        return [];
+      }
+
+      const recomendacoes = [];
+      
+      for (const veiculo of veiculosUser) {
+        const solicitacaoExistente = await this.solicitacaoModel.findOne({
+          where: {
+            veiculo_id: veiculo.id,
+            servico_id: 1,
+            status: {
+              [Op.notIn]: ['cancelado', 'rejeitado']
+            },
+            data_solicitacao: {
+              [Op.between]: [dataInicio, dataFim]
+            }
+          }
+        });
+
+        if (!solicitacaoExistente) {
+          recomendacoes.push({
+            id: 12,
+            nome: "Troca de Placa (Mercosul)",
+            descricao: "Substituição da placa antiga pelo novo padrão Mercosul com QR Code.",
+            veiculo_id: veiculo.id,
+            placa: veiculo.placa
+          });
+        }
+      }
+
+      return recomendacoes.length > 0 ? recomendacoes : [];
+
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      this.logger.error(
+        `Erro ao buscar licenciamento anual para usuário ${usuarioId}: ${errorMessage}`
+      );
+      throw new InternalServerErrorException(
+        'Erro ao processar verificação de licenciamento anual'
+      );
     }
   }
 }
