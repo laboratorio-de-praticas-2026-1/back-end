@@ -1,7 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsuarioController } from './usuario.controller';
 import { UsuarioService } from './usuario.service';
-import { NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
+import {
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
+} from '@nestjs/common';
 import { UsuarioOwnerGuard } from './guards/usuario-owner.guard';
 
 const mockUsuarioService = {
@@ -109,7 +113,6 @@ describe('UsuarioController', () => {
       expect(result).toEqual(respostaCompleta);
     });
   });
-
 
   describe('remove', () => {
     it('deve chamar o service com o id correto e retornar mensagem', async () => {

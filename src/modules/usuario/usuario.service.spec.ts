@@ -2,7 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UsuarioService } from './usuario.service';
 import { getModelToken } from '@nestjs/sequelize';
 import { Usuario } from 'src/models/usuario.model';
-import { NotFoundException, ConflictException, InternalServerErrorException } from '@nestjs/common';
+import {
+  NotFoundException,
+  ConflictException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 
 jest.mock('bcrypt', () => ({
@@ -114,7 +118,6 @@ describe('UsuarioService', () => {
         InternalServerErrorException,
       );
     });
-
   });
 
   describe('remove', () => {

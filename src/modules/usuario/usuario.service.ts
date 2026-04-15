@@ -17,7 +17,7 @@ export class UsuarioService {
   constructor(
     @InjectModel(Usuario)
     private readonly usuarioModel: typeof Usuario,
-  ) { }
+  ) {}
 
   async create(dto: CreateUsuarioDto): Promise<ResponseUsuarioDto> {
     const emailExistente = await this.usuarioModel.findOne({
@@ -47,7 +47,6 @@ export class UsuarioService {
       throw new InternalServerErrorException('Erro ao criar usuário');
     }
   }
-
 
   async remove(id: number): Promise<{ message: string }> {
     const usuario = await this.findOneOrFail(id);
