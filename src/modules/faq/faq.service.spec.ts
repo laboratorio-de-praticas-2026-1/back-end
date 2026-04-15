@@ -4,12 +4,16 @@ import { getModelToken } from '@nestjs/sequelize';
 import { FaqService } from './faq.service';
 import { Faq } from 'src/models/faq.model';
 import { NotFoundException } from '@nestjs/common';
-import { stat } from 'fs';
 
-const faqModelMock = {
+const mockFaqModel = {
   findAll: jest.fn(),
   findByPk: jest.fn(),
   create: jest.fn(),
+};
+
+const mockCategoriaModel = {
+  findAll: jest.fn(),
+  findByPk: jest.fn(),
 };
 
 describe('FaqService', () => {
@@ -19,19 +23,25 @@ describe('FaqService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FaqService,
-        { provide: getModelToken(Faq), useValue: faqModelMock },
+        {
+          provide: getModelToken(Faq),
+          useValue: mockFaqModel,
+        },
+        {
+          provide: 'CategoriaRepository',
+          useValue: mockCategoriaModel,
+        },
       ],
     }).compile();
 
     service = module.get<FaqService>(FaqService);
 
-    // Valores padrão dos mocks
-    faqModelMock.findAll.mockResolvedValue([
+    mockFaqModel.findAll.mockResolvedValue([
       { id: 1, pergunta: 'P1', resposta: 'R1' },
     ]);
 
-    faqModelMock.findByPk.mockResolvedValue(null);
-    faqModelMock.create.mockResolvedValue({});
+    mockFaqModel.findByPk.mockResolvedValue(null);
+    mockFaqModel.create.mockResolvedValue({});
   });
 
   afterEach(() => {
@@ -45,76 +55,114 @@ describe('FaqService', () => {
       { id: 1, pergunta: 'P1', resposta: 'R1' },
     ]);
 
-    expect(faqModelMock.findAll).toHaveBeenCalled();
+    expect(mockFaqModel.findAll).toHaveBeenCalled();
   });
 
-  // ✅ NOVO TESTE (GET /faq/admin)
-  it('getAllFaqsAdmin deve retornar lista', async () => {
-    const result = await service.getAllFaqsAdmin();
+  it('getCategorias deve retornar lista de categorias', async () => {
+    const categorias = [
+      { id: 1, nome: 'Geral' },
+      { id: 2, nome: 'Financeiro' },
+    ];
 
-    expect(result).toEqual([
-      { id: 1, pergunta: 'P1', resposta: 'R1' },
-    ]);
+    mockCategoriaModel.findAll.mockResolvedValueOnce(categorias);
 
-    expect(faqModelMock.findAll).toHaveBeenCalled();
+    const result = await service.getCategorias();
+
+    expect(result).toEqual(categorias);
+    expect(mockCategoriaModel.findAll).toHaveBeenCalled();
   });
 
-  it('getFaqById deve retornar FAQ quando existir', async () => {
-    const fakeFaq = { id: 1, pergunta: 'P1', resposta: 'R1' };
-
-    faqModelMock.findByPk.mockResolvedValueOnce(fakeFaq);
+  it('getFaqById deve retornar FAQ', async () => {
+    const fakeFaq = { id: 1 };
+    mockFaqModel.findByPk.mockResolvedValueOnce(fakeFaq);
 
     const result = await service.getFaqById(1);
 
     expect(result).toEqual(fakeFaq);
-    expect(faqModelMock.findByPk).toHaveBeenCalledWith(1);
+    expect(mockFaqModel.findByPk).toHaveBeenCalledWith(1);
   });
 
   it('getFaqById deve lançar NotFoundException quando não existir', async () => {
-    faqModelMock.findByPk.mockResolvedValueOnce(null);
+    mockFaqModel.findByPk.mockResolvedValueOnce(null);
 
     await expect(service.getFaqById(999))
       .rejects
       .toBeInstanceOf(NotFoundException);
   });
 
-  it('createFaq deve criar e retornar FAQ', async () => {
-    const fakeFaq = { id: 2, pergunta: 'P2', resposta: 'R2' };
+  it('createFaq deve criar com status true por padrão', async () => {
+    const dto = {
+      pergunta: 'P?',
+      resposta: 'R',
+      categoriaId: 1,
+    };
 
-    faqModelMock.create.mockResolvedValueOnce(fakeFaq);
+    mockCategoriaModel.findByPk.mockResolvedValueOnce({ id: 1, nome: 'Geral' });
 
-    const result = await service.createFaq({
-      pergunta: 'P2',
-      resposta: 'R2',
-      status: true,
-    });
+    await service.createFaq(dto);
 
-    expect(result).toEqual(fakeFaq);
-    expect(faqModelMock.create).toHaveBeenCalledWith({
-      pergunta: 'P2',
-      resposta: 'R2',
+    expect(mockCategoriaModel.findByPk).toHaveBeenCalledWith(1);
+    expect(mockFaqModel.create).toHaveBeenCalledWith({
+      ...dto,
       status: true,
     });
   });
 
-  it('deleteFaq deve destruir existente', async () => {
-    const fakeFaq = {
-      id: 1,
-      destroy: jest.fn().mockResolvedValue(undefined),
+  it('createFaq deve lançar erro quando categoria não existir', async () => {
+    const dto = {
+      pergunta: 'P?',
+      resposta: 'R',
+      categoriaId: 999,
     };
 
-    faqModelMock.findByPk.mockResolvedValueOnce(
-      fakeFaq as unknown as Faq,
-    );
+    mockCategoriaModel.findByPk.mockResolvedValueOnce(null);
+
+    await expect(service.createFaq(dto)).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('updateFaq deve atualizar dados com categoriaId', async () => {
+    const fakeFaq = {
+      id: 1,
+      update: jest.fn().mockResolvedValue(undefined),
+    };
+
+    mockFaqModel.findByPk.mockResolvedValueOnce(fakeFaq);
+    mockCategoriaModel.findByPk.mockResolvedValueOnce({ id: 2, nome: 'Financeiro' });
+
+    await service.updateFaq(1, { categoriaId: 2 });
+
+    expect(mockCategoriaModel.findByPk).toHaveBeenCalledWith(2);
+    expect(fakeFaq.update).toHaveBeenCalledWith({ categoriaId: 2 });
+  });
+
+  it('updateFaq deve lançar erro quando categoriaId não existir', async () => {
+    const fakeFaq = {
+      update: jest.fn(),
+    };
+
+    mockFaqModel.findByPk.mockResolvedValueOnce(fakeFaq);
+    mockCategoriaModel.findByPk.mockResolvedValueOnce(null);
+
+    await expect(
+      service.updateFaq(1, { categoriaId: 999 }),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('deleteFaq deve remover FAQ', async () => {
+    const fakeFaq = {
+      destroy: jest.fn(),
+    };
+
+    mockFaqModel.findByPk.mockResolvedValueOnce(fakeFaq);
 
     await service.deleteFaq(1);
 
-    expect(faqModelMock.findByPk).toHaveBeenCalledWith(1);
+    expect(mockFaqModel.findByPk).toHaveBeenCalledWith(1);
     expect(fakeFaq.destroy).toHaveBeenCalled();
   });
 
   it('deleteFaq deve lançar NotFoundException se não achado', async () => {
-    faqModelMock.findByPk.mockResolvedValueOnce(null);
+    mockFaqModel.findByPk.mockResolvedValueOnce(null);
 
     await expect(service.deleteFaq(999))
       .rejects
@@ -129,20 +177,13 @@ describe('FaqService', () => {
       pergunta: 'P1',
       resposta: 'R1',
       update: jest.fn().mockResolvedValue(undefined),
-      reload: jest.fn().mockResolvedValue({
-        id: 1,
-        pergunta: 'Pergunta atualizada',
-        resposta: 'R1',
-      }),
     };
 
-    faqModelMock.findByPk.mockResolvedValueOnce(
-      fakeFaq as unknown as Faq,
-    );
+    mockFaqModel.findByPk.mockResolvedValueOnce(fakeFaq as unknown as Faq);
 
     const result = await service.updateFaq(1, updateDto);
 
-    expect(faqModelMock.findByPk).toHaveBeenCalledWith(1);
+    expect(mockFaqModel.findByPk).toHaveBeenCalledWith(1);
     expect(fakeFaq.update).toHaveBeenCalledWith(updateDto);
     expect(result).toBe(fakeFaq);
   });
@@ -157,15 +198,9 @@ describe('FaqService', () => {
     const fakeFaq = {
       id: 1,
       update: jest.fn().mockResolvedValue(undefined),
-      reload: jest.fn().mockResolvedValue({
-        id: 1,
-        ...updateDto,
-      }),
     };
 
-    faqModelMock.findByPk.mockResolvedValueOnce(
-      fakeFaq as unknown as Faq,
-    );
+    mockFaqModel.findByPk.mockResolvedValueOnce(fakeFaq as unknown as Faq);
 
     const result = await service.updateFaq(1, updateDto);
 
@@ -174,7 +209,7 @@ describe('FaqService', () => {
   });
 
   it('updateFaq deve lançar NotFoundException se FAQ não existir', async () => {
-    faqModelMock.findByPk.mockResolvedValueOnce(null);
+    mockFaqModel.findByPk.mockResolvedValueOnce(null);
 
     await expect(
       service.updateFaq(999, { pergunta: 'Teste' }),

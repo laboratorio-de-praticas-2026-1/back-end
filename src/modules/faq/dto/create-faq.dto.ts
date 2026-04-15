@@ -1,18 +1,20 @@
 /* eslint-disable prettier/prettier */
-import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateFaqDto {
   @IsString({ message: 'A pergunta deve ser um texto.' })
   @IsNotEmpty({ message: 'A pergunta é obrigatória.' })
-  pergunta: string;
+  pergunta!: string;
 
   @IsString({ message: 'A resposta deve ser um texto.' })
   @IsNotEmpty({ message: 'A resposta é obrigatória.' })
-  resposta: string;
+  resposta!: string;
 
-  @IsString({ message: 'A categoria deve ser um texto.' })
+  @Type(() => Number)
+  @IsNumber({}, { message: 'O campo categoriaId deve ser um número.' })
   @IsNotEmpty({ message: 'A categoria é obrigatória.' })
-  categoria: string;
+  categoriaId!: number;
 
   @IsOptional()
   @IsBoolean({ message: 'O status deve ser verdadeiro ou falso.' })

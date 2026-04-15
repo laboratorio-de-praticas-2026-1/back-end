@@ -1,5 +1,6 @@
 /* eslint-disable prettier/prettier */
-import { IsBoolean, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class UpdateFaqDto {
   @IsOptional()
@@ -11,8 +12,9 @@ export class UpdateFaqDto {
   resposta?: string;
 
   @IsOptional()
-  @IsString({ message: 'A categoria deve ser um texto.' })
-  categoria?: string;
+  @Type(() => Number)
+  @IsNumber({}, { message: 'O campo categoriaId deve ser um número.' })
+  categoriaId?: number;
 
   @IsOptional()
   @IsBoolean({ message: 'O status deve ser verdadeiro ou falso.' })

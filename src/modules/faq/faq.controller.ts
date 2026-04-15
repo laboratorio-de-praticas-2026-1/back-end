@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { Controller, Get, Delete, Param, ParseIntPipe, Post, Body, Patch } from '@nestjs/common';
 import { FaqService } from './faq.service';
 import { CreateFaqDto } from './dto/create-faq.dto';
@@ -18,6 +17,12 @@ export class FaqController {
   @Get('admin')
   async getAllFaqsAdmin() {
     return this.faqService.getAllFaqsAdmin();
+  }
+
+  // GET /faq/categorias
+  @Get('categorias')
+  async getCategorias() {
+    return this.faqService.getCategorias();
   }
 
   // GET /faq/:id

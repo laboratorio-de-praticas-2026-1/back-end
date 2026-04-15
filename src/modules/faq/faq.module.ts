@@ -3,9 +3,10 @@ import { FaqService } from './faq.service';
 import { FaqController } from './faq.controller';
 import { Faq } from 'src/models/faq.model';
 import { SequelizeModule } from '@nestjs/sequelize';
+import { CategoriaFaq } from 'src/models/categoria-faq.model';
 
 @Module({
-  imports: [SequelizeModule.forFeature([Faq])],
+  imports: [SequelizeModule.forFeature([Faq, CategoriaFaq])],
   controllers: [FaqController],
   providers: [FaqService],
   exports: [FaqService],
