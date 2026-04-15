@@ -65,13 +65,14 @@ export class BuscaService {
     ];
 
     if (filtros.length === 0) {
-      return await this.servicoModel.findAll();
+      return await this.servicoModel.findAll({ order: [['id', 'ASC']] });
     }
 
     return await this.servicoModel.findAll({
       where: {
         [Op.and]: filtros,
       },
+      order: [['id', 'ASC']],
     });
   }
 

@@ -321,13 +321,13 @@ describe('BuscaService', () => {
   });
 
   describe('buscarServicosPorFiltros', () => {
-    it('deve listar servicos sem filtros ordenando por id decrescente', async () => {
+    it('deve listar servicos sem filtros ordenando por id crescente', async () => {
       servicoFindAllMock.mockResolvedValue([]);
 
       await service.buscarServicosPorFiltros({});
 
       expect(servicoFindAllMock).toHaveBeenCalledWith({
-        order: [['id', 'DESC']],
+        order: [['id', 'ASC']],
       });
     });
 
@@ -346,7 +346,7 @@ describe('BuscaService', () => {
       expect(args.where).toBeDefined();
       const whereClause = args.where as WhereClause;
       expect(whereClause[Op.and]).toHaveLength(1);
-      expect(args.order).toEqual([['id', 'DESC']]);
+      expect(args.order).toEqual([['id', 'ASC']]);
     });
 
     it('deve filtrar por prazo_estimado quando informado', async () => {
