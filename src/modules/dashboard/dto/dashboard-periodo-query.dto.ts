@@ -2,10 +2,10 @@ import { IsOptional, IsDateString } from 'class-validator';
 
 export class DashboardPeriodoQueryDto {
   @IsOptional()
-  @IsDateString()
+  @IsDateString({}, { message: 'A data deve estar no formato YYYY-MM-DD' })
   inicio?: string;
 
   @IsOptional()
-  @IsDateString()
+  @IsDateString({}, { message: 'A data deve estar no formato YYYY-MM-DD' })
   fim?: string;
 }
