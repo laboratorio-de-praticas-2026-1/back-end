@@ -27,4 +27,12 @@ export class Servico extends Model {
 
   @Column({ type: DataType.BOOLEAN, allowNull: true, defaultValue: true })
   declare ativo: boolean | null;
+
+  @Column({
+    field: 'exige_veiculo',
+    type: DataType.BOOLEAN,
+    allowNull: true,
+    defaultValue: false,
+  })
+  declare exigeVeiculo: boolean | null;
 }

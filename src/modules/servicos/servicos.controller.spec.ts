@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ServicosController } from './servicos.controller';
 import { ServicosService } from './servicos.service';
 import { NotFoundException } from '@nestjs/common';
+import { CreateServicoDto } from './dto/servico-create.dto';
+import { UpdateServicoDto } from './dto/servico-update.dto';
 
 describe('ServicosController', () => {
   let controller: ServicosController;
@@ -11,6 +13,7 @@ describe('ServicosController', () => {
     findOne: jest.fn(),
     updateServico: jest.fn(),
     deleteServico: jest.fn(),
+    createServico: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -64,49 +67,82 @@ describe('ServicosController', () => {
     it('deve propagar NotFoundException quando serviço não encontrado', async () => {
       mockServicosService.findOne.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.findOne(99)).rejects.toThrow(NotFoundException);
+      const promise = controller.findOne(99);
+      await expect(promise).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('updateServico', () => {
     it('deve retornar o serviço atualizado', async () => {
       const id = 1;
-      const dto = { nome: 'Novo Nome' };
-      const mockResult = { id, ...dto };
+      const dto: UpdateServicoDto = { nome: 'Novo Nome' };
 
-      mockServicosService.updateServico = jest
-        .fn()
-        .mockResolvedValue(mockResult);
+      mockServicosService.updateServico.mockResolvedValue({ id: 1, ...dto });
 
       const result = await controller.updateServico(id, dto);
 
-      expect(mockServicosService.updateServico).toHaveBeenCalledWith(id, dto);
-      expect(result).toEqual(mockResult);
+      expect(result).toEqual({
+        message: 'Serviço atualizado com sucesso',
+      });
+    });
+    it('deve propagar erro quando o serviço não for encontrado para atualizar', async () => {
+      mockServicosService.updateServico.mockRejectedValue(
+        new NotFoundException(),
+      );
+      const promise = controller.updateServico(1, { nome: 'Teste' });
+      await expect(promise).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('deleteServico', () => {
     it('deve deletar um serviço com sucesso', async () => {
       const id = 1;
-
-      // Configuramos o mock para apenas resolver (já que o delete retorna void/undefined)
-      mockServicosService.deleteServico = jest
-        .fn()
-        .mockResolvedValue(undefined);
-
-      await controller.deleteServico(id);
-
+      mockServicosService.deleteServico.mockResolvedValue(undefined);
+      const resultado = await controller.deleteServico(id);
       expect(mockServicosService.deleteServico).toHaveBeenCalledWith(id);
+      expect(resultado).toEqual({
+        message: 'Serviço removido com sucesso',
+      });
     });
 
     it('deve propagar NotFoundException quando serviço não encontrado para deletar', async () => {
-      mockServicosService.deleteServico = jest
-        .fn()
-        .mockRejectedValue(new NotFoundException());
-
-      await expect(controller.deleteServico(99)).rejects.toThrow(
-        NotFoundException,
+      mockServicosService.deleteServico.mockRejectedValue(
+        new NotFoundException(),
       );
+      const promise = controller.deleteServico(1);
+      await expect(promise).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('createServico', () => {
+    it('deve criar um serviço com sucesso e retornar os dados', async () => {
+      const dto: CreateServicoDto = {
+        nome: 'Troca de óleo',
+        descricao: 'Troca completa do óleo do motor',
+        valor_base: 120.5,
+        prazo_estimado_dias: 2,
+        ativo: true,
+        exige_veiculo: true,
+      };
+      const mockResult = { id: 1, ...dto };
+
+      mockServicosService.createServico.mockResolvedValue(mockResult);
+
+      const result = await controller.createServico(dto);
+
+      expect(mockServicosService.createServico).toHaveBeenCalledWith(dto);
+      expect(result).toEqual(mockResult);
+    });
+    it('deve propagar erro quando houver falha na criação do serviço', async () => {
+      const dto: CreateServicoDto = {
+        nome: 'Erro',
+        valor_base: 0,
+      } as CreateServicoDto;
+      mockServicosService.createServico.mockRejectedValue(
+        new Error('Erro interno'),
+      );
+      const promise = controller.createServico(dto);
+      await expect(promise).rejects.toThrow('Erro interno');
     });
   });
 });
