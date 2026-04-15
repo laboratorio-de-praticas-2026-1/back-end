@@ -4,11 +4,12 @@ import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
 import { BuscaBannerStatusDto } from './dto/busca-banner-status.dto';
 import { Blog } from 'src/models/blog.model';
 import { ApiOperation } from '@nestjs/swagger';
+import { Usuario } from 'src/models/usuario.model';
 
 @Controller('busca')
 export class BuscaController {
   private readonly logger = new Logger(BuscaController.name);
-  constructor(private readonly buscaService: BuscaService) {}
+  constructor(private readonly buscaService: BuscaService) { }
 
   @Get('blog/periodo')
   @ApiOperation({
@@ -53,5 +54,20 @@ export class BuscaController {
       `Listando itens do carrossel com filtro: ${termo ?? 'sem filtro'}`,
     );
     return this.buscaService.listarBannersByTermo(termo);
+  }
+
+  @Get('usuario/termo')
+  @ApiOperation({
+    summary:
+      'Buscar usuários do CMS por nome, email, CPF/CNPJ, celular ou data de cadastro',
+  })
+  listarUsuarios(@Query('termo') termo?: string): Promise<{
+    itens: Usuario[];
+    mensagem?: string;
+  }> {
+    this.logger.log(
+      `Listando usuarios do CMS com filtro: ${termo ?? 'sem filtro'}`,
+    );
+    return this.buscaService.listarUsuariosByTermo(termo);
   }
 }

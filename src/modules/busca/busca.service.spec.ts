@@ -5,12 +5,14 @@ import { BuscaService } from './busca.service';
 import { BadRequestException } from '@nestjs/common';
 import { Blog } from 'src/models/blog.model';
 import { Banner } from 'src/models/banner.model';
+import { Usuario } from 'src/models/usuario.model';
 import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
 
 describe('BuscaService', () => {
   let service: BuscaService;
   const blogFindAllMock = jest.fn();
   const bannerFindAllMock = jest.fn();
+  const usuarioFindAllMock = jest.fn();
 
   type WhereClause = Partial<Record<symbol, unknown>>;
 
@@ -22,6 +24,7 @@ describe('BuscaService', () => {
   beforeEach(async () => {
     blogFindAllMock.mockReset();
     bannerFindAllMock.mockReset();
+    usuarioFindAllMock.mockReset();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -36,6 +39,12 @@ describe('BuscaService', () => {
           provide: getModelToken(Banner),
           useValue: {
             findAll: bannerFindAllMock,
+          },
+        },
+        {
+          provide: getModelToken(Usuario),
+          useValue: {
+            findAll: usuarioFindAllMock,
           },
         },
       ],
@@ -307,6 +316,70 @@ describe('BuscaService', () => {
         },
         order: [['id', 'DESC']],
       });
+    });
+  });
+
+  describe('listarUsuariosByTermo', () => {
+    it('deve retornar mensagem quando nao encontrar itens sem filtro', async () => {
+      usuarioFindAllMock.mockResolvedValue([]);
+
+      const resultado = await service.listarUsuariosByTermo();
+
+      expect(usuarioFindAllMock).toHaveBeenCalledWith({
+        order: [['id', 'DESC']],
+      });
+      expect(resultado).toEqual({
+        itens: [],
+        mensagem: 'Nenhum item foi encontrado.',
+      });
+    });
+
+    it('deve montar filtro por nome, email, cpf/cnpj e celular quando termo textual for informado', async () => {
+      usuarioFindAllMock.mockResolvedValue([]);
+
+      await service.listarUsuariosByTermo('  joao  ');
+
+      expect(usuarioFindAllMock).toHaveBeenCalledWith({
+        where: {
+          [Op.or]: [
+            { nome: { [Op.like]: '%joao%' } },
+            { email: { [Op.like]: '%joao%' } },
+            { cpfCnpj: { [Op.like]: '%joao%' } },
+            { celular: { [Op.like]: '%joao%' } },
+          ],
+        },
+        order: [['id', 'DESC']],
+      });
+    });
+
+    it('deve incluir filtro de data de cadastro quando termo estiver no formato YYYY-MM-DD', async () => {
+      usuarioFindAllMock.mockResolvedValue([]);
+
+      await service.listarUsuariosByTermo('2026-04-15');
+
+      expect(usuarioFindAllMock).toHaveBeenCalledTimes(1);
+      const calls = usuarioFindAllMock.mock.calls as Array<Array<FindAllOptions>>;
+      const args = calls[0]?.[0];
+      expect(args.where).toBeDefined();
+      const whereClause = args.where as WhereClause;
+      const filtros = whereClause[Op.or] as unknown[];
+      expect(Array.isArray(filtros)).toBe(true);
+      expect(filtros).toHaveLength(5);
+    });
+
+    it('deve incluir filtro de data de cadastro quando termo estiver no formato DD/MM/YYYY', async () => {
+      usuarioFindAllMock.mockResolvedValue([]);
+
+      await service.listarUsuariosByTermo('15/04/2026');
+
+      expect(usuarioFindAllMock).toHaveBeenCalledTimes(1);
+      const calls = usuarioFindAllMock.mock.calls as Array<Array<FindAllOptions>>;
+      const args = calls[0]?.[0];
+      expect(args.where).toBeDefined();
+      const whereClause = args.where as WhereClause;
+      const filtros = whereClause[Op.or] as unknown[];
+      expect(Array.isArray(filtros)).toBe(true);
+      expect(filtros).toHaveLength(5);
     });
   });
 });
