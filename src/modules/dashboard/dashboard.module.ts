@@ -23,7 +23,7 @@ import { DebitoServico } from 'src/models/debito-servico.model';
       Debito,
       Pagamento,
       Parcela,
-      DebitoServico
+      DebitoServico,
     ]),
   ],
   controllers: [DashboardController],

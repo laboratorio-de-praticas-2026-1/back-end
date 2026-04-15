@@ -8,6 +8,18 @@ import { Debito } from 'src/models/debito.model';
 import { DebitoServico } from 'src/models/debito-servico.model';
 import { DashboardReturnDto } from './dto/dashboard-return.dto';
 
+type MaisSolicitadosRow = Solicitacao & {
+  servico?: Servico;
+  get(key: 'servicoId' | 'totalSolicitacoes'): string | number | null;
+};
+
+type ReceitaPorServicoRow = DebitoServico & {
+  servico?: Servico;
+  get(
+    key: 'servicoId' | 'totalSolicitacoes' | 'receitaTotal',
+  ): string | number | null;
+};
+
 @Injectable()
 export class DashboardService {
   constructor(
@@ -94,6 +106,7 @@ export class DashboardService {
           {
             model: Servico,
             attributes: ['id', 'nome'],
+            as: 'servico',
           },
         ],
         where: {
@@ -116,10 +129,12 @@ export class DashboardService {
           {
             model: Servico,
             attributes: ['id', 'nome'],
+            as: 'servico',
           },
           {
             model: Debito,
             attributes: [],
+            as: 'debito',
             where: {
               createdAt: {
                 [Op.between]: [dataInicio, dataFim],
@@ -133,13 +148,17 @@ export class DashboardService {
       }),
     ]);
 
-    const maisSolicitados = maisSolicitadosRaw.map((item: any) => ({
-      servicoId: Number(item.get('servicoId') ?? 0),
-      nome: item.servico?.nome ?? '',
-      totalSolicitacoes: Number(item.get('totalSolicitacoes') ?? 0),
-    }));
+    const maisSolicitados = (maisSolicitadosRaw as MaisSolicitadosRow[]).map(
+      (item) => ({
+        servicoId: Number(item.get('servicoId') ?? 0),
+        nome: item.servico?.nome ?? '',
+        totalSolicitacoes: Number(item.get('totalSolicitacoes') ?? 0),
+      }),
+    );
 
-    const receitaPorServico = receitaPorServicoRaw.map((item: any) => ({
+    const receitaPorServico = (
+      receitaPorServicoRaw as ReceitaPorServicoRow[]
+    ).map((item) => ({
       servicoId: Number(item.get('servicoId') ?? 0),
       nome: item.servico?.nome ?? '',
       totalSolicitacoes: Number(item.get('totalSolicitacoes') ?? 0),
