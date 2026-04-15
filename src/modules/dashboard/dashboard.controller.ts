@@ -1,13 +1,23 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
+import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
 import { DashboardReturnDto } from './dto/dashboard-return.dto';
+import { DashboardPeriodoQueryDto } from './dto/dashboard-periodo-query.dto';
 
+@ApiTags('Dashboard')
 @Controller('dashboard')
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @Get()
-  async retornarInfosDashboard(): Promise<DashboardReturnDto> {
-    return this.dashboardService.retornarInfosDashboard();
+  @ApiQuery({ name: 'inicio', required: false, example: '2025-01-01' })
+  @ApiQuery({ name: 'fim', required: false, example: '2025-06-30' })
+  async retornarInfosDashboard(
+    @Query() query: DashboardPeriodoQueryDto,
+  ): Promise<DashboardReturnDto> {
+    return this.dashboardService.retornarInfosDashboard(
+      query.inicio,
+      query.fim,
+    );
   }
 }
