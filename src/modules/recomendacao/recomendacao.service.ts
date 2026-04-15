@@ -29,6 +29,8 @@ export class RecomendacaoService {
     private interacaoUsuarioModel: typeof InteracaoUsuario,
     @InjectModel(Debito)
     private debitoModel: typeof Debito,
+    @InjectModel(Veiculo)
+    private veiculoModel: typeof Veiculo,
   ) {}
 
   async obterRecomendacoes(usuarioId: number) {
@@ -133,9 +135,67 @@ export class RecomendacaoService {
     }
   }
 
-  private async buscarParcelamentoDebitos(usuarioId: number) {
+  async buscarParcelamentoDebitos(
+    usuarioId: number,
+  ): Promise<RecomendacaoRespostaDto | null> {
+    try {
+      const veiculos = await this.veiculoModel.findAll({
+        where: { usuarioId },
+      });
+
+      for (const veiculo of veiculos) {
+        const debitos = await this.debitoModel.findAll({
+          where: {
+            tipo: 'veiculo',
+            status: 'pendente',
+          },
+          include: [
+            {
+              model: Veiculo,
+              where: { id: veiculo.id },
+              through: { attributes: [] },
+              required: true,
+            },
+          ],
+        });
+
+        if (debitos.length === 0) continue;
+
+        const jaExiste = await this.solicitacaoModel.findOne({
+          where: {
+            servicoId: 10,
+            veiculoId: veiculo.id,
+            status: {
+              [Op.ne]: 'cancelado',
+            },
+          },
+        });
+
+        if (!jaExiste) {
+          return {
+            id: 10,
+            nome: 'Parcelamento de Débitos',
+            descricao:
+              'Você possui pendências financeiras. Parcele seus débitos em até 12x no cartão e mantenha seu veículo regularizado.',
+            ativo: true,
+          };
+        }
+      }
+
+      return await this.buscarComunicacaoVenda(usuarioId);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido';
+
+      this.logger.error(`Erro na busca de parcelamento: ${errorMessage}`);
+
+      return await this.buscarComunicacaoVenda(usuarioId);
+    }
+  }
+
+  protected async buscarComunicacaoVenda(usuarioId: number) {
     this.logger.log(
-      `Seguindo para nível de parcelamento para usuário ${usuarioId}`,
+      `Seguindo para Comunicação de Venda para usuário ${usuarioId}`,
     );
     return Promise.resolve(null);
   }
