@@ -1,0 +1,190 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+//
+// ENUMS
+//
+
+enum NivelUsuario {
+  cliente
+  administrador
+}
+
+enum StatusSolicitacao {
+  recebido
+  aguardando_pagamento
+  aguardando_documento
+  em_andamento
+  concluido
+  cancelado
+}
+
+enum StatusValidacaoDocumento {
+  pendente
+  aprovado
+  rejeitado
+}
+
+enum TipoEmpresa {
+  clinica
+  vistoria
+  detran
+}
+
+//
+// TABELAS
+//
+
+model Banner {
+  id        Int     @id @default(autoincrement())
+  urlImagem String? @map("url_imagem")
+  descricao String?
+  ativo     Boolean @default(true)
+
+  @@map("banner")
+}
+
+model Blog {
+  id             Int      @id @default(autoincrement())
+  titulo         String?  @db.VarChar(150)
+  conteudo       String?  @db.Text
+  dataPublicacao DateTime? @db.Date @map("data_publicacao")
+  urlImagem      String?  @map("url_imagem")
+  ativo          Boolean @default(true)
+
+  @@map("blog")
+}
+
+model Empresa {
+  id           Int     @id @default(autoincrement())
+  nomeFantasia String? @map("nome_fantasia") @db.VarChar(100)
+  tipo         TipoEmpresa?
+  cnpj         String? @db.VarChar(20)
+  telefone     String? @db.VarChar(20)
+  email        String? @db.VarChar(100)
+  endereco     String? @db.VarChar(255)
+  cidade       String? @db.VarChar(100)
+  estado       String? @db.VarChar(2)
+  latitude     String?  @db.VarChar(20)
+  longitude    String?  @db.VarChar(20)
+  site         String? @db.VarChar(100)
+
+  @@map("empresa")
+}
+
+model Faq {
+  id       Int     @id @default(autoincrement())
+  pergunta String? @db.Text
+  resposta String? @db.Text
+  status   Boolean @default(true)
+
+  @@map("faq")
+}
+
+model Publicidade {
+  id        Int     @id @default(autoincrement())
+  titulo    String? @db.VarChar(150)
+  conteudo  String? @db.Text
+  urlImagem String? @map("url_imagem")
+
+  @@map("publicidade")
+}
+
+model Servico {
+  id                 Int      @id @default(autoincrement())
+  nome               String   @db.VarChar(100)
+  descricao          String?  @db.Text
+  valorBase          Decimal? @map("valor_base") @db.Decimal(10, 2)
+  prazoEstimadoDias  Int?     @map("prazo_estimado_dias")
+  ativo              Boolean  @default(true)
+
+  solicitacoes       Solicitacao[]
+
+  @@map("servico")
+}
+
+model Usuario {
+  id            Int       @id @default(autoincrement())
+  nome          String    @db.VarChar(100)
+  email         String    @unique @db.VarChar(100)
+  senha         String    @db.VarChar(255)
+  nivel         NivelUsuario @default(cliente)
+  cpfCnpj       String?   @map("cpf_cnpj") @db.VarChar(20)
+  celular       String?   @db.VarChar(20)
+  dataCadastro  DateTime  @default(now()) @map("data_cadastro")
+
+  veiculos      Veiculo[]
+  solicitacoes  Solicitacao[]
+
+  @@map("usuario")
+}
+
+model Veiculo {
+  id             Int      @id @default(autoincrement())
+  usuarioId      Int      @map("usuario_id")
+  placa          String   @db.VarChar(10)
+  renavam        String?  @db.VarChar(20)
+  marca          String?  @db.VarChar(50)
+  modelo         String?  @db.VarChar(50)
+  anoFabricacao  Int?     @map("ano_fabricacao")
+  anoModelo      Int?     @map("ano_modelo")
+
+  usuario        Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  solicitacoes   Solicitacao[]
+
+  @@map("veiculo")
+}
+
+model Solicitacao {
+  id                 Int                 @id @default(autoincrement())
+  usuarioId          Int                 @map("usuario_id")
+  veiculoId          Int?                 @map("veiculo_id")
+  servicoId          Int                 @map("servico_id")
+  status             StatusSolicitacao   @default(recebido)
+  observacaoCliente  String?             @map("observacao_cliente") @db.Text
+  observacaoAdmin    String?             @map("observacao_admin") @db.Text
+  dataSolicitacao    DateTime            @default(now()) @map("data_solicitacao")
+  dataConclusao      DateTime?           @map("data_conclusao")
+
+  usuario            Usuario             @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  veiculo            Veiculo?             @relation(fields: [veiculoId], references: [id], onDelete: Cascade)
+  servico            Servico             @relation(fields: [servicoId], references: [id])
+  documentos         DocumentoSolicitacao[]
+
+  @@map("solicitacao")
+}
+
+model DocumentoSolicitacao {
+  id              Int                      @id @default(autoincrement())
+  solicitacaoId   Int                      @map("solicitacao_id")
+  nomeHash        String?                  @map("nome_hash")
+  tipoDocumento   String?                  @map("tipo_documento") @db.VarChar(100)
+  statusValidacao StatusValidacaoDocumento @default(pendente) @map("status_validacao")
+  dataUpload      DateTime?                @map("data_upload")
+
+  solicitacao     Solicitacao              @relation(fields: [solicitacaoId], references: [id], onDelete: Cascade)
+
+  @@map("documento_solicitacao")
+}
+
+
+model emails_enviados {
+  id             Int      @id @default(autoincrement())
+  nome_usuario   String   @db.VarChar(255)
+  email_usuario  String   @db.VarChar(255)
+  assunto        String   @db.VarChar(255) 
+  texto_digitado String   @db.Text
+  data_envio     DateTime @default(now())
+}

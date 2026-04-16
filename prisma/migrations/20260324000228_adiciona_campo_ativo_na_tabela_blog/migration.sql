@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `blog` ADD COLUMN `ativo` BOOLEAN NOT NULL DEFAULT true;
