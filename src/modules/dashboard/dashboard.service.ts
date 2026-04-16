@@ -7,7 +7,6 @@ import { Pagamento } from 'src/models/pagamento.model';
 import { Parcela } from 'src/models/parcela.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
 import { Servico } from 'src/models/servico.model';
-import { Debito } from 'src/models/debito.model';
 import { DebitoServico } from 'src/models/debito-servico.model';
 import { DashboardReturnDto } from './dto/dashboard-return.dto';
 import type { ModelCtor } from 'sequelize-typescript';
@@ -20,18 +19,12 @@ import type {
   ResultadoDistribuicaoMetodo,
   ResultadoDistribuicaoTipo,
 } from './dashboard.types';
+import {
+  MaisSolicitadosRow,
+  ReceitaPorServicoRow,
+} from './dashboard.types';
 
-type MaisSolicitadosRow = Solicitacao & {
-  servico?: Servico;
-  get(key: 'servicoId' | 'totalSolicitacoes'): string | number | null;
-};
 
-type ReceitaPorServicoRow = DebitoServico & {
-  servico?: Servico;
-  get(
-    key: 'servicoId' | 'totalSolicitacoes' | 'receitaTotal',
-  ): string | number | null;
-};
 
 @Injectable()
 export class DashboardService {
@@ -51,6 +44,9 @@ export class DashboardService {
     @InjectModel(DebitoServico)
     private readonly debitoServicoModel: typeof DebitoServico,
   ) {}
+
+
+
 
   //função para gerar os meses no período selecionado
   private gerarMesesNoPeriodo(inicio: Date, fim: Date): string[] {
@@ -95,10 +91,6 @@ export class DashboardService {
             ],
           },
         },
-      }),
-
-      this.solicitacaoModel.count({
-        where: { status: 'concluido' },
       }),
 
       this.solicitacaoModel.count({ where: { status: 'concluido' } }),
@@ -166,23 +158,6 @@ export class DashboardService {
         limit: 5,
       }),
     ]);
-
-    const maisSolicitados = (maisSolicitadosRaw as MaisSolicitadosRow[]).map(
-      (item) => ({
-        servicoId: Number(item.get('servicoId') ?? 0),
-        nome: item.servico?.nome ?? '',
-        totalSolicitacoes: Number(item.get('totalSolicitacoes') ?? 0),
-      }),
-    );
-
-    const receitaPorServico = (
-      receitaPorServicoRaw as ReceitaPorServicoRow[]
-    ).map((item) => ({
-      servicoId: Number(item.get('servicoId') ?? 0),
-      nome: item.servico?.nome ?? '',
-      totalSolicitacoes: Number(item.get('totalSolicitacoes') ?? 0),
-      receitaTotal: Number(item.get('receitaTotal') ?? 0),
-    }));
 
     const financeiroQuery: Promise<
       [
@@ -297,6 +272,23 @@ export class DashboardService {
         porTipoResult,
       ],
     ] = await Promise.all([solicitacoesQuery, financeiroQuery]);
+
+    const maisSolicitados = (maisSolicitadosRaw as unknown as MaisSolicitadosRow[]).map(
+      (item) => ({
+        servicoId: Number(item.get('servicoId') ?? 0),
+        nome: item.servico?.nome ?? '',
+        totalSolicitacoes: Number(item.get('totalSolicitacoes') ?? 0),
+      }),
+    );
+
+    const receitaPorServico = (
+      receitaPorServicoRaw as unknown as ReceitaPorServicoRow[]
+    ).map((item) => ({
+      servicoId: Number(item.get('servicoId') ?? 0),
+      nome: item.servico?.nome ?? '',
+      totalSolicitacoes: Number(item.get('totalSolicitacoes') ?? 0),
+      receitaTotal: Number(item.get('receitaTotal') ?? 0),
+    }));
 
     const receitaRealizada = Number(receitaRealizadaResult?.total ?? 0);
     const receitaPendente = Number(receitaPendenteRaw ?? 0);

@@ -1,3 +1,7 @@
+import { Servico } from '../../models/servico.model';
+import { Solicitacao } from '../../models/solicitacao.model';
+import { DebitoServico } from '../../models/debito-servico.model';
+
 export interface ResultadoReceita {
   total: string | null;
 }
@@ -33,3 +37,15 @@ export interface ResultadoDistribuicaoTipo {
   quantidade: string | null;
   valorTotal: string | null;
 }
+
+export type MaisSolicitadosRow = Solicitacao & {
+  servico?: Servico;
+  get(key: 'servicoId' | 'totalSolicitacoes'): string | number | null;
+};
+
+export type ReceitaPorServicoRow = DebitoServico & {
+  servico?: Servico;
+  get(
+    key: 'servicoId' | 'totalSolicitacoes' | 'receitaTotal',
+  ): string | number | null;
+};
