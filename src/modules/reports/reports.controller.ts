@@ -1,11 +1,7 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { CreateReportDto } from './dto/create-report.dto';
 import { ReportsService } from './reports.service';
-import {
-  ApiCreatedResponse,
-  ApiOkResponse,
-  ApiOperation,
-} from '@nestjs/swagger';
+import { ApiCreatedResponse, ApiOperation } from '@nestjs/swagger';
 import { Relatorio } from 'src/models/relatorio.model';
 
 @Controller('reports')
