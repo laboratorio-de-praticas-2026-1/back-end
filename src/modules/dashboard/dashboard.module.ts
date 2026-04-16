@@ -7,6 +7,10 @@ import { Solicitacao } from 'src/models/solicitacao.model';
 import { DashboardController } from './dashboard.controller';
 import { DashboardService } from './dashboard.service';
 import { Parcela } from 'src/models/parcela.model';
+import { Usuario } from '../../models/usuario.model';
+import { Veiculo } from '../../models/veiculo.model';
+import { Servico } from '../../models/servico.model';
+import { DebitoServico } from '../../models/debito-servico.model';
 
 @Module({
   imports: [
@@ -16,6 +20,10 @@ import { Parcela } from 'src/models/parcela.model';
       Debito,
       Pagamento,
       Parcela,
+      Usuario,
+      Veiculo,
+      Servico,
+      DebitoServico,
     ]),
   ],
   controllers: [DashboardController],

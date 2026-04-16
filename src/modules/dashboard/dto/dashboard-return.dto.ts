@@ -58,7 +58,24 @@ export class SolicitacoesDto {
   documentosPendentesValidacao!: number;
 }
 
+export class ServicosDto {
+  ativos: number;
+  pausados: number;
+  maisSolicitados: {
+    servicoId: number;
+    nome: string;
+    totalSolicitacoes: number;
+  }[];
+  receitaPorServicoCompleto: {
+    servicoId: number;
+    nome: string;
+    totalSolicitacoes: number;
+    receitaTotal: number;
+  }[];
+}
+
 export class DashboardReturnDto {
   solicitacoes!: SolicitacoesDto;
   financeiro!: FinanceiroDto;
+  servicos!: ServicosDto;
 }

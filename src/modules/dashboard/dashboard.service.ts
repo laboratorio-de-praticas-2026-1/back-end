@@ -6,6 +6,8 @@ import { DocumentoSolicitacao } from 'src/models/documento-solicitacao.model';
 import { Pagamento } from 'src/models/pagamento.model';
 import { Parcela } from 'src/models/parcela.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
+import { Servico } from 'src/models/servico.model';
+import { DebitoServico } from 'src/models/debito-servico.model';
 import { DashboardReturnDto } from './dto/dashboard-return.dto';
 import type { ModelCtor } from 'sequelize-typescript';
 import type {
@@ -17,6 +19,7 @@ import type {
   ResultadoDistribuicaoMetodo,
   ResultadoDistribuicaoTipo,
 } from './dashboard.types';
+import { MaisSolicitadosRow, ReceitaPorServicoRow } from './dashboard.types';
 
 @Injectable()
 export class DashboardService {
@@ -31,6 +34,10 @@ export class DashboardService {
     private readonly pagamentoModel: ModelCtor<Pagamento>,
     @InjectModel(Parcela)
     private readonly parcelaModel: ModelCtor<Parcela>,
+    @InjectModel(Servico)
+    private readonly servicoModel: typeof Servico,
+    @InjectModel(DebitoServico)
+    private readonly debitoServicoModel: typeof DebitoServico,
   ) {}
 
   //função para gerar os meses no período selecionado
@@ -77,11 +84,77 @@ export class DashboardService {
           },
         },
       }),
+
       this.solicitacaoModel.count({ where: { status: 'concluido' } }),
       this.documentoSolicitacaoModel.count({
         where: { statusValidacao: 'pendente' },
       }),
+
+      this.servicoModel.count({
+        where: { ativo: true },
+      }),
+
+      this.servicoModel.count({
+        where: {
+          [Op.or]: [{ ativo: false }, { ativo: null }],
+        },
+      }),
+
+      this.solicitacaoModel.findAll({
+        attributes: [
+          [col('Solicitacao.servico_id'), 'servicoId'],
+          [fn('COUNT', col('Solicitacao.id')), 'totalSolicitacoes'],
+        ],
+        include: [
+          {
+            model: Servico,
+            attributes: ['id', 'nome'],
+            as: 'servico',
+          },
+        ],
+        where: {
+          dataSolicitacao: {
+            [Op.between]: [dataInicio, dataFim],
+          },
+        },
+        group: ['servico.id', 'Solicitacao.servico_id'],
+        order: [[literal('totalSolicitacoes'), 'DESC']],
+        limit: 5,
+      }),
+
+      this.debitoServicoModel.findAll({
+        attributes: [
+          [col('DebitoServico.id_servico'), 'servicoId'],
+          [fn('COUNT', col('DebitoServico.id')), 'totalSolicitacoes'],
+          [fn('SUM', col('debito.valor')), 'receitaTotal'],
+        ],
+        include: [
+          {
+            model: Servico,
+            attributes: ['id', 'nome'],
+            as: 'servico',
+          },
+          {
+            model: Debito,
+            attributes: [],
+            as: 'debito',
+            where: {
+              createdAt: {
+                [Op.between]: [dataInicio, dataFim],
+              },
+            },
+          },
+        ],
+        group: ['servico.id', 'DebitoServico.id_servico'],
+        order: [[literal('receitaTotal'), 'DESC']],
+        limit: 5,
+      }),
     ]);
+
+    const todosServicos = await this.servicoModel.findAll({
+      where: { ativo: true },
+      attributes: ['id', 'nome'],
+    });
 
     const financeiroQuery: Promise<
       [
@@ -179,6 +252,10 @@ export class DashboardService {
         solicitacoesEmAberto,
         solicitacoesConcluidas,
         documentosPendentesValidacao,
+        servicosAtivos,
+        servicosPausados,
+        maisSolicitadosRaw,
+        receitaPorServicoRaw,
       ],
       [
         receitaRealizadaResult,
@@ -192,6 +269,35 @@ export class DashboardService {
         porTipoResult,
       ],
     ] = await Promise.all([solicitacoesQuery, financeiroQuery]);
+
+    const maisSolicitados = (
+      maisSolicitadosRaw as unknown as MaisSolicitadosRow[]
+    ).map((item) => ({
+      servicoId: Number(item.get('servicoId') ?? 0),
+      nome: item.servico?.nome ?? '',
+      totalSolicitacoes: Number(item.get('totalSolicitacoes') ?? 0),
+    }));
+
+    const receitaPorServico = (
+      receitaPorServicoRaw as unknown as ReceitaPorServicoRow[]
+    ).map((item) => ({
+      servicoId: Number(item.get('servicoId') ?? 0),
+      nome: item.servico?.nome ?? '',
+      totalSolicitacoes: Number(item.get('totalSolicitacoes') ?? 0),
+      receitaTotal: Number(item.get('receitaTotal') ?? 0),
+    }));
+
+    const receitaMap = new Map(receitaPorServico.map((r) => [r.servicoId, r]));
+
+    const receitaPorServicoCompleto = todosServicos.map((servico) => {
+      const dados = receitaMap.get(servico.id);
+      return {
+        servicoId: servico.id,
+        nome: servico.nome,
+        totalSolicitacoes: dados?.totalSolicitacoes ?? 0,
+        receitaTotal: dados?.receitaTotal ?? 0,
+      };
+    });
 
     const receitaRealizada = Number(receitaRealizadaResult?.total ?? 0);
     const receitaPendente = Number(receitaPendenteRaw ?? 0);
@@ -256,6 +362,12 @@ export class DashboardService {
         solicitacoesEmAberto,
         solicitacoesConcluidas,
         documentosPendentesValidacao,
+      },
+      servicos: {
+        ativos: servicosAtivos,
+        pausados: servicosPausados,
+        maisSolicitados,
+        receitaPorServicoCompleto,
       },
       financeiro: {
         receitaRealizada,

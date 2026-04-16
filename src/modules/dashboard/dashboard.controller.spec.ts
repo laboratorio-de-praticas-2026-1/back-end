@@ -7,6 +7,8 @@ import { DocumentoSolicitacao } from '../../models/documento-solicitacao.model';
 import { Debito } from '../../models/debito.model';
 import { Pagamento } from '../../models/pagamento.model';
 import { Parcela } from '../../models/parcela.model';
+import { Servico } from '../../models/servico.model';
+import { DebitoServico } from '../../models/debito-servico.model';
 
 const mockModel = { findAll: jest.fn(), findOne: jest.fn(), count: jest.fn() };
 
@@ -23,6 +25,8 @@ describe('DashboardController', () => {
         { provide: getModelToken(Debito), useValue: mockModel },
         { provide: getModelToken(Pagamento), useValue: mockModel },
         { provide: getModelToken(Parcela), useValue: mockModel },
+        { provide: getModelToken(Servico), useValue: mockModel },
+        { provide: getModelToken(DebitoServico), useValue: mockModel },
       ],
     }).compile();
 
@@ -31,5 +35,9 @@ describe('DashboardController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 });
