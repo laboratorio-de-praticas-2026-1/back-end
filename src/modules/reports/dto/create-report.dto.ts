@@ -50,7 +50,7 @@ export class CreateReportDto {
   @IsOptional()
   @Type(() => Date)
   @IsDate({ message: 'Data de início deve ser uma data válida' })
-  dataInicio?: Date;
+  dataPeriodoInicio?: Date;
 
   @ApiPropertyOptional({
     description:

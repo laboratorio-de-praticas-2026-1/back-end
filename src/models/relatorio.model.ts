@@ -49,4 +49,18 @@ export class Relatorio extends Model {
     allowNull: false,
   })
   declare dataGeracao: Date;
+
+  @Column({
+    field: 'periodo_inicio',
+    type: DataType.DATEONLY,
+    allowNull: false,
+  })
+  declare periodoInicio: Date;
+
+  @Column({
+    field: 'periodo_fim',
+    type: DataType.DATEONLY,
+    allowNull: false,
+  })
+  declare periodoFim: Date;
 }

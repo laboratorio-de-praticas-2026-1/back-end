@@ -32,10 +32,10 @@ export class ResponseReportDto {
   categoria!: RelatorioCategoria;
 
   @ApiProperty({
-    description: 'Hash ou URL do documento gerado',
-    example: 'abc123xyz456',
+    description: 'URL do relatório em PDF',
+    example: 'https://example.com/documento.pdf',
   })
-  urlDocumentoHash!: string;
+  urlDocumento!: string;
 
   @ApiProperty({
     description: 'Data de geração do relatório',

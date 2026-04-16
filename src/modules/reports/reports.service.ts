@@ -28,10 +28,10 @@ export class ReportsService {
     const currentDate = new Date();
     //TODO-AVALIAR-SE-MANTEM-TRINTA-DIAS-COMO-PADRAO-QUANDO-NAO-FOR-PASSADO-INTERVALO-DE-DATAS-PELO-USUÁRIO
     const diasEmMs = 30 * 24 * 60 * 60 * 1000; //30 dias em milissegundos
-    const dataInicio = createReportDto.dataInicio
-      ? new Date(createReportDto.dataInicio)
+    const dataPeriodoInicio = createReportDto.dataPeriodoInicio
+      ? new Date(createReportDto.dataPeriodoInicio)
       : new Date(currentDate.getTime() - diasEmMs);
-    dataInicio.setUTCHours(0, 0, 0, 0);
+    dataPeriodoInicio.setUTCHours(0, 0, 0, 0);
 
     const dataPeriodoFim = createReportDto.dataPeriodoFim
       ? new Date(createReportDto.dataPeriodoFim)
@@ -57,16 +57,21 @@ export class ReportsService {
           '`${resourceType}|${publicId}`',
         ),
         dataGeracao: currentDate,
+        periodoInicio: dataPeriodoInicio,
+        periodoFim: dataPeriodoFim,
       });
 
       return plainToInstance(ResponseReportDto, {
         ...relatorioCriado.get(),
-        urlDocumentoHash: this.cloudinaryService.generateTemporaryUrl(
+        urlDocumento: this.cloudinaryService.generateTemporaryUrl(
           this.cryptoUtil.decrypt(relatorioCriado.urlDocumentoHash),
         ),
       });
     } catch (error) {
-      this.logger.error('Erro ao gerar relatório', error);
+      this.logger.error(
+        'Erro ao gerar relatório',
+        error instanceof Error ? (error.stack ?? error.message) : String(error),
+      );
       throw new InternalServerErrorException(
         'Erro ao gerar relatório. Tente novamente.',
       );
