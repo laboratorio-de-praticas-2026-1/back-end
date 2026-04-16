@@ -7,14 +7,16 @@ import { Servico } from 'src/models/servico.model';
 import { BuscaBannerStatusDto } from './dto/busca-banner-status.dto';
 import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
 import { BuscaServicoFiltroDto } from './dto/busca-servico-filtro.dto';
-
+import { Publicidade } from 'src/models/publicidade.model';
+import { BuscaPublicidadeStatusDto } from './dto/busca-publicidade-status.dto';
 @Injectable()
 export class BuscaService {
   constructor(
     @InjectModel(Blog) private blogModel: typeof Blog,
     @InjectModel(Banner) private bannerModel: typeof Banner,
     @InjectModel(Servico) private servicoModel: typeof Servico,
-  ) {}
+    @InjectModel(Publicidade) private publicidadeModel: typeof Publicidade,
+  ) { }
 
   async buscarBlogsPorIntervaloDeData(
     dto: BuscaBlogIntervaloDto,
@@ -79,6 +81,17 @@ export class BuscaService {
   async buscarBannerPorStatus(dto: BuscaBannerStatusDto): Promise<Banner[]> {
     const ativo = dto.status === 'ativo';
     return await this.bannerModel.findAll({
+      where: {
+        ativo,
+      },
+    });
+  }
+
+  async buscarPublicidadePorStatus(
+    dto: BuscaPublicidadeStatusDto,
+  ): Promise<Publicidade[]> {
+    const ativo = dto.status === 'ativo';
+    return await this.publicidadeModel.findAll({
       where: {
         ativo,
       },
