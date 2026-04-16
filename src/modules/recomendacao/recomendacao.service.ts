@@ -15,6 +15,7 @@ import { Op, fn, col, literal } from 'sequelize';
 import { Debito } from 'src/models/debito.model';
 import { Veiculo } from 'src/models/veiculo.model';
 import { RecomendacaoRespostaDto } from './dto/recomendacao-resposta.dto';
+import { RecomendacaoCategoriaBlogEnum } from './enums/recomendacao-categoria-blog.enum';
 
 @Injectable()
 export class RecomendacaoService {
@@ -193,11 +194,49 @@ export class RecomendacaoService {
     }
   }
 
-  protected async buscarComunicacaoVenda(usuarioId: number) {
-    this.logger.log(
-      `Seguindo para Comunicação de Venda para usuário ${usuarioId}`,
-    );
-    return Promise.resolve(null);
+  async buscarComunicacaoVenda(
+    usuarioId: number,
+  ): Promise<RecomendacaoRespostaDto | null> {
+    try {
+      const dataLimite = new Date();
+      dataLimite.setDate(dataLimite.getDate() - 30);
+
+      const interesseBlog = await this.interacaoUsuarioModel.findOne({
+        where: {
+          usuarioId,
+          categoriaBlog: RecomendacaoCategoriaBlogEnum.DOCUMENTACAO,
+          dataInteracao: {
+            [Op.gte]: dataLimite,
+          },
+        },
+      });
+
+      const jaIniciouTransferencia = await this.solicitacaoModel.findOne({
+        where: {
+          usuarioId,
+          servicoId: 2,
+        },
+      });
+
+      if (interesseBlog || jaIniciouTransferencia) {
+        return {
+          id: 9,
+          nome: 'Comunicação de Venda',
+          descricao:
+            'Evite multas e pontos de terceiros. Comunique a venda do seu veículo ao DETRAN imediatamente.',
+          ativo: true,
+        };
+      }
+
+      return null;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido';
+      this.logger.error(
+        `Erro na busca de comunicação de venda: ${errorMessage}`,
+      );
+      return null;
+    }
   }
 
   private async buscarServicosPopulares() {

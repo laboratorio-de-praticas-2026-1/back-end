@@ -37,6 +37,9 @@ describe('RecomendacaoService', () => {
         dataInteracao: string;
       }) => Promise<RecomendacaoInteracaoResponseDto>
     >,
+    findOne: jest.fn() as jest.MockedFunction<
+      () => Promise<InteracaoUsuario | null>
+    >,
   };
 
   const mockDebitoModel = {
@@ -252,6 +255,53 @@ describe('RecomendacaoService', () => {
       await service.buscarParcelamentoDebitos(1);
 
       expect(spyProximoPasso).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe('buscarComunicacaoVenda', () => {
+    it('deve retornar recomendação (ID 9) quando houver interesse no blog (Documentação)', async () => {
+      mockInteracaoUsuarioModel.findOne.mockResolvedValue({
+        id: 1,
+      } as unknown as InteracaoUsuario);
+      mockSolicitacaoModel.findOne.mockResolvedValue(null);
+
+      const resultado = await service.buscarComunicacaoVenda(6);
+
+      expect(resultado).not.toBeNull();
+      expect(resultado?.id).toBe(9);
+      expect(resultado?.nome).toBe('Comunicação de Venda');
+    });
+
+    it('deve retornar recomendação (ID 9) quando houver solicitação de transferência (ID 2)', async () => {
+      mockInteracaoUsuarioModel.findOne.mockResolvedValue(null);
+      mockSolicitacaoModel.findOne.mockResolvedValue({
+        id: 100,
+        servicoId: 2,
+      } as unknown as Solicitacao);
+
+      const resultado = await service.buscarComunicacaoVenda(6);
+
+      expect(resultado).not.toBeNull();
+      expect(resultado?.id).toBe(9);
+    });
+
+    it('deve retornar null quando não houver indícios de venda', async () => {
+      mockInteracaoUsuarioModel.findOne.mockResolvedValue(null);
+      mockSolicitacaoModel.findOne.mockResolvedValue(null);
+
+      const resultado = await service.buscarComunicacaoVenda(6);
+
+      expect(resultado).toBeNull();
+    });
+
+    it('deve retornar null em caso de erro técnico para não travar o fluxo', async () => {
+      mockInteracaoUsuarioModel.findOne.mockRejectedValue(
+        new Error('Erro de banco'),
+      );
+
+      const resultado = await service.buscarComunicacaoVenda(6);
+
+      expect(resultado).toBeNull();
     });
   });
 });
