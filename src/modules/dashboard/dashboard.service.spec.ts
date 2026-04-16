@@ -13,7 +13,11 @@ import { Servico } from '../../models/servico.model';
 describe('DashboardService', () => {
   let service: DashboardService;
 
-  const mockModel = { findAll: jest.fn(), findOne: jest.fn(), count: jest.fn() };
+  const mockModel = {
+    findAll: jest.fn(),
+    findOne: jest.fn(),
+    count: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({

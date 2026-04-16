@@ -19,12 +19,7 @@ import type {
   ResultadoDistribuicaoMetodo,
   ResultadoDistribuicaoTipo,
 } from './dashboard.types';
-import {
-  MaisSolicitadosRow,
-  ReceitaPorServicoRow,
-} from './dashboard.types';
-
-
+import { MaisSolicitadosRow, ReceitaPorServicoRow } from './dashboard.types';
 
 @Injectable()
 export class DashboardService {
@@ -44,9 +39,6 @@ export class DashboardService {
     @InjectModel(DebitoServico)
     private readonly debitoServicoModel: typeof DebitoServico,
   ) {}
-
-
-
 
   //função para gerar os meses no período selecionado
   private gerarMesesNoPeriodo(inicio: Date, fim: Date): string[] {
@@ -273,13 +265,13 @@ export class DashboardService {
       ],
     ] = await Promise.all([solicitacoesQuery, financeiroQuery]);
 
-    const maisSolicitados = (maisSolicitadosRaw as unknown as MaisSolicitadosRow[]).map(
-      (item) => ({
-        servicoId: Number(item.get('servicoId') ?? 0),
-        nome: item.servico?.nome ?? '',
-        totalSolicitacoes: Number(item.get('totalSolicitacoes') ?? 0),
-      }),
-    );
+    const maisSolicitados = (
+      maisSolicitadosRaw as unknown as MaisSolicitadosRow[]
+    ).map((item) => ({
+      servicoId: Number(item.get('servicoId') ?? 0),
+      nome: item.servico?.nome ?? '',
+      totalSolicitacoes: Number(item.get('totalSolicitacoes') ?? 0),
+    }));
 
     const receitaPorServico = (
       receitaPorServicoRaw as unknown as ReceitaPorServicoRow[]
@@ -355,11 +347,11 @@ export class DashboardService {
         documentosPendentesValidacao,
       },
       servicos: {
-      ativos: servicosAtivos,
+        ativos: servicosAtivos,
         pausados: servicosPausados,
         maisSolicitados,
         receitaPorServico,
-    },
+      },
       financeiro: {
         receitaRealizada,
         receitaPendente,

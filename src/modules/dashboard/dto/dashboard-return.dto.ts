@@ -58,7 +58,7 @@ export class SolicitacoesDto {
   documentosPendentesValidacao!: number;
 }
 
-export class ServicosDto{
+export class ServicosDto {
   ativos: number;
   pausados: number;
   maisSolicitados: {
@@ -77,5 +77,5 @@ export class ServicosDto{
 export class DashboardReturnDto {
   solicitacoes!: SolicitacoesDto;
   financeiro!: FinanceiroDto;
-  servicos!: ServicosDto
+  servicos!: ServicosDto;
 }
