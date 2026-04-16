@@ -13,7 +13,7 @@ type StatusCountRow = {
 type TempoConclusaoRow = {
   servicoId: number | string;
   servicoNome: string;
-  prazoEstimadoDias: number | string | null;
+  prazoEstimadoDias: number | string;
   mediaRealDias: number | string;
   totalConcluidas: number | string;
 };
@@ -130,6 +130,7 @@ export class DashboardService {
           dataConclusao: {
             [Op.between]: [dataInicio, dataFim],
           },
+          [Op.and]: [literal('`servico`.`prazo_estimado_dias` IS NOT NULL')],
         },
         group: [
           col('Solicitacao.servico_id'),
@@ -217,7 +218,7 @@ export class DashboardService {
       (item) => ({
         servicoId: Number(item.servicoId),
         servicoNome: item.servicoNome,
-        prazoEstimadoDias: Number(item.prazoEstimadoDias ?? 0),
+        prazoEstimadoDias: Number(item.prazoEstimadoDias),
         mediaRealDias: Number(Number(item.mediaRealDias).toFixed(2)),
         totalConcluidas: Number(item.totalConcluidas),
       }),

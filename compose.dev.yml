@@ -1,0 +1,45 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-dev
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: app_db
+      MYSQL_USER: app_user
+      MYSQL_PASSWORD: app_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      # Verifica se o MySQL já aceita conexões antes de rodar as migrations [1]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migration:
+    image: node:22-alpine
+    container_name: prisma-migration
+    depends_on:
+      mysql:
+        condition: service_healthy # Só inicia quando o healthcheck do mysql passar [2]
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules # Evita conflito entre node_modules do host e do container
+    environment:
+      # URL apontando para o serviço 'mysql' dentro da rede do Docker [2]
+      DATABASE_URL: "mysql://app_user:app_password@mysql:3306/app_db"
+    command: >
+      sh -c "
+      npm install &&
+      npx prisma generate &&
+      npx prisma migrate deploy &&
+      npx prisma db seed
+      "
+
+volumes:
+  mysql_data:
