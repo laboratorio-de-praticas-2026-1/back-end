@@ -12,17 +12,12 @@ import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
 import { CloudinaryResponse } from 'src/infra/cloudinary/dto/cloudinary-response';
 import { EmailService } from 'src/infra/email/email.service';
 import { EmailParams } from 'src/infra/email/dto/email-params';
+import { STATUS_UPDATE } from 'src/infra/email/templates/templates-names';
+import { obterTextosEmailPorStatus } from 'src/infra/email/status-email-textos';
 import { DocumentoSolicitacao } from 'src/models/documento-solicitacao.model';
 import { Servico } from 'src/models/servico.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
 import { Usuario } from 'src/models/usuario.model';
-import {
-  STATUS_AGUARDANDO_DOCUMENTO,
-  STATUS_AGUARDANDO_PAGAMENTO,
-  STATUS_CANCELADO,
-  STATUS_EM_ANDAMENTO,
-  STATUS_FINALIZADO,
-} from 'src/infra/email/templates/templates-names';
 import { Veiculo } from 'src/models/veiculo.model';
 import { NotificacaoService } from '../notificacao/notificacao.service';
 import { CreateDocumentoDto } from './dto/create-documento.dto';
@@ -47,22 +42,6 @@ export class SolicitacaoService {
     StatusSolicitacaoEnum.CONCLUIDO,
     StatusSolicitacaoEnum.CANCELADO,
   ]);
-
-  private readonly TEMPLATE_POR_STATUS: Record<string, string> = {
-    [StatusSolicitacaoEnum.AGUARDANDO_PAGAMENTO]: STATUS_AGUARDANDO_PAGAMENTO,
-    [StatusSolicitacaoEnum.AGUARDANDO_DOCUMENTO]: STATUS_AGUARDANDO_DOCUMENTO,
-    [StatusSolicitacaoEnum.CONCLUIDO]: STATUS_FINALIZADO,
-    [StatusSolicitacaoEnum.CANCELADO]: STATUS_CANCELADO,
-  };
-
-  private readonly ASSUNTO_POR_STATUS: Record<string, string> = {
-    [StatusSolicitacaoEnum.AGUARDANDO_PAGAMENTO]:
-      'Sua solicitação está aguardando pagamento',
-    [StatusSolicitacaoEnum.AGUARDANDO_DOCUMENTO]:
-      'Sua solicitação está aguardando documento',
-    [StatusSolicitacaoEnum.CONCLUIDO]: 'Sua solicitação foi concluída',
-    [StatusSolicitacaoEnum.CANCELADO]: 'Sua solicitação foi cancelada',
-  };
 
   constructor(
     @InjectModel(Solicitacao)
@@ -194,26 +173,23 @@ export class SolicitacaoService {
           statusAnterior === StatusSolicitacaoEnum.CANCELADO &&
           novoStatus === StatusSolicitacaoEnum.EM_ANDAMENTO;
 
-        const template = isReabertura
-          ? STATUS_EM_ANDAMENTO
-          : this.TEMPLATE_POR_STATUS[novoStatus];
+        const textos = obterTextosEmailPorStatus(novoStatus, isReabertura);
 
-        const assunto = isReabertura
-          ? 'Sua solicitação foi reaberta'
-          : this.ASSUNTO_POR_STATUS[novoStatus];
-
-        void this.dispararEmailStatus(
-          solicitacao,
-          template,
-          assunto,
-          observacao,
-        ).catch((error: unknown) => {
-          const mensagemErro =
-            error instanceof Error ? error.message : 'Erro desconhecido';
-          this.logger.warn(
-            `Falha ao enviar email de status para solicitacao ${id}: ${mensagemErro}`,
-          );
-        });
+        if (textos) {
+          void this.dispararEmailStatus(
+            solicitacao,
+            textos.assunto,
+            textos.titulo,
+            textos.mensagem,
+            observacao,
+          ).catch((error: unknown) => {
+            const mensagemErro =
+              error instanceof Error ? error.message : 'Erro desconhecido';
+            this.logger.warn(
+              `Falha ao enviar email de status para solicitacao ${id}: ${mensagemErro}`,
+            );
+          });
+        }
       }
     }
 
@@ -262,8 +238,9 @@ export class SolicitacaoService {
 
   private async dispararEmailStatus(
     solicitacao: Solicitacao,
-    template: string,
     assunto: string,
+    titulo: string,
+    mensagem: string,
     observacaoAdmin?: string,
   ): Promise<void> {
     const emailDestinatario = solicitacao.usuario?.email;
@@ -279,12 +256,14 @@ export class SolicitacaoService {
 
     const params = new EmailParams(
       emailDestinatario,
-      template,
+      STATUS_UPDATE,
       `${assunto} - Solicitação #${solicitacao.id}`,
       {
         nomeCliente,
         solicitacaoId: solicitacao.id,
         servicoNome: servicoNome || 'Serviço',
+        titulo,
+        mensagem,
         observacaoAdmin: observacaoAdmin || '',
       },
     );
@@ -292,7 +271,7 @@ export class SolicitacaoService {
     await this.emailService.enviarEmail(params);
 
     this.logger.log(
-      `Email de status '${template}' enviado para ${emailDestinatario} (solicitacao #${solicitacao.id})`,
+      `Email de status enviado para ${emailDestinatario} (solicitacao #${solicitacao.id})`,
     );
   }
 

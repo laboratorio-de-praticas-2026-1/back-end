@@ -1,0 +1,36 @@
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+
+  <!-- LOGO -->
+  <div style="text-align: center; padding: 30px 0 20px;">
+    <img src="cid:logo_img" alt="Logo" style="max-width: 200px;" />
+  </div>
+
+  <!-- TÍTULO -->
+  <h1 style="color: #333333; font-size: 22px; margin-bottom: 20px;">
+    Solicitação #<%= solicitacaoId %> - <%= titulo %>
+  </h1>
+
+  <!-- SAUDAÇÃO -->
+  <p><b>Olá, <%= nomeCliente %>!</b></p>
+
+  <!-- MENSAGEM PRINCIPAL -->
+  <p>Sua solicitação de serviço <b><%= servicoNome %></b> <%= mensagem %></p>
+
+  <% if (observacaoAdmin) { %>
+    <p><b>Observação:</b> <%= observacaoAdmin %></p>
+  <% } %>
+
+  <!-- BOTÃO DE ACESSO (Local para colocar o link da solicitação) -->
+  <div style="text-align: center; margin: 30px 0;">
+    <a href="#"
+       style="display: inline-block; padding: 14px 32px; background-color: #2563EB; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: bold;">
+      Acessar Minha Solicitação
+    </a>
+  </div>
+
+  <!-- RODAPÉ -->
+  <p style="color: #666666; font-size: 14px;">Caso tenha dúvidas, entre em contato conosco.</p>
+
+  <p>Atenciosamente,<br/>Equipe Bortone</p>
+
+</div>
