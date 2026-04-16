@@ -86,21 +86,7 @@ export class DashboardService {
 
     // ─── Query de solicitações ────────────────────────────────────────────────
 
-    const solicitacoesQuery: Promise<
-      [
-        StatusCountRow[],
-        number,
-        TempoConclusaoRow[],
-        number,
-        number,
-        number,
-        number,
-        number,
-        number,
-        Solicitacao[],
-        DebitoServico[],
-      ]
-    > = Promise.all([
+    const solicitacoesQuery = Promise.all([
       this.solicitacaoModel.findAll({
         attributes: [
           'status',

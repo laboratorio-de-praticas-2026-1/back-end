@@ -53,7 +53,7 @@ export class FinanceiroDto {
 }
 
 export class SolicitacoesDto {
-  porStatus: {
+  porStatus!: {
     recebido: number;
     emAndamento: number;
     aguardandoPagamento: number;
@@ -61,17 +61,17 @@ export class SolicitacoesDto {
     concluido: number;
     cancelado: number;
   };
-  proximasDeVencer: {
+  proximasDeVencer!: {
     quantidade: number;
   };
-  tempoConclusaoPorServico: {
+  tempoConclusaoPorServico!: {
     servicoId: number;
     servicoNome: string;
     prazoEstimadoDias: number;
     mediaRealDias: number;
     totalConcluidas: number;
   }[];
-  foraDoPrazo: {
+  foraDoPrazo!: {
     quantidade: number;
     totalConcluidas: number;
     percentual: number;
@@ -79,14 +79,14 @@ export class SolicitacoesDto {
 }
 
 export class ServicosDto {
-  ativos: number;
-  pausados: number;
-  maisSolicitados: {
+  ativos!: number;
+  pausados!: number;
+  maisSolicitados!: {
     servicoId: number;
     nome: string;
     totalSolicitacoes: number;
   }[];
-  receitaPorServicoCompleto: {
+  receitaPorServicoCompleto!: {
     servicoId: number;
     nome: string;
     totalSolicitacoes: number;
