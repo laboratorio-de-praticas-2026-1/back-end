@@ -3,7 +3,9 @@ import { BuscaService } from './busca.service';
 import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
 import { BuscaBannerStatusDto } from './dto/busca-banner-status.dto';
 import { BuscaPublicidadeStatusDto } from './dto/busca-publicidade-status.dto';
+import { BuscaUsuarioFiltroDto } from './dto/busca-usuario-filtro.dto';
 import { Blog } from 'src/models/blog.model';
+import { Usuario } from 'src/models/usuario.model';
 import { ApiOperation } from '@nestjs/swagger';
 
 @Controller('busca')
@@ -22,6 +24,22 @@ export class BuscaController {
       `Buscando blogs por intervalo de data: de=${dto.de} ate=${dto.ate}`,
     );
     return this.buscaService.buscarBlogsPorIntervaloDeData(dto);
+  }
+
+  @Get('usuario/filtros')
+  @ApiOperation({
+    summary:
+      'Buscar usuários por filtros (nível de usuário e data de cadastro)',
+    description:
+      'Parâmetros opcionais: nivel_usuario ("cliente" ou "administrador") e data_cadastro (data no formato YYYY-MM-DD).',
+  })
+  buscarUsuariosPorFiltros(
+    @Query() dto: BuscaUsuarioFiltroDto,
+  ): Promise<Usuario[]> {
+    this.logger.log(
+      `Buscando usuarios por filtros: nivel_usuario=${dto.nivel_usuario ?? 'n/a'} data_cadastro=${dto.data_cadastro ?? 'n/a'}`,
+    );
+    return this.buscaService.buscarUsuariosPorFiltros(dto);
   }
 
   @Get('banner/status')

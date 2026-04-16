@@ -1,18 +1,22 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { col, Op, where } from 'sequelize';
+import { col, fn, Op, where } from 'sequelize';
 import { Banner } from 'src/models/banner.model';
 import { Blog } from 'src/models/blog.model';
 import { Publicidade } from 'src/models/publicidade.model';
+import { Usuario } from 'src/models/usuario.model';
 import { BuscaBannerStatusDto } from './dto/busca-banner-status.dto';
 import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
 import { BuscaPublicidadeStatusDto } from './dto/busca-publicidade-status.dto';
+import { BuscaUsuarioFiltroDto } from './dto/busca-usuario-filtro.dto';
+
 @Injectable()
 export class BuscaService {
   constructor(
     @InjectModel(Blog) private blogModel: typeof Blog,
     @InjectModel(Banner) private bannerModel: typeof Banner,
     @InjectModel(Publicidade) private publicidadeModel: typeof Publicidade,
+    @InjectModel(Usuario) private usuarioModel: typeof Usuario,
   ) {}
 
   async buscarBlogsPorIntervaloDeData(
@@ -45,6 +49,35 @@ export class BuscaService {
       where: {
         [Op.and]: filtros,
       },
+    });
+  }
+
+  async buscarUsuariosPorFiltros(
+    dto: BuscaUsuarioFiltroDto,
+  ): Promise<Usuario[]> {
+    const nivelUsuario = dto.nivel_usuario?.toLowerCase() as
+      | 'cliente'
+      | 'administrador'
+      | undefined;
+
+    const filtros = [
+      ...(nivelUsuario !== undefined
+        ? [where(col('nivel'), Op.eq, nivelUsuario)]
+        : []),
+      ...(dto.data_cadastro !== undefined
+        ? [where(fn('DATE', col('data_cadastro')), Op.eq, dto.data_cadastro)]
+        : []),
+    ];
+
+    if (filtros.length === 0) {
+      return await this.usuarioModel.findAll({ order: [['id', 'ASC']] });
+    }
+
+    return await this.usuarioModel.findAll({
+      where: {
+        [Op.and]: filtros,
+      },
+      order: [['id', 'ASC']],
     });
   }
 

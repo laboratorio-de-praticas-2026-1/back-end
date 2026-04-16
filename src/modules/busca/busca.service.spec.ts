@@ -6,13 +6,16 @@ import { BadRequestException } from '@nestjs/common';
 import { Blog } from 'src/models/blog.model';
 import { Banner } from 'src/models/banner.model';
 import { Publicidade } from 'src/models/publicidade.model';
+import { Usuario } from 'src/models/usuario.model';
 import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
+import { BuscaUsuarioFiltroDto } from './dto/busca-usuario-filtro.dto';
 
 describe('BuscaService', () => {
   let service: BuscaService;
   const blogFindAllMock = jest.fn();
   const bannerFindAllMock = jest.fn();
   const publicidadeFindAllMock = jest.fn();
+  const usuarioFindAllMock = jest.fn();
   type WhereClause = Partial<Record<symbol, unknown>>;
 
   interface FindAllOptions {
@@ -24,7 +27,7 @@ describe('BuscaService', () => {
     blogFindAllMock.mockReset();
     bannerFindAllMock.mockReset();
     publicidadeFindAllMock.mockReset();
-
+    usuarioFindAllMock.mockReset();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BuscaService,
@@ -44,6 +47,12 @@ describe('BuscaService', () => {
           provide: getModelToken(Publicidade),
           useValue: {
             findAll: publicidadeFindAllMock,
+          },
+        },
+        {
+          provide: getModelToken(Usuario),
+          useValue: {
+            findAll: usuarioFindAllMock,
           },
         },
       ],
@@ -305,6 +314,68 @@ describe('BuscaService', () => {
         },
         order: [['id', 'DESC']],
       });
+    });
+  });
+
+  describe('buscarUsuariosPorFiltros', () => {
+    it('deve listar servicos sem filtros ordenando por id crescente', async () => {
+      usuarioFindAllMock.mockResolvedValue([]);
+      await service.buscarUsuariosPorFiltros({});
+
+      expect(usuarioFindAllMock).toHaveBeenCalledWith({
+        order: [['id', 'ASC']],
+      });
+    });
+
+    it('deve filtrar por nivel_usuario quando informado', async () => {
+      usuarioFindAllMock.mockResolvedValue([]);
+
+      await service.buscarUsuariosPorFiltros({
+        nivel_usuario: 'cliente',
+      } as unknown as BuscaUsuarioFiltroDto);
+
+      expect(usuarioFindAllMock).toHaveBeenCalledTimes(1);
+      const calls = usuarioFindAllMock.mock.calls as Array<
+        Array<FindAllOptions>
+      >;
+      const args = calls[0]?.[0];
+      expect(args.where).toBeDefined();
+      const whereClause = args.where as WhereClause;
+      expect(whereClause[Op.and]).toHaveLength(1);
+      expect(args.order).toEqual([['id', 'ASC']]);
+    });
+
+    it('deve filtrar por data_cadastro quando informado', async () => {
+      usuarioFindAllMock.mockResolvedValue([]);
+
+      await service.buscarUsuariosPorFiltros({
+        data_cadastro: '2026-03-03',
+      } as unknown as BuscaUsuarioFiltroDto);
+
+      expect(usuarioFindAllMock).toHaveBeenCalledTimes(1);
+      const calls = usuarioFindAllMock.mock.calls as Array<
+        Array<FindAllOptions>
+      >;
+      const args = calls[0]?.[0];
+      const whereClause = args.where as WhereClause;
+      expect(whereClause[Op.and]).toHaveLength(1);
+    });
+
+    it('deve combinar filtros quando mais de um campo é informado', async () => {
+      usuarioFindAllMock.mockResolvedValue([]);
+
+      await service.buscarUsuariosPorFiltros({
+        nivel_usuario: 'administrador',
+        data_cadastro: '2026-04-11',
+      } as unknown as BuscaUsuarioFiltroDto);
+
+      expect(usuarioFindAllMock).toHaveBeenCalledTimes(1);
+      const calls = usuarioFindAllMock.mock.calls as Array<
+        Array<FindAllOptions>
+      >;
+      const args = calls[0]?.[0];
+      const whereClause = args.where as WhereClause;
+      expect(whereClause[Op.and]).toHaveLength(2);
     });
   });
 
