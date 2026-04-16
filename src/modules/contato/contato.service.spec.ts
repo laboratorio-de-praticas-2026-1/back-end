@@ -24,6 +24,9 @@ describe('ContatoService', () => {
     cidade: 'São Paulo',
     estado: 'SP',
     site: 'www.empresa.com',
+    tipo: 'clinica',
+    latitude: '-23.5505',
+    longitude: '-46.6333',
   };
 
   beforeEach(async () => {
@@ -49,48 +52,28 @@ describe('ContatoService', () => {
     jest.clearAllMocks();
   });
 
-  describe('buscarContato', () => {
-    it('deve retornar EmpresaDto quando encontrar contato por CNPJ', async () => {
-      mockEmpresaModel.findOne.mockResolvedValue(mockEmpresa);
-
-      const result = await service.buscarContato('12.345.678/0001-90');
-
-      expect(result).toBeInstanceOf(EmpresaDto);
-      expect(result.cnpj).toBe(mockEmpresa.cnpj);
-      expect(result.nomeFantasia).toBe(mockEmpresa.nomeFantasia);
-      expect(mockEmpresaModel.findOne).toHaveBeenCalledWith({
-        where: { cnpj: '12.345.678/0001-90' },
-      });
-    });
-
-    it('deve lançar NotFoundException quando contato não for encontrado', async () => {
-      mockEmpresaModel.findOne.mockResolvedValue(null);
-
-      await expect(service.buscarContato('12.345.678/0001-99')).rejects.toThrow(
-        NotFoundException,
-      );
-    });
-  });
-
   describe('buscarContatoById', () => {
-    it('deve retornar EmpresaDto quando encontrar contato por ID e CNPJ', async () => {
+    it('deve retornar EmpresaDto quando encontrar contato por ID', async () => {
       mockEmpresaModel.findOne.mockResolvedValue(mockEmpresa);
 
-      const result = await service.buscarContatoById(1, '12.345.678/0001-90');
+      const result = await service.buscarContatoById(1);
 
       expect(result).toBeInstanceOf(EmpresaDto);
       expect(result.id).toBe(1);
+      expect(result.tipo).toBe('clinica');
+      expect(result.latitude).toBe('-23.5505');
+
       expect(mockEmpresaModel.findOne).toHaveBeenCalledWith({
-        where: { id: 1, cnpj: '12.345.678/0001-90' },
+        where: { id: 1 },
       });
     });
 
-    it('deve lançar NotFoundException quando não encontrar contato por ID e CNPJ', async () => {
+    it('deve lançar NotFoundException quando não encontrar contato', async () => {
       mockEmpresaModel.findOne.mockResolvedValue(null);
 
-      await expect(
-        service.buscarContatoById(1, '12.345.678/0001-99'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.buscarContatoById(1)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -100,10 +83,10 @@ describe('ContatoService', () => {
 
       const updateData = { telefone: '11999999999' };
 
-      await service.atualizarContato(1, '12.345.678/0001-90', updateData);
+      await service.atualizarContato(1, updateData);
 
       expect(mockEmpresaModel.update).toHaveBeenCalledWith(updateData, {
-        where: { id: 1, cnpj: '12.345.678/0001-90' },
+        where: { id: 1 },
       });
     });
 
@@ -113,7 +96,7 @@ describe('ContatoService', () => {
       const updateData = { telefone: '11999999999' };
 
       await expect(
-        service.atualizarContato(1, '12.345.678/0001-99', updateData),
+        service.atualizarContato(1, updateData),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -124,12 +107,13 @@ describe('ContatoService', () => {
         telefone: '11999999999',
         email: 'novo@email.com',
         endereco: 'Novo Endereço, 456',
+        tipo: 'vistoria',
       };
 
-      await service.atualizarContato(1, '12.345.678/0001-90', updateData);
+      await service.atualizarContato(1, updateData);
 
       expect(mockEmpresaModel.update).toHaveBeenCalledWith(updateData, {
-        where: { id: 1, cnpj: '12.345.678/0001-90' },
+        where: { id: 1 },
       });
     });
   });
@@ -138,7 +122,7 @@ describe('ContatoService', () => {
     it('deve converter Empresa model para EmpresaDto corretamente', async () => {
       mockEmpresaModel.findOne.mockResolvedValue(mockEmpresa);
 
-      const result = await service.buscarContato('12.345.678/0001-90');
+      const result = await service.buscarContatoById(1);
 
       expect(result).toEqual(
         expect.objectContaining({
@@ -151,6 +135,9 @@ describe('ContatoService', () => {
           cidade: mockEmpresa.cidade,
           estado: mockEmpresa.estado,
           site: mockEmpresa.site,
+          tipo: mockEmpresa.tipo,
+          latitude: mockEmpresa.latitude,
+          longitude: mockEmpresa.longitude,
         }),
       );
     });
@@ -166,15 +153,20 @@ describe('ContatoService', () => {
         cidade: null,
         estado: null,
         site: null,
+        tipo: null,
+        latitude: null,
+        longitude: null,
       };
 
       mockEmpresaModel.findOne.mockResolvedValue(empresaComNulos);
 
-      const result = await service.buscarContato('00.000.000/0000-00');
+      const result = await service.buscarContatoById(2);
 
       expect(result.nomeFantasia).toBe('');
       expect(result.cnpj).toBe('');
       expect(result.telefone).toBe('');
+      expect(result.tipo).toBe('');
+      expect(result.latitude).toBe('');
     });
   });
 });
