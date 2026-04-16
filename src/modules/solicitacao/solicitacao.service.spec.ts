@@ -263,6 +263,71 @@ describe('SolicitacaoService', () => {
     );
   });
 
+  it('deve retornar solicitacao completa por id', async () => {
+    mockSolicitacaoModel.findByPk.mockResolvedValue({
+      id: 10,
+      usuarioId: 2,
+      veiculoId: 5,
+      servicoId: 1,
+      status: 'em_andamento',
+      observacaoCliente: 'Exemplo',
+      observacaoAdmin: null,
+      dataSolicitacao: new Date('2026-04-14T10:00:00.000Z'),
+      dataConclusao: new Date('2026-04-16T11:00:00.000Z'),
+      usuario: {
+        id: 2,
+        nome: 'João Silva',
+        cpfCnpj: '00000000000',
+      },
+      veiculo: {
+        id: 5,
+        modelo: 'Civic',
+        placa: 'ABC1234',
+      },
+      servico: {
+        id: 1,
+        nome: 'Licenciamento Anual',
+      },
+    });
+
+    await expect(service.getSolicitacaoById(10)).resolves.toEqual({
+      id: 10,
+      usuario_id: 2,
+      veiculo_id: 5,
+      servico_id: 1,
+      status: 'em_andamento',
+      observacao_cliente: 'Exemplo',
+      observacao_admin: null,
+      data_solicitacao: '2026-04-14T10:00:00.000Z',
+      data_conclusao: '2026-04-16T11:00:00.000Z',
+      usuario: {
+        id: 2,
+        nome: 'João Silva',
+        cpf_cnpj: '00000000000',
+      },
+      veiculo: {
+        id: 5,
+        modelo: 'Civic',
+        placa: 'ABC1234',
+      },
+      servico: {
+        id: 1,
+        nome: 'Licenciamento Anual',
+      },
+    });
+  });
+
+  it('deve retornar erro 404 quando solicitacao nao for encontrada', async () => {
+    mockSolicitacaoModel.findByPk.mockResolvedValue(null);
+
+    await expect(service.getSolicitacaoById(999)).rejects.toMatchObject({
+      response: {
+        error: 'SOLICITACAO_NAO_ENCONTRADA',
+        message: 'A solicitação não foi encontrada',
+      },
+    });
+  });
+
   it('deve criar solicitacao mesmo se o envio do email falhar', async () => {
     const solicitacaoDto = {
       usuario_id: 1,
