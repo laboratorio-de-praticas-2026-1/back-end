@@ -19,10 +19,17 @@ import type {
   ResultadoDistribuicaoMetodo,
   ResultadoDistribuicaoTipo,
 } from './dashboard.types';
-import { MaisSolicitadosRow, ReceitaPorServicoRow } from './dashboard.types';
+import {
+  MaisSolicitadosRow,
+  ReceitaPorServicoRow,
+  StatusCountRow,
+  TempoConclusaoRow,
+} from './dashboard.types';
 
 @Injectable()
 export class DashboardService {
+  private readonly DIAS_ALERTA_VENCIMENTO = 3;
+
   constructor(
     @InjectModel(Solicitacao)
     private readonly solicitacaoModel: ModelCtor<Solicitacao>,
@@ -40,7 +47,6 @@ export class DashboardService {
     private readonly debitoServicoModel: typeof DebitoServico,
   ) {}
 
-  //função para gerar os meses no período selecionado
   private gerarMesesNoPeriodo(inicio: Date, fim: Date): string[] {
     const meses: string[] = [];
     const atual = new Date(inicio.getFullYear(), inicio.getMonth(), 1);
@@ -71,23 +77,104 @@ export class DashboardService {
     const hoje = new Date();
     const em30Dias = new Date(hoje.getTime() + 30 * 24 * 60 * 60 * 1000);
 
+    const statusAbertos = [
+      'recebido',
+      'aguardando_pagamento',
+      'aguardando_documento',
+      'em_andamento',
+    ];
+
+    // ─── Query de solicitações ────────────────────────────────────────────────
+
     const solicitacoesQuery = Promise.all([
-      this.solicitacaoModel.count({
+      this.solicitacaoModel.findAll({
+        attributes: [
+          'status',
+          [fn('COUNT', col('Solicitacao.id')), 'quantidade'],
+        ],
         where: {
-          status: {
-            [Op.in]: [
-              'recebido',
-              'aguardando_pagamento',
-              'aguardando_documento',
-              'em_andamento',
-            ],
-          },
+          dataSolicitacao: { [Op.between]: [dataInicio, dataFim] },
+        },
+        group: [col('Solicitacao.status')],
+        raw: true,
+      }) as unknown as Promise<StatusCountRow[]>,
+
+      this.solicitacaoModel.count({
+        include: [{ model: Servico, attributes: [], required: true }],
+        where: {
+          status: { [Op.in]: statusAbertos },
+          dataSolicitacao: { [Op.between]: [dataInicio, dataFim] },
+          [Op.and]: [
+            literal('`servico`.`prazo_estimado_dias` IS NOT NULL'),
+            literal(`
+              DATEDIFF(NOW(), \`Solicitacao\`.\`data_solicitacao\`)
+              BETWEEN GREATEST(\`servico\`.\`prazo_estimado_dias\` - ${this.DIAS_ALERTA_VENCIMENTO}, 0)
+              AND \`servico\`.\`prazo_estimado_dias\`
+            `),
+          ],
         },
       }),
 
-      this.solicitacaoModel.count({ where: { status: 'concluido' } }),
+      this.solicitacaoModel.findAll({
+        attributes: [
+          [col('Solicitacao.servico_id'), 'servicoId'],
+          [col('servico.nome'), 'servicoNome'],
+          [col('servico.prazo_estimado_dias'), 'prazoEstimadoDias'],
+          [
+            fn(
+              'AVG',
+              literal(
+                'DATEDIFF(`Solicitacao`.`data_conclusao`, `Solicitacao`.`data_solicitacao`)',
+              ),
+            ),
+            'mediaRealDias',
+          ],
+          [fn('COUNT', col('Solicitacao.id')), 'totalConcluidas'],
+        ],
+        include: [{ model: Servico, attributes: [], required: true }],
+        where: {
+          status: 'concluido',
+          dataConclusao: { [Op.between]: [dataInicio, dataFim] },
+          [Op.and]: [literal('`servico`.`prazo_estimado_dias` IS NOT NULL')],
+        },
+        group: [
+          col('Solicitacao.servico_id'),
+          col('servico.id'),
+          col('servico.nome'),
+          col('servico.prazo_estimado_dias'),
+        ],
+        order: [[literal('mediaRealDias'), 'DESC']],
+        raw: true,
+      }) as unknown as Promise<TempoConclusaoRow[]>,
+
+      this.solicitacaoModel.count({
+        include: [{ model: Servico, attributes: [], required: true }],
+        where: {
+          status: 'concluido',
+          dataConclusao: { [Op.between]: [dataInicio, dataFim] },
+          [Op.and]: [
+            literal('`servico`.`prazo_estimado_dias` IS NOT NULL'),
+            literal(`
+              DATEDIFF(\`Solicitacao\`.\`data_conclusao\`, \`Solicitacao\`.\`data_solicitacao\`)
+              > \`servico\`.\`prazo_estimado_dias\`
+            `),
+          ],
+        },
+      }),
+
+      this.solicitacaoModel.count({
+        where: { status: 'concluido' },
+      }),
+
       this.documentoSolicitacaoModel.count({
         where: { statusValidacao: 'pendente' },
+      }),
+
+      this.solicitacaoModel.count({
+        where: {
+          status: 'concluido',
+          dataConclusao: { [Op.between]: [dataInicio, dataFim] },
+        },
       }),
 
       this.servicoModel.count({
@@ -95,9 +182,7 @@ export class DashboardService {
       }),
 
       this.servicoModel.count({
-        where: {
-          [Op.or]: [{ ativo: false }, { ativo: null }],
-        },
+        where: { [Op.or]: [{ ativo: false }, { ativo: null }] },
       }),
 
       this.solicitacaoModel.findAll({
@@ -106,16 +191,10 @@ export class DashboardService {
           [fn('COUNT', col('Solicitacao.id')), 'totalSolicitacoes'],
         ],
         include: [
-          {
-            model: Servico,
-            attributes: ['id', 'nome'],
-            as: 'servico',
-          },
+          { model: Servico, attributes: ['id', 'nome'], as: 'servico' },
         ],
         where: {
-          dataSolicitacao: {
-            [Op.between]: [dataInicio, dataFim],
-          },
+          dataSolicitacao: { [Op.between]: [dataInicio, dataFim] },
         },
         group: ['servico.id', 'Solicitacao.servico_id'],
         order: [[literal('totalSolicitacoes'), 'DESC']],
@@ -129,20 +208,12 @@ export class DashboardService {
           [fn('SUM', col('debito.valor')), 'receitaTotal'],
         ],
         include: [
-          {
-            model: Servico,
-            attributes: ['id', 'nome'],
-            as: 'servico',
-          },
+          { model: Servico, attributes: ['id', 'nome'], as: 'servico' },
           {
             model: Debito,
             attributes: [],
             as: 'debito',
-            where: {
-              createdAt: {
-                [Op.between]: [dataInicio, dataFim],
-              },
-            },
+            where: { createdAt: { [Op.between]: [dataInicio, dataFim] } },
           },
         ],
         group: ['servico.id', 'DebitoServico.id_servico'],
@@ -151,10 +222,7 @@ export class DashboardService {
       }),
     ]);
 
-    const todosServicos = await this.servicoModel.findAll({
-      where: { ativo: true },
-      attributes: ['id', 'nome'],
-    });
+    // ─── Query financeira ────────────────────────────────────────────────────
 
     const financeiroQuery: Promise<
       [
@@ -176,7 +244,9 @@ export class DashboardService {
         raw: true,
       }) as unknown as Promise<ResultadoReceita | null>,
 
-      this.debitoModel.sum('valor', { where: { status: 'pendente' } }),
+      this.debitoModel.sum('valor', {
+        where: { status: 'pendente' },
+      }),
 
       this.pagamentoModel.sum('taxa', {
         where: { createdAt: { [Op.between]: [dataInicio, dataFim] } },
@@ -247,11 +317,17 @@ export class DashboardService {
       }) as unknown as Promise<ResultadoDistribuicaoTipo[]>,
     ]);
 
+    // ─── Execução paralela e desestruturação ─────────────────────────────────
+
     const [
       [
-        solicitacoesEmAberto,
-        solicitacoesConcluidas,
+        porStatusRaw,
+        proximasDeVencerQuantidade,
+        tempoConclusaoPorServicoRaw,
+        foraDoPrazoQuantidade,
+        totalConcluidas,
         documentosPendentesValidacao,
+        solicitacoesConcluidas,
         servicosAtivos,
         servicosPausados,
         maisSolicitadosRaw,
@@ -270,6 +346,47 @@ export class DashboardService {
       ],
     ] = await Promise.all([solicitacoesQuery, financeiroQuery]);
 
+    // ─── Processamento: solicitações ─────────────────────────────────────────
+
+    const porStatusBase = {
+      recebido: 0,
+      emAndamento: 0,
+      aguardandoPagamento: 0,
+      aguardandoDocumento: 0,
+      concluido: 0,
+      cancelado: 0,
+    };
+
+    const porStatus = porStatusRaw.reduce((acc, item) => {
+      const quantidade = Number(item.quantidade ?? 0);
+
+      if (item.status === 'recebido') acc.recebido = quantidade;
+      if (item.status === 'em_andamento') acc.emAndamento = quantidade;
+      if (item.status === 'aguardando_pagamento')
+        acc.aguardandoPagamento = quantidade;
+      if (item.status === 'aguardando_documento')
+        acc.aguardandoDocumento = quantidade;
+      if (item.status === 'concluido') acc.concluido = quantidade;
+      if (item.status === 'cancelado') acc.cancelado = quantidade;
+
+      return acc;
+    }, porStatusBase);
+
+    const tempoConclusaoPorServico = tempoConclusaoPorServicoRaw.map(
+      (item) => ({
+        servicoId: Number(item.servicoId),
+        servicoNome: item.servicoNome,
+        prazoEstimadoDias: Number(item.prazoEstimadoDias),
+        mediaRealDias: Number(Number(item.mediaRealDias).toFixed(2)),
+        totalConcluidas: Number(item.totalConcluidas),
+      }),
+    );
+
+    const percentual =
+      totalConcluidas > 0
+        ? Number(((foraDoPrazoQuantidade / totalConcluidas) * 100).toFixed(2))
+        : 0;
+
     const maisSolicitados = (
       maisSolicitadosRaw as unknown as MaisSolicitadosRow[]
     ).map((item) => ({
@@ -287,6 +404,13 @@ export class DashboardService {
       receitaTotal: Number(item.get('receitaTotal') ?? 0),
     }));
 
+    // ─── Processamento: serviços ─────────────────────────────────────────────
+
+    const todosServicos = await this.servicoModel.findAll({
+      where: { ativo: true },
+      attributes: ['id', 'nome'],
+    });
+
     const receitaMap = new Map(receitaPorServico.map((r) => [r.servicoId, r]));
 
     const receitaPorServicoCompleto = todosServicos.map((servico) => {
@@ -299,6 +423,8 @@ export class DashboardService {
       };
     });
 
+    // ─── Processamento: financeiro ───────────────────────────────────────────
+
     const receitaRealizada = Number(receitaRealizadaResult?.total ?? 0);
     const receitaPendente = Number(receitaPendenteRaw ?? 0);
     const receitaTaxa = Number(receitaTaxaRaw ?? 0);
@@ -306,7 +432,7 @@ export class DashboardService {
 
     const mesesPeriodo = this.gerarMesesNoPeriodo(dataInicio, dataFim);
 
-    const mapa = new Map(
+    const mapaHistorico = new Map<string, number>(
       historicoMensalResult.map((m: ResultadoHistoricoMensal) => [
         m.mes,
         Number(m.receitaRealizada ?? 0),
@@ -315,18 +441,17 @@ export class DashboardService {
 
     const historicoMensal = mesesPeriodo.map((mes) => ({
       mes,
-      receitaRealizada: mapa.get(mes) ?? 0,
+      receitaRealizada: mapaHistorico.get(mes) ?? (0 as number),
     }));
-
-    const totalMeses = mesesPeriodo.length;
 
     const somaHistorico = historicoMensal.reduce(
       (acc, m) => acc + m.receitaRealizada,
       0,
     );
-
     const mediaMensalReceita =
-      totalMeses > 0 ? Number((somaHistorico / totalMeses).toFixed(2)) : 0;
+      mesesPeriodo.length > 0
+        ? Number((somaHistorico / mesesPeriodo.length).toFixed(2))
+        : 0;
 
     const inadimplencia = {
       valorTotal: Number(inadimplenciaResult?.valorTotal ?? 0),
@@ -357,11 +482,20 @@ export class DashboardService {
       }),
     );
 
+    // ─── Retorno ─────────────────────────────────────────────────────────────
+
     return {
       solicitacoes: {
-        solicitacoesEmAberto,
-        solicitacoesConcluidas,
-        documentosPendentesValidacao,
+        porStatus,
+        proximasDeVencer: {
+          quantidade: proximasDeVencerQuantidade,
+        },
+        tempoConclusaoPorServico,
+        foraDoPrazo: {
+          quantidade: foraDoPrazoQuantidade,
+          totalConcluidas,
+          percentual,
+        },
       },
       servicos: {
         ativos: servicosAtivos,
