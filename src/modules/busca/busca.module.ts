@@ -4,11 +4,12 @@ import { BuscaController } from './busca.controller';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { Blog } from 'src/models/blog.model';
 import { Banner } from 'src/models/banner.model';
+import { Servico } from 'src/models/servico.model';
 import { Publicidade } from 'src/models/publicidade.model';
 import { Usuario } from 'src/models/usuario.model';
 
 @Module({
-  imports: [SequelizeModule.forFeature([Blog, Banner, Publicidade, Usuario])],
+  imports: [SequelizeModule.forFeature([Blog, Banner, Publicidade, Servico, Usuario])],
   controllers: [BuscaController],
   providers: [BuscaService],
 })

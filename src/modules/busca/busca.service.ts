@@ -3,10 +3,12 @@ import { InjectModel } from '@nestjs/sequelize';
 import { col, fn, Op, where } from 'sequelize';
 import { Banner } from 'src/models/banner.model';
 import { Blog } from 'src/models/blog.model';
-import { Publicidade } from 'src/models/publicidade.model';
+import { Servico } from 'src/models/servico.model';
 import { Usuario } from 'src/models/usuario.model';
 import { BuscaBannerStatusDto } from './dto/busca-banner-status.dto';
 import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
+import { BuscaServicoFiltroDto } from './dto/busca-servico-filtro.dto';
+import { Publicidade } from 'src/models/publicidade.model';
 import { BuscaPublicidadeStatusDto } from './dto/busca-publicidade-status.dto';
 import { BuscaUsuarioFiltroDto } from './dto/busca-usuario-filtro.dto';
 
@@ -15,6 +17,7 @@ export class BuscaService {
   constructor(
     @InjectModel(Blog) private blogModel: typeof Blog,
     @InjectModel(Banner) private bannerModel: typeof Banner,
+    @InjectModel(Servico) private servicoModel: typeof Servico,
     @InjectModel(Publicidade) private publicidadeModel: typeof Publicidade,
     @InjectModel(Usuario) private usuarioModel: typeof Usuario,
   ) {}
@@ -49,6 +52,33 @@ export class BuscaService {
       where: {
         [Op.and]: filtros,
       },
+    });
+  }
+
+  async buscarServicosPorFiltros(
+    dto: BuscaServicoFiltroDto,
+  ): Promise<Servico[]> {
+    const filtros = [
+      ...(dto.valor_base !== undefined
+        ? [where(col('valor_base'), Op.eq, dto.valor_base)]
+        : []),
+      ...(dto.prazo_estimado !== undefined
+        ? [where(col('prazo_estimado_dias'), Op.eq, dto.prazo_estimado)]
+        : []),
+      ...(dto.status
+        ? [where(col('ativo'), Op.eq, dto.status === 'ativo')]
+        : []),
+    ];
+
+    if (filtros.length === 0) {
+      return await this.servicoModel.findAll({ order: [['id', 'ASC']] });
+    }
+
+    return await this.servicoModel.findAll({
+      where: {
+        [Op.and]: filtros,
+      },
+      order: [['id', 'ASC']],
     });
   }
 
