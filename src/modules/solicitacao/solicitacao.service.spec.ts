@@ -486,7 +486,7 @@ describe('SolicitacaoService', () => {
       expect(mockEmailService.enviarEmail).toHaveBeenCalledWith(
         expect.objectContaining({
           to: 'amanda@email.com',
-          template: 'status-concluido',
+          template: 'status-finalizado',
         }),
       );
     });
@@ -522,7 +522,7 @@ describe('SolicitacaoService', () => {
       expect(mockEmailService.enviarEmail).toHaveBeenCalledWith(
         expect.objectContaining({
           to: 'amanda@email.com',
-          template: 'status-reaberto',
+          template: 'status-em-andamento',
         }),
       );
     });
