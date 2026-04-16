@@ -6,8 +6,8 @@ import {
   Logger,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
-  Put,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -69,10 +69,11 @@ export class SolicitacaoController {
     return this.solicitacaoService.listarSolicitacoes();
   }
 
-  @Put(':id')
+  @Patch(':id/status')
   @ApiOperation({
     summary: 'Atualizar status de solicitação',
-    description: 'Atualizar status de solicitação e mudar observação de Admin.',
+    description:
+      'Atualização parcial do status de uma solicitação com envio controlado de e-mails e proteção anti-spam.',
   })
   @ApiBody({
     type: UpdateSolicitacaoStatusDto,
@@ -152,7 +153,7 @@ export class SolicitacaoController {
   @UseInterceptors(
     FileInterceptor('documento', {
       limits: {
-        fileSize: 10 * 1024 * 1024, // Limite de 10MB
+        fileSize: 10 * 1024 * 1024,
       },
     }),
   )
