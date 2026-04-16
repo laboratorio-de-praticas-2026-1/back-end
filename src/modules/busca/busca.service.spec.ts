@@ -329,7 +329,7 @@ describe('BuscaService', () => {
   });
 
   describe('buscarUsuariosPorFiltros', () => {
-    it('deve listar servicos sem filtros ordenando por id crescente', async () => {
+    it('deve listar usuarios sem filtros ordenando por id crescente', async () => {
       usuarioFindAllMock.mockResolvedValue([]);
       await service.buscarUsuariosPorFiltros({});
 
