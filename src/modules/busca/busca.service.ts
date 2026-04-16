@@ -16,7 +16,7 @@ export class BuscaService {
     @InjectModel(Banner) private bannerModel: typeof Banner,
     @InjectModel(Servico) private servicoModel: typeof Servico,
     @InjectModel(Publicidade) private publicidadeModel: typeof Publicidade,
-  ) { }
+  ) {}
 
   async buscarBlogsPorIntervaloDeData(
     dto: BuscaBlogIntervaloDto,

@@ -49,7 +49,7 @@ describe('BuscaService', () => {
           provide: getModelToken(Servico),
           useValue: {
             findAll: servicoFindAllMock,
-          }
+          },
         },
         {
           provide: getModelToken(Publicidade),
