@@ -15,7 +15,6 @@ const mockModel = { findAll: jest.fn(), findOne: jest.fn(), count: jest.fn() };
 describe('DashboardController', () => {
   let controller: DashboardController;
 
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [DashboardController],
@@ -41,6 +40,4 @@ describe('DashboardController', () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
-
-
 });
