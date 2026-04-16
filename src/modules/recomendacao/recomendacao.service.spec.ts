@@ -10,6 +10,7 @@ import { RecomendacaoInteracaoRequestDto } from './dto/recomendacao-interacao-re
 import { RecomendacaoInteracaoResponseDto } from './dto/recomendacao-interacao-response.dto';
 import { RecomendacaoCategoriaBlogEnum } from './enums/recomendacao-categoria-blog.enum';
 import { SolicitacaoComServicoDto } from './dto/solicitacao-com-servico.dto';
+import { Debito } from 'src/models/debito.model';
 
 describe('RecomendacaoService', () => {
   let service: RecomendacaoService;
@@ -18,9 +19,14 @@ describe('RecomendacaoService', () => {
     findAll: jest.fn() as jest.MockedFunction<
       () => Promise<SolicitacaoComServicoDto[]>
     >,
+    findOne: jest.fn() as jest.MockedFunction<
+      () => Promise<Solicitacao | null>
+    >,
   };
 
-  const mockServicoModel = {};
+  const mockServicoModel = {
+    findAll: jest.fn() as jest.MockedFunction<() => Promise<Servico[]>>,
+  };
 
   const mockInteracaoUsuarioModel = {
     create: jest.fn() as jest.MockedFunction<
@@ -32,8 +38,17 @@ describe('RecomendacaoService', () => {
     >,
   };
 
+  const mockDebitoModel = {
+    findAll: jest.fn() as jest.MockedFunction<() => Promise<Partial<Debito>[]>>,
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
+
+    mockDebitoModel.findAll.mockResolvedValue([]);
+    mockSolicitacaoModel.findOne.mockResolvedValue(null);
+    mockServicoModel.findAll.mockResolvedValue([]);
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RecomendacaoService,
@@ -48,6 +63,10 @@ describe('RecomendacaoService', () => {
         {
           provide: getModelToken(InteracaoUsuario),
           useValue: mockInteracaoUsuarioModel,
+        },
+        {
+          provide: getModelToken(Debito),
+          useValue: mockDebitoModel,
         },
       ],
     }).compile();
@@ -159,6 +178,24 @@ describe('RecomendacaoService', () => {
       await expect(
         service.criarInteracao(usuarioId, interacaoDto),
       ).rejects.toThrow(InternalServerErrorException);
+    });
+  });
+
+  describe('buscarRecursoMulta', () => {
+    it('deve retornar recomendação de multa se houver débitos', async () => {
+      mockDebitoModel.findAll.mockResolvedValue([
+        {
+          descricao: 'MULTA X',
+          veiculos: [{ id: 10 }] as unknown as Debito['veiculos'],
+        },
+      ]);
+
+      mockSolicitacaoModel.findOne.mockResolvedValue(null);
+
+      const resultado = await service.buscarRecursoMulta(1);
+
+      expect(resultado).not.toBeNull();
+      expect(resultado?.id).toBe(6);
     });
   });
 });
