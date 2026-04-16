@@ -11,6 +11,7 @@ import { RecomendacaoInteracaoResponseDto } from './dto/recomendacao-interacao-r
 import { RecomendacaoCategoriaBlogEnum } from './enums/recomendacao-categoria-blog.enum';
 import { SolicitacaoComServicoDto } from './dto/solicitacao-com-servico.dto';
 import { Debito } from 'src/models/debito.model';
+import { Veiculo } from 'src/models/veiculo.model';
 
 describe('RecomendacaoService', () => {
   let service: RecomendacaoService;
@@ -42,6 +43,10 @@ describe('RecomendacaoService', () => {
     findAll: jest.fn() as jest.MockedFunction<() => Promise<Partial<Debito>[]>>,
   };
 
+  const mockVeiculoModel = {
+    findAll: jest.fn() as jest.MockedFunction<() => Promise<Veiculo[]>>,
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -67,6 +72,10 @@ describe('RecomendacaoService', () => {
         {
           provide: getModelToken(Debito),
           useValue: mockDebitoModel,
+        },
+        {
+          provide: getModelToken(Veiculo),
+          useValue: mockVeiculoModel,
         },
       ],
     }).compile();
@@ -196,6 +205,53 @@ describe('RecomendacaoService', () => {
 
       expect(resultado).not.toBeNull();
       expect(resultado?.id).toBe(6);
+    });
+  });
+
+  describe('buscarParcelamentoDebitos', () => {
+    it('deve retornar recomendação de parcelamento (ID 10) se houver débitos pendentes e nenhuma solicitação ativa', async () => {
+      mockVeiculoModel.findAll.mockResolvedValue([
+        { id: 10, usuarioId: 1 } as Veiculo,
+      ]);
+
+      mockDebitoModel.findAll.mockResolvedValue([
+        {
+          id: 1,
+          status: 'pendente',
+          tipo: 'veiculo',
+          veiculos: [{ id: 10 }] as unknown as Veiculo[],
+        },
+      ]);
+
+      mockSolicitacaoModel.findOne.mockResolvedValue(null);
+
+      const resultado = await service.buscarParcelamentoDebitos(1);
+
+      expect(resultado).not.toBeNull();
+      expect(resultado?.id).toBe(10);
+      expect(resultado?.nome).toBe('Parcelamento de Débitos');
+    });
+
+    it('deve chamar buscarComunicacaoVenda se o usuário já tiver uma solicitação de parcelamento ativa', async () => {
+      mockVeiculoModel.findAll.mockResolvedValue([{ id: 10 } as Veiculo]);
+      mockDebitoModel.findAll.mockResolvedValue([
+        { id: 1, veiculos: [{ id: 10 }] as unknown as Veiculo[] },
+      ]);
+      mockSolicitacaoModel.findOne.mockResolvedValue({
+        id: 500,
+        status: 'pendente',
+      } as unknown as Solicitacao);
+
+      const spyProximoPasso = jest.spyOn(
+        service as unknown as {
+          buscarComunicacaoVenda: (usuarioId: number) => Promise<null>;
+        },
+        'buscarComunicacaoVenda',
+      );
+
+      await service.buscarParcelamentoDebitos(1);
+
+      expect(spyProximoPasso).toHaveBeenCalledWith(1);
     });
   });
 });
