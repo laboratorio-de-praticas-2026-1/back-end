@@ -9,7 +9,9 @@ import { Publicidade } from 'src/models/publicidade.model';
 import { Usuario } from 'src/models/usuario.model';
 
 @Module({
-  imports: [SequelizeModule.forFeature([Blog, Banner, Publicidade, Servico, Usuario])],
+  imports: [
+    SequelizeModule.forFeature([Blog, Banner, Publicidade, Servico, Usuario]),
+  ],
   controllers: [BuscaController],
   providers: [BuscaService],
 })
