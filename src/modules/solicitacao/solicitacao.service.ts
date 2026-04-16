@@ -13,10 +13,19 @@ import { StatusSolicitacaoEnum } from 'src/commons/enums/status-solicitacao.enum
 import { CryptoUtil } from 'src/commons/utils/crypto';
 import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
 import { CloudinaryResponse } from 'src/infra/cloudinary/dto/cloudinary-response';
+import { EmailService } from 'src/infra/email/email.service';
+import { EmailParams } from 'src/infra/email/dto/email-params';
 import { DocumentoSolicitacao } from 'src/models/documento-solicitacao.model';
 import { Servico } from 'src/models/servico.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
 import { Usuario } from 'src/models/usuario.model';
+import {
+  STATUS_AGUARDANDO_DOCUMENTO,
+  STATUS_AGUARDANDO_PAGAMENTO,
+  STATUS_CANCELADO,
+  STATUS_EM_ANDAMENTO,
+  STATUS_FINALIZADO,
+} from 'src/infra/email/templates/templates-names';
 import { Veiculo } from 'src/models/veiculo.model';
 import { NotificacaoService } from '../notificacao/notificacao.service';
 import { CreateDocumentoDto } from './dto/create-documento.dto';
@@ -33,6 +42,32 @@ import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto'
 export class SolicitacaoService {
   private readonly logger: Logger = new Logger(SolicitacaoService.name);
 
+  private readonly emailDebounceMap = new Map<string, number>();
+  private readonly DEBOUNCE_INTERVAL_MS = 3 * 60 * 1000;
+
+  private readonly STATUS_COM_EMAIL = new Set<string>([
+    StatusSolicitacaoEnum.AGUARDANDO_PAGAMENTO,
+    StatusSolicitacaoEnum.AGUARDANDO_DOCUMENTO,
+    StatusSolicitacaoEnum.CONCLUIDO,
+    StatusSolicitacaoEnum.CANCELADO,
+  ]);
+
+  private readonly TEMPLATE_POR_STATUS: Record<string, string> = {
+    [StatusSolicitacaoEnum.AGUARDANDO_PAGAMENTO]: STATUS_AGUARDANDO_PAGAMENTO,
+    [StatusSolicitacaoEnum.AGUARDANDO_DOCUMENTO]: STATUS_AGUARDANDO_DOCUMENTO,
+    [StatusSolicitacaoEnum.CONCLUIDO]: STATUS_FINALIZADO,
+    [StatusSolicitacaoEnum.CANCELADO]: STATUS_CANCELADO,
+  };
+
+  private readonly ASSUNTO_POR_STATUS: Record<string, string> = {
+    [StatusSolicitacaoEnum.AGUARDANDO_PAGAMENTO]:
+      'Sua solicitação está aguardando pagamento',
+    [StatusSolicitacaoEnum.AGUARDANDO_DOCUMENTO]:
+      'Sua solicitação está aguardando documento',
+    [StatusSolicitacaoEnum.CONCLUIDO]: 'Sua solicitação foi concluída',
+    [StatusSolicitacaoEnum.CANCELADO]: 'Sua solicitação foi cancelada',
+  };
+
   constructor(
     @InjectModel(Solicitacao)
     private readonly solicitacaoModel: typeof Solicitacao,
@@ -47,6 +82,7 @@ export class SolicitacaoService {
     private readonly notificacaoService: NotificacaoService,
     private readonly cloudinaryService: CloudinaryService,
     private readonly cryptoUtil: CryptoUtil,
+    private readonly emailService: EmailService,
   ) {}
 
   async criarSolicitacao(
@@ -118,7 +154,12 @@ export class SolicitacaoService {
 
   async findSolicitacaoById(id: number): Promise<Solicitacao> {
     const solicitacao: Solicitacao | null =
-      await this.solicitacaoModel.findByPk(id);
+      await this.solicitacaoModel.findByPk(id, {
+        include: [
+          { model: Usuario, attributes: ['id', 'nome', 'email'] },
+          { model: Servico, attributes: ['id', 'nome'] },
+        ],
+      });
 
     if (!solicitacao) {
       throw new NotFoundException(`Solicitação com ID ${id} não encontrada`);
@@ -190,8 +231,11 @@ export class SolicitacaoService {
   ): Promise<{ message: string }> {
     const solicitacao: Solicitacao = await this.findSolicitacaoById(id);
 
+    const statusAnterior = solicitacao.status as StatusSolicitacaoEnum;
+    const novoStatus = updateSolicitacaoStatusDto.status;
+
     const updateData: Partial<Solicitacao> = {
-      status: updateSolicitacaoStatusDto.status,
+      status: novoStatus,
     };
 
     const observacao: string | undefined =
@@ -200,15 +244,118 @@ export class SolicitacaoService {
       updateData.observacaoAdmin = observacao;
     }
 
-    if (updateSolicitacaoStatusDto.status === StatusSolicitacaoEnum.CONCLUIDO) {
+    if (novoStatus === StatusSolicitacaoEnum.CONCLUIDO) {
       updateData.dataConclusao = new Date();
     }
 
     await solicitacao.update(updateData);
 
+    if (this.deveDispararEmail(statusAnterior, novoStatus)) {
+      if (this.verificarDebounce(id, novoStatus, statusAnterior)) {
+        const isReabertura =
+          statusAnterior === StatusSolicitacaoEnum.CANCELADO &&
+          novoStatus === StatusSolicitacaoEnum.EM_ANDAMENTO;
+
+        const template = isReabertura
+          ? STATUS_EM_ANDAMENTO
+          : this.TEMPLATE_POR_STATUS[novoStatus];
+
+        const assunto = isReabertura
+          ? 'Sua solicitação foi reaberta'
+          : this.ASSUNTO_POR_STATUS[novoStatus];
+
+        void this.dispararEmailStatus(
+          solicitacao,
+          template,
+          assunto,
+          observacao,
+        ).catch((error: unknown) => {
+          const mensagemErro =
+            error instanceof Error ? error.message : 'Erro desconhecido';
+          this.logger.warn(
+            `Falha ao enviar email de status para solicitacao ${id}: ${mensagemErro}`,
+          );
+        });
+      }
+    }
+
     return {
       message: 'Status da solicitação atualizado com sucesso.',
     };
+  }
+
+  private deveDispararEmail(
+    statusAnterior: StatusSolicitacaoEnum,
+    novoStatus: StatusSolicitacaoEnum,
+  ): boolean {
+    if (statusAnterior === novoStatus) return false;
+
+    if (this.STATUS_COM_EMAIL.has(novoStatus)) return true;
+
+    if (
+      statusAnterior === StatusSolicitacaoEnum.CANCELADO &&
+      novoStatus === StatusSolicitacaoEnum.EM_ANDAMENTO
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
+  private verificarDebounce(
+    solicitacaoId: number,
+    novoStatus: string,
+    statusAnterior: string,
+  ): boolean {
+    const chave = `${solicitacaoId}:${statusAnterior}:${novoStatus}`;
+    const agora = Date.now();
+    const ultimoEnvio = this.emailDebounceMap.get(chave);
+
+    if (ultimoEnvio && agora - ultimoEnvio < this.DEBOUNCE_INTERVAL_MS) {
+      this.logger.log(
+        `Debounce ativo para solicitacao ${solicitacaoId}: ${statusAnterior} -> ${novoStatus}`,
+      );
+      return false;
+    }
+
+    this.emailDebounceMap.set(chave, agora);
+    return true;
+  }
+
+  private async dispararEmailStatus(
+    solicitacao: Solicitacao,
+    template: string,
+    assunto: string,
+    observacaoAdmin?: string,
+  ): Promise<void> {
+    const emailDestinatario = solicitacao.usuario?.email;
+    const nomeCliente = solicitacao.usuario?.nome;
+    const servicoNome = solicitacao.servico?.nome;
+
+    if (!emailDestinatario || !nomeCliente) {
+      this.logger.warn(
+        `Dados do usuario incompletos para solicitacao ${solicitacao.id}`,
+      );
+      return;
+    }
+
+    const params = new EmailParams(
+      emailDestinatario,
+      template,
+      `${assunto} - Solicitação #${solicitacao.id}`,
+      {
+        nomeCliente,
+        solicitacaoId: solicitacao.id,
+        servicoNome: servicoNome || 'Serviço',
+        observacaoAdmin: observacaoAdmin || '',
+      },
+    );
+
+    await this.emailService.enviarEmail(params);
+
+    this.logger.log(
+      `Email de status '${template}' enviado para ${emailDestinatario} (solicitacao #${solicitacao.id})`,
+    );
   }
 
   private gerarProtocoloSolicitacao(
@@ -286,7 +433,6 @@ export class SolicitacaoService {
     };
   }
 
-  // Criação de rota de envio de documentos
   async enviarDocumento(
     solicitacaoId: number,
     usuarioId: number,

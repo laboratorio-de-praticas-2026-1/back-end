@@ -5,6 +5,7 @@ import {
   Logger,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   Put,
   Req,
@@ -113,13 +114,14 @@ export class SolicitacaoController {
     return this.solicitacaoService.getSolicitacaoById(id);
   }
 
-  @Put(':id')
+  @Patch(':id/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Atualizar status de solicitação',
-    description: 'Atualizar status de solicitação e mudar observação de Admin.',
+    description:
+      'Atualização parcial do status de uma solicitação com envio controlado de e-mails e proteção anti-spam.',
   })
   @ApiBody({
     type: UpdateSolicitacaoStatusDto,
