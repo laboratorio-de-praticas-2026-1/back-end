@@ -31,6 +31,7 @@ import { Roles } from '../usuario/decorators/roles.decorator';
 import { CreateDocumentoDto } from './dto/create-documento.dto';
 import { CreateSolicitacaoResponseDto } from './dto/create-solicitacao-response.dto';
 import { CreateSolicitacaoDto } from './dto/create-solicitacao.dto';
+import { GetSolicitacaoResponseDto } from './dto/get-solicitacao-response.dto';
 import { ListSolicitacoesResponseDto } from './dto/list-solicitacoes-response.dto';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 import { SolicitacaoService } from './solicitacao.service';
@@ -80,6 +81,36 @@ export class SolicitacaoController {
   async listarSolicitacoes(): Promise<ListSolicitacoesResponseDto> {
     this.logger.log('Buscando lista de solicitações...');
     return this.solicitacaoService.listarSolicitacoes();
+  }
+
+  @Get(':id')
+  @ApiOperation({
+    summary: 'Retornar os dados completos de uma solicitação',
+    description:
+      'Retorna os dados completos de uma solicitação pelo seu identificador. Rota destinada ao uso administrativo (CMS).',
+  })
+  @ApiOkResponse({
+    description: 'Solicitação encontrada com sucesso',
+    type: GetSolicitacaoResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'Solicitação não encontrada',
+    schema: {
+      type: 'object',
+      properties: {
+        error: { type: 'string', example: 'SOLICITACAO_NAO_ENCONTRADA' },
+        message: {
+          type: 'string',
+          example: 'A solicitação não foi encontrada',
+        },
+      },
+    },
+  })
+  getSolicitacaoById(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<GetSolicitacaoResponseDto> {
+    this.logger.log(`Buscando solicitação com id=${id}...`);
+    return this.solicitacaoService.getSolicitacaoById(id);
   }
 
   @Put(':id')
