@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
-import { Debito } from '../../models/debito.model';
-import { DebitoVeiculo } from '../../models/debito-veiculo.model';
-import { Veiculo } from '../../models/veiculo.model';
+import { DebitoVeiculo } from 'src/models/debito-veiculo.model';
+import { Debito } from 'src/models/debito.model'; 
+import { Veiculo } from 'src/models/veiculo.model';
 import { DebitoController } from './debito.controller';
 import { DebitoService } from './debito.service';
 
