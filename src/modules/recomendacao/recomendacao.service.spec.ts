@@ -4,6 +4,7 @@ import { RecomendacaoService } from './recomendacao.service';
 import { InteracaoUsuario } from 'src/models/interacao-usuario.model';
 import { Servico } from 'src/models/servico.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
+import { Veiculo } from 'src/models/veiculo.model';
 import { InternalServerErrorException } from '@nestjs/common';
 import { jest, describe, it, expect, beforeEach } from '@jest/globals';
 import { RecomendacaoInteracaoRequestDto } from './dto/recomendacao-interacao-request.dto';
@@ -18,7 +19,19 @@ describe('RecomendacaoService', () => {
     findAll: jest.fn() as jest.MockedFunction<
       () => Promise<SolicitacaoComServicoDto[]>
     >,
+    findOne: jest.fn() as jest.MockedFunction<
+      () => Promise<any>
+    >
   };
+
+  const mockVeiculoModel = {
+    findAll: jest.fn() as jest.MockedFunction<
+      () => Promise<any[]>
+    >,
+    findOne: jest.fn() as jest.MockedFunction<
+      () => Promise<any>
+    >
+  }
 
   const mockServicoModel = {};
 
@@ -49,6 +62,10 @@ describe('RecomendacaoService', () => {
           provide: getModelToken(InteracaoUsuario),
           useValue: mockInteracaoUsuarioModel,
         },
+        {
+          provide: getModelToken(Veiculo),
+          useValue: mockVeiculoModel,
+        }
       ],
     }).compile();
 
@@ -159,6 +176,142 @@ describe('RecomendacaoService', () => {
       await expect(
         service.criarInteracao(usuarioId, interacaoDto),
       ).rejects.toThrow(InternalServerErrorException);
+    });
+  });
+
+  describe('buscarTransferenciaPropriedade', () => {
+    const usuarioId = 1;
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('deve retornar recomendação quando existir veículo sem solicitação de transferência', async () => {
+      const mockVeiculos = [
+        { id: 1, placa: 'ABC-1234', renavam: '123456789', modelo: 'Civic', usuarioId: 1 }
+      ];
+      mockVeiculoModel.findAll.mockResolvedValue(mockVeiculos);
+      mockSolicitacaoModel.findOne.mockResolvedValue(null);
+
+      const resultado = await service.buscarTransferenciaPropriedade(usuarioId);
+
+      expect(mockVeiculoModel.findAll).toHaveBeenCalled();
+      expect(mockSolicitacaoModel.findOne).toHaveBeenCalled();
+      expect(resultado).toEqual([
+        {
+          id: 2,
+          nome: 'Transferência de Propriedade',
+          descricao: 'Descrição de transferência de propriedade'
+        }
+      ]);
+    });
+
+    it('não deve retornar recomendação quando todos os veículos já possuem solicitação de transferência ativa', async () => {
+      const mockVeiculos = [
+        { id: 1, placa: 'ABC-1234', usuarioId: 1 }
+      ];
+      mockVeiculoModel.findAll.mockResolvedValue(mockVeiculos);
+      mockSolicitacaoModel.findOne.mockResolvedValue({
+        id: 10,
+        veiculo_id: 1,
+        servico_id: 2,
+        status: 'pendente'
+      });
+
+      const resultado = await service.buscarTransferenciaPropriedade(usuarioId);
+      expect(resultado).toEqual([]);
+    });
+
+    it('deve retornar recomendação quando a única solicitação existente está cancelada', async () => {
+      const mockVeiculos = [
+        { id: 1, placa: 'ABC-1234', usuarioId: 1 }
+      ];
+      mockVeiculoModel.findAll.mockResolvedValue(mockVeiculos);
+      mockSolicitacaoModel.findOne.mockResolvedValue(null);
+
+      const resultado = await service.buscarTransferenciaPropriedade(usuarioId);
+
+      expect(resultado).toEqual([
+        {
+          id: 2,
+          nome: 'Transferência de Propriedade',
+          descricao: 'Descrição de transferência de propriedade'
+        }
+      ]);
+    });
+    
+    it('deve retornar recomendação para o primeiro veículo sem solicitação quando usuário tem múltiplos veículos', async () => {
+      const mockVeiculos = [
+        { id: 1, placa: 'ABC-1234', usuarioId: 1 },
+        { id: 2, placa: 'XYZ-5678', usuarioId: 1 },
+        { id: 3, placa: 'DEF-9012', usuarioId: 1 }
+      ];
+      mockVeiculoModel.findAll.mockResolvedValue(mockVeiculos);
+      
+      mockSolicitacaoModel.findOne
+        .mockResolvedValueOnce({ id: 10, status: 'pendente' })  
+        .mockResolvedValueOnce(null); 
+
+      const resultado = await service.buscarTransferenciaPropriedade(usuarioId);
+
+      expect(mockSolicitacaoModel.findOne).toHaveBeenCalledTimes(2);
+      expect(resultado).toEqual([
+        {
+          id: 2,
+          nome: 'Transferência de Propriedade',
+          descricao: 'Descrição de transferência de propriedade'
+        }
+      ]);
+    });
+
+    it('deve retornar array vazio quando usuário não possui nenhum veículo cadastrado', async () => {
+      mockVeiculoModel.findAll.mockResolvedValue([]);
+
+      const resultado = await service.buscarTransferenciaPropriedade(usuarioId);
+
+      expect(mockVeiculoModel.findAll).toHaveBeenCalled();
+      expect(mockSolicitacaoModel.findOne).not.toHaveBeenCalled();
+      expect(resultado).toEqual([]);
+    });
+
+    it('deve retornar array vazio quando todos os múltiplos veículos já possuem solicitação', async () => {
+      const mockVeiculos = [
+        { id: 1, placa: 'ABC-1234', usuarioId: 1 },
+        { id: 2, placa: 'XYZ-5678', usuarioId: 1 }
+      ];
+      mockVeiculoModel.findAll.mockResolvedValue(mockVeiculos);
+      
+      mockSolicitacaoModel.findOne
+        .mockResolvedValueOnce({ id: 10, status: 'pendente' }) 
+        .mockResolvedValueOnce({ id: 11, status: 'pendente' });
+
+      const resultado = await service.buscarTransferenciaPropriedade(usuarioId);
+
+      expect(mockSolicitacaoModel.findOne).toHaveBeenCalledTimes(2);
+      expect(resultado).toEqual([]);
+    });
+
+    it('deve lançar InternalServerErrorException quando ocorrer erro no banco de dados', async () => {
+      const erro = new Error('Erro na conexão com o banco');
+      mockVeiculoModel.findAll.mockRejectedValue(erro);
+
+      await expect(service.buscarTransferenciaPropriedade(usuarioId))
+        .rejects
+        .toThrow(InternalServerErrorException);
+    });
+
+    it('deve lançar InternalServerErrorException quando ocorrer erro ao buscar solicitações', async () => {
+      const mockVeiculos = [
+        { id: 1, placa: 'ABC-1234', usuarioId: 1 }
+      ];
+      mockVeiculoModel.findAll.mockResolvedValue(mockVeiculos);
+      
+      const erro = new Error('Erro ao buscar solicitação');
+      mockSolicitacaoModel.findOne.mockRejectedValue(erro);
+
+      await expect(service.buscarTransferenciaPropriedade(usuarioId))
+        .rejects
+        .toThrow(InternalServerErrorException);
     });
   });
 });

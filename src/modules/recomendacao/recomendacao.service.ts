@@ -7,11 +7,14 @@ import { InjectModel } from '@nestjs/sequelize';
 import { InteracaoUsuario } from 'src/models/interacao-usuario.model';
 import { Servico } from 'src/models/servico.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
+import { Veiculo } from 'src/models/veiculo.model';
 import { RecomendacaoInteracaoRequestDto } from './dto/recomendacao-interacao-request.dto';
 import { RecomendacaoInteracaoResponseDto } from './dto/recomendacao-interacao-response.dto';
 import { PerfilUsuarioDto } from './dto/recomendacao-perfil-usuario.dto';
 import { SolicitacaoComServicoDto } from './dto/solicitacao-com-servico.dto';
 import { Op, fn, col, literal } from 'sequelize';
+import { plainToClass } from 'class-transformer';
+import { markAsUncloneable } from 'worker_threads';
 
 @Injectable()
 export class RecomendacaoService {
@@ -22,6 +25,8 @@ export class RecomendacaoService {
     private servicoModel: typeof Servico,
     @InjectModel(Solicitacao)
     private solicitacaoModel: typeof Solicitacao,
+    @InjectModel(Veiculo)
+    private veiculoModel: typeof Veiculo,
     @InjectModel(InteracaoUsuario)
     private interacaoUsuarioModel: typeof InteracaoUsuario,
   ) {}
@@ -165,6 +170,53 @@ export class RecomendacaoService {
       );
       throw new InternalServerErrorException(
         'Erro ao processar perfil de recomendação',
+      );
+    }
+  }
+
+  async buscarTransferenciaPropriedade(usuarioId: number): Promise<any[]> {
+    try {
+      this.logger.log(`Buscando transferências de propriedade do usuário com id ${usuarioId}`);
+
+      const veiculosUsuario = await this.veiculoModel.findAll({
+        where: { usuarioId },
+        raw: true,
+      });
+
+      if (!veiculosUsuario || veiculosUsuario.length === 0) {
+        this.logger.warn(`Nenhum veículo encontrado para usuário ${usuarioId}`);
+        return [];
+      }
+
+      for (const veiculo of veiculosUsuario) {
+        const solicitacaoExistente = await this.solicitacaoModel.findOne({
+          where: {
+            veiculo_id: veiculo.id,
+            servico_id: 2, 
+            status: { [Op.ne]: 'cancelado' } 
+          }
+        });
+
+        if (!solicitacaoExistente) {
+          this.logger.warn(`Veículo ${veiculo.id} - ${veiculo.placa} não possui solicitação de transferência`);
+          return [{
+            id: 2,
+            nome: 'Transferência de Propriedade',
+            descricao: 'Descrição de transferência de propriedade'
+          }];
+        }
+      }
+
+      this.logger.log(`Todos os veículos do usuário ${usuarioId} já possuem transferência solicitada`);
+      return [];
+
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      this.logger.error(
+        `Erro ao buscar transferências de propriedade para usuário ${usuarioId}: ${errorMessage}`,
+      );
+      throw new InternalServerErrorException(
+        'Erro ao processar verificação de transferência de propriedade'
       );
     }
   }
