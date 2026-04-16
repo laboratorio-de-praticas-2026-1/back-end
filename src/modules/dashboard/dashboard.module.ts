@@ -7,6 +7,8 @@ import { DocumentoSolicitacao } from 'src/models/documento-solicitacao.model';
 import { Usuario } from 'src/models/usuario.model';
 import { Veiculo } from 'src/models/veiculo.model';
 import { Servico } from 'src/models/servico.model';
+import { Debito } from 'src/models/debito.model';
+import { DebitoVeiculo } from 'src/models/debito-veiculo.model';
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { Servico } from 'src/models/servico.model';
       Usuario,
       Veiculo,
       Servico,
+      Debito,
+      DebitoVeiculo,
     ]),
   ],
   controllers: [DashboardController],
