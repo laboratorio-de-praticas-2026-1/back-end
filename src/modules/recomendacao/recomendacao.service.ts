@@ -320,7 +320,9 @@ export class RecomendacaoService {
 
   async buscarLicenciamentoAnual(usuarioId: number): Promise<any[]> {
     try {
-      this.logger.log(`Buscando licenciamento anual do usuário com id ${usuarioId}`);
+      this.logger.log(
+        `Buscando licenciamento anual do usuário com id ${usuarioId}`,
+      );
 
       const anoCorrente = new Date().getFullYear();
       const dataInicio = new Date(anoCorrente, 0, 1);
@@ -331,7 +333,15 @@ export class RecomendacaoService {
           usuario_id: usuarioId,
           ativo: true,
         },
-        attributes: ['id', 'placa', 'renavam', 'marca', 'modelo', 'anoFabricacao', 'anoModelo'],
+        attributes: [
+          'id',
+          'placa',
+          'renavam',
+          'marca',
+          'modelo',
+          'anoFabricacao',
+          'anoModelo',
+        ],
         raw: true,
       });
 
@@ -341,41 +351,42 @@ export class RecomendacaoService {
       }
 
       const recomendacoes = [];
-      
+
       for (const veiculo of veiculosUser) {
         const solicitacaoExistente = await this.solicitacaoModel.findOne({
           where: {
             veiculo_id: veiculo.id,
             servico_id: 1,
             status: {
-              [Op.notIn]: ['cancelado', 'rejeitado']
+              [Op.notIn]: ['cancelado', 'rejeitado'],
             },
             data_solicitacao: {
-              [Op.between]: [dataInicio, dataFim]
-            }
-          }
+              [Op.between]: [dataInicio, dataFim],
+            },
+          },
         });
 
         if (!solicitacaoExistente) {
           recomendacoes.push({
             id: 12,
-            nome: "Troca de Placa (Mercosul)",
-            descricao: "Substituição da placa antiga pelo novo padrão Mercosul com QR Code.",
+            nome: 'Troca de Placa (Mercosul)',
+            descricao:
+              'Substituição da placa antiga pelo novo padrão Mercosul com QR Code.',
             veiculo_id: veiculo.id,
-            placa: veiculo.placa
+            placa: veiculo.placa,
           });
         }
       }
 
       return recomendacoes.length > 0 ? recomendacoes : [];
-
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido';
       this.logger.error(
-        `Erro ao buscar licenciamento anual para usuário ${usuarioId}: ${errorMessage}`
+        `Erro ao buscar licenciamento anual para usuário ${usuarioId}: ${errorMessage}`,
       );
       throw new InternalServerErrorException(
-        'Erro ao processar verificação de licenciamento anual'
+        'Erro ao processar verificação de licenciamento anual',
       );
     }
   }

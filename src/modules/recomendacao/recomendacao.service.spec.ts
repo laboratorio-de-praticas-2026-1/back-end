@@ -305,7 +305,7 @@ describe('RecomendacaoService', () => {
       expect(resultado).toBeNull();
     });
   });
-  
+
   describe('buscarLicenciamentoAnual', () => {
     const usuarioId = 1;
     const anoCorrente = new Date().getFullYear();
@@ -320,7 +320,14 @@ describe('RecomendacaoService', () => {
 
       mockSolicitacaoModel.findOne
         .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce({ id: 2, status: 'aprovado', usuarioId: usuarioId, usuario: null, veiculoId: 2, veiculo: null } as unknown as Solicitacao);
+        .mockResolvedValueOnce({
+          id: 2,
+          status: 'aprovado',
+          usuarioId: usuarioId,
+          usuario: null,
+          veiculoId: 2,
+          veiculo: null,
+        } as unknown as Solicitacao);
 
       const resultado = await service.buscarLicenciamentoAnual(usuarioId);
 
@@ -343,8 +350,22 @@ describe('RecomendacaoService', () => {
   Type '{ id: number; status: "recebido"; }' is missing the following properties from type 'Solicitacao': usuarioId, usuario, veiculoId, veiculo, and 43 more.ts(2345)
   */
       mockSolicitacaoModel.findOne
-        .mockResolvedValueOnce({ id: 1, status: 'recebido', usuarioId: usuarioId, usuario: null, veiculoId: 1, veiculo: null } as unknown as Solicitacao)
-        .mockResolvedValueOnce({ id: 2, status: 'recebido', usuarioId: usuarioId, usuario: null, veiculoId: 2, veiculo: null } as unknown as Solicitacao);
+        .mockResolvedValueOnce({
+          id: 1,
+          status: 'recebido',
+          usuarioId: usuarioId,
+          usuario: null,
+          veiculoId: 1,
+          veiculo: null,
+        } as unknown as Solicitacao)
+        .mockResolvedValueOnce({
+          id: 2,
+          status: 'recebido',
+          usuarioId: usuarioId,
+          usuario: null,
+          veiculoId: 2,
+          veiculo: null,
+        } as unknown as Solicitacao);
 
       const resultado = await service.buscarLicenciamentoAnual(usuarioId);
 
