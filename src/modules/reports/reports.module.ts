@@ -9,6 +9,10 @@ import { UtilsModule } from 'src/commons/utils/utils.module';
 @Module({
   controllers: [ReportsController],
   providers: [ReportsService],
-  imports: [SequelizeModule.forFeature([Relatorio]), CloudinaryModule, UtilsModule],
+  imports: [
+    SequelizeModule.forFeature([Relatorio]),
+    CloudinaryModule,
+    UtilsModule,
+  ],
 })
 export class ReportsModule {}
