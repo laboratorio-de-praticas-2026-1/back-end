@@ -287,9 +287,7 @@ export class DashboardService {
       receitaTotal: Number(item.get('receitaTotal') ?? 0),
     }));
 
-    const receitaMap = new Map(
-      receitaPorServico.map((r) => [r.servicoId, r]),
-    );
+    const receitaMap = new Map(receitaPorServico.map((r) => [r.servicoId, r]));
 
     const receitaPorServicoCompleto = todosServicos.map((servico) => {
       const dados = receitaMap.get(servico.id);
