@@ -1,4 +1,4 @@
-import { IsOptional, IsString, Matches, IsDateString } from 'class-validator';
+import { IsOptional, IsString, Matches, IsDateString, IsIn } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class BuscaUsuarioFiltroDto {
@@ -20,14 +20,14 @@ export class BuscaUsuarioFiltroDto {
 
   @IsOptional()
   @IsString()
-  @Matches(/^(cliente|administrador)$/i, {
+  @IsIn(['cliente', 'administrador', 'Cliente', 'Administrador'], {  // ou transforme antes
     message:
       'Campo "nivel_usuario" deve ser um nível de usuário válido, "cliente" ou "administrador"',
   })
   @ApiPropertyOptional({
     description: 'Nível do usuário para filtrar os resultados',
     example: 'cliente',
-    type: String,
+    enum: ['cliente', 'administrador']
   })
   declare nivel_usuario?: 'cliente' | 'administrador';
 }
