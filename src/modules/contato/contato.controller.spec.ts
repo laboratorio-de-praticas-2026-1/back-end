@@ -1,13 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ContatoController } from './contato.controller';
 import { ContatoService } from './contato.service';
+import { ForbiddenException } from '@nestjs/common';
 
 describe('ContatoController', () => {
   let controller: ContatoController;
 
   const mockContatoService = {
-    buscarContato: jest.fn(),
     buscarContatoById: jest.fn(),
+    atualizarContato: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -28,38 +29,61 @@ describe('ContatoController', () => {
     jest.clearAllMocks();
   });
 
-  //TESTES
-  it('deve buscar contato com sucesso', async () => {
+  it('deve buscar contato por id (ID = 1) com sucesso', async () => {
     const mockEmpresaDto = {
       id: 1,
       nomeFantasia: 'Empresa Teste',
       cnpj: '00.000.000/0000-00',
       telefone: '(11) 1234-5678',
       email: 'contato@empresatest.com',
+      endereco: 'Rua Teste, 123',
+      cidade: 'São Paulo',
+      estado: 'SP',
+      site: 'www.empresa.com',
+      tipo: 'clinica',
+      latitude: '-23.5505',
+      longitude: '-46.6333',
+      enderecoCompleto: 'Rua Teste, 123, São Paulo, SP',
     };
 
-    mockContatoService.buscarContato.mockResolvedValue(mockEmpresaDto);
+    mockContatoService.buscarContatoById.mockResolvedValue(mockEmpresaDto);
 
-    const result = await controller.buscarContato();
+    const result = await controller.buscarContatoById(1);
 
     expect(result).toEqual(mockEmpresaDto);
-    expect(mockContatoService.buscarContato).toHaveBeenCalledTimes(1);
+    expect(mockContatoService.buscarContatoById).toHaveBeenCalledWith(1);
   });
 
-  it('deve buscar contato por id com sucesso', async () => {
-    const mockEmpresaDto = {
-      id: 1,
-      nomeFantasia: 'Empresa Teste',
-      cnpj: '00.000.000/0000-00',
-      telefone: '(11) 1234-5678',
-      email: 'contato@empresatest.com',
-    };
+  it('deve bloquear busca quando id for diferente de 1', async () => {
+    await expect(controller.buscarContatoById(2)).rejects.toThrow(
+      ForbiddenException,
+    );
 
-    mockContatoService.buscarContato.mockResolvedValue(mockEmpresaDto);
+    expect(mockContatoService.buscarContatoById).not.toHaveBeenCalled();
+  });
 
-    const result = await controller.buscarContato();
+  it('deve atualizar contato quando id = 1', async () => {
+    const updateData = { telefone: '11999999999' };
+    const mockResponse = { message: 'Contato atualizado com sucesso' };
 
-    expect(result).toEqual(mockEmpresaDto);
-    expect(mockContatoService.buscarContato).toHaveBeenCalledTimes(1);
+    mockContatoService.atualizarContato.mockResolvedValue(mockResponse);
+
+    const result = await controller.atualizarContatoById(1, updateData);
+
+    expect(result).toEqual(mockResponse);
+    expect(mockContatoService.atualizarContato).toHaveBeenCalledWith(
+      1,
+      updateData,
+    );
+  });
+
+  it('deve bloquear atualização quando id for diferente de 1', async () => {
+    const updateData = { telefone: '11999999999' };
+
+    await expect(
+      controller.atualizarContatoById(2, updateData),
+    ).rejects.toThrow(ForbiddenException);
+
+    expect(mockContatoService.atualizarContato).not.toHaveBeenCalled();
   });
 });

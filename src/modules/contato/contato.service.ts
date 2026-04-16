@@ -24,21 +24,9 @@ export class ContatoService {
     private readonly emailService: EmailService,
   ) {}
 
-  async buscarContato(cnpj: string): Promise<EmpresaDto> {
+  async buscarContatoById(id: number): Promise<EmpresaDto> {
     const empresa: Empresa | null = await this.empresaModel.findOne({
-      where: { cnpj },
-    });
-
-    if (!empresa) {
-      throw new NotFoundException('Dados de contato não encontrados');
-    }
-
-    return this.toDto(empresa);
-  }
-
-  async buscarContatoById(id: number, cnpj: string): Promise<EmpresaDto> {
-    const empresa: Empresa | null = await this.empresaModel.findOne({
-      where: { id, cnpj },
+      where: { id },
     });
 
     if (!empresa) {
@@ -50,20 +38,27 @@ export class ContatoService {
 
   async atualizarContato(
     id: number,
-    cnpj: string,
     data: Partial<EmpresaDto>,
-  ): Promise<void> {
-    const { cnpj: _, ...safeData } = data;
-
-    const [updated] = await this.empresaModel.update(safeData, {
-      where: { id, cnpj },
+  ): Promise<{ message: string }> {
+    const empresa = await this.empresaModel.findOne({
+      where: { id },
     });
 
-    if (updated === 0) {
-      throw new NotFoundException(
-        'Contato não encontrado ou não pertence à empresa',
-      );
+    if (!empresa) {
+      throw new NotFoundException('Contato não encontrado');
     }
+
+    const safeData = Object.fromEntries(
+      Object.entries(data).filter(([_, value]) => value !== undefined),
+    );
+
+    await this.empresaModel.update(safeData, {
+      where: { id },
+    });
+
+    return {
+      message: 'Contato atualizado com sucesso',
+    };
   }
 
   private toDto(empresa: Empresa): EmpresaDto {
@@ -77,6 +72,9 @@ export class ContatoService {
       empresa.cidade ?? '',
       empresa.estado ?? '',
       empresa.site ?? '',
+      empresa.tipo ?? '',
+      empresa.latitude ?? '',
+      empresa.longitude ?? '',
     );
   }
 
