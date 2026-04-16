@@ -66,7 +66,7 @@ export class ServicosDto {
     nome: string;
     totalSolicitacoes: number;
   }[];
-  receitaPorServico: {
+  receitaPorServicoCompleto: {
     servicoId: number;
     nome: string;
     totalSolicitacoes: number;

@@ -151,6 +151,11 @@ export class DashboardService {
       }),
     ]);
 
+    const todosServicos = await this.servicoModel.findAll({
+      where: { ativo: true },
+      attributes: ['id', 'nome'],
+    });
+
     const financeiroQuery: Promise<
       [
         ResultadoReceita | null,
@@ -282,6 +287,20 @@ export class DashboardService {
       receitaTotal: Number(item.get('receitaTotal') ?? 0),
     }));
 
+    const receitaMap = new Map(
+      receitaPorServico.map((r) => [r.servicoId, r]),
+    );
+
+    const receitaPorServicoCompleto = todosServicos.map((servico) => {
+      const dados = receitaMap.get(servico.id);
+      return {
+        servicoId: servico.id,
+        nome: servico.nome,
+        totalSolicitacoes: dados?.totalSolicitacoes ?? 0,
+        receitaTotal: dados?.receitaTotal ?? 0,
+      };
+    });
+
     const receitaRealizada = Number(receitaRealizadaResult?.total ?? 0);
     const receitaPendente = Number(receitaPendenteRaw ?? 0);
     const receitaTaxa = Number(receitaTaxaRaw ?? 0);
@@ -350,7 +369,7 @@ export class DashboardService {
         ativos: servicosAtivos,
         pausados: servicosPausados,
         maisSolicitados,
-        receitaPorServico,
+        receitaPorServicoCompleto,
       },
       financeiro: {
         receitaRealizada,
