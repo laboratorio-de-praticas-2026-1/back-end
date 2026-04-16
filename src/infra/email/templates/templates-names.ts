@@ -1,7 +1,3 @@
 export const CONTATO_DUVIDA_CLIENTE = 'contato';
-export const STATUS_AGUARDANDO_DOCUMENTO = 'status-aguardando-documento';
-export const STATUS_AGUARDANDO_PAGAMENTO = 'status-aguardando-pagamento';
-export const STATUS_FINALIZADO = 'status-finalizado';
-export const STATUS_CANCELADO = 'status-cancelado';
-export const STATUS_EM_ANDAMENTO = 'status-em-andamento';
 export const NOTIFICACAO_DEBITOS_PRAZOS = 'notificacao-debitos-prazos';
+export const STATUS_UPDATE = 'status-update';

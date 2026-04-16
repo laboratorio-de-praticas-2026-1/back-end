@@ -504,7 +504,7 @@ describe('SolicitacaoService', () => {
       expect(mockEmailService.enviarEmail).toHaveBeenCalledWith(
         expect.objectContaining({
           to: 'amanda@email.com',
-          template: 'status-aguardando-pagamento',
+          template: 'status-update',
         }),
       );
     });
@@ -522,7 +522,7 @@ describe('SolicitacaoService', () => {
       expect(mockEmailService.enviarEmail).toHaveBeenCalledWith(
         expect.objectContaining({
           to: 'amanda@email.com',
-          template: 'status-aguardando-documento',
+          template: 'status-update',
         }),
       );
     });
@@ -540,7 +540,7 @@ describe('SolicitacaoService', () => {
       expect(mockEmailService.enviarEmail).toHaveBeenCalledWith(
         expect.objectContaining({
           to: 'amanda@email.com',
-          template: 'status-finalizado',
+          template: 'status-update',
         }),
       );
     });
@@ -558,7 +558,7 @@ describe('SolicitacaoService', () => {
       expect(mockEmailService.enviarEmail).toHaveBeenCalledWith(
         expect.objectContaining({
           to: 'amanda@email.com',
-          template: 'status-cancelado',
+          template: 'status-update',
         }),
       );
     });
@@ -576,7 +576,7 @@ describe('SolicitacaoService', () => {
       expect(mockEmailService.enviarEmail).toHaveBeenCalledWith(
         expect.objectContaining({
           to: 'amanda@email.com',
-          template: 'status-em-andamento',
+          template: 'status-update',
         }),
       );
     });
