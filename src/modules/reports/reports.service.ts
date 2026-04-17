@@ -7,9 +7,52 @@ import { InjectModel } from '@nestjs/sequelize';
 import { plainToInstance } from 'class-transformer';
 import { CryptoUtil } from 'src/commons/utils/crypto';
 import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
-import { Relatorio } from 'src/models/relatorio.model';
+import { Relatorio, RelatorioCategoria } from 'src/models/relatorio.model';
+import { RelatorioCategoriaResponseDto } from './dto/categoria-response.dto';
 import { CreateReportDto } from './dto/create-report.dto';
 import { ResponseReportDto } from './dto/response-report.dto';
+
+function getCategoriaLabel(categoria: RelatorioCategoria): string {
+  switch (categoria) {
+    case RelatorioCategoria.RELATORIO_COMPLETO:
+      return 'Relatório Completo';
+
+    case RelatorioCategoria.PERFORMANCE_FINANCEIRA:
+      return 'Performance Financeira';
+
+    case RelatorioCategoria.DESEMPENHO_OPERACIONAL:
+      return 'Desempenho Operacional';
+
+    case RelatorioCategoria.PERFORMANCE_SERVICOS:
+      return 'Performance de Serviços';
+
+    case RelatorioCategoria.GESTAO_SOLICITACOES:
+      return 'Gestão de Solicitações';
+
+    case RelatorioCategoria.GESTAO_DOCUMENTOS:
+      return 'Gestão de Documentos';
+
+    case RelatorioCategoria.GESTAO_VEICULOS:
+      return 'Gestão de Veículos';
+
+    case RelatorioCategoria.BASE_CLIENTES:
+      return 'Base de Clientes';
+
+    case RelatorioCategoria.ANALISE_EFICIENCIA:
+      return 'Análise de Eficiência';
+
+    case RelatorioCategoria.FUNIL_CONVERSAO:
+      return 'Funil de Conversão';
+
+    case RelatorioCategoria.GARGALOS_OPERACIONAIS:
+      return 'Gargalos Operacionais';
+
+    default:
+      throw new InternalServerErrorException(
+        `Erro ao mapear categorias de relatório: categoria desconhecida`,
+      );
+  }
+}
 
 @Injectable()
 export class ReportsService {
@@ -21,6 +64,15 @@ export class ReportsService {
     private readonly cloudinaryService: CloudinaryService,
     private readonly cryptoUtil: CryptoUtil,
   ) {}
+
+  getCategorias(): RelatorioCategoriaResponseDto[] {
+    return Object.values(RelatorioCategoria).map((categoria) => {
+      return new RelatorioCategoriaResponseDto(
+        getCategoriaLabel(categoria),
+        categoria,
+      );
+    });
+  }
 
   async generateReport(
     createReportDto: CreateReportDto,
