@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/sequelize';
 import { Debito, TipoDebito } from 'src/models/debito.model';
 import { DebitoVeiculo } from 'src/models/debito-veiculo.model';
 import { Veiculo } from 'src/models/veiculo.model';
-import { DebitoItemDto, DebitoResponseDto  } from './dto/debito-response.dto';
+import { DebitoItemDto, DebitoResponseDto } from './dto/debito-response.dto';
 
 @Injectable()
 export class DebitoService {
