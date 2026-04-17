@@ -1,68 +1,23 @@
 import { Controller, Get } from '@nestjs/common';
 import { ReportsService } from './reports.service';
+import { RelatorioCategoriaResponseDto } from './dto/categoria-response.dto';
+import { ApiOkResponse, ApiOperation, ApiProperty } from '@nestjs/swagger';
 
-@Controller('reports/categorias')
+@Controller('reports')
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
-  // Página principal
-  @Get()
-  getCategorias() {
+  @Get('categorias')
+  @ApiOperation({
+    summary: 'Retorna as categorias de relatórios disponíveis',
+    description:
+      'Fornece uma lista de categorias de relatórios, cada uma com um nome amigável e um valor identificador.',
+  })
+  @ApiOkResponse({
+    description: 'Lista de categorias de relatórios retornada com sucesso',
+    type: [RelatorioCategoriaResponseDto],
+  })
+  getCategorias(): RelatorioCategoriaResponseDto[] {
     return this.reportsService.getCategorias();
-  }
-
-  @Get('completo')
-  getRelatorioCompleto() {
-    return this.reportsService.getRelatorioCompleto();
-  }
-
-  @Get('financeiro')
-  getPerformanceFinanceira() {
-    return this.reportsService.getPerformanceFinanceira();
-  }
-
-  @Get('operacional')
-  getDesempenhoOperacional() {
-    return this.reportsService.getDesempenhoOperacional();
-  }
-
-  @Get('operacional/servicos')
-  getPerformanceServicos() {
-    return this.reportsService.getPerformanceServicos();
-  }
-
-  @Get('operacional/solicitacoes')
-  getGestaoSolicitacoes() {
-    return this.reportsService.getGestaoSolicitacoes();
-  }
-
-  @Get('operacional/documentos')
-  getGestaoDocumentos() {
-    return this.reportsService.getGestaoDocumentos();
-  }
-
-  @Get('operacional/veiculos')
-  getGestaoVeiculos() {
-    return this.reportsService.getGestaoVeiculos();
-  }
-
-  @Get('operacional/clientes')
-  getBaseClientes() {
-    return this.reportsService.getBaseClientes();
-  }
-
-  @Get('operacional/eficiencia')
-  getAnaliseEficiencia() {
-    return this.reportsService.getAnaliseEficiencia();
-  }
-
-  @Get('operacional/funil')
-  getFunilConversao() {
-    return this.reportsService.getFunilConversao();
-  }
-
-  @Get('operacional/gargalos')
-  getGargalosOperacionais() {
-    return this.reportsService.getGargalosOperacionais();
   }
 }
