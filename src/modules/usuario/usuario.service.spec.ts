@@ -140,43 +140,43 @@ describe('UsuarioService', () => {
   });
 
   describe('findAll', () => {
-  it('deve retornar lista de usuários sem senha', async () => {
-    const usuariosMock = [
-      {
-        get: jest.fn().mockReturnValue({
-          id: 1,
-          nome: 'Arthur',
-          email: 'arthur@email.com',
-          senha: 'hashed',
-        }),
-      },
-      {
-        get: jest.fn().mockReturnValue({
-          id: 2,
-          nome: 'João',
-          email: 'joao@email.com',
-          senha: 'hashed',
-        }),
-      },
-    ];
+    it('deve retornar lista de usuários sem senha', async () => {
+      const usuariosMock = [
+        {
+          get: jest.fn().mockReturnValue({
+            id: 1,
+            nome: 'Arthur',
+            email: 'arthur@email.com',
+            senha: 'hashed',
+          }),
+        },
+        {
+          get: jest.fn().mockReturnValue({
+            id: 2,
+            nome: 'João',
+            email: 'joao@email.com',
+            senha: 'hashed',
+          }),
+        },
+      ];
 
-    mockUsuarioModel.findAll.mockResolvedValue(usuariosMock);
+      mockUsuarioModel.findAll.mockResolvedValue(usuariosMock);
 
-    const result = await service.findAll();
+      const result = await service.findAll();
 
-    expect(mockUsuarioModel.findAll).toHaveBeenCalled();
+      expect(mockUsuarioModel.findAll).toHaveBeenCalled();
 
-    expect(result[0]).not.toHaveProperty('senha');
-    expect(result[1]).not.toHaveProperty('senha');
+      expect(result[0]).not.toHaveProperty('senha');
+      expect(result[1]).not.toHaveProperty('senha');
+    });
+
+    it('deve retornar lista vazia', async () => {
+      mockUsuarioModel.findAll.mockResolvedValue([]);
+
+      const result = await service.findAll();
+
+      expect(mockUsuarioModel.findAll).toHaveBeenCalled();
+      expect(result).toEqual([]);
+    });
   });
-
-  it('deve retornar lista vazia', async () => {
-    mockUsuarioModel.findAll.mockResolvedValue([]);
-
-    const result = await service.findAll();
-
-    expect(mockUsuarioModel.findAll).toHaveBeenCalled();
-    expect(result).toEqual([]);
-  });
-});
 });
