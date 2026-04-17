@@ -5,6 +5,7 @@ import {
   Body,
   ParseIntPipe,
   UseGuards,
+  Get
 } from '@nestjs/common';
 import { UsuarioService } from './usuario.service';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
@@ -21,5 +22,9 @@ export class UsuarioController {
     @Body() updateUsuarioDto: UpdateUsuarioDto,
   ) {
     return this.usuarioService.update(id, updateUsuarioDto);
+  }
+  @Get()
+  findAll() {
+    return this.usuarioService.findAll();
   }
 }

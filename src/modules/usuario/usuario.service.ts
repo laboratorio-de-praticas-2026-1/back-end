@@ -59,4 +59,12 @@ export class UsuarioService {
       );
     }
   }
+
+  async findAll(): Promise<ResponseUsuarioDto[]> {
+  const usuarios = await this.usuarioModel.findAll();
+
+  return plainToInstance(ResponseUsuarioDto, usuarios.map(u => u.get({ plain: true })), {
+    excludeExtraneousValues: true,
+  });
+}
 }
