@@ -127,12 +127,9 @@ export class SolicitacaoService {
     return solicitacao;
   }
 
-  async getSolicitacaoById(
-    id: number,
-  ): Promise<GetSolicitacaoResponseDto> {
-    const solicitacao: Solicitacao | null = await this.solicitacaoModel.findByPk(
-      id,
-      {
+  async getSolicitacaoById(id: number): Promise<GetSolicitacaoResponseDto> {
+    const solicitacao: Solicitacao | null =
+      await this.solicitacaoModel.findByPk(id, {
         include: [
           {
             model: Usuario,
@@ -147,8 +144,7 @@ export class SolicitacaoService {
             attributes: ['id', 'nome'],
           },
         ],
-      },
-    );
+      });
 
     if (!solicitacao) {
       throw new HttpException(
