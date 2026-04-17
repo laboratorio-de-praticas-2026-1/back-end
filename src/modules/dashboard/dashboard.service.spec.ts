@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/sequelize';
 import { DashboardService } from './dashboard.service';
-import { getModelToken } from '@nestjs/sequelize';
 import { Solicitacao } from '../../models/solicitacao.model';
 import { DocumentoSolicitacao } from '../../models/documento-solicitacao.model';
 import { Debito } from '../../models/debito.model';
@@ -9,6 +8,7 @@ import { Pagamento } from '../../models/pagamento.model';
 import { Parcela } from '../../models/parcela.model';
 import { DebitoServico } from 'src/models/debito-servico.model';
 import { Servico } from '../../models/servico.model';
+import { Usuario } from '../../models/usuario.model';
 
 describe('DashboardService', () => {
   let service: DashboardService;
@@ -30,6 +30,7 @@ describe('DashboardService', () => {
         { provide: getModelToken(Debito), useValue: mockModel },
         { provide: getModelToken(Pagamento), useValue: mockModel },
         { provide: getModelToken(Parcela), useValue: mockModel },
+        { provide: getModelToken(Usuario), useValue: mockModel },
       ],
     }).compile();
 

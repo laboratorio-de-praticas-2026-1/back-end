@@ -9,6 +9,7 @@ import { Pagamento } from '../../models/pagamento.model';
 import { Parcela } from '../../models/parcela.model';
 import { Servico } from '../../models/servico.model';
 import { DebitoServico } from '../../models/debito-servico.model';
+import { Usuario } from '../../models/usuario.model';
 
 const mockModel = { findAll: jest.fn(), findOne: jest.fn(), count: jest.fn() };
 
@@ -27,6 +28,7 @@ describe('DashboardController', () => {
         { provide: getModelToken(Parcela), useValue: mockModel },
         { provide: getModelToken(Servico), useValue: mockModel },
         { provide: getModelToken(DebitoServico), useValue: mockModel },
+        { provide: getModelToken(Usuario), useValue: mockModel },
       ],
     }).compile();
 

@@ -3,27 +3,23 @@ export class HistoricoMensalDto {
   receitaRealizada!: number;
 }
 
-/*débitos vencidos e não pagos*/
 export class InadimplenciaDto {
   valorTotal!: number;
   quantidadePagamentos!: number;
   quantidadeParcelas!: number;
 }
 
-/*Previsão de caixa para os próximos 30 dias*/
 export class PrevisaoCaixa30DiasDto {
   valorTotal!: number;
   quantidadeParcelas!: number;
 }
 
-/*Receita agrupada por canal de pagamento (pix, boleto, etc.) */
 export class PorMetodoPagamentoDto {
   metodo!: string;
   quantidade!: number;
   valorTotal!: number;
 }
 
-/*Receita agrupada por tipo de pagamento (à vista vs. parcelado)*/
 export class PorTipoPagamentoDto {
   tipo!: 'avista' | 'parcelado';
   quantidade!: number;
@@ -94,7 +90,24 @@ export class ServicosDto {
   }[];
 }
 
+export class GeralDto {
+  solicitacoesEmAberto!: number;
+  solicitacoesConcluidas!: number;
+  documentosPendentesValidacao!: number;
+  clientesNovosMesAtual!: number;
+  taxaCancelamentoPct!: number;
+  debitosEmAberto!: {
+    quantidade: number;
+    valorTotal: number;
+  };
+  parcelasVencidasNaoPagas!: {
+    quantidade: number;
+    valorTotal: number;
+  };
+}
+
 export class DashboardReturnDto {
+  geral!: GeralDto;
   solicitacoes!: SolicitacoesDto;
   financeiro!: FinanceiroDto;
   servicos!: ServicosDto;
