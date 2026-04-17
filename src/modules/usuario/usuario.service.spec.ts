@@ -6,11 +6,17 @@ import {
   NotFoundException,
   ConflictException,
   InternalServerErrorException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 
 jest.mock('bcrypt', () => ({
   hash: jest.fn().mockResolvedValue('hashed_password'),
+  compare: jest.fn(),
+}));
+
+jest.mock('jsonwebtoken', () => ({
+  sign: jest.fn().mockReturnValue('token_jwt_mock'),
 }));
 
 const mockUsuarioToJSON = {
@@ -116,6 +122,69 @@ describe('UsuarioService', () => {
 
       await expect(service.create(dtoBase)).rejects.toThrow(
         InternalServerErrorException,
+      );
+    });
+  });
+
+   describe('login', () => {
+    const dtoLogin = {
+      email: 'davi@example.com',
+      senha: 'senha123',
+    };
+
+    it('deve retornar token e dados do usuário com credenciais válidas', async () => {
+      mockUsuarioModel.findOne.mockResolvedValue(mockUsuario);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
+      const result = await service.login(dtoLogin);
+
+      expect(mockUsuarioModel.findOne).toHaveBeenCalledWith({
+        where: { email: dtoLogin.email },
+      });
+      expect(bcrypt.compare).toHaveBeenCalledWith(dtoLogin.senha, mockUsuario.senha);
+      expect(result).toEqual({
+        message: 'Login realizado com sucesso',
+        tokenJWT: 'token_jwt_mock',
+        usuario: {
+          id: mockUsuario.id,
+          nome: mockUsuario.nome,
+          email: mockUsuario.email,
+          nivel: mockUsuario.nivel,
+        },
+      });
+    });
+
+    it('não deve retornar o campo senha na resposta', async () => {
+      mockUsuarioModel.findOne.mockResolvedValue(mockUsuario);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
+      const result = await service.login(dtoLogin);
+
+      expect(result.usuario).not.toHaveProperty('senha');
+    });
+
+    it('deve lançar UnauthorizedException se o e-mail não existir', async () => {
+      mockUsuarioModel.findOne.mockResolvedValue(null);
+
+      await expect(service.login(dtoLogin)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('deve lançar UnauthorizedException se a senha estiver incorreta', async () => {
+      mockUsuarioModel.findOne.mockResolvedValue(mockUsuario);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
+      await expect(service.login(dtoLogin)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('deve retornar a mesma mensagem de erro para e-mail e senha inválidos', async () => {
+      mockUsuarioModel.findOne.mockResolvedValue(null);
+
+      await expect(service.login(dtoLogin)).rejects.toThrow(
+        'Email ou senha inválidos',
       );
     });
   });
