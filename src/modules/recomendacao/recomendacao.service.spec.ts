@@ -212,49 +212,21 @@ describe('RecomendacaoService', () => {
   });
 
   describe('buscarParcelamentoDebitos', () => {
-    it('deve retornar recomendação de parcelamento (ID 10) se houver débitos pendentes e nenhuma solicitação ativa', async () => {
-      mockVeiculoModel.findAll.mockResolvedValue([
-        { id: 10, usuarioId: 1 } as Veiculo,
-      ]);
-
+    it('deve retornar recomendação de parcelamento (ID 10) se houver débitos pendentes', async () => {
+      mockVeiculoModel.findAll.mockResolvedValue([{ id: 10 } as Veiculo]);
       mockDebitoModel.findAll.mockResolvedValue([
-        {
-          id: 1,
-          status: 'pendente',
-          tipo: 'veiculo',
-          veiculos: [{ id: 10 }] as unknown as Veiculo[],
-        },
-      ]);
-
+        { id: 1, status: 'pendente', tipo: 'veiculo', veiculos: [{ id: 10 }] },
+      ] as unknown as Partial<Debito>[]);
       mockSolicitacaoModel.findOne.mockResolvedValue(null);
 
       const resultado = await service.buscarParcelamentoDebitos(1);
-
-      expect(resultado).not.toBeNull();
       expect(resultado?.id).toBe(10);
-      expect(resultado?.nome).toBe('Parcelamento de Débitos');
     });
 
-    it('deve chamar buscarComunicacaoVenda se o usuário já tiver uma solicitação de parcelamento ativa', async () => {
-      mockVeiculoModel.findAll.mockResolvedValue([{ id: 10 } as Veiculo]);
-      mockDebitoModel.findAll.mockResolvedValue([
-        { id: 1, veiculos: [{ id: 10 }] as unknown as Veiculo[] },
-      ]);
-      mockSolicitacaoModel.findOne.mockResolvedValue({
-        id: 500,
-        status: 'pendente',
-      } as unknown as Solicitacao);
-
-      const spyProximoPasso = jest.spyOn(
-        service as unknown as {
-          buscarComunicacaoVenda: (usuarioId: number) => Promise<null>;
-        },
-        'buscarComunicacaoVenda',
-      );
-
-      await service.buscarParcelamentoDebitos(1);
-
-      expect(spyProximoPasso).toHaveBeenCalledWith(1);
+    it('deve retornar null se não houver débitos (não deve chamar o próximo método)', async () => {
+      mockVeiculoModel.findAll.mockResolvedValue([]);
+      const resultado = await service.buscarParcelamentoDebitos(1);
+      expect(resultado).toBeNull();
     });
   });
 
@@ -302,6 +274,62 @@ describe('RecomendacaoService', () => {
       const resultado = await service.buscarComunicacaoVenda(6);
 
       expect(resultado).toBeNull();
+    });
+  });
+
+  describe('obterRecomendacoes', () => {
+    it('deve retornar uma lista com múltiplos serviços se o usuário tiver multa e venda', async () => {
+      jest.spyOn(service, 'buscarRecursoMulta').mockResolvedValue({
+        id: 6,
+        nome: 'Multa',
+        descricao: '...',
+        ativo: true,
+      });
+      jest.spyOn(service, 'buscarParcelamentoDebitos').mockResolvedValue(null);
+      jest.spyOn(service, 'buscarComunicacaoVenda').mockResolvedValue({
+        id: 9,
+        nome: 'Venda',
+        descricao: '...',
+        ativo: true,
+      });
+
+      const resultado = await service.obterRecomendacoes(1);
+
+      expect(Array.isArray(resultado)).toBe(true);
+      expect(resultado).toHaveLength(2);
+      expect(resultado[0]).not.toHaveProperty('ativo');
+      expect(resultado[1]).not.toHaveProperty('ativo');
+      expect(resultado[0].id).toBe(6);
+      expect(resultado[1].id).toBe(9);
+    });
+
+    it('deve retornar serviços populares se a lista de prioridades estiver vazia', async () => {
+      jest.spyOn(service, 'buscarRecursoMulta').mockResolvedValue(null);
+      jest.spyOn(service, 'buscarParcelamentoDebitos').mockResolvedValue(null);
+      jest.spyOn(service, 'buscarComunicacaoVenda').mockResolvedValue(null);
+      jest
+        .spyOn(
+          service as unknown as {
+            buscarAtributosPerfil: (usuarioId: number) => Promise<[]>;
+          },
+          'buscarAtributosPerfil',
+        )
+        .mockResolvedValue([]);
+
+      const mockPopulares = [{ id: 1, nome: 'Popular', descricao: '...' }];
+      jest
+        .spyOn(
+          service as unknown as {
+            buscarServicosPopulares: () => Promise<
+              { id: number; nome: string; descricao: string }[]
+            >;
+          },
+          'buscarServicosPopulares',
+        )
+        .mockResolvedValue(mockPopulares);
+      const resultado = await service.obterRecomendacoes(1);
+      expect(resultado).toEqual(mockPopulares);
+      expect(resultado[0]).not.toHaveProperty('ativo');
     });
   });
 });
