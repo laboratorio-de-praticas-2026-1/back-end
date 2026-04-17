@@ -4,24 +4,24 @@ import { SequelizeModule } from '@nestjs/sequelize';
 import { UtilsModule } from './commons/utils/utils.module';
 import { CloudinaryModule } from './infra/cloudinary/cloudinary.module';
 import { FileConversorModule } from './infra/conversor/file-conversor/file-conversor.module';
+import { EmailModule } from './infra/email/email.module';
 import { BlogModule } from './modules/blog/blog.module';
 import { BuscaModule } from './modules/busca/busca.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { ContatoModule } from './modules/contato/contato.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { DebitoModule } from './modules/debito/debito.module';
 import { FaqModule } from './modules/faq/faq.module';
 import { HeaderModule } from './modules/header/header.module';
 import { MapaModule } from './modules/mapa/mapa.module';
 import { NotificacaoModule } from './modules/notificacao/notificacao.module';
 import { PublicidadeModule } from './modules/publicidade/publicidade.module';
-import { EmailModule } from './infra/email/email.module';
 import { RecomendacaoModule } from './modules/recomendacao/recomendacao.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { ServicosModule } from './modules/servicos/servicos.module';
 import { SimuladorModule } from './modules/simulador/simulador.module';
 import { SolicitacaoModule } from './modules/solicitacao/solicitacao.module';
 import { UsuarioModule } from './modules/usuario/usuario.module';
-
 @Module({
   imports: [
     ConfigModule.forRoot({ envFilePath: '.env', isGlobal: true }),
@@ -58,6 +58,7 @@ import { UsuarioModule } from './modules/usuario/usuario.module';
     SolicitacaoModule,
     UtilsModule,
     FileConversorModule,
+    DebitoModule,
   ],
 
   controllers: [],

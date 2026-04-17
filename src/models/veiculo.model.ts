@@ -3,10 +3,12 @@ import {
   Column,
   DataType,
   ForeignKey,
+  HasMany,
   Model,
   Table,
 } from 'sequelize-typescript';
 import { Usuario } from './usuario.model';
+import { DebitoVeiculo } from './debito-veiculo.model';
 
 @Table({ tableName: 'veiculo' })
 export class Veiculo extends Model {
@@ -57,4 +59,7 @@ export class Veiculo extends Model {
     allowNull: true,
   })
   declare anoModelo: number | null;
+
+  @HasMany(() => DebitoVeiculo)
+  declare debitoVeiculos: DebitoVeiculo[];
 }
