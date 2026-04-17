@@ -15,13 +15,12 @@ import { plainToInstance } from 'class-transformer';
 import { LoginUsuarioDto } from './dto/login-usuario.dto';
 import { JwtService } from '@nestjs/jwt';
 
-const jwt = new JwtService();
-
 @Injectable()
 export class UsuarioService {
   constructor(
     @InjectModel(Usuario)
     private readonly usuarioModel: typeof Usuario,
+    private readonly jwtService: JwtService,
   ) {}
 
   async create(dto: CreateUsuarioDto): Promise<ResponseUsuarioDto> {
@@ -72,14 +71,9 @@ export class UsuarioService {
       throw new UnauthorizedException('Email ou senha inválidos');
     }
 
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) {
-      throw new InternalServerErrorException('JWT_SECRET não configurada');
-    }
-    const tokenJWT = jwt.sign(
+    const tokenJWT = this.jwtService.sign(
       { id: usuario.id, nivel: usuario.nivel },
       {
-        secret: jwtSecret,
         expiresIn: '1d',
       },
     );

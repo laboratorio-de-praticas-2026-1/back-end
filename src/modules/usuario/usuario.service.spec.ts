@@ -9,14 +9,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
 
 jest.mock('bcrypt', () => ({
   hash: jest.fn().mockResolvedValue('hashed_password'),
   compare: jest.fn(),
-}));
-
-jest.mock('jsonwebtoken', () => ({
-  sign: jest.fn().mockReturnValue('token_jwt_mock'),
 }));
 
 const mockUsuarioToJSON = {
@@ -51,6 +48,10 @@ const mockUsuarioModel = {
   create: jest.fn(),
 };
 
+const mockJwtService = {
+  sign: jest.fn().mockReturnValue('token_jwt_mock'),
+};
+
 describe('UsuarioService', () => {
   let service: UsuarioService;
 
@@ -61,6 +62,10 @@ describe('UsuarioService', () => {
         {
           provide: getModelToken(Usuario),
           useValue: mockUsuarioModel,
+        },
+        {
+          provide: JwtService,
+          useValue: mockJwtService,
         },
       ],
     }).compile();
@@ -142,6 +147,10 @@ describe('UsuarioService', () => {
         where: { email: dtoLogin.email },
       });
       expect(bcrypt.compare).toHaveBeenCalledWith(dtoLogin.senha, mockUsuario.senha);
+      expect(mockJwtService.sign).toHaveBeenCalledWith(
+        { id: mockUsuario.id, nivel: mockUsuario.nivel },
+        { expiresIn: '1d' },
+      );
       expect(result).toEqual({
         message: 'Login realizado com sucesso',
         tokenJWT: 'token_jwt_mock',
