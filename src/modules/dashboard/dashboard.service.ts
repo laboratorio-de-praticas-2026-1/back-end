@@ -8,6 +8,7 @@ import { Parcela } from 'src/models/parcela.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
 import { Servico } from 'src/models/servico.model';
 import { DebitoServico } from 'src/models/debito-servico.model';
+import { Usuario } from 'src/models/usuario.model';
 import { DashboardReturnDto } from './dto/dashboard-return.dto';
 import type { ModelCtor } from 'sequelize-typescript';
 import type {
@@ -45,6 +46,8 @@ export class DashboardService {
     private readonly servicoModel: typeof Servico,
     @InjectModel(DebitoServico)
     private readonly debitoServicoModel: typeof DebitoServico,
+    @InjectModel(Usuario)
+    private readonly usuarioModel: typeof Usuario,
   ) {}
 
   private gerarMesesNoPeriodo(inicio: Date, fim: Date): string[] {
@@ -170,6 +173,13 @@ export class DashboardService {
         where: { statusValidacao: 'pendente' },
       }),
 
+      this.usuarioModel.count({
+        where: {
+          nivel: 'cliente',
+          dataCadastro: { [Op.between]: [dataInicio, dataFim] },
+        },
+      }),
+
       this.solicitacaoModel.count({
         where: {
           status: 'concluido',
@@ -229,6 +239,7 @@ export class DashboardService {
         ResultadoReceita | null,
         number,
         number,
+        number,
         ResultadoTicketMedio | null,
         ResultadoHistoricoMensal[],
         ResultadoInadimplencia | null,
@@ -245,6 +256,10 @@ export class DashboardService {
       }) as unknown as Promise<ResultadoReceita | null>,
 
       this.debitoModel.sum('valor', {
+        where: { status: 'pendente' },
+      }),
+
+      this.debitoModel.count({
         where: { status: 'pendente' },
       }),
 
@@ -327,6 +342,7 @@ export class DashboardService {
         foraDoPrazoQuantidade,
         totalConcluidas,
         documentosPendentesValidacao,
+        clientesNovosMesAtual,
         solicitacoesConcluidas,
         servicosAtivos,
         servicosPausados,
@@ -336,6 +352,7 @@ export class DashboardService {
       [
         receitaRealizadaResult,
         receitaPendenteRaw,
+        debitosEmAbertoQuantidade,
         receitaTaxaRaw,
         ticketMedioResult,
         historicoMensalResult,
@@ -371,6 +388,27 @@ export class DashboardService {
 
       return acc;
     }, porStatusBase);
+
+    const solicitacoesEmAberto =
+      porStatus.recebido +
+      porStatus.emAndamento +
+      porStatus.aguardandoPagamento +
+      porStatus.aguardandoDocumento;
+
+    const totalSolicitacoesPeriodo =
+      porStatus.recebido +
+      porStatus.emAndamento +
+      porStatus.aguardandoPagamento +
+      porStatus.aguardandoDocumento +
+      porStatus.concluido +
+      porStatus.cancelado;
+
+    const taxaCancelamentoPct =
+      totalSolicitacoesPeriodo > 0
+        ? Number(
+            ((porStatus.cancelado / totalSolicitacoesPeriodo) * 100).toFixed(2),
+          )
+        : 0;
 
     const tempoConclusaoPorServico = tempoConclusaoPorServicoRaw.map(
       (item) => ({
@@ -466,6 +504,16 @@ export class DashboardService {
       quantidadeParcelas: Number(previsaoCaixaResult?.quantidadeParcelas ?? 0),
     };
 
+    const debitosEmAberto = {
+      quantidade: Number(debitosEmAbertoQuantidade ?? 0),
+      valorTotal: Number(receitaPendenteRaw ?? 0),
+    };
+
+    const parcelasVencidasNaoPagas = {
+      quantidade: Number(inadimplenciaResult?.quantidadeParcelas ?? 0),
+      valorTotal: Number(inadimplenciaResult?.valorTotal ?? 0),
+    };
+
     const porMetodoPagamento = porMetodoResult.map(
       (m: ResultadoDistribuicaoMetodo) => ({
         metodo: m.metodo,
@@ -485,6 +533,15 @@ export class DashboardService {
     // ─── Retorno ─────────────────────────────────────────────────────────────
 
     return {
+      geral: {
+        solicitacoesEmAberto,
+        solicitacoesConcluidas,
+        documentosPendentesValidacao,
+        clientesNovosMesAtual,
+        taxaCancelamentoPct,
+        debitosEmAberto,
+        parcelasVencidasNaoPagas,
+      },
       solicitacoes: {
         porStatus,
         proximasDeVencer: {

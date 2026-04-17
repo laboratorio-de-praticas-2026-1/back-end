@@ -94,7 +94,24 @@ export class ServicosDto {
   }[];
 }
 
+export class GeralDto {
+  solicitacoesEmAberto!: number;
+  solicitacoesConcluidas!: number;
+  documentosPendentesValidacao!: number;
+  clientesNovosMesAtual!: number;
+  taxaCancelamentoPct!: number;
+  debitosEmAberto!: {
+    quantidade: number;
+    valorTotal: number;
+  };
+  parcelasVencidasNaoPagas!: {
+    quantidade: number;
+    valorTotal: number;
+  };
+}
+
 export class DashboardReturnDto {
+  geral!: GeralDto;
   solicitacoes!: SolicitacoesDto;
   financeiro!: FinanceiroDto;
   servicos!: ServicosDto;
