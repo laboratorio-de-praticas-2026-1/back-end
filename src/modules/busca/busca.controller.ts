@@ -13,7 +13,7 @@ import { ApiOperation } from '@nestjs/swagger';
 @Controller('busca')
 export class BuscaController {
   private readonly logger = new Logger(BuscaController.name);
-  constructor(private readonly buscaService: BuscaService) { }
+  constructor(private readonly buscaService: BuscaService) {}
 
   @Get('blog/periodo')
   @ApiOperation({
@@ -111,9 +111,7 @@ export class BuscaController {
     itens: Servico[];
     mensagem?: string;
   }> {
-    this.logger.log(
-      `Listando servicos com filtro: ${termo ?? 'sem filtro'}`,
-    );
+    this.logger.log(`Listando servicos com filtro: ${termo ?? 'sem filtro'}`);
     return this.buscaService.listarServicosByTermo(termo);
   }
 }

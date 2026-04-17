@@ -20,7 +20,7 @@ export class BuscaService {
     @InjectModel(Servico) private servicoModel: typeof Servico,
     @InjectModel(Publicidade) private publicidadeModel: typeof Publicidade,
     @InjectModel(Usuario) private usuarioModel: typeof Usuario,
-  ) { }
+  ) {}
 
   async buscarBlogsPorIntervaloDeData(
     dto: BuscaBlogIntervaloDto,
@@ -250,7 +250,9 @@ export class BuscaService {
     const termoNormalizado = termo?.trim();
 
     if (!termoNormalizado) {
-      const itens = await this.servicoModel.findAll({ order: [['id', 'DESC']] });
+      const itens = await this.servicoModel.findAll({
+        order: [['id', 'DESC']],
+      });
 
       return {
         itens,
@@ -276,7 +278,9 @@ export class BuscaService {
     if (termoEhInteiroDecimal) {
       const termoComoInteiro = parseInt(termoNormalizado, 10);
       if (!Number.isNaN(termoComoInteiro)) {
-        filtros.push(where(col('prazo_estimado_dias'), Op.eq, termoComoInteiro));
+        filtros.push(
+          where(col('prazo_estimado_dias'), Op.eq, termoComoInteiro),
+        );
       }
     }
 
