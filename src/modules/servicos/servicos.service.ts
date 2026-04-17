@@ -34,6 +34,10 @@ export class ServicosService {
   ): Promise<Servico> {
     const servico = await this.findOne(id);
 
+    if (!servico) {
+      throw new NotFoundException(`Serviço com id ${id} não encontrado`);
+    }
+
     await servico.update({
       nome: servicoDto.nome ?? servico.nome,
       descricao: servicoDto.descricao ?? servico.descricao,
@@ -49,6 +53,11 @@ export class ServicosService {
 
   async deleteServico(id: number): Promise<void> {
     const servico = await this.findOne(id);
+
+    if (!servico) {
+      throw new NotFoundException(`Serviço com id ${id} não encontrado`);
+    }
+
     await servico.destroy();
   }
 
