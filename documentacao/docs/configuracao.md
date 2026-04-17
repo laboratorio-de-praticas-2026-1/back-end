@@ -45,6 +45,16 @@ Com a API em execução, acesse:
 http://localhost:3000/swagger
 ```
 
+## Swagger em ambientes deployados
+
+| Branch | URL |
+| --- | --- |
+| `main` | https://backend-main-412027788376.southamerica-east1.run.app/swagger |
+| `develop` | https://backend-develop-412027788376.southamerica-east1.run.app/swagger |
+| `release` | https://backend-release-entrega-09-04-412027788376.southamerica-east1.run.app/swagger |
+
+Esses endpoints sao uteis para validacao integrada apos merge/deploy.
+
 ## Scripts úteis
 
 | Script | Função |

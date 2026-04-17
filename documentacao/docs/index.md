@@ -30,6 +30,16 @@ Esta documentação cobre exclusivamente o back-end atual do repositório, imple
 3. Rodar a API: `npm run start:dev`
 4. Abrir Swagger: `http://localhost:3000/swagger`
 
+## Ambientes de deploy
+
+| Branch | URL do Swagger |
+| --- | --- |
+| `main` | https://backend-main-412027788376.southamerica-east1.run.app/swagger |
+| `develop` | https://backend-develop-412027788376.southamerica-east1.run.app/swagger |
+| `release` | https://backend-release-entrega-09-04-412027788376.southamerica-east1.run.app/swagger |
+
+Use essas URLs para validar comportamento em ambiente remoto, mantendo o localhost para desenvolvimento e depuração local.
+
 ## Mapa da documentação
 
 - **Configuração do Ambiente**: setup local e variáveis

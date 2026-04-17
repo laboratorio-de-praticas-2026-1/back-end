@@ -47,7 +47,6 @@ Cada módulo segue a estrutura típica:
 
 ## Módulos registrados atualmente
 
-- agendamento
 - blog
 - busca
 - chat
@@ -62,4 +61,5 @@ Cada módulo segue a estrutura típica:
 - reports
 - servicos
 - simulador
+- solicitacao
 - usuario
