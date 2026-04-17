@@ -1,3 +1,5 @@
+import { ApiProperty } from "@nestjs/swagger";
+
 export class HistoricoMensalDto {
   mes!: string;
   receitaRealizada!: number;
@@ -94,7 +96,39 @@ export class ServicosDto {
   }[];
 }
 
+class FinanceiroItemDto {
+  @ApiProperty()
+  quantidade: number;
+
+  @ApiProperty()
+  valorTotal: number;
+}
+
+class GeralDashboardDto {
+  @ApiProperty()
+  solicitacoesEmAberto: number;
+
+  @ApiProperty()
+  solicitacoesConcluidas: number;
+
+  @ApiProperty()
+  documentosPendentesValidacao: number;
+
+  @ApiProperty()
+  clientesNovosMesAtual: number;
+
+  @ApiProperty()
+  taxaCancelamentoPct: number;
+
+  @ApiProperty({ type: FinanceiroItemDto })
+  debitosEmAberto: FinanceiroItemDto;
+
+  @ApiProperty({ type: FinanceiroItemDto })
+  parcelasVencidasNaoPagas: FinanceiroItemDto;
+}
+
 export class DashboardReturnDto {
+  geral!: GeralDashboardDto;
   solicitacoes!: SolicitacoesDto;
   financeiro!: FinanceiroDto;
   servicos!: ServicosDto;
