@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { StatusDebito } from '../../../models/debito.model';
+import { StatusDebito } from 'src/models/debito.model';
 
 export class DebitoItemDto {
   @ApiProperty({ example: 1 })
