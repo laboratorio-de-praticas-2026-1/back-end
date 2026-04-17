@@ -51,7 +51,7 @@ export class UsuarioService {
     }
   }
 
-async login(dto: LoginUsuarioDto): Promise<{
+  async login(dto: LoginUsuarioDto): Promise<{
     message: string;
     tokenJWT: string;
     usuario: Pick<Usuario, 'id' | 'nome' | 'email' | 'nivel'>;
@@ -70,10 +70,13 @@ async login(dto: LoginUsuarioDto): Promise<{
       throw new UnauthorizedException('Email ou senha inválidos');
     }
 
-
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      throw new InternalServerErrorException('JWT_SECRET não configurada');
+    }
     const tokenJWT = jwt.sign(
       { id: usuario.id, nivel: usuario.nivel },
-      process.env.JWT_SECRET ?? 'secret',
+      jwtSecret,
       { expiresIn: '1d' },
     );
 
