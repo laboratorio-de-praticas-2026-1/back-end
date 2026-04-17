@@ -1,16 +1,25 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { col, Op, where } from 'sequelize';
+import { col, fn, Op, where } from 'sequelize';
 import { Banner } from 'src/models/banner.model';
 import { Blog } from 'src/models/blog.model';
+import { Servico } from 'src/models/servico.model';
+import { Usuario } from 'src/models/usuario.model';
 import { BuscaBannerStatusDto } from './dto/busca-banner-status.dto';
 import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
+import { BuscaServicoFiltroDto } from './dto/busca-servico-filtro.dto';
+import { Publicidade } from 'src/models/publicidade.model';
+import { BuscaPublicidadeStatusDto } from './dto/busca-publicidade-status.dto';
+import { BuscaUsuarioFiltroDto } from './dto/busca-usuario-filtro.dto';
 
 @Injectable()
 export class BuscaService {
   constructor(
     @InjectModel(Blog) private blogModel: typeof Blog,
     @InjectModel(Banner) private bannerModel: typeof Banner,
+    @InjectModel(Servico) private servicoModel: typeof Servico,
+    @InjectModel(Publicidade) private publicidadeModel: typeof Publicidade,
+    @InjectModel(Usuario) private usuarioModel: typeof Usuario,
   ) {}
 
   async buscarBlogsPorIntervaloDeData(
@@ -46,9 +55,76 @@ export class BuscaService {
     });
   }
 
+  async buscarServicosPorFiltros(
+    dto: BuscaServicoFiltroDto,
+  ): Promise<Servico[]> {
+    const filtros = [
+      ...(dto.valor_base !== undefined
+        ? [where(col('valor_base'), Op.eq, dto.valor_base)]
+        : []),
+      ...(dto.prazo_estimado !== undefined
+        ? [where(col('prazo_estimado_dias'), Op.eq, dto.prazo_estimado)]
+        : []),
+      ...(dto.status
+        ? [where(col('ativo'), Op.eq, dto.status === 'ativo')]
+        : []),
+    ];
+
+    if (filtros.length === 0) {
+      return await this.servicoModel.findAll({ order: [['id', 'ASC']] });
+    }
+
+    return await this.servicoModel.findAll({
+      where: {
+        [Op.and]: filtros,
+      },
+      order: [['id', 'ASC']],
+    });
+  }
+
+  async buscarUsuariosPorFiltros(
+    dto: BuscaUsuarioFiltroDto,
+  ): Promise<Usuario[]> {
+    const nivelUsuario = dto.nivel_usuario?.toLowerCase() as
+      | 'cliente'
+      | 'administrador'
+      | undefined;
+
+    const filtros = [
+      ...(nivelUsuario !== undefined
+        ? [where(col('nivel'), Op.eq, nivelUsuario)]
+        : []),
+      ...(dto.data_cadastro !== undefined
+        ? [where(fn('DATE', col('data_cadastro')), Op.eq, dto.data_cadastro)]
+        : []),
+    ];
+
+    if (filtros.length === 0) {
+      return await this.usuarioModel.findAll({ order: [['id', 'ASC']] });
+    }
+
+    return await this.usuarioModel.findAll({
+      where: {
+        [Op.and]: filtros,
+      },
+      order: [['id', 'ASC']],
+    });
+  }
+
   async buscarBannerPorStatus(dto: BuscaBannerStatusDto): Promise<Banner[]> {
     const ativo = dto.status === 'ativo';
     return await this.bannerModel.findAll({
+      where: {
+        ativo,
+      },
+    });
+  }
+
+  async buscarPublicidadePorStatus(
+    dto: BuscaPublicidadeStatusDto,
+  ): Promise<Publicidade[]> {
+    const ativo = dto.status === 'ativo';
+    return await this.publicidadeModel.findAll({
       where: {
         ativo,
       },

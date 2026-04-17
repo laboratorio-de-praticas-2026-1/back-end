@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Documentacao tecnica do back-end NestJS do projeto Bortone">
+        <meta name="description" content="Documentação técnica do back-end NestJS do projeto Bortone">
       
       
       
@@ -14,7 +14,7 @@
         <link rel="prev" href="../modulos-e-endpoints/">
       
       
-        <link rel="next" href="../../dados/modelos-sequelize/">
+        <link rel="next" href="../swagger-embed/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>WebSocket (Chat) - Back-end Bortone - Documentacao Tecnica</title>
+        <title>WebSocket (Chat) - Back-end Bortone - Documentação Técnica</title>
       
     
     
@@ -92,7 +92,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Cabeçalho">
-    <a href="../.." title="Back-end Bortone - Documentacao Tecnica" class="md-header__button md-logo" aria-label="Back-end Bortone - Documentacao Tecnica" data-md-component="logo">
+    <a href="../.." title="Back-end Bortone - Documentação Técnica" class="md-header__button md-logo" aria-label="Back-end Bortone - Documentação Técnica" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -106,7 +106,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            Back-end Bortone - Documentacao Tecnica
+            Back-end Bortone - Documentação Técnica
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -333,13 +333,13 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navegação" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="Back-end Bortone - Documentacao Tecnica" class="md-nav__button md-logo" aria-label="Back-end Bortone - Documentacao Tecnica" data-md-component="logo">
+    <a href="../.." title="Back-end Bortone - Documentação Técnica" class="md-nav__button md-logo" aria-label="Back-end Bortone - Documentação Técnica" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
-    Back-end Bortone - Documentacao Tecnica
+    Back-end Bortone - Documentação Técnica
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -591,7 +591,7 @@
   <a href="#estado-de-implementacao" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Estado de implementacao
+        Estado de implementação
       
     </span>
   </a>
@@ -599,10 +599,49 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#impacto-atual" class="md-nav__link">
+  <a href="#evento-principal" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Impacto atual
+        Evento principal
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Evento principal">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entrada-client-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entrada (client -&gt; server)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#saida-server-client" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Saida (server -&gt; client)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#regras-de-comunicacao-atuais" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Regras de comunicacao atuais
       
     </span>
   </a>
@@ -613,7 +652,7 @@
   <a href="#proximo-passo-recomendado" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Proximo passo recomendado
+        Próximo passo recomendado
       
     </span>
   </a>
@@ -624,6 +663,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../swagger-embed/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Swagger (Embed)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -769,24 +836,55 @@
 
 
 
-<h1 id="websocket-modulo-chat">WebSocket - modulo chat</h1>
+<h1 id="websocket-modulo-chat">WebSocket - módulo chat</h1>
 <h2 id="estrutura-atual">Estrutura atual</h2>
 <p>O projeto possui um gateway em <code>src/modules/chat/chat.gateway.ts</code> com <code>@WebSocketGateway()</code>.</p>
-<h2 id="estado-de-implementacao">Estado de implementacao</h2>
+<h2 id="estado-de-implementacao">Estado de implementação</h2>
 <ul>
 <li>Gateway registrado: <strong>sim</strong></li>
-<li>Namespace customizado: <strong>nao definido</strong></li>
-<li>Eventos com <code>@SubscribeMessage(...)</code>: <strong>nao implementados no momento</strong></li>
+<li>Namespace customizado: <strong>não definido</strong></li>
+<li>Evento com <code>@SubscribeMessage(...)</code>: <strong>implementado</strong> (<code>chat</code>)</li>
+<li>Autenticação por token no handshake: <strong>sim</strong></li>
+<li>Controle de regras de envio: <strong>sim</strong> (cooldown, rate limit e bloqueio de duplicadas)</li>
 </ul>
-<h2 id="impacto-atual">Impacto atual</h2>
-<p>No estado atual, a infraestrutura de WebSocket existe apenas como base de projeto, sem handlers de eventos para emissao/escuta.</p>
-<h2 id="proximo-passo-recomendado">Proximo passo recomendado</h2>
-<p>Quando a funcionalidade de chat for implementada, documentar:</p>
+<h2 id="evento-principal">Evento principal</h2>
+<h3 id="entrada-client-server">Entrada (<code>client -&gt; server</code>)</h3>
+<ul>
+<li>Evento: <code>chat</code></li>
+<li>Payload esperado (resumo):<ul>
+<li><code>type</code>: atualmente tratado para <code>message</code></li>
+<li><code>text</code>: texto da mensagem</li>
+<li><code>to</code>: id do usuario destino (quando remetente e atendente)</li>
+</ul>
+</li>
+</ul>
+<h3 id="saida-server-client">Saida (<code>server -&gt; client</code>)</h3>
+<p>Mensagens sao emitidas no evento <code>chat</code>, com tipos como:</p>
+<ul>
+<li><code>status</code></li>
+<li><code>history</code></li>
+<li><code>users</code></li>
+<li><code>agents</code></li>
+<li><code>message</code></li>
+<li><code>error</code></li>
+</ul>
+<h2 id="regras-de-comunicacao-atuais">Regras de comunicacao atuais</h2>
+<ul>
+<li>Conexao exige token valido no handshake (<code>auth.token</code> ou header <code>token</code>).</li>
+<li>Usuarios sao separados por perfil (cliente x administrador).</li>
+<li>Janela de funcionamento validada por horario (<code>dentroHorario</code>).</li>
+<li>Cooldown entre mensagens: 3 segundos.</li>
+<li>Rate limit: ate 10 mensagens por minuto por usuario.</li>
+<li>Bloqueio de mensagens duplicadas em janela curta.</li>
+<li>Sanitizacao basica do texto para reduzir risco de injecao HTML.</li>
+</ul>
+<h2 id="proximo-passo-recomendado">Próximo passo recomendado</h2>
+<p>Para evolucao da documentacao, detalhar:</p>
 <ol>
-<li>Namespace e autenticacao do socket</li>
-<li>Eventos de entrada (<code>client -&gt; server</code>)</li>
-<li>Eventos de saida (<code>server -&gt; client</code>)</li>
-<li>Payloads esperados e codigos de erro</li>
+<li>Namespace e autenticação do socket</li>
+<li>Contrato completo de payload por tipo de evento (<code>chat</code>)</li>
+<li>Eventos de saída (<code>server -&gt; client</code>) com exemplos reais</li>
+<li>Payloads esperados e códigos de erro</li>
 <li>Politica de reconexao e heartbeat</li>
 </ol>
 
