@@ -13,7 +13,9 @@ import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { ResponseUsuarioDto } from './dto/response-usuario.dto';
 import { plainToInstance } from 'class-transformer';
 import { LoginUsuarioDto } from './dto/login-usuario.dto';
-import * as jwt from 'jsonwebtoken';
+import { JwtService } from '@nestjs/jwt';
+
+const jwt = new JwtService();
 
 @Injectable()
 export class UsuarioService {
