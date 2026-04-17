@@ -14,7 +14,7 @@ pip install mkdocs mkdocs-material pymdown-extensions
 cd documentacao
 ```
 
-### 3. Subir servidor local
+###  3. Subir servidor local
 
 ```bash
 mkdocs serve
