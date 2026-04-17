@@ -5,11 +5,12 @@ import {
   Body,
   ParseIntPipe,
   UseGuards,
-  Get
+  Get,
 } from '@nestjs/common';
 import { UsuarioService } from './usuario.service';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { UsuarioOwnerGuard } from './guards/usuario-owner.guard';
+import { AdminGuard } from './guards/admin.guard';
 
 @Controller('usuario')
 export class UsuarioController {
@@ -23,7 +24,9 @@ export class UsuarioController {
   ) {
     return this.usuarioService.update(id, updateUsuarioDto);
   }
+
   @Get()
+  @UseGuards(AdminGuard)
   findAll() {
     return this.usuarioService.findAll();
   }

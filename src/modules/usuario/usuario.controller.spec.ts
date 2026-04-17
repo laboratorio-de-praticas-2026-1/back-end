@@ -68,24 +68,33 @@ describe('UsuarioController', () => {
   describe('findAll', () => {
     it('deve retornar uma lista de usuários', async () => {
       const usuarios = [
-        { id: 1, nome: 'Arthur' },
-        { id: 2, nome: 'João' },
-      ];
+      {
+        id: 1,
+        nome: 'Arthur',
+        email: 'arthur@email.com',
+      },
+      {
+        id: 2,
+        nome: 'João',
+        email: 'joao@email.com',
+      },
+    ];
 
       mockUsuarioService.findAll.mockResolvedValue(usuarios);
 
-      const result = await controller.findAll();
+    const result = await controller.findAll();
 
       expect(mockUsuarioService.findAll).toHaveBeenCalled();
       expect(result).toEqual(usuarios);
     });
-  });
 
     it('deve retornar lista vazia', async () => {
       mockUsuarioService.findAll.mockResolvedValue([]);
 
-      const result = await controller.findAll();
+    const result = await controller.findAll();
 
+      expect(mockUsuarioService.findAll).toHaveBeenCalled();
       expect(result).toEqual([]);
     });
+  });
 });

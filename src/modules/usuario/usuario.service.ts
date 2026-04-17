@@ -61,10 +61,14 @@ export class UsuarioService {
   }
 
   async findAll(): Promise<ResponseUsuarioDto[]> {
-  const usuarios = await this.usuarioModel.findAll();
+    const usuarios = await this.usuarioModel.findAll();
 
-  return plainToInstance(ResponseUsuarioDto, usuarios.map(u => u.get({ plain: true })), {
-    excludeExtraneousValues: true,
-  });
-}
+    const plainUsuarios = usuarios.map(
+      (u) => u.get({ plain: true }) as Usuario,
+    );
+
+    return plainToInstance(ResponseUsuarioDto, plainUsuarios, {
+      excludeExtraneousValues: true,
+    });
+  }
 }
