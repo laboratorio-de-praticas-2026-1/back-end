@@ -78,8 +78,10 @@ export class UsuarioService {
     }
     const tokenJWT = jwt.sign(
       { id: usuario.id, nivel: usuario.nivel },
-      jwtSecret,
-      { expiresIn: '1d' },
+      {
+        secret: jwtSecret,
+        expiresIn: '1d',
+      },
     );
 
     return {
