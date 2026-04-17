@@ -16,9 +16,12 @@ import {
   ApiBadRequestResponse,
   ApiConflictResponse,
   ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { ResponseUsuarioDto } from './dto/response-usuario.dto';
+import { LoginUsuarioDto } from './dto/login-usuario.dto';
 
 @Controller('usuario')
 export class UsuarioController {
@@ -36,6 +39,14 @@ export class UsuarioController {
   @ApiConflictResponse({ description: 'E-mail já cadastrado no sistema' })
   register(@Body() createUsuarioDto: CreateUsuarioDto) {
     return this.usuarioService.create(createUsuarioDto);
+  }
+
+  @Post('login')
+  @ApiOperation({ summary: 'Autentica um usuário e retorna o token JWT' })
+  @ApiOkResponse({ description: 'Login realizado com sucesso' })
+  @ApiUnauthorizedResponse({ description: 'Email ou senha inválidos' })
+  login(@Body() loginUsuarioDto: LoginUsuarioDto) {
+    return this.usuarioService.login(loginUsuarioDto);
   }
 
   @Delete(':id')

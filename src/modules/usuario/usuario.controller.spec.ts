@@ -5,11 +5,13 @@ import {
   NotFoundException,
   ForbiddenException,
   ConflictException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { UsuarioOwnerGuard } from './guards/usuario-owner.guard';
 
 const mockUsuarioService = {
   create: jest.fn(),
+  login: jest.fn(),
   remove: jest.fn(),
   update: jest.fn(),
 };
@@ -111,6 +113,61 @@ describe('UsuarioController', () => {
       const result = await controller.register(dtoCompleto);
 
       expect(result).toEqual(respostaCompleta);
+    });
+  });
+
+  describe('login', () => {
+    const dtoLogin = {
+      email: 'joao@gmail.com',
+      senha: 'senha123',
+    };
+
+    const respostaLoginMock = {
+      message: 'Login realizado com sucesso',
+      tokenJWT: 'token_jwt_mock',
+      usuario: {
+        id: 1,
+        nome: 'João Silva',
+        email: 'joao@gmail.com',
+        nivel: 'cliente',
+      },
+    };
+
+    it('deve chamar o service com o dto correto e retornar o token', async () => {
+      mockUsuarioService.login.mockResolvedValue(respostaLoginMock);
+
+      const result = await controller.login(dtoLogin);
+
+      expect(mockUsuarioService.login).toHaveBeenCalledWith(dtoLogin);
+      expect(result).toEqual(respostaLoginMock);
+    });
+
+    it('deve retornar message, tokenJWT e usuario na resposta', async () => {
+      mockUsuarioService.login.mockResolvedValue(respostaLoginMock);
+
+      const result = await controller.login(dtoLogin);
+
+      expect(result).toHaveProperty('message');
+      expect(result).toHaveProperty('tokenJWT');
+      expect(result).toHaveProperty('usuario');
+    });
+
+    it('não deve retornar o campo senha na resposta', async () => {
+      mockUsuarioService.login.mockResolvedValue(respostaLoginMock);
+
+      const result = await controller.login(dtoLogin);
+
+      expect(result.usuario).not.toHaveProperty('senha');
+    });
+
+    it('deve propagar UnauthorizedException quando credenciais forem inválidas', async () => {
+      mockUsuarioService.login.mockRejectedValue(
+        new UnauthorizedException('Email ou senha inválidos'),
+      );
+
+      await expect(controller.login(dtoLogin)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
