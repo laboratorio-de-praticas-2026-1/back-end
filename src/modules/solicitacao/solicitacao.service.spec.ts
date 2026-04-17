@@ -141,6 +141,7 @@ describe('SolicitacaoService', () => {
   });
 
   afterEach(() => {
+    service.onModuleDestroy();
     jest.resetAllMocks();
   });
 
@@ -221,6 +222,18 @@ describe('SolicitacaoService', () => {
         },
       },
     });
+
+    expect(mockEmailService.enviarEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'amanda@email.com',
+        template: 'solicitacao-feita',
+        dados: expect.objectContaining({
+          nomeCliente: 'Amanda',
+          solicitacaoId: 10,
+          servicoNome: 'Transferencia',
+        }) as Record<string, unknown>,
+      }),
+    );
   });
 
   it('deve criar solicitacao sem veiculo quando nao informado', async () => {
@@ -376,6 +389,60 @@ describe('SolicitacaoService', () => {
     );
 
     await expect(service.criarSolicitacao(solicitacaoDto, 1)).resolves.toEqual({
+      message: 'Agendamento de serviço realizado com sucesso',
+      protocolo: {
+        cliente: {
+          nome: 'Amanda',
+        },
+        servico: {
+          nome: 'Transferencia',
+          valor_base: 200,
+        },
+        solicitacao: {
+          data_solicitacao: '2026-03-10',
+          prazo_estimado: '2026-03-20',
+        },
+      },
+    });
+  });
+
+  it('deve criar solicitacao mesmo se o envio do email de confirmacao falhar', async () => {
+    const solicitacaoDto = {
+      usuario_id: 1,
+      veiculo_id: 2,
+      servico_id: 3,
+      observacao_cliente: 'Observacao com falha de email de confirmacao',
+    };
+
+    const dataSolicitacao = new Date('2026-03-10T12:00:00.000Z');
+
+    mockUsuarioModel.findByPk.mockResolvedValue({
+      id: 1,
+      nome: 'Amanda',
+      email: 'amanda@email.com',
+    });
+    mockVeiculoModel.findByPk.mockResolvedValue({
+      id: 2,
+      usuarioId: 1,
+    });
+    mockServicoModel.findByPk.mockResolvedValue({
+      id: 3,
+      nome: 'Transferencia',
+      valorBase: 200,
+      prazoEstimadoDias: 10,
+    });
+    mockSolicitacaoModel.create.mockResolvedValue({
+      id: 12,
+      dataSolicitacao,
+    });
+    mockNotificacaoService.enviarConfirmacaoSolicitacao.mockRejectedValue(
+      new Error('Falha no envio'),
+    );
+    mockEmailService.enviarEmail.mockRejectedValue(
+      new Error('Falha no envio de email'),
+    );
+
+    await expect(service.criarSolicitacao(solicitacaoDto)).resolves.toEqual({
       message: 'Agendamento de serviço realizado com sucesso',
       protocolo: {
         cliente: {

@@ -7,6 +7,7 @@ import {
   InternalServerErrorException,
   Logger,
   NotFoundException,
+  OnModuleDestroy,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { StatusSolicitacaoEnum } from 'src/commons/enums/status-solicitacao.enum';
@@ -15,7 +16,10 @@ import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
 import { CloudinaryResponse } from 'src/infra/cloudinary/dto/cloudinary-response';
 import { EmailService } from 'src/infra/email/email.service';
 import { EmailParams } from 'src/infra/email/dto/email-params';
-import { STATUS_UPDATE } from 'src/infra/email/templates/templates-names';
+import {
+  STATUS_UPDATE,
+  SOLICITACAO_FEITA,
+} from 'src/infra/email/templates/templates-names';
 import { obterTextosEmailPorStatus } from 'src/infra/email/status-email-textos';
 import { DocumentoSolicitacao } from 'src/models/documento-solicitacao.model';
 import { Servico } from 'src/models/servico.model';
@@ -34,11 +38,12 @@ import { ListSolicitacoesResponseDto } from './dto/list-solicitacoes-response.dt
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 
 @Injectable()
-export class SolicitacaoService {
+export class SolicitacaoService implements OnModuleDestroy {
   private readonly logger: Logger = new Logger(SolicitacaoService.name);
 
   private readonly emailDebounceMap = new Map<string, number>();
   private readonly DEBOUNCE_INTERVAL_MS = 3 * 60 * 1000;
+  private readonly debounceCleanupTimer: ReturnType<typeof setInterval>;
 
   private readonly STATUS_COM_EMAIL = new Set<string>([
     StatusSolicitacaoEnum.AGUARDANDO_PAGAMENTO,
@@ -62,7 +67,33 @@ export class SolicitacaoService {
     private readonly cloudinaryService: CloudinaryService,
     private readonly cryptoUtil: CryptoUtil,
     private readonly emailService: EmailService,
-  ) {}
+  ) {
+    this.debounceCleanupTimer = setInterval(() => {
+      this.limparEntradasExpiradas();
+    }, this.DEBOUNCE_INTERVAL_MS);
+  }
+
+  onModuleDestroy(): void {
+    clearInterval(this.debounceCleanupTimer);
+  }
+
+  private limparEntradasExpiradas(): void {
+    const agora = Date.now();
+    let removidas = 0;
+
+    for (const [chave, timestamp] of this.emailDebounceMap) {
+      if (agora - timestamp >= this.DEBOUNCE_INTERVAL_MS) {
+        this.emailDebounceMap.delete(chave);
+        removidas++;
+      }
+    }
+
+    if (removidas > 0) {
+      this.logger.debug(
+        `Debounce cleanup: ${removidas} entrada(s) expirada(s) removida(s), ${this.emailDebounceMap.size} restante(s)`,
+      );
+    }
+  }
 
   async criarSolicitacao(
     solicitacaoDto: CreateSolicitacaoDto,
@@ -122,6 +153,27 @@ export class SolicitacaoService {
           error instanceof Error ? error.message : 'Erro desconhecido';
         this.logger.warn(
           `Falha ao enviar email de confirmacao da solicitacao ${solicitacao.id}: ${mensagemErro}`,
+        );
+      });
+
+    void this.emailService
+      .enviarEmail(
+        new EmailParams(
+          usuario.email,
+          SOLICITACAO_FEITA,
+          `Solicitação recebida - Solicitação #${solicitacao.id}`,
+          {
+            nomeCliente: usuario.nome,
+            solicitacaoId: solicitacao.id,
+            servicoNome: servico.nome,
+          },
+        ),
+      )
+      .catch((error: unknown) => {
+        const mensagemErro =
+          error instanceof Error ? error.message : 'Erro desconhecido';
+        this.logger.warn(
+          `Falha ao enviar email de solicitacao feita ${solicitacao.id}: ${mensagemErro}`,
         );
       });
 
@@ -243,6 +295,7 @@ export class SolicitacaoService {
             textos.assunto,
             textos.titulo,
             textos.mensagem,
+            textos.cor,
             observacao,
           ).catch((error: unknown) => {
             const mensagemErro =
@@ -303,6 +356,7 @@ export class SolicitacaoService {
     assunto: string,
     titulo: string,
     mensagem: string,
+    statusCor: string,
     observacaoAdmin?: string,
   ): Promise<void> {
     const emailDestinatario = solicitacao.usuario?.email;
@@ -326,6 +380,7 @@ export class SolicitacaoService {
         servicoNome: servicoNome || 'Serviço',
         titulo,
         mensagem,
+        statusCor,
         observacaoAdmin: observacaoAdmin || '',
       },
     );

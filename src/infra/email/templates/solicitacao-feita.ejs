@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atualização de Solicitação - Grupo Bortone</title>
+    <title>Solicitação Recebida - Grupo Bortone</title>
     <style>
         /* Reset e Base */
         body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
@@ -22,21 +22,17 @@
         .intro-text { text-align: center; color: #666; margin-bottom: 30px; }
         
         /* Tabela de Detalhes */
-        .details-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; background-color: #fcfcfc; border: 1px solid #eeeeee; border-radius: 4px; }
-        .details-table td { padding: 14px 15px; border-bottom: 1px solid #eeeeee; font-size: 14px; }
+        .details-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; background-color: #f9fbfd; border: 1px solid #e2e8f0; border-radius: 4px; overflow: hidden; }
+        .details-table td { padding: 14px 15px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
         .details-table tr:last-child td { border-bottom: none; }
         .label { font-weight: bold; color: #555; width: 35%; }
         .value { color: #333; text-align: right; }
         
-        /* Etiquetas de Status (Badges) */
-        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; }
-
-        /* Caixa de Observação */
-        .feedback-box { background-color: #f9fbfd; border-left: 4px solid #283e7b; padding: 16px; margin-bottom: 30px; border-radius: 0 4px 4px 0; font-size: 14px; color: #444; }
-        .feedback-label { font-weight: bold; color: #283e7b; display: block; margin-bottom: 5px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
-
+        /* Etiqueta de Status */
+        .status-badge { display: inline-block; background-color: #e0e7ff; color: #283e7b; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; border: 1px solid #c7d2fe; }
+        
         /* Botão de Ação */
-        .button-container { text-align: center; margin-top: 10px; }
+        .button-container { text-align: center; margin-top: 20px; }
         .btn { background-color: #283e7b; color: #ffffff !important; padding: 14px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; transition: background-color 0.3s; }
         
         /* Rodapé */
@@ -52,8 +48,8 @@
         </div>
 
         <div class="content">
-            <h2>Status Atualizado</h2>
-            <p class="intro-text">Olá, <strong><%= nomeCliente %></strong>.<br>Houve uma atualização no andamento da sua solicitação.</p>
+            <h2>Solicitação Recebida</h2>
+            <p class="intro-text">Olá, <strong><%= nomeCliente %></strong>.<br>Sua solicitação foi registrada com sucesso e já está na fila de atendimento da nossa equipe.</p>
             
             <table class="details-table">
                 <tr>
@@ -65,21 +61,19 @@
                     <td class="value"><%= servicoNome %></td>
                 </tr>
                 <tr>
-                    <td class="label">Novo Status:</td>
-                    <td class="value"><%- '<span class="status-badge" style="color: #ffffff; background-color: ' + statusCor + ';">' %><%= titulo %></span></td>
+                    <td class="label">Status:</td>
+                    <td class="value"><span class="status-badge">Em Análise</span></td>
+                </tr>
+                <tr>
+                    <td class="label">Prazo de resposta:</td>
+                    <td class="value">Até 2 dias úteis</td>
                 </tr>
             </table>
 
-            <div class="feedback-box">
-                <span class="feedback-label">Mensagem da Equipe:</span>
-                <%= mensagem %>
-                <% if (observacaoAdmin) { %>
-                <br><br><strong>Observação:</strong> <%= observacaoAdmin %>
-                <% } %>
-            </div>
+            <p style="font-size: 14px; color: #666; text-align: center;">Você receberá uma nova notificação por e-mail assim que houver uma atualização no seu pedido.</p>
 
             <div class="button-container">
-                <a href="#" class="btn">Ver Detalhes do Pedido</a>
+                <a href="#" class="btn">Acompanhar Solicitação</a>
             </div>
         </div>
 
