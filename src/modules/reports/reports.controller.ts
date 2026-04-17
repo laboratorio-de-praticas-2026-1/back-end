@@ -1,7 +1,20 @@
-import { Controller, Get } from '@nestjs/common';
-import { ReportsService } from './reports.service';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+} from '@nestjs/common';
+import {
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+} from '@nestjs/swagger';
+import { Relatorio } from 'src/models/relatorio.model';
 import { RelatorioCategoriaResponseDto } from './dto/categoria-response.dto';
-import { ApiOkResponse, ApiOperation, ApiProperty } from '@nestjs/swagger';
+import { CreateReportDto } from './dto/create-report.dto';
+import { ReportsService } from './reports.service';
 
 @Controller('reports')
 export class ReportsController {
@@ -19,5 +32,21 @@ export class ReportsController {
   })
   getCategorias(): RelatorioCategoriaResponseDto[] {
     return this.reportsService.getCategorias();
+  }
+
+  @Post('generate')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Gerar Relatório PDF',
+    description:
+      'Endpoint para gerar um relatório PDF com base nos dados fornecidos.',
+  })
+  @ApiCreatedResponse({
+    description:
+      'Relatório gerado com sucesso. Retorna a URL temporária para acesso ao PDF e dados do relatório.',
+    type: Relatorio,
+  })
+  generateReport(@Body() createReportDto: CreateReportDto) {
+    return this.reportsService.generateReport(createReportDto);
   }
 }

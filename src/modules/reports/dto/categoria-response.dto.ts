@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { RelatorioCategoria } from '../reports.service';
+import { RelatorioCategoria } from 'src/models/relatorio.model';
 
 export class RelatorioCategoriaResponseDto {
   @ApiProperty({
