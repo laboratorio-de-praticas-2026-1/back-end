@@ -48,7 +48,11 @@ export class Servico extends Model {
     example: true,
     default: true,
   })
-  @Column({ type: DataType.BOOLEAN, allowNull: true, defaultValue: true })
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: true,
+    defaultValue: true,
+  })
   declare ativo: boolean | null;
 
   @ApiPropertyOptional({

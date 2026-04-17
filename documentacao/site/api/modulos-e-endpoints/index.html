@@ -1,0 +1,1233 @@
+
+<!doctype html>
+<html lang="pt" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Documentação técnica do back-end NestJS do projeto Bortone">
+      
+      
+      
+      
+        <link rel="prev" href="../../arquitetura-backend/">
+      
+      
+        <link rel="next" href="../websocket-chat/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+    
+    
+      
+        <title>Modulos e Endpoints - Back-end Bortone - Documentação Técnica</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/custom.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#modulos-e-endpoints" class="md-skip">
+          Ir para o conteúdo
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Cabeçalho">
+    <a href="../.." title="Back-end Bortone - Documentação Técnica" class="md-header__button md-logo" aria-label="Back-end Bortone - Documentação Técnica" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Back-end Bortone - Documentação Técnica
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Modulos e Endpoints
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-hidden="true"  type="radio" name="__palette" id="__palette_0">
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Buscar" placeholder="Buscar" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Pesquisar">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Limpar" aria-label="Limpar" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Inicializando a pesquisa
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Abas" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Inicio
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../configuracao/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Configuracao do Ambiente
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../arquitetura-backend/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Arquitetura Back-end
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  
+  API
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../dados/modelos-sequelize/" class="md-tabs__link">
+          
+  
+  
+  Dados
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../status-implementacao/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Status de Implementacao
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navegação" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Back-end Bortone - Documentação Técnica" class="md-nav__button md-logo" aria-label="Back-end Bortone - Documentação Técnica" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Back-end Bortone - Documentação Técnica
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inicio
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuracao/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuracao do Ambiente
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../arquitetura-backend/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Arquitetura Back-end
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modulos e Endpoints
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modulos e Endpoints
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Índice">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Índice
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#resumo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resumo
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#endpoints-implementados" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Endpoints implementados
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Endpoints implementados">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#blog" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Blog
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#busca" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Busca
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#contato" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contato
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#header" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Header
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#publicidade" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Publicidade
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#solicitacoes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Solicitacoes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#controllers-sem-endpoints-http-estrutura-base" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Controllers sem endpoints HTTP (estrutura base)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#observacoes-de-documentacao-da-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Observações de documentação da API
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../websocket-chat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WebSocket (Chat)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../swagger-embed/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Swagger (Embed)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dados
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Dados
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dados/modelos-sequelize/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modelos Sequelize
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../status-implementacao/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Status de Implementacao
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="modulos-e-endpoints">Módulos e endpoints</h1>
+<h2 id="resumo">Resumo</h2>
+<p>Atualmente, o projeto possui <strong>15 controllers</strong> registrados no <code>AppModule</code> e <strong>1 gateway WebSocket</strong> (<code>chat</code>).</p>
+<p>Dos controllers HTTP, <strong>6 módulos</strong> possuem rotas implementadas no código.</p>
+<h2 id="endpoints-implementados">Endpoints implementados</h2>
+<h3 id="blog">Blog</h3>
+<ul>
+<li><code>POST /blog</code></li>
+<li>Método: <code>criarPost()</code></li>
+<li>Body: <code>BlogCreateDto</code> (multipart/form-data com campo <code>imagem</code>)</li>
+<li>
+<p>Objetivo: criar uma postagem de blog</p>
+</li>
+<li>
+<p><code>GET /blog</code></p>
+</li>
+<li>Método: <code>getAll()</code></li>
+<li>
+<p>Objetivo: listar todos os posts</p>
+</li>
+<li>
+<p><code>GET /blog/:id</code></p>
+</li>
+<li>Método: <code>getById(id)</code></li>
+<li>Parâmetros:<ul>
+<li><code>id</code> (number, validado com <code>ParseIntPipe</code>)</li>
+</ul>
+</li>
+<li>
+<p>Objetivo: buscar post por identificador</p>
+</li>
+<li>
+<p><code>PUT /blog/:id</code></p>
+</li>
+<li>Método: <code>updateBlog(id)</code></li>
+<li>Parâmetros:<ul>
+<li><code>id</code> (number)</li>
+</ul>
+</li>
+<li>Body: <code>BlogUpdateDto</code> (multipart/form-data, <code>imagem</code> opcional)</li>
+<li>
+<p>Objetivo: atualizar dados do post</p>
+</li>
+<li>
+<p><code>DELETE /blog/:id</code></p>
+</li>
+<li>Método: <code>deleteById(id)</code></li>
+<li>Parâmetros:<ul>
+<li><code>id</code> (number)</li>
+</ul>
+</li>
+<li>Objetivo: remover post por identificador</li>
+</ul>
+<h3 id="busca">Busca</h3>
+<ul>
+<li><code>GET /busca/blog/periodo</code></li>
+<li>Método: <code>buscarBlogsPorIntervaloDeData()</code></li>
+<li>Query params:<ul>
+<li><code>de</code> (date string <code>YYYY-MM-DD</code>, opcional)</li>
+<li><code>ate</code> (date string <code>YYYY-MM-DD</code>, opcional)</li>
+</ul>
+</li>
+<li>
+<p>Objetivo: filtrar posts de blog por intervalo de data</p>
+</li>
+<li>
+<p><code>GET /busca/banner/status</code></p>
+</li>
+<li>Método: <code>buscarBannerPorStatus()</code></li>
+<li>Query params:<ul>
+<li><code>status</code> (<code>ativo</code> | <code>inativo</code>)</li>
+</ul>
+</li>
+<li>
+<p>Objetivo: filtrar banners por status</p>
+</li>
+<li>
+<p><code>GET /busca/blog/termo</code></p>
+</li>
+<li>Método: <code>listarBlog()</code></li>
+<li>Query params:<ul>
+<li><code>termo</code> (string, opcional)</li>
+</ul>
+</li>
+<li>
+<p>Objetivo: buscar posts por termo no titulo/conteudo</p>
+</li>
+<li>
+<p><code>GET /busca/carrossel/termo</code></p>
+</li>
+<li>Método: <code>listarCarrossel()</code></li>
+<li>Query params:<ul>
+<li><code>termo</code> (string, opcional)</li>
+</ul>
+</li>
+<li>Objetivo: buscar banners por termo na descricao</li>
+</ul>
+<h3 id="contato">Contato</h3>
+<ul>
+<li><code>GET /contato</code></li>
+<li>Método: <code>buscarContato()</code></li>
+<li>
+<p>Objetivo: retornar dados de contato/empresa</p>
+</li>
+<li>
+<p><code>GET /contato/:id</code></p>
+</li>
+<li>Método: <code>buscarContatoById(id)</code></li>
+<li>Parâmetros:<ul>
+<li><code>id</code> (number, validado com <code>ParseIntPipe</code>)</li>
+</ul>
+</li>
+<li>
+<p>Objetivo: retornar registro de contato por identificador</p>
+</li>
+<li>
+<p><code>PUT /contato/:id</code></p>
+</li>
+<li>Método: <code>atualizarContato(id)</code></li>
+<li>Parâmetros:<ul>
+<li><code>id</code> (number, validado com <code>ParseIntPipe</code>)</li>
+</ul>
+</li>
+<li>Body: <code>ContatoUpdateDto</code></li>
+<li>Objetivo: atualizar dados de contato</li>
+</ul>
+<h3 id="header">Header</h3>
+<ul>
+<li><code>GET /header/carrossel</code></li>
+<li>Método: <code>getCarrossel()</code></li>
+<li>
+<p>Objetivo: retornar banners ativos para exibição no carrossel</p>
+</li>
+<li>
+<p><code>GET /header</code></p>
+</li>
+<li>Método: <code>getAll()</code></li>
+<li>
+<p>Objetivo: listar banners</p>
+</li>
+<li>
+<p><code>GET /header/:id</code></p>
+</li>
+<li>Método: <code>getById(id)</code></li>
+<li>Parâmetros:<ul>
+<li><code>id</code> (number)</li>
+</ul>
+</li>
+<li>
+<p>Objetivo: buscar banner por identificador</p>
+</li>
+<li>
+<p><code>POST /header</code></p>
+</li>
+<li>Método: <code>create()</code></li>
+<li>Body: <code>HeaderCreateDto</code> (multipart/form-data com campo <code>imagem</code>)</li>
+<li>
+<p>Objetivo: criar banner</p>
+</li>
+<li>
+<p><code>PATCH /header/:id</code></p>
+</li>
+<li>Método: <code>update(id)</code></li>
+<li>Parâmetros:<ul>
+<li><code>id</code> (number, validado com <code>ParseIntPipe</code>)</li>
+</ul>
+</li>
+<li>Body: <code>HeaderUpdateDto</code> (multipart/form-data, <code>imagem</code> opcional)</li>
+<li>
+<p>Objetivo: atualizar banner</p>
+</li>
+<li>
+<p><code>DELETE /header/:id</code></p>
+</li>
+<li>Método: <code>delete(id)</code></li>
+<li>Parâmetros:<ul>
+<li><code>id</code> (number, validado com <code>ParseIntPipe</code>)</li>
+</ul>
+</li>
+<li>Objetivo: remover banner</li>
+</ul>
+<h3 id="publicidade">Publicidade</h3>
+<ul>
+<li><code>GET /publicidade</code></li>
+<li>Método: <code>getAll()</code></li>
+<li>
+<p>Objetivo: listar publicidades</p>
+</li>
+<li>
+<p><code>GET /publicidade/:id</code></p>
+</li>
+<li>Método: <code>getById(id)</code></li>
+<li>Parâmetros:<ul>
+<li><code>id</code> (number, validado com <code>ParseIntPipe</code>)</li>
+</ul>
+</li>
+<li>
+<p>Objetivo: buscar publicidade por identificador</p>
+</li>
+<li>
+<p><code>GET /publicidade/status/:status</code></p>
+</li>
+<li>Método: <code>getByStatus(status)</code></li>
+<li>Parâmetros:<ul>
+<li><code>status</code> (<code>ativo</code> | <code>inativo</code>)</li>
+</ul>
+</li>
+<li>
+<p>Objetivo: filtrar publicidades por status</p>
+</li>
+<li>
+<p><code>POST /publicidade</code></p>
+</li>
+<li>Método: <code>criarPublicidade()</code></li>
+<li>Body: <code>PublicidadeCreateDto</code> (multipart/form-data com campo <code>file</code>)</li>
+<li>
+<p>Objetivo: criar publicidade</p>
+</li>
+<li>
+<p><code>PUT /publicidade/:id</code></p>
+</li>
+<li>Método: <code>update(id)</code></li>
+<li>Parâmetros:<ul>
+<li><code>id</code> (number, validado com <code>ParseIntPipe</code>)</li>
+</ul>
+</li>
+<li>Body: <code>PublicidadeUpdateDto</code> (multipart/form-data, <code>imagem</code> opcional)</li>
+<li>
+<p>Objetivo: atualizar publicidade</p>
+</li>
+<li>
+<p><code>DELETE /publicidade/:id</code></p>
+</li>
+<li>Método: <code>remove(id)</code></li>
+<li>Parâmetros:<ul>
+<li><code>id</code> (number, validado com <code>ParseIntPipe</code>)</li>
+</ul>
+</li>
+<li>Objetivo: remover publicidade</li>
+</ul>
+<h3 id="solicitacoes">Solicitacoes</h3>
+<ul>
+<li><code>POST /solicitacoes</code></li>
+<li>Método: <code>criarSolicitacao()</code></li>
+<li>Body: <code>CreateSolicitacaoDto</code></li>
+<li>
+<p>Objetivo: criar solicitacao e retornar protocolo</p>
+</li>
+<li>
+<p><code>GET /solicitacoes</code></p>
+</li>
+<li>Método: <code>listarSolicitacoes()</code></li>
+<li>
+<p>Objetivo: listar solicitacoes do sistema</p>
+</li>
+<li>
+<p><code>PUT /solicitacoes/:id</code></p>
+</li>
+<li>Método: <code>updateSolicitacaoStatus(id)</code></li>
+<li>Parâmetros:<ul>
+<li><code>id</code> (number, validado com <code>ParseIntPipe</code>)</li>
+</ul>
+</li>
+<li>Body: <code>UpdateSolicitacaoStatusDto</code><ul>
+<li><code>status</code>: <code>recebido</code> | <code>aguardando_pagamento</code> | <code>aguardando_documento</code> | <code>em_andamento</code> | <code>concluido</code> | <code>cancelado</code></li>
+<li><code>observacaoAdmin</code> (opcional)</li>
+</ul>
+</li>
+<li>
+<p>Objetivo: atualizar status da solicitacao</p>
+</li>
+<li>
+<p><code>POST /solicitacoes/:id/documentos</code></p>
+</li>
+<li>Método: <code>enviarDocumento(id)</code></li>
+<li>Parâmetros:<ul>
+<li><code>id</code> (number, validado com <code>ParseIntPipe</code>)</li>
+</ul>
+</li>
+<li>Body: multipart/form-data<ul>
+<li><code>tipo_documento</code> (string)</li>
+<li><code>documento</code> (arquivo)</li>
+</ul>
+</li>
+<li>Objetivo: anexar documento a solicitacao</li>
+</ul>
+<h2 id="controllers-sem-endpoints-http-estrutura-base">Controllers sem endpoints HTTP (estrutura base)</h2>
+<p>Os controllers abaixo existem e estão registrados no módulo raiz, mas ainda sem rotas HTTP declaradas:</p>
+<ul>
+<li><code>dashboard</code></li>
+<li><code>faq</code></li>
+<li><code>mapa</code></li>
+<li><code>notificacao</code></li>
+<li><code>recomendacao</code></li>
+<li><code>reports</code></li>
+<li><code>servicos</code></li>
+<li><code>simulador</code></li>
+<li><code>usuario</code></li>
+</ul>
+<h2 id="observacoes-de-documentacao-da-api">Observações de documentação da API</h2>
+<ul>
+<li>Swagger está configurado globalmente em <code>/swagger</code>.</li>
+<li>A maior parte dos endpoints ativos já possui decorators Swagger (<code>@ApiOperation</code>, <code>@ApiBody</code>, <code>@ApiResponse</code>).</li>
+<li>Alguns endpoints usam upload multipart/form-data; validar tamanho/tipo de arquivo também no front-end para reduzir erros de integração.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "content.code.copy", "toc.integrate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copiado para \u00e1rea de transfer\u00eancia", "clipboard.copy": "Copiar para \u00e1rea de transfer\u00eancia", "search.result.more.one": "Mais 1 nesta p\u00e1gina", "search.result.more.other": "Mais # nesta p\u00e1gina", "search.result.none": "Nenhum resultado encontrado", "search.result.one": "1 resultado encontrado", "search.result.other": "# resultados encontrados", "search.result.placeholder": "Digite para iniciar a busca", "search.result.term.missing": "Ausente", "select.version": "Selecione a vers\u00e3o"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

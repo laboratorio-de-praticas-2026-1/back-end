@@ -21,6 +21,5 @@
     "noImplicitAny": true,
     "strictBindCallApply": true,
     "noFallthroughCasesInSwitch": true,
-    "types": ["jest", "node"]
   }
 }
