@@ -3,11 +3,13 @@ import { InjectModel } from '@nestjs/sequelize';
 import { col, fn, Op, where } from 'sequelize';
 import { Banner } from 'src/models/banner.model';
 import { Blog } from 'src/models/blog.model';
+import { Empresa } from 'src/models/empresa.model';
 import { Publicidade } from 'src/models/publicidade.model';
 import { Servico } from 'src/models/servico.model';
 import { Usuario } from 'src/models/usuario.model';
 import { BuscaBannerStatusDto } from './dto/busca-banner-status.dto';
 import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
+import { BuscaEmpresaFiltroDto } from './dto/busca-empresa-filtro.dto';
 import { BuscaPublicidadeStatusDto } from './dto/busca-publicidade-status.dto';
 import { BuscaServicoFiltroDto } from './dto/busca-servico-filtro.dto';
 import { BuscaUsuarioFiltroDto } from './dto/busca-usuario-filtro.dto';
@@ -20,6 +22,7 @@ export class BuscaService {
     @InjectModel(Servico) private servicoModel: typeof Servico,
     @InjectModel(Publicidade) private publicidadeModel: typeof Publicidade,
     @InjectModel(Usuario) private usuarioModel: typeof Usuario,
+    @InjectModel(Empresa) private empresaModel: typeof Empresa,
   ) {}
 
   async buscarBlogsPorIntervaloDeData(
@@ -133,6 +136,62 @@ export class BuscaService {
         ativo,
       },
     });
+  }
+
+  async buscarEmpresasPorFiltros(
+    dto: BuscaEmpresaFiltroDto,
+  ): Promise<Empresa[]> {
+    const filtros = [
+      ...(dto.tipo ? [where(col('tipo'), Op.eq, dto.tipo)] : []),
+      ...(dto.estado ? [where(col('estado'), Op.eq, dto.estado)] : []),
+      ...(dto.cidade ? [where(col('cidade'), Op.eq, dto.cidade)] : []),
+    ];
+
+    if (filtros.length === 0) {
+      return await this.empresaModel.findAll({ order: [['id', 'ASC']] });
+    }
+
+    return await this.empresaModel.findAll({
+      where: {
+        [Op.and]: filtros,
+      },
+      order: [['id', 'ASC']],
+    });
+  }
+
+  async listarEstadosEmpresas(): Promise<string[]> {
+    const rows = (await this.empresaModel.findAll({
+      attributes: ['estado'],
+      group: ['estado'],
+      order: [['estado', 'ASC']],
+      raw: true,
+    })) as Array<{ estado?: string | null }>;
+
+    const valores = rows
+      .map((r) => (r.estado ?? '').trim())
+      .filter((v) => v.length > 0);
+
+    return Array.from(new Set(valores));
+  }
+
+  async listarCidadesEmpresas(estado?: string): Promise<string[]> {
+    const estadoNormalizado = estado?.trim() ? estado.trim().toUpperCase() : '';
+
+    const rows = (await this.empresaModel.findAll({
+      attributes: ['cidade'],
+      ...(estadoNormalizado
+        ? { where: { estado: estadoNormalizado } }
+        : undefined),
+      group: ['cidade'],
+      order: [['cidade', 'ASC']],
+      raw: true,
+    })) as Array<{ cidade?: string | null }>;
+
+    const valores = rows
+      .map((r) => (r.cidade ?? '').trim())
+      .filter((v) => v.length > 0);
+
+    return Array.from(new Set(valores));
   }
 
   private parseYmdDate(

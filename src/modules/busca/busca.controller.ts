@@ -2,11 +2,13 @@ import { Controller, Get, Logger, Query } from '@nestjs/common';
 import { ApiOperation } from '@nestjs/swagger';
 import { Blog } from 'src/models/blog.model';
 import { Publicidade } from 'src/models/publicidade.model';
+import { Empresa } from 'src/models/empresa.model';
 import { Servico } from 'src/models/servico.model';
 import { Usuario } from 'src/models/usuario.model';
 import { BuscaService } from './busca.service';
 import { BuscaBannerStatusDto } from './dto/busca-banner-status.dto';
 import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
+import { BuscaEmpresaFiltroDto } from './dto/busca-empresa-filtro.dto';
 import { BuscaPublicidadeStatusDto } from './dto/busca-publicidade-status.dto';
 import { BuscaServicoFiltroDto } from './dto/busca-servico-filtro.dto';
 import { BuscaUsuarioFiltroDto } from './dto/busca-usuario-filtro.dto';
@@ -115,6 +117,45 @@ export class BuscaController {
       `Buscando servicos por filtros: valor_base=${dto.valor_base ?? 'n/a'} prazo_estimado=${dto.prazo_estimado ?? 'n/a'} status=${dto.status ?? 'n/a'}`,
     );
     return this.buscaService.buscarServicosPorFiltros(dto);
+  }
+
+  @Get('empresa/filtros')
+  @ApiOperation({
+    summary: 'Buscar empresas por filtros (tipo, estado e cidade)',
+    description:
+      'Parâmetros opcionais: tipo (clinica|detran|vistoria), estado (UF) e cidade (string).',
+  })
+  buscarEmpresasPorFiltros(
+    @Query() dto: BuscaEmpresaFiltroDto,
+  ): Promise<Empresa[]> {
+    this.logger.log(
+      `Buscando empresas por filtros: tipo=${dto.tipo ?? 'n/a'} estado=${dto.estado ?? 'n/a'} cidade=${dto.cidade ?? 'n/a'}`,
+    );
+    return this.buscaService.buscarEmpresasPorFiltros(dto);
+  }
+
+  @Get('empresa/estados')
+  @ApiOperation({
+    summary: 'Listar UFs (estados) disponíveis nas empresas',
+    description:
+      'Retorna apenas UFs únicas encontradas na tabela empresa (para preencher o filtro de estado).',
+  })
+  listarEstadosEmpresas(): Promise<string[]> {
+    this.logger.log('Listando estados disponíveis nas empresas');
+    return this.buscaService.listarEstadosEmpresas();
+  }
+
+  @Get('empresa/cidades')
+  @ApiOperation({
+    summary: 'Listar cidades disponíveis nas empresas (opcionalmente por UF)',
+    description:
+      'Sem UF retorna todas as cidades únicas; com UF retorna somente as cidades das empresas daquele estado.',
+  })
+  listarCidadesEmpresas(@Query('estado') estado?: string): Promise<string[]> {
+    this.logger.log(
+      `Listando cidades disponíveis nas empresas: estado=${estado?.trim() ?? 'n/a'}`,
+    );
+    return this.buscaService.listarCidadesEmpresas(estado);
   }
 
   @Get('usuario/termo')
