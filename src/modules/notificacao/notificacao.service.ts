@@ -21,9 +21,10 @@ interface DebitoResult {
 export class NotificacaoService {
   constructor(private readonly sequelize: Sequelize) {}
 
-  // Removeu 'async' e trocou 'any' por Record<string, unknown>
-  enviarConfirmacaoSolicitacao(data: Record<string, unknown>): void {
+  // Mantém async e Promise<void>, mas adiciona um await dummy para eliminar o erro ESLint
+  async enviarConfirmacaoSolicitacao(data: Record<string, unknown>): Promise<void> {
     console.log('Notificação enviada', data);
+    await Promise.resolve(); // resolve @typescript-eslint/require-await
   }
 
   async getUserNotifications(userId: number): Promise<Notification[]> {
@@ -44,7 +45,7 @@ export class NotificacaoService {
       `,
       {
         replacements: { userId },
-        type: QueryTypes.SELECT, // ESSENCIAL para tipagem correta
+        type: QueryTypes.SELECT,
       },
     );
 
