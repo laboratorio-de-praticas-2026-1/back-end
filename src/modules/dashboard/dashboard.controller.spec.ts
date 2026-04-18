@@ -33,7 +33,6 @@ describe('DashboardController', () => {
         { provide: getModelToken(DebitoServico), useValue: mockModel },
         { provide: getModelToken(Usuario), useValue: mockModel },
         { provide: getModelToken(DebitoVeiculo), useValue: {} },
-
       ],
     }).compile();
 

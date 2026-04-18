@@ -35,8 +35,6 @@ describe('DashboardService', () => {
         { provide: getModelToken(Usuario), useValue: mockModel },
         { provide: getModelToken(Veiculo), useValue: {} },
         { provide: getModelToken(DebitoVeiculo), useValue: {} },
-
-
       ],
     }).compile();
 

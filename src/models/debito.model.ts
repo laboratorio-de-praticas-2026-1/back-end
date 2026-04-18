@@ -2,7 +2,6 @@ import { Column, DataType, HasOne, Model, Table } from 'sequelize-typescript';
 import { Pagamento } from './pagamento.model';
 import { DebitoVeiculo } from './debito-veiculo.model';
 
-
 /*Representa uma cobrança gerada para um cliente*/
 @Table({ tableName: 'debito', timestamps: false })
 export class Debito extends Model {
