@@ -12,7 +12,6 @@ import { Usuario } from 'src/models/usuario.model';
 import { Veiculo } from 'src/models/veiculo.model';
 import { DebitoVeiculo } from 'src/models/debito-veiculo.model';
 
-
 import { DashboardReturnDto } from './dto/dashboard-return.dto';
 import type { ModelCtor } from 'sequelize-typescript';
 import type {
@@ -54,6 +53,8 @@ export class DashboardService {
     private readonly usuarioModel: typeof Usuario,
     @InjectModel(DebitoVeiculo)
     private readonly debitoVeiculoModel: typeof DebitoVeiculo,
+    @InjectModel(Veiculo)
+    private readonly veiculoModel: typeof Veiculo,
   ) {}
 
   private gerarMesesNoPeriodo(inicio: Date, fim: Date): string[] {
@@ -245,7 +246,6 @@ export class DashboardService {
       veiculosComSolicitacaoAtiva,
       debitosPendentesResult,
     ] = await Promise.all([
-
       // Total de veículos cadastrados
       this.veiculoModel.count(),
 
@@ -288,10 +288,7 @@ export class DashboardService {
         raw: true,
         nest: true,
       }),
-
     ]);
-
-
 
     // ─── Query financeira ────────────────────────────────────────────────────
 
@@ -635,6 +632,15 @@ export class DashboardService {
           totalConcluidas,
           percentual,
         },
+        veiculos: {
+          totalCadastrados: totalVeiculosCadastrados,
+          comSolicitacaoAtiva: veiculosComSolicitacaoAtiva,
+          comDebitoPendente: porVeiculo.length,
+          debitosPendentes: {
+            valorTotal: valorTotalGeral,
+            porVeiculo,
+          },
+        },
       },
       servicos: {
         ativos: servicosAtivos,
@@ -653,15 +659,6 @@ export class DashboardService {
         previsaoCaixa30Dias,
         porMetodoPagamento,
         porTipoPagamento,
-      },
-      veiculos: {
-        totalCadastrados: totalVeiculosCadastrados,
-        comSolicitacaoAtiva: veiculosComSolicitacaoAtiva,
-        comDebitoPendente: porVeiculo.length,
-        debitosPendentes: {
-          valorTotal: valorTotalGeral,
-          porVeiculo,
-        },
       },
     };
   }

@@ -72,7 +72,7 @@ export class SolicitacoesDto {
     totalConcluidas: number;
     percentual: number;
   };
-  veiculos: {
+  veiculos!: {
     totalCadastrados: number;
     comSolicitacaoAtiva: number;
     comDebitoPendente: number;
