@@ -292,6 +292,58 @@ export class BuscaService {
     };
   }
 
+  async listarServicosByTermo(termo?: string): Promise<{
+    itens: Servico[];
+    mensagem?: string;
+  }> {
+    const termoNormalizado = termo?.trim();
+
+    if (!termoNormalizado) {
+      const itens = await this.servicoModel.findAll({
+        order: [['id', 'DESC']],
+      });
+
+      return {
+        itens,
+        mensagem:
+          itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+      };
+    }
+
+    const filtros: Array<Record<string, unknown> | ReturnType<typeof where>> = [
+      { nome: { [Op.like]: `%${termoNormalizado}%` } },
+      { descricao: { [Op.like]: `%${termoNormalizado}%` } },
+    ];
+
+    const termoEhNumero = /^(0|[1-9]\d*)(\.\d+)?$/.test(termoNormalizado);
+    if (termoEhNumero) {
+      const termoComoNumero = Number(termoNormalizado);
+      if (!Number.isNaN(termoComoNumero)) {
+        filtros.push(where(col('valor_base'), Op.eq, termoComoNumero));
+      }
+    }
+
+    const termoEhInteiroDecimal = /^(0|[1-9]\d*)$/.test(termoNormalizado);
+    if (termoEhInteiroDecimal) {
+      const termoComoInteiro = parseInt(termoNormalizado, 10);
+      if (!Number.isNaN(termoComoInteiro)) {
+        filtros.push(
+          where(col('prazo_estimado_dias'), Op.eq, termoComoInteiro),
+        );
+      }
+    }
+
+    const itens = await this.servicoModel.findAll({
+      where: { [Op.or]: filtros },
+      order: [['id', 'DESC']],
+    });
+
+    return {
+      itens,
+      mensagem: itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+    };
+  }
+
   private normalizarDataBusca(valor: string): string | undefined {
     const valorYmd = valor.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (valorYmd) {

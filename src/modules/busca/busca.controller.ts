@@ -116,4 +116,17 @@ export class BuscaController {
     );
     return this.buscaService.listarUsuariosByTermo(termo);
   }
+
+  @Get('servico/termo')
+  @ApiOperation({
+    summary:
+      'Buscar serviços por termo simples nos campos nome, descrição, valor base e prazo estimado',
+  })
+  listarServicos(@Query('termo') termo?: string): Promise<{
+    itens: Servico[];
+    mensagem?: string;
+  }> {
+    this.logger.log(`Listando servicos com filtro: ${termo ?? 'sem filtro'}`);
+    return this.buscaService.listarServicosByTermo(termo);
+  }
 }
