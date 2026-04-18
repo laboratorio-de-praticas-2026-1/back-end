@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  HttpException,
+  HttpStatus,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -30,6 +32,7 @@ import {
   ProtocoloSolicitacaoDto,
 } from './dto/create-solicitacao-response.dto';
 import { CreateSolicitacaoDto } from './dto/create-solicitacao.dto';
+import { GetSolicitacaoResponseDto } from './dto/get-solicitacao-response.dto';
 import { ListSolicitacoesResponseDto } from './dto/list-solicitacoes-response.dto';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 
@@ -192,6 +195,63 @@ export class SolicitacaoService implements OnModuleDestroy {
     }
 
     return solicitacao;
+  }
+
+  async getSolicitacaoById(id: number): Promise<GetSolicitacaoResponseDto> {
+    const solicitacao: Solicitacao | null =
+      await this.solicitacaoModel.findByPk(id, {
+        include: [
+          {
+            model: Usuario,
+            attributes: ['id', 'nome', 'cpfCnpj'],
+          },
+          {
+            model: Veiculo,
+            attributes: ['id', 'modelo', 'placa'],
+          },
+          {
+            model: Servico,
+            attributes: ['id', 'nome'],
+          },
+        ],
+      });
+
+    if (!solicitacao) {
+      throw new NotFoundException({
+        error: 'SOLICITACAO_NAO_ENCONTRADA',
+        message: 'A solicitação não foi encontrada',
+      });
+    }
+
+    return {
+      id: solicitacao.id,
+      usuario_id: solicitacao.usuarioId,
+      veiculo_id: solicitacao.veiculoId,
+      servico_id: solicitacao.servicoId,
+      status: solicitacao.status,
+      observacao_cliente: solicitacao.observacaoCliente,
+      observacao_admin: solicitacao.observacaoAdmin,
+      data_solicitacao: solicitacao.dataSolicitacao.toISOString(),
+      data_conclusao: solicitacao.dataConclusao
+        ? solicitacao.dataConclusao.toISOString()
+        : null,
+      usuario: {
+        id: solicitacao.usuario.id,
+        nome: solicitacao.usuario.nome,
+        cpf_cnpj: solicitacao.usuario.cpfCnpj ?? null,
+      },
+      veiculo: solicitacao.veiculo
+        ? {
+            id: solicitacao.veiculo.id,
+            modelo: solicitacao.veiculo.modelo,
+            placa: solicitacao.veiculo.placa,
+          }
+        : null,
+      servico: {
+        id: solicitacao.servico.id,
+        nome: solicitacao.servico.nome,
+      },
+    };
   }
 
   async updateSolicitacaoStatusById(
