@@ -3,13 +3,13 @@ import { InjectModel } from '@nestjs/sequelize';
 import { col, fn, Op, where } from 'sequelize';
 import { Banner } from 'src/models/banner.model';
 import { Blog } from 'src/models/blog.model';
+import { Publicidade } from 'src/models/publicidade.model';
 import { Servico } from 'src/models/servico.model';
 import { Usuario } from 'src/models/usuario.model';
 import { BuscaBannerStatusDto } from './dto/busca-banner-status.dto';
 import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
-import { BuscaServicoFiltroDto } from './dto/busca-servico-filtro.dto';
-import { Publicidade } from 'src/models/publicidade.model';
 import { BuscaPublicidadeStatusDto } from './dto/busca-publicidade-status.dto';
+import { BuscaServicoFiltroDto } from './dto/busca-servico-filtro.dto';
 import { BuscaUsuarioFiltroDto } from './dto/busca-usuario-filtro.dto';
 
 @Injectable()
@@ -100,10 +100,14 @@ export class BuscaService {
     ];
 
     if (filtros.length === 0) {
-      return await this.usuarioModel.findAll({ order: [['id', 'ASC']] });
+      return await this.usuarioModel.findAll({
+        attributes: { exclude: ['senha'] },
+        order: [['id', 'ASC']],
+      });
     }
 
     return await this.usuarioModel.findAll({
+      attributes: { exclude: ['senha'] },
       where: {
         [Op.and]: filtros,
       },
@@ -241,5 +245,83 @@ export class BuscaService {
       itens,
       mensagem: itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
     };
+  }
+
+  async listarUsuariosByTermo(termo?: string): Promise<{
+    itens: Usuario[];
+    mensagem?: string;
+  }> {
+    const termoNormalizado = termo?.trim();
+
+    if (!termoNormalizado) {
+      const itens = await this.usuarioModel.findAll({
+        attributes: { exclude: ['senha'] },
+        order: [['id', 'DESC']],
+      });
+
+      return {
+        itens,
+        mensagem:
+          itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+      };
+    }
+
+    const filtros: Array<Record<string, unknown> | ReturnType<typeof where>> = [
+      { nome: { [Op.like]: `%${termoNormalizado}%` } },
+      { email: { [Op.like]: `%${termoNormalizado}%` } },
+      { cpfCnpj: { [Op.like]: `%${termoNormalizado}%` } },
+      { celular: { [Op.like]: `%${termoNormalizado}%` } },
+    ];
+
+    const dataNormalizada = this.normalizarDataBusca(termoNormalizado);
+    if (dataNormalizada) {
+      const inicio = new Date(`${dataNormalizada}T00:00:00.000Z`);
+      const fim = new Date(`${dataNormalizada}T23:59:59.999Z`);
+      filtros.push(where(col('data_cadastro'), Op.between, [inicio, fim]));
+    }
+
+    const itens = await this.usuarioModel.findAll({
+      attributes: { exclude: ['senha'] },
+      where: { [Op.or]: filtros },
+      order: [['id', 'DESC']],
+    });
+
+    return {
+      itens,
+      mensagem: itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+    };
+  }
+
+  private normalizarDataBusca(valor: string): string | undefined {
+    const valorYmd = valor.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (valorYmd) {
+      const ano = Number(valorYmd[1]);
+      const mes = Number(valorYmd[2]);
+      const dia = Number(valorYmd[3]);
+      return this.validarData(ano, mes, dia)
+        ? `${valorYmd[1]}-${valorYmd[2]}-${valorYmd[3]}`
+        : undefined;
+    }
+
+    const valorBr = valor.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (valorBr) {
+      const dia = Number(valorBr[1]);
+      const mes = Number(valorBr[2]);
+      const ano = Number(valorBr[3]);
+      return this.validarData(ano, mes, dia)
+        ? `${valorBr[3]}-${valorBr[2]}-${valorBr[1]}`
+        : undefined;
+    }
+
+    return undefined;
+  }
+
+  private validarData(ano: number, mes: number, dia: number): boolean {
+    const dataUtc = new Date(Date.UTC(ano, mes - 1, dia, 0, 0, 0, 0));
+    return (
+      dataUtc.getUTCFullYear() === ano &&
+      dataUtc.getUTCMonth() === mes - 1 &&
+      dataUtc.getUTCDate() === dia
+    );
   }
 }
