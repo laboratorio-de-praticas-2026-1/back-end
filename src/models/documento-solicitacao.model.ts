@@ -1,4 +1,11 @@
-import { Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
+import {
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  Model,
+  Table,
+} from 'sequelize-typescript';
 import { Solicitacao } from './solicitacao.model';
 
 @Table({ tableName: 'documento_solicitacao' })
@@ -10,10 +17,17 @@ export class DocumentoSolicitacao extends Model {
   @Column({ field: 'solicitacao_id', allowNull: false })
   declare solicitacaoId: number;
 
+  @BelongsTo(() => Solicitacao)
+  declare solicitacao: Solicitacao;
+
   @Column({ field: 'nome_hash', type: DataType.STRING(255), allowNull: true })
   declare nomeHash: string | null;
 
-  @Column({ field: 'tipo_documento', type: DataType.STRING(100), allowNull: true })
+  @Column({
+    field: 'tipo_documento',
+    type: DataType.STRING(100),
+    allowNull: true,
+  })
   declare tipoDocumento: string | null;
 
   @Column({

@@ -3,7 +3,5 @@ import { FaqService } from './faq.service';
 
 @Controller('faq')
 export class FaqController {
-  constructor(private readonly faqService: FaqService) {    
-  }
+  constructor(private readonly faqService: FaqService) {}
 }
-

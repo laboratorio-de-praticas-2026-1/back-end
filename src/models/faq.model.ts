@@ -9,5 +9,5 @@ export class Faq extends Model {
   declare pergunta: string | null;
 
   @Column({ type: DataType.TEXT, allowNull: true })
-  declare resposta: string | null ;
+  declare resposta: string | null;
 }
