@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atualização de Solicitação - Grupo Bortone</title>
+    <style>
+        /* Reset e Base */
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f5f7; margin: 0; padding: 0; }
+        
+        /* Container Principal */
+        .email-container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e0e0e0; }
+        
+        /* Cabeçalho */
+        .header { background-color: #283e7b; padding: 25px; text-align: center; }
+        .header img { max-width: 180px; height: auto; }
+        
+        /* Conteúdo */
+        .content { padding: 40px 35px; color: #333333; line-height: 1.6; }
+        .content h2 { color: #283e7b; margin-top: 0; font-size: 20px; text-align: center; }
+        .intro-text { text-align: center; color: #666; margin-bottom: 30px; }
+        
+        /* Tabela de Detalhes */
+        .details-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; background-color: #fcfcfc; border: 1px solid #eeeeee; border-radius: 4px; }
+        .details-table td { padding: 14px 15px; border-bottom: 1px solid #eeeeee; font-size: 14px; }
+        .details-table tr:last-child td { border-bottom: none; }
+        .label { font-weight: bold; color: #555; width: 35%; }
+        .value { color: #333; text-align: right; }
+        
+        /* Etiquetas de Status (Badges) */
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+
+        /* Caixa de Observação */
+        .feedback-box { background-color: #f9fbfd; border-left: 4px solid #283e7b; padding: 16px; margin-bottom: 30px; border-radius: 0 4px 4px 0; font-size: 14px; color: #444; }
+        .feedback-label { font-weight: bold; color: #283e7b; display: block; margin-bottom: 5px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Botão de Ação */
+        .button-container { text-align: center; margin-top: 10px; }
+        .btn { background-color: #283e7b; color: #ffffff !important; padding: 14px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; transition: background-color 0.3s; }
+        
+        /* Rodapé */
+        .footer { background-color: #f9f9f9; padding: 20px; text-align: center; font-size: 12px; color: #999; border-top: 1px solid #eeeeee; }
+        .footer a { color: #283e7b; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        
+        <div class="header">
+            <img src="cid:logo_img" alt="Grupo Bortone">
+        </div>
+
+        <div class="content">
+            <h2>Status Atualizado</h2>
+            <p class="intro-text">Olá, <strong><%= nomeCliente %></strong>.<br>Houve uma atualização no andamento da sua solicitação.</p>
+            
+            <table class="details-table">
+                <tr>
+                    <td class="label">Protocolo:</td>
+                    <td class="value" style="font-family: monospace; font-size: 15px;"><strong>#BRT-<%= solicitacaoId %></strong></td>
+                </tr>
+                <tr>
+                    <td class="label">Assunto:</td>
+                    <td class="value"><%= servicoNome %></td>
+                </tr>
+                <tr>
+                    <td class="label">Novo Status:</td>
+                    <td class="value"><%- '<span class="status-badge" style="color: #ffffff; background-color: ' + statusCor + ';">' %><%= titulo %></span></td>
+                </tr>
+            </table>
+
+            <div class="feedback-box">
+                <span class="feedback-label">Mensagem da Equipe:</span>
+                <%= mensagem %>
+                <% if (observacaoAdmin) { %>
+                <br><br><strong>Observação:</strong> <%= observacaoAdmin %>
+                <% } %>
+            </div>
+
+            <div class="button-container">
+                <a href="#" class="btn">Ver Detalhes do Pedido</a>
+            </div>
+        </div>
+
+        <div class="footer">
+            © 2026 Grupo Bortone. Todos os direitos reservados.<br>
+            <a href="#">Acesse sua área do cliente</a> | <a href="#">Central de Ajuda</a>
+        </div>
+        
+    </div>
+</body>
+</html>
