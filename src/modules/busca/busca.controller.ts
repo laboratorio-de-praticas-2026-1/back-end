@@ -101,6 +101,7 @@ export class BuscaController {
     );
     return this.buscaService.buscarServicosPorFiltros(dto);
   }
+
   @Get('usuario/termo')
   @ApiOperation({
     summary:
@@ -111,7 +112,7 @@ export class BuscaController {
     mensagem?: string;
   }> {
     this.logger.log(
-      `Listando usuarios do CMS com filtro: ${termo ?? 'sem filtro'}`,
+      `Listando usuarios do CMS com filtro: ${termo?.trim() ?? 'sem filtro'}`,
     );
     return this.buscaService.listarUsuariosByTermo(termo);
   }
