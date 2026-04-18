@@ -632,15 +632,6 @@ export class DashboardService {
           totalConcluidas,
           percentual,
         },
-        veiculos: {
-          totalCadastrados: totalVeiculosCadastrados,
-          comSolicitacaoAtiva: veiculosComSolicitacaoAtiva,
-          comDebitoPendente: porVeiculo.length,
-          debitosPendentes: {
-            valorTotal: valorTotalGeral,
-            porVeiculo,
-          },
-        },
       },
       servicos: {
         ativos: servicosAtivos,
@@ -659,6 +650,15 @@ export class DashboardService {
         previsaoCaixa30Dias,
         porMetodoPagamento,
         porTipoPagamento,
+      },
+      veiculos: {
+        totalCadastrados: totalVeiculosCadastrados,
+        comSolicitacaoAtiva: veiculosComSolicitacaoAtiva,
+        comDebitoPendente: porVeiculo.length,
+        debitosPendentes: {
+          valorTotal: valorTotalGeral,
+          porVeiculo,
+        },
       },
     };
   }
