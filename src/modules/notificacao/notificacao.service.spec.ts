@@ -1,19 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotificacaoService } from './notificacao.service';
-import { getModelToken } from '@nestjs/sequelize';
+import { Sequelize } from 'sequelize-typescript';
 
 
 const mockSequelize = {
   query: jest.fn(),
-  transaction: jest.fn(),
-
-};
-
-
-const mockDebitoModel = {
-  findAll: jest.fn(),
-  findOne: jest.fn(),
-  create: jest.fn(),
 };
 
 describe('NotificacaoService', () => {
@@ -24,14 +15,9 @@ describe('NotificacaoService', () => {
       providers: [
         NotificacaoService,
         {
-          provide: 'SEQUELIZE',
+          provide: Sequelize,
           useValue: mockSequelize,
         },
-        {
-          provide: getModelToken('Debito'), 
-          useValue: mockDebitoModel,
-        },
-        
       ],
     }).compile();
 
