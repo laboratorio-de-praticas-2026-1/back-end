@@ -216,6 +216,50 @@ describe('BuscaService', () => {
     });
   });
 
+  describe('listarEmpresasByTermo', () => {
+    it('deve retornar mensagem quando nao encontrar itens sem filtro', async () => {
+      empresaFindAllMock.mockResolvedValue([]);
+
+      const resultado = await service.listarEmpresasByTermo();
+
+      expect(empresaFindAllMock).toHaveBeenCalledWith({
+        order: [['id', 'DESC']],
+      });
+      expect(resultado).toEqual({
+        itens: [],
+        mensagem: 'Nenhum item foi encontrado.',
+      });
+    });
+
+    it('deve montar filtro por nome fantasia, cnpj, telefone, cidade e site quando termo textual for informado', async () => {
+      empresaFindAllMock.mockResolvedValue([]);
+
+      await service.listarEmpresasByTermo('  curitiba  ');
+
+      expect(empresaFindAllMock).toHaveBeenCalledWith({
+        where: {
+          [Op.or]: [
+            { nomeFantasia: { [Op.like]: '%curitiba%' } },
+            { cnpj: { [Op.like]: '%curitiba%' } },
+            { telefone: { [Op.like]: '%curitiba%' } },
+            { cidade: { [Op.like]: '%curitiba%' } },
+            { site: { [Op.like]: '%curitiba%' } },
+          ],
+        },
+        order: [['id', 'DESC']],
+      });
+    });
+
+    it('deve retornar itens quando houver correspondencia no filtro', async () => {
+      const retorno = [{ id: 10, nomeFantasia: 'Auto Curitiba' }];
+      empresaFindAllMock.mockResolvedValue(retorno);
+
+      const resultado = await service.listarEmpresasByTermo('curitiba');
+
+      expect(resultado).toEqual({ itens: retorno, mensagem: undefined });
+    });
+  });
+
   it('deve buscar blogs entre datas (incluindo limites)', async () => {
     const retorno = [{ id: 1 }];
     blogFindAllMock.mockResolvedValue(retorno);

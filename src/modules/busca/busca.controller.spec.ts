@@ -9,6 +9,7 @@ describe('BuscaController', () => {
     listarBannersByTermo: jest.fn(),
     listarPublicidadeByTermo: jest.fn(),
     listarUsuariosByTermo: jest.fn(),
+    listarEmpresasByTermo: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -16,6 +17,7 @@ describe('BuscaController', () => {
     buscaServiceMock.listarBannersByTermo.mockReset();
     buscaServiceMock.listarPublicidadeByTermo.mockReset();
     buscaServiceMock.listarUsuariosByTermo.mockReset();
+    buscaServiceMock.listarEmpresasByTermo.mockReset();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [BuscaController],
@@ -65,6 +67,16 @@ describe('BuscaController', () => {
 
     expect(buscaServiceMock.listarPublicidadeByTermo).toHaveBeenCalledWith(
       'promo',
+    );
+  });
+
+  it('deve delegar a listagem de empresas para o BuscaService', async () => {
+    buscaServiceMock.listarEmpresasByTermo.mockResolvedValue({ itens: [] });
+
+    await controller.listarEmpresas('curitiba');
+
+    expect(buscaServiceMock.listarEmpresasByTermo).toHaveBeenCalledWith(
+      'curitiba',
     );
   });
 });

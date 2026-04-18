@@ -134,6 +134,21 @@ export class BuscaController {
     return this.buscaService.buscarEmpresasPorFiltros(dto);
   }
 
+  @Get('empresa/termo')
+  @ApiOperation({
+    summary:
+      'Buscar empresas do CMS por nome fantasia, CNPJ, telefone, cidade ou site',
+  })
+  listarEmpresas(@Query('termo') termo?: string): Promise<{
+    itens: Empresa[];
+    mensagem?: string;
+  }> {
+    this.logger.log(
+      `Listando empresas do CMS com filtro: ${termo?.trim() ?? 'sem filtro'}`,
+    );
+    return this.buscaService.listarEmpresasByTermo(termo);
+  }
+
   @Get('empresa/estados')
   @ApiOperation({
     summary: 'Listar UFs (estados) disponíveis nas empresas',
