@@ -14,6 +14,7 @@ const mockUsuarioService = {
   login: jest.fn(),
   remove: jest.fn(),
   update: jest.fn(),
+  findAll: jest.fn(),
 };
 
 const mockGuard = { canActivate: jest.fn().mockReturnValue(true) };
@@ -222,6 +223,39 @@ describe('UsuarioController', () => {
       await expect(controller.update(1, {})).rejects.toThrow(
         ForbiddenException,
       );
+    });
+  });
+
+  describe('findAll', () => {
+    it('deve retornar uma lista de usuários', async () => {
+      const usuarios = [
+        {
+          id: 1,
+          nome: 'Arthur',
+          email: 'arthur@email.com',
+        },
+        {
+          id: 2,
+          nome: 'João',
+          email: 'joao@email.com',
+        },
+      ];
+
+      mockUsuarioService.findAll.mockResolvedValue(usuarios);
+
+      const result = await controller.findAll();
+
+      expect(mockUsuarioService.findAll).toHaveBeenCalled();
+      expect(result).toEqual(usuarios);
+    });
+
+    it('deve retornar lista vazia', async () => {
+      mockUsuarioService.findAll.mockResolvedValue([]);
+
+      const result = await controller.findAll();
+
+      expect(mockUsuarioService.findAll).toHaveBeenCalled();
+      expect(result).toEqual([]);
     });
   });
 });

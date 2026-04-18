@@ -138,4 +138,18 @@ export class UsuarioService {
       );
     }
   }
+
+  async findAll(): Promise<ResponseUsuarioDto[]> {
+    const usuarios = await this.usuarioModel.findAll({
+      attributes: { exclude: ['senha'] },
+    });
+
+    const plainUsuarios = usuarios.map(
+      (u) => u.get({ plain: true }) as Usuario,
+    );
+
+    return plainToInstance(ResponseUsuarioDto, plainUsuarios, {
+      excludeExtraneousValues: true,
+    });
+  }
 }

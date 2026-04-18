@@ -6,11 +6,13 @@ import {
   Body,
   ParseIntPipe,
   UseGuards,
+  Get,
   Post,
 } from '@nestjs/common';
 import { UsuarioService } from './usuario.service';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { UsuarioOwnerGuard } from './guards/usuario-owner.guard';
+import { AdminGuard } from './guards/admin.guard';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import {
   ApiBadRequestResponse,
@@ -62,5 +64,11 @@ export class UsuarioController {
     @Body() updateUsuarioDto: UpdateUsuarioDto,
   ) {
     return this.usuarioService.update(id, updateUsuarioDto);
+  }
+
+  @Get()
+  @UseGuards(AdminGuard)
+  findAll() {
+    return this.usuarioService.findAll();
   }
 }
