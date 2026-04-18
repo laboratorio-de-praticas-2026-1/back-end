@@ -478,7 +478,9 @@ describe('BuscaService', () => {
     });
 
     it('deve aplicar fallback para filtro textual quando termo numerico nao encontrar id exato', async () => {
-      publicidadeFindAllMock.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+      publicidadeFindAllMock
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]);
 
       await service.listarPublicidadeByTermo('12');
 

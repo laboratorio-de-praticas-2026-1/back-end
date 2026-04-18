@@ -20,7 +20,7 @@ export class BuscaService {
     @InjectModel(Servico) private servicoModel: typeof Servico,
     @InjectModel(Publicidade) private publicidadeModel: typeof Publicidade,
     @InjectModel(Usuario) private usuarioModel: typeof Usuario,
-  ) { }
+  ) {}
 
   async buscarBlogsPorIntervaloDeData(
     dto: BuscaBlogIntervaloDto,
@@ -278,9 +278,7 @@ export class BuscaService {
         return {
           itens: itensPorId,
           mensagem:
-            itensPorId.length === 0
-              ? 'Nenhum item foi encontrado.'
-              : undefined,
+            itensPorId.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
         };
       }
     }
