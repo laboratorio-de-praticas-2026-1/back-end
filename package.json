@@ -47,8 +47,7 @@
     "puppeteer": "^22.0.0",
     "pdf-lib": "^1.17.1",
     "chart.js": "^4.4.2",
-    "canvas": "^2.11.2",
-    "@types/canvas": "^2.11.0"
+    "canvas": "^2.11.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
