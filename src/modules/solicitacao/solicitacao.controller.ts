@@ -30,6 +30,7 @@ import { GetSolicitacaoResponseDto } from './dto/get-solicitacao-response.dto';
 import { ListSolicitacoesResponseDto } from './dto/list-solicitacoes-response.dto';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 import { SolicitacaoService } from './solicitacao.service';
+import { Patch } from '@nestjs/common';
 
 @ApiTags('solicitacao')
 @Controller('solicitacoes')
@@ -100,10 +101,11 @@ export class SolicitacaoController {
     return this.solicitacaoService.getSolicitacaoById(id);
   }
 
-  @Put(':id')
+  @Patch(':id/status')
   @ApiOperation({
     summary: 'Atualizar status de solicitação',
-    description: 'Atualizar status de solicitação e mudar observação de Admin.',
+    description:
+      'Atualização parcial do status de uma solicitação com envio controlado de e-mails e proteção anti-spam.',
   })
   @ApiBody({
     type: UpdateSolicitacaoStatusDto,
