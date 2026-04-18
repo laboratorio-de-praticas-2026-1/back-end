@@ -55,7 +55,7 @@ describe('ContatoController', () => {
   });
 
   it('deve bloquear busca quando id for diferente de 1', async () => {
-    await expect(controller.buscarContatoById(2)).rejects.toThrow(
+    expect(() => controller.buscarContatoById(2)).toThrow(
       ForbiddenException,
     );
 

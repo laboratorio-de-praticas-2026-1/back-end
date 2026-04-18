@@ -107,6 +107,7 @@ describe('ContatoService', () => {
 
   describe('atualizarContato', () => {
     it('deve atualizar contato com sucesso', async () => {
+      mockEmpresaModel.findOne.mockResolvedValue(mockEmpresa);
       mockEmpresaModel.update.mockResolvedValue([1]);
 
       const updateData = { telefone: '11999999999' };
@@ -118,17 +119,20 @@ describe('ContatoService', () => {
       });
     });
 
-    it('deve lançar NotFoundException quando nenhum registro for atualizado', async () => {
-      mockEmpresaModel.update.mockResolvedValue([0]);
+    it('deve lançar NotFoundException quando contato não existir', async () => {
+      mockEmpresaModel.findOne.mockResolvedValue(null);
 
       const updateData = { telefone: '11999999999' };
 
-      await expect(
-        service.atualizarContato(1, updateData),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.atualizarContato(1, updateData)).rejects.toThrow(
+        NotFoundException,
+      );
+
+      expect(mockEmpresaModel.update).not.toHaveBeenCalled();
     });
 
     it('deve atualizar múltiplos campos', async () => {
+      mockEmpresaModel.findOne.mockResolvedValue(mockEmpresa);
       mockEmpresaModel.update.mockResolvedValue([1]);
 
       const updateData = {
@@ -266,4 +270,3 @@ describe('ContatoService', () => {
     });
   });
 });
-
