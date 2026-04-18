@@ -6,6 +6,7 @@ import { UsuarioService } from './usuario.service';
 import { UsuarioController } from './usuario.controller';
 import { Usuario } from 'src/models/usuario.model';
 import { UsuarioOwnerGuard } from './guards/usuario-owner.guard';
+import { AdminGuard } from './guards/admin.guard';
 
 @Module({
   imports: [
@@ -19,6 +20,6 @@ import { UsuarioOwnerGuard } from './guards/usuario-owner.guard';
     }),
   ],
   controllers: [UsuarioController],
-  providers: [UsuarioService, UsuarioOwnerGuard],
+  providers: [UsuarioService, UsuarioOwnerGuard, AdminGuard],
 })
 export class UsuarioModule {}
