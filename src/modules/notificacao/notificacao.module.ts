@@ -1,4 +1,3 @@
-///
 import { SequelizeModule } from '@nestjs/sequelize';
 import { Module } from '@nestjs/common';
 import { NotificacaoService } from './notificacao.service';
