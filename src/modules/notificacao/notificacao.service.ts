@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Sequelize } from 'sequelize-typescript';
+import { QueryTypes } from 'sequelize';
 
 type Notification = {
   titulo: string;
@@ -8,16 +9,25 @@ type Notification = {
   data: Date;
 };
 
+interface DebitoResult {
+  id: number;
+  descricao: string;
+  valor: number;
+  created_at: Date;
+  placa: string;
+}
+
 @Injectable()
 export class NotificacaoService {
   constructor(private readonly sequelize: Sequelize) {}
 
-  async enviarConfirmacaoSolicitacao(data: any): Promise<void> {
+  // Removeu 'async' e trocou 'any' por Record<string, unknown>
+  enviarConfirmacaoSolicitacao(data: Record<string, unknown>): void {
     console.log('Notificação enviada', data);
   }
 
   async getUserNotifications(userId: number): Promise<Notification[]> {
-    const [results]: any = await this.sequelize.query(
+    const results: DebitoResult[] = await this.sequelize.query(
       `
       SELECT 
         d.id,
@@ -34,10 +44,11 @@ export class NotificacaoService {
       `,
       {
         replacements: { userId },
+        type: QueryTypes.SELECT, // ESSENCIAL para tipagem correta
       },
     );
 
-    return results.map((debito: any) => ({
+    return (results || []).map((debito) => ({
       titulo: 'Débito pendente',
       mensagem: `Você possui um débito pendente para o veículo ${debito.placa}. ${debito.descricao}`,
       valor: Number(debito.valor),

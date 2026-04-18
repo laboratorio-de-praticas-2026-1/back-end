@@ -28,9 +28,11 @@ export class NotificacaoController {
         total: notificacoes.length,
         notificacoes,
       };
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido';
       throw new BadRequestException(
-        `Erro ao recuperar notificações: ${error.message}`,
+        `Erro ao recuperar notificações: ${errorMessage}`,
       );
     }
   }
