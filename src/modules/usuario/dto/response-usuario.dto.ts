@@ -3,25 +3,25 @@ import { Usuario } from 'src/models/usuario.model';
 
 export class ResponseUsuarioDto {
   @Expose()
-  id: number;
+  id!: number;
 
   @Expose()
-  nome: string;
+  nome!: string;
 
   @Expose()
-  email: string;
+  email!: string;
 
   @Expose()
-  nivel: string;
+  nivel!: string;
 
   @Expose()
   @Transform(({ obj }: { obj: Usuario }) => obj.cpfCnpj ?? null)
-  cpf_cnpj: string | null;
+  cpf_cnpj!: string | null;
 
   @Expose()
-  celular: string | null;
+  celular!: string | null;
 
   @Expose()
   @Transform(({ obj }: { obj: Usuario }) => obj.dataCadastro)
-  data_cadastro: Date;
+  data_cadastro!: Date;
 }
