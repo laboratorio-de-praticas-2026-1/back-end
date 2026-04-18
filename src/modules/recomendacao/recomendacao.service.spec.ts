@@ -230,6 +230,91 @@ describe('RecomendacaoService', () => {
     });
   });
 
+  describe('buscarLicenciamentoAnual', () => {
+    it('deve retornar recomendação de licenciamento se o veículo estiver no período e não houver solicitação ativa', async () => {
+      const mesAtual = new Date().getMonth() + 1;
+
+      // Encontrar um dígito cujo gatilho seja <= mesAtual
+      const gatilhoPorDigito: Record<string, number> = {
+        '1': 3,
+        '2': 4,
+        '3': 5,
+        '4': 6,
+        '5': 7,
+        '6': 7,
+        '7': 8,
+        '8': 9,
+        '9': 10,
+        '0': 11,
+      };
+      const digitoElegivel =
+        Object.entries(gatilhoPorDigito).find(
+          ([, gatilho]) => mesAtual >= gatilho,
+        )?.[0] ?? '1';
+
+      mockVeiculoModel.findAll.mockResolvedValue([
+        { id: 5, placa: `ABC123${digitoElegivel}` } as unknown as Veiculo,
+      ]);
+      mockSolicitacaoModel.findOne.mockResolvedValue(null);
+
+      const resultado = await service.buscarLicenciamentoAnual(1);
+
+      expect(resultado).not.toBeNull();
+      expect(resultado?.id).toBe(1);
+      expect(resultado?.nome).toBe('Licenciamento Anual');
+    });
+
+    it('deve retornar null se o veículo ainda não atingiu o mês de gatilho', async () => {
+      // Dígito '0' tem gatilho em novembro (11), só dispara se mesAtual >= 11
+      // Forçamos um cenário onde o mês atual é anterior ao gatilho
+      mockVeiculoModel.findAll.mockResolvedValue([
+        { id: 5, placa: 'ABC1230', ativo: true } as unknown as Veiculo,
+      ]);
+
+      jest.spyOn(Date.prototype, 'getMonth').mockReturnValue(0); // Janeiro
+
+      const resultado = await service.buscarLicenciamentoAnual(1);
+      expect(resultado).toBeNull();
+
+      jest.restoreAllMocks();
+    });
+
+    it('deve retornar null se já existe solicitação ativa no ano corrente', async () => {
+      const mesAtual = new Date().getMonth() + 1;
+      const gatilhoPorDigito: Record<string, number> = {
+        '1': 3,
+        '2': 4,
+        '3': 5,
+        '4': 6,
+        '5': 7,
+        '6': 7,
+        '7': 8,
+        '8': 9,
+        '9': 10,
+        '0': 11,
+      };
+      const digitoElegivel =
+        Object.entries(gatilhoPorDigito).find(
+          ([, gatilho]) => mesAtual >= gatilho,
+        )?.[0] ?? '1';
+
+      mockVeiculoModel.findAll.mockResolvedValue([
+        {
+          id: 5,
+          placa: `ABC123${digitoElegivel}`,
+          ativo: true,
+        } as unknown as Veiculo,
+      ]);
+      mockSolicitacaoModel.findOne.mockResolvedValue({
+        id: 99,
+        status: 'pendente',
+      } as unknown as Solicitacao);
+
+      const resultado = await service.buscarLicenciamentoAnual(1);
+      expect(resultado).toBeNull();
+    });
+  });
+
   describe('buscarComunicacaoVenda', () => {
     it('deve retornar recomendação (ID 9) quando houver interesse no blog (Documentação)', async () => {
       mockInteracaoUsuarioModel.findOne.mockResolvedValue({
@@ -279,6 +364,7 @@ describe('RecomendacaoService', () => {
 
   describe('obterRecomendacoes', () => {
     it('deve retornar uma lista com múltiplos serviços se o usuário tiver multa e venda', async () => {
+      jest.spyOn(service, 'buscarLicenciamentoAnual').mockResolvedValue(null);
       jest.spyOn(service, 'buscarRecursoMulta').mockResolvedValue({
         id: 6,
         nome: 'Multa',
@@ -304,6 +390,7 @@ describe('RecomendacaoService', () => {
     });
 
     it('deve retornar serviços populares se a lista de prioridades estiver vazia', async () => {
+      jest.spyOn(service, 'buscarLicenciamentoAnual').mockResolvedValue(null);
       jest.spyOn(service, 'buscarRecursoMulta').mockResolvedValue(null);
       jest.spyOn(service, 'buscarParcelamentoDebitos').mockResolvedValue(null);
       jest.spyOn(service, 'buscarComunicacaoVenda').mockResolvedValue(null);
