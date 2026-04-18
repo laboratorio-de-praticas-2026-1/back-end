@@ -30,6 +30,7 @@
     "@nestjs/platform-socket.io": "^11.1.16",
     "@nestjs/sequelize": "^11.0.1",
     "@nestjs/swagger": "^11.2.6",
+    "@nestjs/typeorm": "^11.0.1",
     "@nestjs/websockets": "^11.1.16",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
