@@ -1,47 +1,43 @@
-import { Injectable } from '@nestjs/common';
-import { Sequelize } from 'sequelize-typescript';
+import { Injectable, Logger } from '@nestjs/common';
+import { ProtocoloSolicitacaoDto } from '../solicitacao/dto/create-solicitacao-response.dto';
 
-type Notification = {
-  titulo: string;
-  mensagem: string;
-  valor: number;
-  data: Date;
+type ConfirmacaoSolicitacaoPayload = {
+  email: string;
+  nomeUsuario: string;
+  solicitacaoId: number;
+  protocolo: ProtocoloSolicitacaoDto;
 };
 
 @Injectable()
 export class NotificacaoService {
-  constructor(private readonly sequelize: Sequelize) {}
+  private readonly logger = new Logger(NotificacaoService.name);
 
-  async enviarConfirmacaoSolicitacao(data: any): Promise<void> {
-    console.log('Notificação enviada', data);
-  }
+  async enviarConfirmacaoSolicitacao(
+    payload: ConfirmacaoSolicitacaoPayload,
+  ): Promise<void> {
+    void this.montarMensagemConfirmacao(payload);
 
-  async getUserNotifications(userId: number): Promise<Notification[]> {
-    const [results]: any = await this.sequelize.query(
-      `
-      SELECT 
-        d.id,
-        d.descricao,
-        d.valor,
-        d.created_at,
-        v.placa
-      FROM debito d
-      JOIN debito_veiculo dv ON dv.id_debito = d.id
-      JOIN veiculo v ON v.id = dv.id_veiculo
-      WHERE v.usuario_id = :userId
-      AND d.status = 'pendente'
-      ORDER BY d.created_at DESC
-      `,
-      {
-        replacements: { userId },
-      },
+    this.logger.log(
+      `Email de confirmacao da solicitacao ${payload.solicitacaoId} preparado com sucesso`,
     );
 
-    return results.map((debito: any) => ({
-      titulo: 'Débito pendente',
-      mensagem: `Você possui um débito pendente para o veículo ${debito.placa}. ${debito.descricao}`,
-      valor: Number(debito.valor),
-      data: debito.created_at,
-    }));
+    return Promise.resolve();
+  }
+
+  private montarMensagemConfirmacao(payload: ConfirmacaoSolicitacaoPayload): {
+    assunto: string;
+    conteudo: string;
+  } {
+    const assunto = `Confirmacao da solicitacao #${payload.solicitacaoId}`;
+    const conteudo = [
+      `Ola, ${payload.nomeUsuario}!`,
+      `Sua solicitacao foi registrada com sucesso.`,
+      `Servico: ${payload.protocolo.servico.nome}`,
+      `Valor base: ${payload.protocolo.servico.valor_base ?? 'Nao informado'}`,
+      `Data da solicitacao: ${payload.protocolo.solicitacao.data_solicitacao}`,
+      `Prazo estimado: ${payload.protocolo.solicitacao.prazo_estimado}`,
+    ].join(' ');
+
+    return { assunto, conteudo };
   }
 }
