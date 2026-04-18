@@ -36,6 +36,7 @@ import { GetSolicitacaoResponseDto } from './dto/get-solicitacao-response.dto';
 import { ListSolicitacoesResponseDto } from './dto/list-solicitacoes-response.dto';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 import { SolicitacaoService } from './solicitacao.service';
+import { Patch } from '@nestjs/common';
 
 @ApiTags('solicitacao')
 @Controller('solicitacoes')
