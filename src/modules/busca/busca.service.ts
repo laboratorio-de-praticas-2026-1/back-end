@@ -247,6 +247,76 @@ export class BuscaService {
     };
   }
 
+  async listarPublicidadeByTermo(termo?: string): Promise<{
+    itens: Publicidade[];
+    mensagem?: string;
+  }> {
+    const termoNormalizado = termo?.trim();
+
+    if (!termoNormalizado) {
+      const itens = await this.publicidadeModel.findAll({
+        order: [['id', 'DESC']],
+      });
+
+      return {
+        itens,
+        mensagem:
+          itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+      };
+    }
+
+    const idExtraido = this.extrairIdExato(termoNormalizado);
+    const buscaIdExplicita = this.termoRepresentaIdExplicito(termoNormalizado);
+
+    if (idExtraido !== undefined) {
+      const itensPorId = await this.publicidadeModel.findAll({
+        where: { id: idExtraido },
+        order: [['id', 'DESC']],
+      });
+
+      if (itensPorId.length > 0 || buscaIdExplicita) {
+        return {
+          itens: itensPorId,
+          mensagem:
+            itensPorId.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+        };
+      }
+    }
+
+    const filtros: Array<Record<string, unknown>> = [
+      { urlImagem: { [Op.like]: `%${termoNormalizado}%` } },
+      { conteudo: { [Op.like]: `%${termoNormalizado}%` } },
+    ];
+
+    const itens = await this.publicidadeModel.findAll({
+      where: { [Op.or]: filtros },
+      order: [['id', 'DESC']],
+    });
+
+    return {
+      itens,
+      mensagem: itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+    };
+  }
+
+  private extrairIdExato(valor: string): number | undefined {
+    const valorNumerico = valor.match(/^(0|[1-9]\d*)$/);
+    if (valorNumerico) {
+      return parseInt(valorNumerico[1], 10);
+    }
+
+    const valorComPrefixoId = valor.match(/^id\s*[:#-]?\s*(0|[1-9]\d*)$/i);
+    if (valorComPrefixoId) {
+      return parseInt(valorComPrefixoId[1], 10);
+    }
+
+    return undefined;
+  }
+
+  private termoRepresentaIdExplicito(valor: string): boolean {
+    return /^id\s*[:#-]?\s*(0|[1-9]\d*)$/i.test(valor);
+  }
+
   async listarUsuariosByTermo(termo?: string): Promise<{
     itens: Usuario[];
     mensagem?: string;

@@ -1,6 +1,7 @@
 import { Controller, Get, Logger, Query } from '@nestjs/common';
 import { ApiOperation } from '@nestjs/swagger';
 import { Blog } from 'src/models/blog.model';
+import { Publicidade } from 'src/models/publicidade.model';
 import { Servico } from 'src/models/servico.model';
 import { Usuario } from 'src/models/usuario.model';
 import { BuscaService } from './busca.service';
@@ -84,6 +85,20 @@ export class BuscaController {
       `Listando itens do carrossel com filtro: ${termo ?? 'sem filtro'}`,
     );
     return this.buscaService.listarBannersByTermo(termo);
+  }
+
+  @Get('publicidade/termo')
+  @ApiOperation({
+    summary: 'Buscar publicidades por termo presente em imagem, conteúdo ou id',
+  })
+  listarPublicidade(@Query('termo') termo?: string): Promise<{
+    itens: Publicidade[];
+    mensagem?: string;
+  }> {
+    this.logger.log(
+      `Listando publicidades do CMS com filtro: ${termo?.trim() ?? 'sem filtro'}`,
+    );
+    return this.buscaService.listarPublicidadeByTermo(termo);
   }
 
   @Get('servico/filtros')

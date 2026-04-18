@@ -434,6 +434,83 @@ describe('BuscaService', () => {
     });
   });
 
+  describe('listarPublicidadeByTermo', () => {
+    it('deve retornar mensagem quando nao encontrar itens sem filtro', async () => {
+      publicidadeFindAllMock.mockResolvedValue([]);
+
+      const resultado = await service.listarPublicidadeByTermo();
+
+      expect(publicidadeFindAllMock).toHaveBeenCalledWith({
+        order: [['id', 'DESC']],
+      });
+      expect(resultado).toEqual({
+        itens: [],
+        mensagem: 'Nenhum item foi encontrado.',
+      });
+    });
+
+    it('deve montar filtro por imagem e conteudo quando termo textual for informado', async () => {
+      publicidadeFindAllMock.mockResolvedValue([]);
+
+      await service.listarPublicidadeByTermo('  campanha  ');
+
+      expect(publicidadeFindAllMock).toHaveBeenCalledWith({
+        where: {
+          [Op.or]: [
+            { urlImagem: { [Op.like]: '%campanha%' } },
+            { conteudo: { [Op.like]: '%campanha%' } },
+          ],
+        },
+        order: [['id', 'DESC']],
+      });
+    });
+
+    it('deve buscar apenas por id quando termo numerico encontrar registro com id exato', async () => {
+      publicidadeFindAllMock.mockResolvedValue([{ id: 12 }]);
+
+      await service.listarPublicidadeByTermo('12');
+
+      expect(publicidadeFindAllMock).toHaveBeenCalledWith({
+        where: { id: 12 },
+        order: [['id', 'DESC']],
+      });
+      expect(publicidadeFindAllMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('deve aplicar fallback para filtro textual quando termo numerico nao encontrar id exato', async () => {
+      publicidadeFindAllMock
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]);
+
+      await service.listarPublicidadeByTermo('12');
+
+      expect(publicidadeFindAllMock).toHaveBeenNthCalledWith(1, {
+        where: { id: 12 },
+        order: [['id', 'DESC']],
+      });
+      expect(publicidadeFindAllMock).toHaveBeenNthCalledWith(2, {
+        where: {
+          [Op.or]: [
+            { urlImagem: { [Op.like]: '%12%' } },
+            { conteudo: { [Op.like]: '%12%' } },
+          ],
+        },
+        order: [['id', 'DESC']],
+      });
+    });
+
+    it('deve buscar apenas por id quando termo estiver no formato id N', async () => {
+      publicidadeFindAllMock.mockResolvedValue([]);
+
+      await service.listarPublicidadeByTermo('id 9');
+
+      expect(publicidadeFindAllMock).toHaveBeenCalledWith({
+        where: { id: 9 },
+        order: [['id', 'DESC']],
+      });
+    });
+  });
+
   describe('buscarServicosPorFiltros', () => {
     it('deve listar servicos sem filtros ordenando por id crescente', async () => {
       servicoFindAllMock.mockResolvedValue([]);
