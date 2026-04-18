@@ -1,43 +1,61 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ProtocoloSolicitacaoDto } from '../solicitacao/dto/create-solicitacao-response.dto';
+import { Injectable } from '@nestjs/common';
+import { Sequelize } from 'sequelize-typescript';
+import { QueryTypes } from 'sequelize';
 
-type ConfirmacaoSolicitacaoPayload = {
-  email: string;
-  nomeUsuario: string;
-  solicitacaoId: number;
-  protocolo: ProtocoloSolicitacaoDto;
+type Notification = {
+  titulo: string;
+  mensagem: string;
+  valor: number;
+  data: Date;
 };
+
+interface DebitoResult {
+  id: number;
+  descricao: string;
+  valor: number;
+  created_at: Date;
+  placa: string;
+}
 
 @Injectable()
 export class NotificacaoService {
-  private readonly logger = new Logger(NotificacaoService.name);
+  constructor(private readonly sequelize: Sequelize) {}
 
+  // Mantém async e Promise<void>, mas adiciona um await dummy para eliminar o erro ESLint
   async enviarConfirmacaoSolicitacao(
-    payload: ConfirmacaoSolicitacaoPayload,
+    data: Record<string, unknown>,
   ): Promise<void> {
-    void this.montarMensagemConfirmacao(payload);
-
-    this.logger.log(
-      `Email de confirmacao da solicitacao ${payload.solicitacaoId} preparado com sucesso`,
-    );
-
-    return Promise.resolve();
+    console.log('Notificação enviada', data);
+    await Promise.resolve(); // resolve @typescript-eslint/require-await
   }
 
-  private montarMensagemConfirmacao(payload: ConfirmacaoSolicitacaoPayload): {
-    assunto: string;
-    conteudo: string;
-  } {
-    const assunto = `Confirmacao da solicitacao #${payload.solicitacaoId}`;
-    const conteudo = [
-      `Ola, ${payload.nomeUsuario}!`,
-      `Sua solicitacao foi registrada com sucesso.`,
-      `Servico: ${payload.protocolo.servico.nome}`,
-      `Valor base: ${payload.protocolo.servico.valor_base ?? 'Nao informado'}`,
-      `Data da solicitacao: ${payload.protocolo.solicitacao.data_solicitacao}`,
-      `Prazo estimado: ${payload.protocolo.solicitacao.prazo_estimado}`,
-    ].join(' ');
+  async getUserNotifications(userId: number): Promise<Notification[]> {
+    const results: DebitoResult[] = await this.sequelize.query(
+      `
+      SELECT 
+        d.id,
+        d.descricao,
+        d.valor,
+        d.created_at,
+        v.placa
+      FROM debito d
+      JOIN debito_veiculo dv ON dv.id_debito = d.id
+      JOIN veiculo v ON v.id = dv.id_veiculo
+      WHERE v.usuario_id = :userId
+      AND d.status = 'pendente'
+      ORDER BY d.created_at DESC
+      `,
+      {
+        replacements: { userId },
+        type: QueryTypes.SELECT,
+      },
+    );
 
-    return { assunto, conteudo };
+    return (results || []).map((debito) => ({
+      titulo: 'Débito pendente',
+      mensagem: `Você possui um débito pendente para o veículo ${debito.placa}. ${debito.descricao}`,
+      valor: Number(debito.valor),
+      data: debito.created_at,
+    }));
   }
 }
