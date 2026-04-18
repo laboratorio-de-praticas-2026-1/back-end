@@ -306,6 +306,76 @@ export class BuscaService {
     };
   }
 
+  async listarPublicidadeByTermo(termo?: string): Promise<{
+    itens: Publicidade[];
+    mensagem?: string;
+  }> {
+    const termoNormalizado = termo?.trim();
+
+    if (!termoNormalizado) {
+      const itens = await this.publicidadeModel.findAll({
+        order: [['id', 'DESC']],
+      });
+
+      return {
+        itens,
+        mensagem:
+          itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+      };
+    }
+
+    const idExtraido = this.extrairIdExato(termoNormalizado);
+    const buscaIdExplicita = this.termoRepresentaIdExplicito(termoNormalizado);
+
+    if (idExtraido !== undefined) {
+      const itensPorId = await this.publicidadeModel.findAll({
+        where: { id: idExtraido },
+        order: [['id', 'DESC']],
+      });
+
+      if (itensPorId.length > 0 || buscaIdExplicita) {
+        return {
+          itens: itensPorId,
+          mensagem:
+            itensPorId.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+        };
+      }
+    }
+
+    const filtros: Array<Record<string, unknown>> = [
+      { urlImagem: { [Op.like]: `%${termoNormalizado}%` } },
+      { conteudo: { [Op.like]: `%${termoNormalizado}%` } },
+    ];
+
+    const itens = await this.publicidadeModel.findAll({
+      where: { [Op.or]: filtros },
+      order: [['id', 'DESC']],
+    });
+
+    return {
+      itens,
+      mensagem: itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+    };
+  }
+
+  private extrairIdExato(valor: string): number | undefined {
+    const valorNumerico = valor.match(/^(0|[1-9]\d*)$/);
+    if (valorNumerico) {
+      return parseInt(valorNumerico[1], 10);
+    }
+
+    const valorComPrefixoId = valor.match(/^id\s*[:#-]?\s*(0|[1-9]\d*)$/i);
+    if (valorComPrefixoId) {
+      return parseInt(valorComPrefixoId[1], 10);
+    }
+
+    return undefined;
+  }
+
+  private termoRepresentaIdExplicito(valor: string): boolean {
+    return /^id\s*[:#-]?\s*(0|[1-9]\d*)$/i.test(valor);
+  }
+
   async listarUsuariosByTermo(termo?: string): Promise<{
     itens: Usuario[];
     mensagem?: string;
@@ -341,6 +411,58 @@ export class BuscaService {
 
     const itens = await this.usuarioModel.findAll({
       attributes: { exclude: ['senha'] },
+      where: { [Op.or]: filtros },
+      order: [['id', 'DESC']],
+    });
+
+    return {
+      itens,
+      mensagem: itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+    };
+  }
+
+  async listarServicosByTermo(termo?: string): Promise<{
+    itens: Servico[];
+    mensagem?: string;
+  }> {
+    const termoNormalizado = termo?.trim();
+
+    if (!termoNormalizado) {
+      const itens = await this.servicoModel.findAll({
+        order: [['id', 'DESC']],
+      });
+
+      return {
+        itens,
+        mensagem:
+          itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+      };
+    }
+
+    const filtros: Array<Record<string, unknown> | ReturnType<typeof where>> = [
+      { nome: { [Op.like]: `%${termoNormalizado}%` } },
+      { descricao: { [Op.like]: `%${termoNormalizado}%` } },
+    ];
+
+    const termoEhNumero = /^(0|[1-9]\d*)(\.\d+)?$/.test(termoNormalizado);
+    if (termoEhNumero) {
+      const termoComoNumero = Number(termoNormalizado);
+      if (!Number.isNaN(termoComoNumero)) {
+        filtros.push(where(col('valor_base'), Op.eq, termoComoNumero));
+      }
+    }
+
+    const termoEhInteiroDecimal = /^(0|[1-9]\d*)$/.test(termoNormalizado);
+    if (termoEhInteiroDecimal) {
+      const termoComoInteiro = parseInt(termoNormalizado, 10);
+      if (!Number.isNaN(termoComoInteiro)) {
+        filtros.push(
+          where(col('prazo_estimado_dias'), Op.eq, termoComoInteiro),
+        );
+      }
+    }
+
+    const itens = await this.servicoModel.findAll({
       where: { [Op.or]: filtros },
       order: [['id', 'DESC']],
     });

@@ -1,6 +1,7 @@
 import { Controller, Get, Logger, Query } from '@nestjs/common';
 import { ApiOperation } from '@nestjs/swagger';
 import { Blog } from 'src/models/blog.model';
+import { Publicidade } from 'src/models/publicidade.model';
 import { Empresa } from 'src/models/empresa.model';
 import { Servico } from 'src/models/servico.model';
 import { Usuario } from 'src/models/usuario.model';
@@ -88,6 +89,20 @@ export class BuscaController {
     return this.buscaService.listarBannersByTermo(termo);
   }
 
+  @Get('publicidade/termo')
+  @ApiOperation({
+    summary: 'Buscar publicidades por termo presente em imagem, conteúdo ou id',
+  })
+  listarPublicidade(@Query('termo') termo?: string): Promise<{
+    itens: Publicidade[];
+    mensagem?: string;
+  }> {
+    this.logger.log(
+      `Listando publicidades do CMS com filtro: ${termo?.trim() ?? 'sem filtro'}`,
+    );
+    return this.buscaService.listarPublicidadeByTermo(termo);
+  }
+
   @Get('servico/filtros')
   @ApiOperation({
     summary:
@@ -156,5 +171,18 @@ export class BuscaController {
       `Listando usuarios do CMS com filtro: ${termo?.trim() ?? 'sem filtro'}`,
     );
     return this.buscaService.listarUsuariosByTermo(termo);
+  }
+
+  @Get('servico/termo')
+  @ApiOperation({
+    summary:
+      'Buscar serviços por termo simples nos campos nome, descrição, valor base e prazo estimado',
+  })
+  listarServicos(@Query('termo') termo?: string): Promise<{
+    itens: Servico[];
+    mensagem?: string;
+  }> {
+    this.logger.log(`Listando servicos com filtro: ${termo ?? 'sem filtro'}`);
+    return this.buscaService.listarServicosByTermo(termo);
   }
 }
