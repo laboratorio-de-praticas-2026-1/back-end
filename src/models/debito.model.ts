@@ -1,5 +1,6 @@
 import { Column, DataType, HasOne, Model, Table } from 'sequelize-typescript';
 import { Pagamento } from './pagamento.model';
+import { DebitoVeiculo } from './debito-veiculo.model';
 
 /*Representa uma cobrança gerada para um cliente*/
 @Table({ tableName: 'debito', timestamps: false })
@@ -39,4 +40,7 @@ export class Debito extends Model {
   /*Quando o débito é quitado, um registro de Pagamento é criado*/
   @HasOne(() => Pagamento, { foreignKey: 'idDebito' })
   declare pagamento: Pagamento | null;
+
+  @HasOne(() => DebitoVeiculo)
+  declare debitoVeiculo: DebitoVeiculo;
 }

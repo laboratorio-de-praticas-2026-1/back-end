@@ -9,6 +9,9 @@ import { Solicitacao } from 'src/models/solicitacao.model';
 import { Servico } from 'src/models/servico.model';
 import { DebitoServico } from 'src/models/debito-servico.model';
 import { Usuario } from 'src/models/usuario.model';
+import { Veiculo } from 'src/models/veiculo.model';
+import { DebitoVeiculo } from 'src/models/debito-veiculo.model';
+
 import { DashboardReturnDto } from './dto/dashboard-return.dto';
 import type { ModelCtor } from 'sequelize-typescript';
 import type {
@@ -48,6 +51,10 @@ export class DashboardService {
     private readonly debitoServicoModel: typeof DebitoServico,
     @InjectModel(Usuario)
     private readonly usuarioModel: typeof Usuario,
+    @InjectModel(DebitoVeiculo)
+    private readonly debitoVeiculoModel: typeof DebitoVeiculo,
+    @InjectModel(Veiculo)
+    private readonly veiculoModel: typeof Veiculo,
   ) {}
 
   private gerarMesesNoPeriodo(inicio: Date, fim: Date): string[] {
@@ -232,6 +239,57 @@ export class DashboardService {
       }),
     ]);
 
+    // Queries veiculos
+
+    const [
+      totalVeiculosCadastrados,
+      veiculosComSolicitacaoAtiva,
+      debitosPendentesResult,
+    ] = await Promise.all([
+      // Total de veículos cadastrados
+      this.veiculoModel.count(),
+
+      // Veículos com solicitação ativa
+      this.solicitacaoModel.count({
+        where: {
+          veiculoId: { [Op.ne]: null },
+          status: {
+            [Op.in]: [
+              'recebido',
+              'aguardando_pagamento',
+              'aguardando_documento',
+              'em_andamento',
+            ],
+          },
+        },
+        distinct: true,
+        col: 'veiculo_id',
+      }),
+
+      // Débitos pendentes por veículo
+      this.debitoVeiculoModel.findAll({
+        include: [
+          {
+            model: Debito,
+            where: { status: 'pendente' },
+            attributes: [],
+          },
+          {
+            model: Veiculo,
+            attributes: ['id', 'placa'],
+          },
+        ],
+        attributes: [
+          'idVeiculo',
+          [fn('COUNT', col('DebitoVeiculo.id')), 'totalDebitos'],
+          [fn('SUM', col('debito.valor')), 'valorTotal'],
+        ],
+        group: ['idVeiculo', 'veiculo.id'],
+        raw: true,
+        nest: true,
+      }),
+    ]);
+
     // ─── Query financeira ────────────────────────────────────────────────────
 
     const financeiroQuery: Promise<
@@ -331,6 +389,27 @@ export class DashboardService {
         raw: true,
       }) as unknown as Promise<ResultadoDistribuicaoTipo[]>,
     ]);
+
+    interface DebitoVeiculoRaw {
+      idVeiculo: number;
+      totalDebitos: string;
+      valorTotal: string;
+      veiculo: { placa: string };
+    }
+
+    const porVeiculo = (
+      debitosPendentesResult as unknown as DebitoVeiculoRaw[]
+    ).map((item) => ({
+      veiculoId: item.idVeiculo,
+      placa: item.veiculo.placa,
+      totalDebitos: Number(item.totalDebitos),
+      valorTotal: Number(item.valorTotal),
+    }));
+
+    const valorTotalGeral = porVeiculo.reduce(
+      (acc, item) => acc + item.valorTotal,
+      0,
+    );
 
     // ─── Execução paralela e desestruturação ─────────────────────────────────
 
@@ -571,6 +650,15 @@ export class DashboardService {
         previsaoCaixa30Dias,
         porMetodoPagamento,
         porTipoPagamento,
+      },
+      veiculos: {
+        totalCadastrados: totalVeiculosCadastrados,
+        comSolicitacaoAtiva: veiculosComSolicitacaoAtiva,
+        comDebitoPendente: porVeiculo.length,
+        debitosPendentes: {
+          valorTotal: valorTotalGeral,
+          porVeiculo,
+        },
       },
     };
   }

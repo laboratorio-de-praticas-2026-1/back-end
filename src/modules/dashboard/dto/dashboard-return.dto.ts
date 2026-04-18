@@ -74,6 +74,21 @@ export class SolicitacoesDto {
   };
 }
 
+export class VeiculosDto {
+  totalCadastrados!: number;
+  comSolicitacaoAtiva!: number;
+  comDebitoPendente!: number;
+  debitosPendentes!: {
+    valorTotal: number;
+    porVeiculo: {
+      veiculoId: number;
+      placa: string;
+      totalDebitos: number;
+      valorTotal: number;
+    }[];
+  };
+}
+
 export class ServicosDto {
   ativos!: number;
   pausados!: number;
@@ -111,4 +126,5 @@ export class DashboardReturnDto {
   solicitacoes!: SolicitacoesDto;
   financeiro!: FinanceiroDto;
   servicos!: ServicosDto;
+  veiculos!: VeiculosDto;
 }

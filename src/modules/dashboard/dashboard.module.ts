@@ -11,6 +11,7 @@ import { Usuario } from '../../models/usuario.model';
 import { Veiculo } from '../../models/veiculo.model';
 import { Servico } from '../../models/servico.model';
 import { DebitoServico } from '../../models/debito-servico.model';
+import { DebitoVeiculo } from '../../models/debito-veiculo.model';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { DebitoServico } from '../../models/debito-servico.model';
       Veiculo,
       Servico,
       DebitoServico,
+      DebitoVeiculo,
     ]),
   ],
   controllers: [DashboardController],

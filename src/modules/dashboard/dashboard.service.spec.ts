@@ -9,6 +9,8 @@ import { Parcela } from '../../models/parcela.model';
 import { DebitoServico } from 'src/models/debito-servico.model';
 import { Servico } from '../../models/servico.model';
 import { Usuario } from '../../models/usuario.model';
+import { Veiculo } from '../../models/veiculo.model';
+import { DebitoVeiculo } from '../../models/debito-veiculo.model';
 
 describe('DashboardService', () => {
   let service: DashboardService;
@@ -31,6 +33,8 @@ describe('DashboardService', () => {
         { provide: getModelToken(Pagamento), useValue: mockModel },
         { provide: getModelToken(Parcela), useValue: mockModel },
         { provide: getModelToken(Usuario), useValue: mockModel },
+        { provide: getModelToken(Veiculo), useValue: {} },
+        { provide: getModelToken(DebitoVeiculo), useValue: {} },
       ],
     }).compile();
 
