@@ -36,31 +36,49 @@ export class RecomendacaoService {
 
   async obterRecomendacoes(usuarioId: number) {
     try {
-      const proativo = await this.buscarRecursoMulta(usuarioId);
-      if (proativo) {
-        return [proativo];
+      const listaRecomendacoes: RecomendacaoRespostaDto[] = [];
+
+      const infracao = await this.buscarRecursoMulta(usuarioId);
+      if (infracao) {
+        listaRecomendacoes.push(infracao);
       }
 
-      const historico = await this.buscarAtributosPerfil(usuarioId);
+      const parcelamento = await this.buscarParcelamentoDebitos(usuarioId);
+      if (parcelamento) listaRecomendacoes.push(parcelamento);
 
-      if (historico.length > 0) {
-        const idsUsados = historico.map((s) => s.id);
-
-        const servicos = await this.servicoModel.findAll({
-          where: {
-            ativo: true,
-            id: { [Op.notIn]: idsUsados },
-          },
-        });
-
-        return servicos.map((s) => ({
-          id: s.id,
-          nome: s.nome,
-          descricao: s.descricao,
-        }));
+      const venda = await this.buscarComunicacaoVenda(usuarioId);
+      if (venda) {
+        listaRecomendacoes.push(venda);
       }
 
-      return await this.buscarServicosPopulares();
+      if (listaRecomendacoes.length === 0) {
+        const historico = await this.buscarAtributosPerfil(usuarioId);
+
+        if (historico.length > 0) {
+          const idsUsados = historico.map((s) => s.id);
+
+          const servicos = await this.servicoModel.findAll({
+            where: {
+              ativo: true,
+              id: { [Op.notIn]: idsUsados },
+            },
+          });
+
+          return servicos.map((s) => ({
+            id: s.id,
+            nome: s.nome,
+            descricao: s.descricao,
+          }));
+        }
+
+        return await this.buscarServicosPopulares();
+      }
+
+      return listaRecomendacoes.map(({ id, nome, descricao }) => ({
+        id,
+        nome,
+        descricao,
+      }));
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Erro desconhecido';
@@ -125,14 +143,14 @@ export class RecomendacaoService {
         }
       }
 
-      return await this.buscarParcelamentoDebitos(usuarioId);
+      return null;
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Erro desconhecido';
 
       this.logger.error(`Erro na busca proativa de multas: ${errorMessage}`);
 
-      return await this.buscarParcelamentoDebitos(usuarioId);
+      return null;
     }
   }
 
@@ -183,14 +201,14 @@ export class RecomendacaoService {
         }
       }
 
-      return await this.buscarComunicacaoVenda(usuarioId);
+      return null;
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Erro desconhecido';
 
       this.logger.error(`Erro na busca de parcelamento: ${errorMessage}`);
 
-      return await this.buscarComunicacaoVenda(usuarioId);
+      return null;
     }
   }
 
