@@ -3,7 +3,6 @@ import { NotificacaoController } from './notificacao.controller';
 import { NotificacaoService } from './notificacao.service';
 import { Sequelize } from 'sequelize-typescript';
 
-)
 const mockSequelize = {
   query: jest.fn(),
 };
