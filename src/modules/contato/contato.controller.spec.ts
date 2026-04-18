@@ -54,10 +54,8 @@ describe('ContatoController', () => {
     expect(mockContatoService.buscarContatoById).toHaveBeenCalledWith(1);
   });
 
-  it('deve bloquear busca quando id for diferente de 1', async () => {
-    expect(() => controller.buscarContatoById(2)).toThrow(
-      ForbiddenException,
-    );
+  it('deve bloquear busca quando id for diferente de 1', () => {
+    expect(() => controller.buscarContatoById(2)).toThrow(ForbiddenException);
 
     expect(mockContatoService.buscarContatoById).not.toHaveBeenCalled();
   });
