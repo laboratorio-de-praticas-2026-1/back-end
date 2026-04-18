@@ -7,10 +7,18 @@ import { Banner } from 'src/models/banner.model';
 import { Servico } from 'src/models/servico.model';
 import { Publicidade } from 'src/models/publicidade.model';
 import { Usuario } from 'src/models/usuario.model';
+import { Empresa } from 'src/models/empresa.model';
 
 @Module({
   imports: [
-    SequelizeModule.forFeature([Blog, Banner, Publicidade, Servico, Usuario]),
+    SequelizeModule.forFeature([
+      Blog,
+      Banner,
+      Publicidade,
+      Servico,
+      Usuario,
+      Empresa,
+    ]),
   ],
   controllers: [BuscaController],
   providers: [BuscaService],

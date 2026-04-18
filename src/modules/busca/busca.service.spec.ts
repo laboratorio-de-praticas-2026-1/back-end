@@ -8,6 +8,7 @@ import { Banner } from 'src/models/banner.model';
 import { Servico } from 'src/models/servico.model';
 import { Publicidade } from 'src/models/publicidade.model';
 import { Usuario } from 'src/models/usuario.model';
+import { Empresa } from 'src/models/empresa.model';
 import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
 import { BuscaServicoFiltroDto } from './dto/busca-servico-filtro.dto';
 import { BuscaUsuarioFiltroDto } from './dto/busca-usuario-filtro.dto';
@@ -19,11 +20,16 @@ describe('BuscaService', () => {
   const servicoFindAllMock = jest.fn();
   const usuarioFindAllMock = jest.fn();
   const publicidadeFindAllMock = jest.fn();
+  const empresaFindAllMock = jest.fn();
   type WhereClause = Partial<Record<symbol, unknown>>;
 
   interface FindAllOptions {
     where?: unknown;
     order?: unknown;
+    attributes?: unknown;
+    group?: unknown;
+    raw?: unknown;
+    [key: string]: unknown;
   }
 
   beforeEach(async () => {
@@ -33,6 +39,7 @@ describe('BuscaService', () => {
     publicidadeFindAllMock.mockReset();
     usuarioFindAllMock.mockReset();
     usuarioFindAllMock.mockReset();
+    empresaFindAllMock.mockReset();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -67,6 +74,12 @@ describe('BuscaService', () => {
             findAll: usuarioFindAllMock,
           },
         },
+        {
+          provide: getModelToken(Empresa),
+          useValue: {
+            findAll: empresaFindAllMock,
+          },
+        },
       ],
     }).compile();
 
@@ -75,6 +88,133 @@ describe('BuscaService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  describe('buscarEmpresasPorFiltros', () => {
+    it('deve listar empresas sem filtros ordenando por id crescente', async () => {
+      const retorno = [{ id: 1 }];
+      empresaFindAllMock.mockResolvedValue(retorno);
+
+      await expect(service.buscarEmpresasPorFiltros({})).resolves.toEqual(
+        retorno,
+      );
+
+      expect(empresaFindAllMock).toHaveBeenCalledTimes(1);
+      expect(empresaFindAllMock).toHaveBeenCalledWith({
+        order: [['id', 'ASC']],
+      });
+    });
+
+    it('deve filtrar por tipo quando informado', async () => {
+      const retorno = [{ id: 1 }];
+      empresaFindAllMock.mockResolvedValue(retorno);
+
+      await expect(
+        service.buscarEmpresasPorFiltros({ tipo: 'detran' }),
+      ).resolves.toEqual(retorno);
+
+      expect(empresaFindAllMock).toHaveBeenCalledTimes(1);
+      const calls = empresaFindAllMock.mock.calls as Array<
+        Array<FindAllOptions>
+      >;
+      const args = calls[0]?.[0];
+      const whereClause = (args.where as WhereClause) ?? {};
+      expect(whereClause[Op.and]).toHaveLength(1);
+      expect(args.order).toEqual([['id', 'ASC']]);
+    });
+
+    it('deve combinar filtros quando mais de um campo é informado', async () => {
+      const retorno = [{ id: 1 }];
+      empresaFindAllMock.mockResolvedValue(retorno);
+
+      await expect(
+        service.buscarEmpresasPorFiltros({
+          tipo: 'clinica',
+          estado: 'PR',
+          cidade: 'Curitiba',
+        }),
+      ).resolves.toEqual(retorno);
+
+      expect(empresaFindAllMock).toHaveBeenCalledTimes(1);
+      const calls = empresaFindAllMock.mock.calls as Array<
+        Array<FindAllOptions>
+      >;
+      const args = calls[0]?.[0];
+      const whereClause = (args.where as WhereClause) ?? {};
+      expect(whereClause[Op.and]).toHaveLength(3);
+      expect(args.order).toEqual([['id', 'ASC']]);
+    });
+  });
+
+  describe('listarEstadosEmpresas', () => {
+    it('deve retornar apenas UFs únicas, sem nulos/vazios', async () => {
+      empresaFindAllMock.mockResolvedValue([
+        { estado: 'PR' },
+        { estado: 'SP' },
+        { estado: 'PR' },
+        { estado: null },
+        { estado: '  ' },
+      ]);
+
+      await expect(service.listarEstadosEmpresas()).resolves.toEqual([
+        'PR',
+        'SP',
+      ]);
+
+      expect(empresaFindAllMock).toHaveBeenCalledTimes(1);
+      expect(empresaFindAllMock).toHaveBeenCalledWith({
+        attributes: ['estado'],
+        group: ['estado'],
+        order: [['estado', 'ASC']],
+        raw: true,
+      });
+    });
+  });
+
+  describe('listarCidadesEmpresas', () => {
+    it('sem estado deve retornar todas as cidades únicas', async () => {
+      empresaFindAllMock.mockResolvedValue([
+        { cidade: 'Curitiba' },
+        { cidade: 'Maringá' },
+        { cidade: 'Curitiba' },
+        { cidade: null },
+        { cidade: '   ' },
+      ]);
+
+      await expect(service.listarCidadesEmpresas()).resolves.toEqual([
+        'Curitiba',
+        'Maringá',
+      ]);
+
+      expect(empresaFindAllMock).toHaveBeenCalledTimes(1);
+      expect(empresaFindAllMock).toHaveBeenCalledWith({
+        attributes: ['cidade'],
+        group: ['cidade'],
+        order: [['cidade', 'ASC']],
+        raw: true,
+      });
+    });
+
+    it('com estado deve filtrar cidades do estado informado (UF normalizada)', async () => {
+      empresaFindAllMock.mockResolvedValue([
+        { cidade: 'Curitiba' },
+        { cidade: 'Londrina' },
+      ]);
+
+      await expect(service.listarCidadesEmpresas(' pr ')).resolves.toEqual([
+        'Curitiba',
+        'Londrina',
+      ]);
+
+      expect(empresaFindAllMock).toHaveBeenCalledTimes(1);
+      expect(empresaFindAllMock).toHaveBeenCalledWith({
+        attributes: ['cidade'],
+        where: { estado: 'PR' },
+        group: ['cidade'],
+        order: [['cidade', 'ASC']],
+        raw: true,
+      });
+    });
   });
 
   it('deve buscar blogs entre datas (incluindo limites)', async () => {

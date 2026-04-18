@@ -1,10 +1,4 @@
-import {
-  IsOptional,
-  IsString,
-  Matches,
-  IsDateString,
-  IsIn,
-} from 'class-validator';
+import { IsOptional, IsString, IsDateString, IsIn } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class BuscaUsuarioFiltroDto {
