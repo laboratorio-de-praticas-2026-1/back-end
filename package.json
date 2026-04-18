@@ -43,7 +43,12 @@
     "sequelize": "^6.37.7",
     "sequelize-typescript": "^2.1.6",
     "sharp": "^0.34.5",
-    "streamifier": "^0.1.1"
+    "streamifier": "^0.1.1",
+    "puppeteer": "^22.0.0",
+    "pdf-lib": "^1.17.1",
+    "chart.js": "^4.4.2",
+    "canvas": "^2.11.2",
+    "@types/canvas": "^2.11.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -72,7 +77,8 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3",
-    "typescript-eslint": "^8.20.0"
+    "typescript-eslint": "^8.20.0",
+    "@types/puppeteer": "^7.0.4"
   },
   "jest": {
     "moduleFileExtensions": [

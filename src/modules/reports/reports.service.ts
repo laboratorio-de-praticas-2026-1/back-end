@@ -11,47 +11,28 @@ import { Relatorio, RelatorioCategoria } from 'src/models/relatorio.model';
 import { RelatorioCategoriaResponseDto } from './dto/categoria-response.dto';
 import { CreateReportDto } from './dto/create-report.dto';
 import { ResponseReportDto } from './dto/response-report.dto';
+import { PdfGeneratorService } from './pdf-generator.service';
 
 function getCategoriaLabel(categoria: RelatorioCategoria): string {
-  switch (categoria) {
-    case RelatorioCategoria.RELATORIO_COMPLETO:
-      return 'Relatório Completo';
-
-    case RelatorioCategoria.PERFORMANCE_FINANCEIRA:
-      return 'Performance Financeira';
-
-    case RelatorioCategoria.DESEMPENHO_OPERACIONAL:
-      return 'Desempenho Operacional';
-
-    case RelatorioCategoria.PERFORMANCE_SERVICOS:
-      return 'Performance de Serviços';
-
-    case RelatorioCategoria.GESTAO_SOLICITACOES:
-      return 'Gestão de Solicitações';
-
-    case RelatorioCategoria.GESTAO_DOCUMENTOS:
-      return 'Gestão de Documentos';
-
-    case RelatorioCategoria.GESTAO_VEICULOS:
-      return 'Gestão de Veículos';
-
-    case RelatorioCategoria.BASE_CLIENTES:
-      return 'Base de Clientes';
-
-    case RelatorioCategoria.ANALISE_EFICIENCIA:
-      return 'Análise de Eficiência';
-
-    case RelatorioCategoria.FUNIL_CONVERSAO:
-      return 'Funil de Conversão';
-
-    case RelatorioCategoria.GARGALOS_OPERACIONAIS:
-      return 'Gargalos Operacionais';
-
-    default:
-      throw new InternalServerErrorException(
-        `Erro ao mapear categorias de relatório: categoria desconhecida`,
-      );
-  }
+  const labels: Record<RelatorioCategoria, string> = {
+    [RelatorioCategoria.RELATORIO_COMPLETO]: 'Relatório Completo',
+    [RelatorioCategoria.PERFORMANCE_FINANCEIRA]: 'Performance Financeira',
+    [RelatorioCategoria.DESEMPENHO_OPERACIONAL]: 'Desempenho Operacional',
+    [RelatorioCategoria.PERFORMANCE_SERVICOS]: 'Performance de Serviços',
+    [RelatorioCategoria.GESTAO_SOLICITACOES]: 'Gestão de Solicitações',
+    [RelatorioCategoria.GESTAO_DOCUMENTOS]: 'Gestão de Documentos',
+    [RelatorioCategoria.GESTAO_VEICULOS]: 'Gestão de Veículos',
+    [RelatorioCategoria.BASE_CLIENTES]: 'Base de Clientes',
+    [RelatorioCategoria.ANALISE_EFICIENCIA]: 'Análise de Eficiência',
+    [RelatorioCategoria.FUNIL_CONVERSAO]: 'Funil de Conversão',
+    [RelatorioCategoria.GARGALOS_OPERACIONAIS]: 'Gargalos Operacionais',
+  };
+  const label = labels[categoria];
+  if (!label)
+    throw new InternalServerErrorException(
+      'Categoria de relatório desconhecida',
+    );
+  return label;
 }
 
 @Injectable()
@@ -63,23 +44,25 @@ export class ReportsService {
     private readonly relatorioModel: typeof Relatorio,
     private readonly cloudinaryService: CloudinaryService,
     private readonly cryptoUtil: CryptoUtil,
+    private readonly pdfGeneratorService: PdfGeneratorService,
   ) {}
 
   getCategorias(): RelatorioCategoriaResponseDto[] {
-    return Object.values(RelatorioCategoria).map((categoria) => {
-      return new RelatorioCategoriaResponseDto(
-        getCategoriaLabel(categoria),
-        categoria,
-      );
-    });
+    return Object.values(RelatorioCategoria).map(
+      (categoria) =>
+        new RelatorioCategoriaResponseDto(
+          getCategoriaLabel(categoria),
+          categoria,
+        ),
+    );
   }
 
   async generateReport(
     createReportDto: CreateReportDto,
   ): Promise<ResponseReportDto> {
     const currentDate = new Date();
-    //TODO-AVALIAR-SE-MANTEM-TRINTA-DIAS-COMO-PADRAO-QUANDO-NAO-FOR-PASSADO-INTERVALO-DE-DATAS-PELO-USUÁRIO
-    const diasEmMs = 30 * 24 * 60 * 60 * 1000; //30 dias em milissegundos
+    const diasEmMs = 30 * 24 * 60 * 60 * 1000;
+
     const dataPeriodoInicio = createReportDto.dataPeriodoInicio
       ? new Date(createReportDto.dataPeriodoInicio)
       : new Date(currentDate.getTime() - diasEmMs);
@@ -91,33 +74,47 @@ export class ReportsService {
     dataPeriodoFim.setUTCHours(23, 59, 59, 999);
 
     try {
-      //TODO-Implementar a lógica de geração de relatório, incluindo a criação do PDF
+      const pdfBuffer = await this.pdfGeneratorService.generate(createReportDto);
+      const multerFile: Express.Multer.File = {
+        fieldname: 'report',
+        originalname: `${createReportDto.nome.replace(/\s+/g, '_')}.pdf`,
+        encoding: '7bit',
+        mimetype: 'application/pdf',
+        buffer: pdfBuffer,
+        size: pdfBuffer.length,
+        stream: null as any,
+        destination: '',
+        filename: '',
+        path: '',
+      };
 
-      //TODO-DESCOMENTAR-ESSE-USO-E-PASSAR-PDF-GERADO-COMO-PARAMETRO DA FUNCAO uploadDocument
-      /*
-        const pdfUrl = await this.cloudinaryService.uploadDocument(arquivo PDF gerado, o tipo esperado aqui é Express.Multer.File)
-        const publicId = pdfUrl.public_id as string;
-        const resourceType = pdfUrl.resource_type as 'raw' | 'image';
-        */
+      const uploadResult = await this.cloudinaryService.uploadDocument(multerFile);
+      const publicId = uploadResult.public_id as string;
+      const resourceType = uploadResult.resource_type as 'raw' | 'image';
+
+      const encryptedUrl = this.cryptoUtil.encrypt(
+        `${resourceType}|${publicId}`,
+      );
 
       const relatorioCriado = await this.relatorioModel.create({
         nome: createReportDto.nome,
-        descricao: createReportDto.descricao ? createReportDto.descricao : null,
+        descricao: createReportDto.descricao ?? null,
         categoria: createReportDto.categoria,
-        //TODO-Tirar as aspas simples para usar valores de variáveis
-        urlDocumentoHash: this.cryptoUtil.encrypt(
-          '`${resourceType}|${publicId}`',
-        ),
+        urlDocumentoHash: encryptedUrl,
         dataGeracao: currentDate,
         periodoInicio: dataPeriodoInicio,
         periodoFim: dataPeriodoFim,
       });
 
+      const decryptedInfo = this.cryptoUtil.decrypt(
+        relatorioCriado.urlDocumentoHash,
+      );
+      const urlDocumento =
+        this.cloudinaryService.generateTemporaryUrl(decryptedInfo);
+
       return plainToInstance(ResponseReportDto, {
         ...relatorioCriado.get(),
-        urlDocumento: this.cloudinaryService.generateTemporaryUrl(
-          this.cryptoUtil.decrypt(relatorioCriado.urlDocumentoHash),
-        ),
+        urlDocumento,
       });
     } catch (error) {
       this.logger.error(

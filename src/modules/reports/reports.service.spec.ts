@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/sequelize';
 import { InternalServerErrorException } from '@nestjs/common';
 import { ReportsService } from './reports.service';
+import { PdfGeneratorService } from './pdf-generator.service';
 import { Relatorio } from 'src/models/relatorio.model';
 import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
 import { CryptoUtil } from 'src/commons/utils/crypto';
@@ -12,46 +13,42 @@ describe('ReportsService', () => {
   let mockRelatorioModel: any;
   let mockCloudinaryService: any;
   let mockCryptoUtil: any;
+  let mockPdfGeneratorService: any;
 
   beforeEach(async () => {
-    mockRelatorioModel = {
-      create: jest.fn(),
-    };
+    mockRelatorioModel = { create: jest.fn() };
 
     mockCloudinaryService = {
-      uploadDocument: jest.fn(),
+      uploadDocument: jest.fn().mockResolvedValue({
+        public_id: 'reports/fake-id',
+        resource_type: 'raw',
+      }),
       generateTemporaryUrl: jest.fn().mockReturnValue('https://temp-url.com'),
     };
 
     mockCryptoUtil = {
       encrypt: jest.fn().mockReturnValue('encrypted-value'),
-      decrypt: jest.fn().mockReturnValue('decrypted-value'),
+      decrypt: jest.fn().mockReturnValue('raw|reports/fake-id'),
+    };
+
+    mockPdfGeneratorService = {
+      generate: jest.fn().mockResolvedValue(Buffer.from('fake-pdf-content')),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ReportsService,
-        {
-          provide: getModelToken(Relatorio),
-          useValue: mockRelatorioModel,
-        },
-        {
-          provide: CloudinaryService,
-          useValue: mockCloudinaryService,
-        },
-        {
-          provide: CryptoUtil,
-          useValue: mockCryptoUtil,
-        },
+        { provide: getModelToken(Relatorio), useValue: mockRelatorioModel },
+        { provide: CloudinaryService, useValue: mockCloudinaryService },
+        { provide: CryptoUtil, useValue: mockCryptoUtil },
+        { provide: PdfGeneratorService, useValue: mockPdfGeneratorService },
       ],
     }).compile();
 
     service = module.get<ReportsService>(ReportsService);
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
+  afterEach(() => jest.clearAllMocks());
 
   it('should be defined', () => {
     expect(service).toBeDefined();
@@ -86,12 +83,14 @@ describe('ReportsService', () => {
 
       const resultado = await service.generateReport(createReportDto);
 
+      expect(mockPdfGeneratorService.generate).toHaveBeenCalledWith(createReportDto);
+      expect(mockCloudinaryService.uploadDocument).toHaveBeenCalled();
       expect(mockRelatorioModel.create).toHaveBeenCalled();
       expect(resultado).toBeDefined();
       expect(resultado.nome).toBe(createReportDto.nome);
     });
 
-    it('deve usar dataInicio padrão quando não fornecida', async () => {
+    it('deve usar dataPeriodoInicio padrão (30 dias atrás) quando não fornecida', async () => {
       const createReportDto: CreateReportDto = {
         nome: 'Relatório de Teste',
         categoria: 'financial' as any,
@@ -116,10 +115,111 @@ describe('ReportsService', () => {
 
       await service.generateReport(createReportDto);
 
+      expect(mockPdfGeneratorService.generate).toHaveBeenCalled();
       expect(mockRelatorioModel.create).toHaveBeenCalled();
     });
 
-    it('deve lançar InternalServerErrorException em caso de erro', async () => {
+    it('deve gerar e fazer upload do PDF antes de salvar o registro', async () => {
+      const createReportDto: CreateReportDto = {
+        nome: 'Relatório de Teste',
+        categoria: 'financial' as any,
+      };
+
+      const mockReportData = {
+        id: 1,
+        nome: createReportDto.nome,
+        categoria: createReportDto.categoria,
+        urlDocumentoHash: 'encrypted-value',
+        dataGeracao: new Date(),
+        get: jest.fn().mockReturnValue({
+          id: 1,
+          nome: createReportDto.nome,
+          categoria: createReportDto.categoria,
+          urlDocumentoHash: 'encrypted-value',
+          dataGeracao: new Date(),
+        }),
+      };
+
+      mockRelatorioModel.create.mockResolvedValue(mockReportData);
+
+      const generateOrder: string[] = [];
+      mockPdfGeneratorService.generate.mockImplementation(async () => {
+        generateOrder.push('generate');
+        return Buffer.from('pdf');
+      });
+      mockCloudinaryService.uploadDocument.mockImplementation(async () => {
+        generateOrder.push('upload');
+        return { public_id: 'reports/fake-id', resource_type: 'raw' };
+      });
+      mockRelatorioModel.create.mockImplementation(async () => {
+        generateOrder.push('create');
+        return mockReportData;
+      });
+
+      await service.generateReport(createReportDto);
+
+      expect(generateOrder).toEqual(['generate', 'upload', 'create']);
+    });
+
+    it('deve encriptar a URL do documento antes de salvar', async () => {
+      const createReportDto: CreateReportDto = {
+        nome: 'Relatório de Teste',
+        categoria: 'financial' as any,
+      };
+
+      const mockReportData = {
+        id: 1,
+        nome: createReportDto.nome,
+        categoria: createReportDto.categoria,
+        urlDocumentoHash: 'encrypted-value',
+        dataGeracao: new Date(),
+        get: jest.fn().mockReturnValue({
+          id: 1,
+          nome: createReportDto.nome,
+          categoria: createReportDto.categoria,
+          urlDocumentoHash: 'encrypted-value',
+          dataGeracao: new Date(),
+        }),
+      };
+
+      mockRelatorioModel.create.mockResolvedValue(mockReportData);
+
+      await service.generateReport(createReportDto);
+
+      expect(mockCryptoUtil.encrypt).toHaveBeenCalledWith('raw|reports/fake-id');
+    });
+
+    it('deve lançar InternalServerErrorException se o pdfGeneratorService falhar', async () => {
+      const createReportDto: CreateReportDto = {
+        nome: 'Relatório de Teste',
+        categoria: 'financial' as any,
+      };
+
+      mockPdfGeneratorService.generate.mockRejectedValue(
+        new Error('Falha ao renderizar PDF'),
+      );
+
+      await expect(service.generateReport(createReportDto)).rejects.toThrow(
+        InternalServerErrorException,
+      );
+    });
+
+    it('deve lançar InternalServerErrorException se o upload no Cloudinary falhar', async () => {
+      const createReportDto: CreateReportDto = {
+        nome: 'Relatório de Teste',
+        categoria: 'financial' as any,
+      };
+
+      mockCloudinaryService.uploadDocument.mockRejectedValue(
+        new Error('Cloudinary offline'),
+      );
+
+      await expect(service.generateReport(createReportDto)).rejects.toThrow(
+        InternalServerErrorException,
+      );
+    });
+
+    it('deve lançar InternalServerErrorException se o banco falhar', async () => {
       const createReportDto: CreateReportDto = {
         nome: 'Relatório de Teste',
         categoria: 'financial' as any,
@@ -132,34 +232,6 @@ describe('ReportsService', () => {
       await expect(service.generateReport(createReportDto)).rejects.toThrow(
         InternalServerErrorException,
       );
-    });
-
-    it('deve encriptar a URL do documento', async () => {
-      const createReportDto: CreateReportDto = {
-        nome: 'Relatório de Teste',
-        categoria: 'financial' as any,
-      };
-
-      const mockReportData = {
-        id: 1,
-        nome: createReportDto.nome,
-        categoria: createReportDto.categoria,
-        urlDocumentoHash: 'encrypted-value',
-        dataGeracao: new Date(),
-        get: jest.fn().mockReturnValue({
-          id: 1,
-          nome: createReportDto.nome,
-          categoria: createReportDto.categoria,
-          urlDocumentoHash: 'encrypted-value',
-          dataGeracao: new Date(),
-        }),
-      };
-
-      mockRelatorioModel.create.mockResolvedValue(mockReportData);
-
-      await service.generateReport(createReportDto);
-
-      expect(mockCryptoUtil.encrypt).toHaveBeenCalled();
     });
   });
 });
