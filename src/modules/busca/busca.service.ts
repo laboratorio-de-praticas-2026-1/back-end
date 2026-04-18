@@ -23,7 +23,7 @@ export class BuscaService {
     @InjectModel(Publicidade) private publicidadeModel: typeof Publicidade,
     @InjectModel(Usuario) private usuarioModel: typeof Usuario,
     @InjectModel(Empresa) private empresaModel: typeof Empresa,
-  ) {}
+  ) { }
 
   async buscarBlogsPorIntervaloDeData(
     dto: BuscaBlogIntervaloDto,
