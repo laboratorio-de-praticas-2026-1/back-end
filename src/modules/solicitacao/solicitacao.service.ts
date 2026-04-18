@@ -145,13 +145,10 @@ export class SolicitacaoService {
       });
 
     if (!solicitacao) {
-      throw new HttpException(
-        {
-          error: 'SOLICITACAO_NAO_ENCONTRADA',
-          message: 'A solicitação não foi encontrada',
-        },
-        HttpStatus.NOT_FOUND,
-      );
+      throw new NotFoundException({
+        error: 'SOLICITACAO_NAO_ENCONTRADA',
+        message: 'A solicitação não foi encontrada',
+      });
     }
 
     return {
