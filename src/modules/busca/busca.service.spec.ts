@@ -38,7 +38,6 @@ describe('BuscaService', () => {
     servicoFindAllMock.mockReset();
     publicidadeFindAllMock.mockReset();
     usuarioFindAllMock.mockReset();
-    usuarioFindAllMock.mockReset();
     empresaFindAllMock.mockReset();
 
     const module: TestingModule = await Test.createTestingModule({

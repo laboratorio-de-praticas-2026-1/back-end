@@ -49,7 +49,7 @@ export class BuscaEmpresaFiltroDto {
   @IsOptional()
   @Transform(({ value }: TransformFnParams) => {
     const normalized = normalizeString(value);
-    return typeof normalized === 'string' ? normalized : normalized;
+    return normalized;
   })
   @IsString()
   @ApiPropertyOptional({
