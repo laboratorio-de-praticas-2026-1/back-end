@@ -16,7 +16,7 @@ import { BuscaUsuarioFiltroDto } from './dto/busca-usuario-filtro.dto';
 @Controller('busca')
 export class BuscaController {
   private readonly logger = new Logger(BuscaController.name);
-  constructor(private readonly buscaService: BuscaService) { }
+  constructor(private readonly buscaService: BuscaService) {}
 
   @Get('blog/periodo')
   @ApiOperation({
