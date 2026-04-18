@@ -22,7 +22,9 @@ export class NotificacaoService {
   constructor(private readonly sequelize: Sequelize) {}
 
   // Mantém async e Promise<void>, mas adiciona um await dummy para eliminar o erro ESLint
-  async enviarConfirmacaoSolicitacao(data: Record<string, unknown>): Promise<void> {
+  async enviarConfirmacaoSolicitacao(
+    data: Record<string, unknown>,
+  ): Promise<void> {
     console.log('Notificação enviada', data);
     await Promise.resolve(); // resolve @typescript-eslint/require-await
   }
