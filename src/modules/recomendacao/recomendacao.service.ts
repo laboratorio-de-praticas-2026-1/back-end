@@ -38,7 +38,7 @@ export class RecomendacaoService {
     try {
       const listaRecomendacoes: RecomendacaoRespostaDto[] = [];
 
-      const licenciamento = await this.buscarLicenciamentoAnual(usuarioId); // << ADICIONAR
+      const licenciamento = await this.buscarLicenciamentoAnual(usuarioId);
       if (licenciamento) listaRecomendacoes.push(licenciamento);
 
       const infracao = await this.buscarRecursoMulta(usuarioId);
@@ -316,15 +316,60 @@ export class RecomendacaoService {
         }
       }
 
-      return null;
+      return await this.buscarRenovacaoCNH(usuarioId);
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Erro desconhecido';
       this.logger.error(
         `Erro na busca de licenciamento anual: ${errorMessage}`,
       );
+      return await this.buscarRenovacaoCNH(usuarioId);
+    }
+  }
+
+  async buscarRenovacaoCNH(
+    usuarioId: number,
+  ): Promise<RecomendacaoRespostaDto | null> {
+    try {
+      const dezAnosAtras = new Date();
+      dezAnosAtras.setFullYear(dezAnosAtras.getFullYear() - 10);
+
+      const jaExiste = await this.solicitacaoModel.findOne({
+        where: {
+          usuarioId,
+          servicoId: 4,
+          status: {
+            [Op.notIn]: ['cancelado', 'concluido'],
+          },
+          dataSolicitacao: {
+            [Op.gte]: dezAnosAtras,
+          },
+        },
+      });
+
+      if (!jaExiste) {
+        return {
+          id: 4,
+          nome: 'Renovação de CNH',
+          descricao: 'Renove sua CNH',
+          ativo: true,
+        };
+      }
+
+      return await this.buscarTransferenciaPropriedade(usuarioId);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido';
+      this.logger.error(`Erro na busca de renovação de CNH: ${errorMessage}`);
       return null;
     }
+  }
+
+  protected async buscarTransferenciaPropriedade(usuarioId: number) {
+    this.logger.log(
+      `Seguindo para Transferência de Propriedade para usuário ${usuarioId}`,
+    );
+    return Promise.resolve(null);
   }
 
   private async buscarServicosPopulares() {

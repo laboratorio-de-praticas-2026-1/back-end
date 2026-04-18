@@ -264,16 +264,20 @@ describe('RecomendacaoService', () => {
       expect(resultado?.nome).toBe('Licenciamento Anual');
     });
 
-    it('deve retornar null se o veículo ainda não atingiu o mês de gatilho', async () => {
-      // Dígito '0' tem gatilho em novembro (11), só dispara se mesAtual >= 11
-      // Forçamos um cenário onde o mês atual é anterior ao gatilho
+    it('deve seguir para buscarRenovacaoCNH se o veículo não atingiu o mês de gatilho', async () => {
       mockVeiculoModel.findAll.mockResolvedValue([
-        { id: 5, placa: 'ABC1230', ativo: true } as unknown as Veiculo,
+        { id: 5, placa: 'ABC1230' } as unknown as Veiculo,
       ]);
 
       jest.spyOn(Date.prototype, 'getMonth').mockReturnValue(0); // Janeiro
 
+      const spyCNH = jest
+        .spyOn(service, 'buscarRenovacaoCNH')
+        .mockResolvedValue(null);
+
       const resultado = await service.buscarLicenciamentoAnual(1);
+
+      expect(spyCNH).toHaveBeenCalledWith(1);
       expect(resultado).toBeNull();
 
       jest.restoreAllMocks();
@@ -311,6 +315,40 @@ describe('RecomendacaoService', () => {
       } as unknown as Solicitacao);
 
       const resultado = await service.buscarLicenciamentoAnual(1);
+      expect(resultado).toBeNull();
+    });
+  });
+
+  describe('buscarRenovacaoCNH', () => {
+    it('deve retornar recomendação (ID 4) se não houver solicitação nos últimos 10 anos', async () => {
+      mockSolicitacaoModel.findOne.mockResolvedValue(null);
+
+      const resultado = await service.buscarRenovacaoCNH(1);
+
+      expect(resultado).not.toBeNull();
+      expect(resultado?.id).toBe(4);
+      expect(resultado?.nome).toBe('Renovação de CNH');
+    });
+
+    it('deve retornar null se já existe solicitação ativa nos últimos 10 anos', async () => {
+      mockSolicitacaoModel.findOne.mockResolvedValue({
+        id: 50,
+        servicoId: 4,
+        status: 'concluido',
+      } as unknown as Solicitacao);
+
+      const resultado = await service.buscarRenovacaoCNH(1);
+
+      expect(resultado).toBeNull();
+    });
+
+    it('deve retornar null em caso de erro técnico para não travar o fluxo', async () => {
+      mockSolicitacaoModel.findOne.mockRejectedValue(
+        new Error('Erro de banco'),
+      );
+
+      const resultado = await service.buscarRenovacaoCNH(1);
+
       expect(resultado).toBeNull();
     });
   });
@@ -365,6 +403,7 @@ describe('RecomendacaoService', () => {
   describe('obterRecomendacoes', () => {
     it('deve retornar uma lista com múltiplos serviços se o usuário tiver multa e venda', async () => {
       jest.spyOn(service, 'buscarLicenciamentoAnual').mockResolvedValue(null);
+      jest.spyOn(service, 'buscarRenovacaoCNH').mockResolvedValue(null);
       jest.spyOn(service, 'buscarRecursoMulta').mockResolvedValue({
         id: 6,
         nome: 'Multa',
@@ -391,6 +430,7 @@ describe('RecomendacaoService', () => {
 
     it('deve retornar serviços populares se a lista de prioridades estiver vazia', async () => {
       jest.spyOn(service, 'buscarLicenciamentoAnual').mockResolvedValue(null);
+      jest.spyOn(service, 'buscarRenovacaoCNH').mockResolvedValue(null);
       jest.spyOn(service, 'buscarRecursoMulta').mockResolvedValue(null);
       jest.spyOn(service, 'buscarParcelamentoDebitos').mockResolvedValue(null);
       jest.spyOn(service, 'buscarComunicacaoVenda').mockResolvedValue(null);
