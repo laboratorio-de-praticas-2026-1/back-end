@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Sequelize } from 'sequelize-typescript';
 
 type Notification = {
   titulo: string;
@@ -9,52 +10,38 @@ type Notification = {
 
 @Injectable()
 export class NotificacaoService {
+  constructor(private readonly sequelize: Sequelize) {}
 
   async enviarConfirmacaoSolicitacao(data: any): Promise<void> {
     console.log('Notificação enviada', data);
   }
 
   async getUserNotifications(userId: number): Promise<Notification[]> {
-    const veiculos = [
-      { id: 1, usuarioId: 1, placa: 'ABC-1234' },
-      { id: 2, usuarioId: 2, placa: 'XYZ-9999' },
-    ];
-
-    const debitos = [
+    const [results]: any = await this.sequelize.query(
+      `
+      SELECT 
+        d.id,
+        d.descricao,
+        d.valor,
+        d.created_at,
+        v.placa
+      FROM debito d
+      JOIN debito_veiculo dv ON dv.id_debito = d.id
+      JOIN veiculo v ON v.id = dv.id_veiculo
+      WHERE v.usuario_id = :userId
+      AND d.status = 'pendente'
+      ORDER BY d.created_at DESC
+      `,
       {
-        id: 1,
-        veiculoId: 1,
-        status: 'aguardando_pagamento',
-        valor: 200,
-        data: new Date(),
+        replacements: { userId },
       },
-    ];
-
-    // Buscar veículos do usuário
-    const veiculosDoUsuario = veiculos.filter(v => v.usuarioId === userId);
-    if (veiculosDoUsuario.length === 0) return [];
-
-    const veiculoIds = veiculosDoUsuario.map(v => v.id);
-
-    // Buscar débitos pendentes
-    const debitosPendentes = debitos.filter(
-      d =>
-        veiculoIds.includes(d.veiculoId) &&
-        d.status === 'aguardando_pagamento',
     );
 
-    if (debitosPendentes.length === 0) return [];
-
-    // Gerar notificações
-    return debitosPendentes.map(d => {
-      const veiculo = veiculos.find(v => v.id === d.veiculoId);
-
-      return {
-        titulo: 'Débito pendente',
-        mensagem: `Débito para o veículo ${veiculo?.placa}`,
-        valor: d.valor,
-        data: d.data,
-      };
-    });
+    return results.map((debito: any) => ({
+      titulo: 'Débito pendente',
+      mensagem: `Você possui um débito pendente para o veículo ${debito.placa}. ${debito.descricao}`,
+      valor: Number(debito.valor),
+      data: debito.created_at,
+    }));
   }
 }
