@@ -264,20 +264,15 @@ describe('RecomendacaoService', () => {
       expect(resultado?.nome).toBe('Licenciamento Anual');
     });
 
-    it('deve seguir para buscarRenovacaoCNH se o veículo não atingiu o mês de gatilho', async () => {
+    it('deve retornar null se o veículo não atingiu o mês de gatilho', async () => {
       mockVeiculoModel.findAll.mockResolvedValue([
         { id: 5, placa: 'ABC1230' } as unknown as Veiculo,
       ]);
 
       jest.spyOn(Date.prototype, 'getMonth').mockReturnValue(0); // Janeiro
 
-      const spyCNH = jest
-        .spyOn(service, 'buscarRenovacaoCNH')
-        .mockResolvedValue(null);
-
       const resultado = await service.buscarLicenciamentoAnual(1);
 
-      expect(spyCNH).toHaveBeenCalledWith(1);
       expect(resultado).toBeNull();
 
       jest.restoreAllMocks();

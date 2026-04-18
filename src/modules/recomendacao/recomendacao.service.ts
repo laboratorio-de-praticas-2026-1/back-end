@@ -41,6 +41,9 @@ export class RecomendacaoService {
       const licenciamento = await this.buscarLicenciamentoAnual(usuarioId);
       if (licenciamento) listaRecomendacoes.push(licenciamento);
 
+      const cnh = await this.buscarRenovacaoCNH(usuarioId);
+      if (cnh) listaRecomendacoes.push(cnh);
+
       const infracao = await this.buscarRecursoMulta(usuarioId);
       if (infracao) {
         listaRecomendacoes.push(infracao);
@@ -129,7 +132,7 @@ export class RecomendacaoService {
               servicoId: 6,
               veiculoId: veiculo.id,
               status: {
-                [Op.notIn]: ['concluido', 'cancelado'],
+                [Op.notIn]: ['cancelado', 'rejeitado'],
               },
             },
           });
@@ -295,7 +298,7 @@ export class RecomendacaoService {
             veiculoId: veiculo.id,
             servicoId: 1,
             status: {
-              [Op.notIn]: ['cancelado', 'concluido'],
+              [Op.notIn]: ['cancelado', 'rejeitado'],
             },
             dataSolicitacao: {
               [Op.between]: [
@@ -316,14 +319,14 @@ export class RecomendacaoService {
         }
       }
 
-      return await this.buscarRenovacaoCNH(usuarioId);
+      return null;
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Erro desconhecido';
       this.logger.error(
         `Erro na busca de licenciamento anual: ${errorMessage}`,
       );
-      return await this.buscarRenovacaoCNH(usuarioId);
+      return null;
     }
   }
 
@@ -339,7 +342,7 @@ export class RecomendacaoService {
           usuarioId,
           servicoId: 4,
           status: {
-            [Op.notIn]: ['cancelado', 'concluido'],
+            [Op.notIn]: ['cancelado', 'rejeitado'],
           },
           dataSolicitacao: {
             [Op.gte]: dezAnosAtras,
@@ -356,20 +359,13 @@ export class RecomendacaoService {
         };
       }
 
-      return await this.buscarTransferenciaPropriedade(usuarioId);
+      return null;
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Erro desconhecido';
       this.logger.error(`Erro na busca de renovação de CNH: ${errorMessage}`);
       return null;
     }
-  }
-
-  protected async buscarTransferenciaPropriedade(usuarioId: number) {
-    this.logger.log(
-      `Seguindo para Transferência de Propriedade para usuário ${usuarioId}`,
-    );
-    return Promise.resolve(null);
   }
 
   private async buscarServicosPopulares() {
