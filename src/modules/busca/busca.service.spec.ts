@@ -335,6 +335,7 @@ describe('BuscaService', () => {
       await service.buscarUsuariosPorFiltros({});
 
       expect(usuarioFindAllMock).toHaveBeenCalledWith({
+        attributes: { exclude: ['senha'] },
         order: [['id', 'ASC']],
       });
     });
@@ -520,6 +521,7 @@ describe('BuscaService', () => {
       const resultado = await service.listarUsuariosByTermo();
 
       expect(usuarioFindAllMock).toHaveBeenCalledWith({
+        attributes: { exclude: ['senha'] },
         order: [['id', 'DESC']],
       });
       expect(resultado).toEqual({
@@ -534,6 +536,7 @@ describe('BuscaService', () => {
       await service.listarUsuariosByTermo('  joao  ');
 
       expect(usuarioFindAllMock).toHaveBeenCalledWith({
+        attributes: { exclude: ['senha'] },
         where: {
           [Op.or]: [
             { nome: { [Op.like]: '%joao%' } },
@@ -556,6 +559,7 @@ describe('BuscaService', () => {
         Array<FindAllOptions>
       >;
       const args = calls[0]?.[0];
+      expect(args.attributes).toEqual({ exclude: ['senha'] });
       expect(args.where).toBeDefined();
       const whereClause = args.where as WhereClause;
       const filtros = whereClause[Op.or] as unknown[];
@@ -573,6 +577,7 @@ describe('BuscaService', () => {
         Array<FindAllOptions>
       >;
       const args = calls[0]?.[0];
+      expect(args.attributes).toEqual({ exclude: ['senha'] });
       expect(args.where).toBeDefined();
       const whereClause = args.where as WhereClause;
       const filtros = whereClause[Op.or] as unknown[];

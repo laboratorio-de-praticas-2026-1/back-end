@@ -100,10 +100,14 @@ export class BuscaService {
     ];
 
     if (filtros.length === 0) {
-      return await this.usuarioModel.findAll({ order: [['id', 'ASC']] });
+      return await this.usuarioModel.findAll({
+        attributes: { exclude: ['senha'] },
+        order: [['id', 'ASC']],
+      });
     }
 
     return await this.usuarioModel.findAll({
+      attributes: { exclude: ['senha'] },
       where: {
         [Op.and]: filtros,
       },
@@ -251,6 +255,7 @@ export class BuscaService {
 
     if (!termoNormalizado) {
       const itens = await this.usuarioModel.findAll({
+        attributes: { exclude: ['senha'] },
         order: [['id', 'DESC']],
       });
 
@@ -276,6 +281,7 @@ export class BuscaService {
     }
 
     const itens = await this.usuarioModel.findAll({
+      attributes: { exclude: ['senha'] },
       where: { [Op.or]: filtros },
       order: [['id', 'DESC']],
     });
