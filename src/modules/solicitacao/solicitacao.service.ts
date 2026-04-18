@@ -4,12 +4,20 @@ import {
   InternalServerErrorException,
   Logger,
   NotFoundException,
+  OnModuleDestroy,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { StatusSolicitacaoEnum } from 'src/commons/enums/status-solicitacao.enum';
 import { CryptoUtil } from 'src/commons/utils/crypto';
 import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
 import { CloudinaryResponse } from 'src/infra/cloudinary/dto/cloudinary-response';
+import { EmailService } from 'src/infra/email/email.service';
+import { EmailParams } from 'src/infra/email/dto/email-params';
+import {
+  STATUS_UPDATE,
+  SOLICITACAO_FEITA,
+} from 'src/infra/email/templates/templates-names';
+import { obterTextosEmailPorStatus } from 'src/infra/email/status-email-textos';
 import { DocumentoSolicitacao } from 'src/models/documento-solicitacao.model';
 import { Servico } from 'src/models/servico.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
@@ -26,8 +34,19 @@ import { ListSolicitacoesResponseDto } from './dto/list-solicitacoes-response.dt
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 
 @Injectable()
-export class SolicitacaoService {
+export class SolicitacaoService implements OnModuleDestroy {
   private readonly logger: Logger = new Logger(SolicitacaoService.name);
+
+  private readonly emailDebounceMap = new Map<string, number>();
+  private readonly DEBOUNCE_INTERVAL_MS = 3 * 60 * 1000;
+  private readonly debounceCleanupTimer: ReturnType<typeof setInterval>;
+
+  private readonly STATUS_COM_EMAIL = new Set<string>([
+    StatusSolicitacaoEnum.AGUARDANDO_PAGAMENTO,
+    StatusSolicitacaoEnum.AGUARDANDO_DOCUMENTO,
+    StatusSolicitacaoEnum.CONCLUIDO,
+    StatusSolicitacaoEnum.CANCELADO,
+  ]);
 
   constructor(
     @InjectModel(Solicitacao)
@@ -43,7 +62,34 @@ export class SolicitacaoService {
     private readonly notificacaoService: NotificacaoService,
     private readonly cloudinaryService: CloudinaryService,
     private readonly cryptoUtil: CryptoUtil,
-  ) {}
+    private readonly emailService: EmailService,
+  ) {
+    this.debounceCleanupTimer = setInterval(() => {
+      this.limparEntradasExpiradas();
+    }, this.DEBOUNCE_INTERVAL_MS);
+  }
+
+  onModuleDestroy(): void {
+    clearInterval(this.debounceCleanupTimer);
+  }
+
+  private limparEntradasExpiradas(): void {
+    const agora = Date.now();
+    let removidas = 0;
+
+    for (const [chave, timestamp] of this.emailDebounceMap) {
+      if (agora - timestamp >= this.DEBOUNCE_INTERVAL_MS) {
+        this.emailDebounceMap.delete(chave);
+        removidas++;
+      }
+    }
+
+    if (removidas > 0) {
+      this.logger.debug(
+        `Debounce cleanup: ${removidas} entrada(s) expirada(s) removida(s), ${this.emailDebounceMap.size} restante(s)`,
+      );
+    }
+  }
 
   async criarSolicitacao(
     solicitacaoDto: CreateSolicitacaoDto,
@@ -105,6 +151,27 @@ export class SolicitacaoService {
         );
       });
 
+    void this.emailService
+      .enviarEmail(
+        new EmailParams(
+          usuario.email,
+          SOLICITACAO_FEITA,
+          `Solicitação recebida - Solicitação #${solicitacao.id}`,
+          {
+            nomeCliente: usuario.nome,
+            solicitacaoId: solicitacao.id,
+            servicoNome: servico.nome,
+          },
+        ),
+      )
+      .catch((error: unknown) => {
+        const mensagemErro =
+          error instanceof Error ? error.message : 'Erro desconhecido';
+        this.logger.warn(
+          `Falha ao enviar email de solicitacao feita ${solicitacao.id}: ${mensagemErro}`,
+        );
+      });
+
     return {
       message: 'Agendamento de serviço realizado com sucesso',
       protocolo,
@@ -113,7 +180,12 @@ export class SolicitacaoService {
 
   async findSolicitacaoById(id: number): Promise<Solicitacao> {
     const solicitacao: Solicitacao | null =
-      await this.solicitacaoModel.findByPk(id);
+      await this.solicitacaoModel.findByPk(id, {
+        include: [
+          { model: Usuario, attributes: ['id', 'nome', 'email'] },
+          { model: Servico, attributes: ['id', 'nome'] },
+        ],
+      });
 
     if (!solicitacao) {
       throw new NotFoundException(`Solicitação com ID ${id} não encontrada`);
@@ -128,8 +200,11 @@ export class SolicitacaoService {
   ): Promise<{ message: string }> {
     const solicitacao: Solicitacao = await this.findSolicitacaoById(id);
 
+    const statusAnterior = solicitacao.status as StatusSolicitacaoEnum;
+    const novoStatus = updateSolicitacaoStatusDto.status;
+
     const updateData: Partial<Solicitacao> = {
-      status: updateSolicitacaoStatusDto.status,
+      status: novoStatus,
     };
 
     const observacao: string | undefined =
@@ -138,15 +213,121 @@ export class SolicitacaoService {
       updateData.observacaoAdmin = observacao;
     }
 
-    if (updateSolicitacaoStatusDto.status === StatusSolicitacaoEnum.CONCLUIDO) {
+    if (novoStatus === StatusSolicitacaoEnum.CONCLUIDO) {
       updateData.dataConclusao = new Date();
     }
 
     await solicitacao.update(updateData);
 
+    if (this.deveDispararEmail(statusAnterior, novoStatus)) {
+      if (this.verificarDebounce(id, novoStatus, statusAnterior)) {
+        const isReabertura =
+          statusAnterior === StatusSolicitacaoEnum.CANCELADO &&
+          novoStatus === StatusSolicitacaoEnum.EM_ANDAMENTO;
+
+        const textos = obterTextosEmailPorStatus(novoStatus, isReabertura);
+
+        if (textos) {
+          void this.dispararEmailStatus(
+            solicitacao,
+            textos.assunto,
+            textos.titulo,
+            textos.mensagem,
+            textos.cor,
+            observacao,
+          ).catch((error: unknown) => {
+            const mensagemErro =
+              error instanceof Error ? error.message : 'Erro desconhecido';
+            this.logger.warn(
+              `Falha ao enviar email de status para solicitacao ${id}: ${mensagemErro}`,
+            );
+          });
+        }
+      }
+    }
+
     return {
       message: 'Status da solicitação atualizado com sucesso.',
     };
+  }
+
+  private deveDispararEmail(
+    statusAnterior: StatusSolicitacaoEnum,
+    novoStatus: StatusSolicitacaoEnum,
+  ): boolean {
+    if (statusAnterior === novoStatus) return false;
+
+    if (this.STATUS_COM_EMAIL.has(novoStatus)) return true;
+
+    if (
+      statusAnterior === StatusSolicitacaoEnum.CANCELADO &&
+      novoStatus === StatusSolicitacaoEnum.EM_ANDAMENTO
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
+  private verificarDebounce(
+    solicitacaoId: number,
+    novoStatus: string,
+    statusAnterior: string,
+  ): boolean {
+    const chave = `${solicitacaoId}:${statusAnterior}:${novoStatus}`;
+    const agora = Date.now();
+    const ultimoEnvio = this.emailDebounceMap.get(chave);
+
+    if (ultimoEnvio && agora - ultimoEnvio < this.DEBOUNCE_INTERVAL_MS) {
+      this.logger.log(
+        `Debounce ativo para solicitacao ${solicitacaoId}: ${statusAnterior} -> ${novoStatus}`,
+      );
+      return false;
+    }
+
+    this.emailDebounceMap.set(chave, agora);
+    return true;
+  }
+
+  private async dispararEmailStatus(
+    solicitacao: Solicitacao,
+    assunto: string,
+    titulo: string,
+    mensagem: string,
+    statusCor: string,
+    observacaoAdmin?: string,
+  ): Promise<void> {
+    const emailDestinatario = solicitacao.usuario?.email;
+    const nomeCliente = solicitacao.usuario?.nome;
+    const servicoNome = solicitacao.servico?.nome;
+
+    if (!emailDestinatario || !nomeCliente) {
+      this.logger.warn(
+        `Dados do usuario incompletos para solicitacao ${solicitacao.id}`,
+      );
+      return;
+    }
+
+    const params = new EmailParams(
+      emailDestinatario,
+      STATUS_UPDATE,
+      `${assunto} - Solicitação #${solicitacao.id}`,
+      {
+        nomeCliente,
+        solicitacaoId: solicitacao.id,
+        servicoNome: servicoNome || 'Serviço',
+        titulo,
+        mensagem,
+        statusCor,
+        observacaoAdmin: observacaoAdmin || '',
+      },
+    );
+
+    await this.emailService.enviarEmail(params);
+
+    this.logger.log(
+      `Email de status enviado para ${emailDestinatario} (solicitacao #${solicitacao.id})`,
+    );
   }
 
   private gerarProtocoloSolicitacao(
@@ -224,7 +405,6 @@ export class SolicitacaoService {
     };
   }
 
-  // Criação de rota de envio de documentos
   async enviarDocumento(
     solicitacaoId: number,
     data: CreateDocumentoDto,
