@@ -16,7 +16,7 @@ import { DashboardPeriodoQueryDto } from './dto/dashboard-periodo-query.dto';
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
-  @Get('/all')
+  @Get('all')
   @ApiQuery({ name: 'inicio', required: false, example: '2025-01-01' })
   @ApiQuery({ name: 'fim', required: false, example: '2025-06-30' })
   async retornarTudoDashboard(
@@ -34,7 +34,7 @@ export class DashboardController {
     return this.dashboardService.obterDadosGerais(query.inicio, query.fim);
   }
 
-  @Get('/solicitacoes')
+  @Get('solicitacoes')
   @ApiQuery({ name: 'inicio', required: false, example: '2025-01-01' })
   @ApiQuery({ name: 'fim', required: false, example: '2025-06-30' })
   async retornarSolicitacoesDashboard(
@@ -46,12 +46,12 @@ export class DashboardController {
     );
   }
 
-  @Get('/veiculos')
+  @Get('veiculos')
   async retornarVeiculosDashboard(): Promise<VeiculosDto> {
     return this.dashboardService.obterDadosVeiculos();
   }
 
-  @Get('/servicos')
+  @Get('servicos')
   @ApiQuery({ name: 'inicio', required: false, example: '2025-01-01' })
   @ApiQuery({ name: 'fim', required: false, example: '2025-06-30' })
   async retornarServicosDashboard(
@@ -60,7 +60,7 @@ export class DashboardController {
     return this.dashboardService.obterDadosServicos(query.inicio, query.fim);
   }
 
-  @Get('/financeiro')
+  @Get('financeiro')
   @ApiQuery({ name: 'inicio', required: false, example: '2025-01-01' })
   @ApiQuery({ name: 'fim', required: false, example: '2025-06-30' })
   async retornarFinanceiroDashboard(
