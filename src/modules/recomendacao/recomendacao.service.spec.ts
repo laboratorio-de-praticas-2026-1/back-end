@@ -395,10 +395,56 @@ describe('RecomendacaoService', () => {
     });
   });
 
+  describe('buscarTransferenciaPropriedade', () => {
+    it('deve retornar recomendação (ID 2) se veículo não tiver transferência ativa', async () => {
+      mockVeiculoModel.findAll.mockResolvedValue([
+        { id: 3 } as unknown as Veiculo,
+      ]);
+      mockSolicitacaoModel.findOne.mockResolvedValue(null);
+
+      const resultado = await service.buscarTransferenciaPropriedade(1);
+
+      expect(resultado).not.toBeNull();
+      expect(resultado?.id).toBe(2);
+      expect(resultado?.nome).toBe('Transferência de Propriedade');
+    });
+
+    it('deve retornar null se já existe solicitação ativa para o veículo', async () => {
+      mockVeiculoModel.findAll.mockResolvedValue([
+        { id: 3 } as unknown as Veiculo,
+      ]);
+      mockSolicitacaoModel.findOne.mockResolvedValue({
+        id: 20,
+        servicoId: 2,
+        status: 'pendente',
+      } as unknown as Solicitacao);
+
+      const resultado = await service.buscarTransferenciaPropriedade(1);
+      expect(resultado).toBeNull();
+    });
+
+    it('deve retornar null se o usuário não tiver veículos', async () => {
+      mockVeiculoModel.findAll.mockResolvedValue([]);
+
+      const resultado = await service.buscarTransferenciaPropriedade(1);
+      expect(resultado).toBeNull();
+    });
+
+    it('deve retornar null em caso de erro técnico', async () => {
+      mockVeiculoModel.findAll.mockRejectedValue(new Error('Erro de banco'));
+
+      const resultado = await service.buscarTransferenciaPropriedade(1);
+      expect(resultado).toBeNull();
+    });
+  });
+
   describe('obterRecomendacoes', () => {
     it('deve retornar uma lista com múltiplos serviços se o usuário tiver multa e venda', async () => {
       jest.spyOn(service, 'buscarLicenciamentoAnual').mockResolvedValue(null);
       jest.spyOn(service, 'buscarRenovacaoCNH').mockResolvedValue(null);
+      jest
+        .spyOn(service, 'buscarTransferenciaPropriedade')
+        .mockResolvedValue(null);
       jest.spyOn(service, 'buscarRecursoMulta').mockResolvedValue({
         id: 6,
         nome: 'Multa',
@@ -426,6 +472,9 @@ describe('RecomendacaoService', () => {
     it('deve retornar serviços populares se a lista de prioridades estiver vazia', async () => {
       jest.spyOn(service, 'buscarLicenciamentoAnual').mockResolvedValue(null);
       jest.spyOn(service, 'buscarRenovacaoCNH').mockResolvedValue(null);
+      jest
+        .spyOn(service, 'buscarTransferenciaPropriedade')
+        .mockResolvedValue(null);
       jest.spyOn(service, 'buscarRecursoMulta').mockResolvedValue(null);
       jest.spyOn(service, 'buscarParcelamentoDebitos').mockResolvedValue(null);
       jest.spyOn(service, 'buscarComunicacaoVenda').mockResolvedValue(null);
