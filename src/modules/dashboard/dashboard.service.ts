@@ -343,7 +343,7 @@ export class DashboardService {
   }
 
   /** Retorna dados de veículos: cadastrados, com solicitações ativas e débitos pendentes */
-  private async obterDadosVeiculos(): Promise<VeiculosDto> {
+  async obterDadosVeiculos(): Promise<VeiculosDto> {
     const totalVeiculosCadastrados = await this.veiculoModel.count();
 
     const veiculosComSolicitacaoAtiva = await this.solicitacaoModel.count({

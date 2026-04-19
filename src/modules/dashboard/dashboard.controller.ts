@@ -1,7 +1,13 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
-import { DashboardReturnDto, GeralDto, ServicosDto, SolicitacoesDto } from './dto/dashboard-return.dto';
+import {
+  DashboardReturnDto,
+  GeralDto,
+  ServicosDto,
+  SolicitacoesDto,
+  VeiculosDto,
+} from './dto/dashboard-return.dto';
 import { DashboardPeriodoQueryDto } from './dto/dashboard-periodo-query.dto';
 
 @ApiTags('Dashboard')
@@ -33,8 +39,16 @@ export class DashboardController {
   async retornarSolicitacoesDashboard(
     @Query() query: DashboardPeriodoQueryDto,
   ): Promise<SolicitacoesDto> {
-    return this.dashboardService.obterDadosSolicitacoes(query.inicio, query.fim);
+    return this.dashboardService.obterDadosSolicitacoes(
+      query.inicio,
+      query.fim,
+    );
   }
 
-
+  @Get('/veiculos')
+  async retornarVeiculosDashboard(
+    @Query() query: DashboardPeriodoQueryDto,
+  ): Promise<VeiculosDto> {
+    return this.dashboardService.obterDadosVeiculos();
+  }
 }
