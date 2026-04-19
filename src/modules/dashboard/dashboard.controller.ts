@@ -25,7 +25,7 @@ export class DashboardController {
     return this.dashboardService.retornoTotalDashboard(query.inicio, query.fim);
   }
 
-  @Get('/')
+  @Get()
   @ApiQuery({ name: 'inicio', required: false, example: '2025-01-01' })
   @ApiQuery({ name: 'fim', required: false, example: '2025-06-30' })
   async retornarGeralDashboard(
