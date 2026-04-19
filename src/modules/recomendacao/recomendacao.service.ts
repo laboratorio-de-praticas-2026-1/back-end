@@ -44,6 +44,10 @@ export class RecomendacaoService {
       const cnh = await this.buscarRenovacaoCNH(usuarioId);
       if (cnh) listaRecomendacoes.push(cnh);
 
+      const transferencia =
+        await this.buscarTransferenciaPropriedade(usuarioId);
+      if (transferencia) listaRecomendacoes.push(transferencia);
+
       const infracao = await this.buscarRecursoMulta(usuarioId);
       if (infracao) {
         listaRecomendacoes.push(infracao);
@@ -90,6 +94,47 @@ export class RecomendacaoService {
         error instanceof Error ? error.message : 'Erro desconhecido';
       this.logger.error(`Erro ao gerar recomendações: ${errorMessage}`);
       throw new InternalServerErrorException('Erro ao processar recomendações');
+    }
+  }
+
+  async buscarTransferenciaPropriedade(
+    usuarioId: number,
+  ): Promise<RecomendacaoRespostaDto | null> {
+    try {
+      const veiculos = await this.veiculoModel.findAll({
+        where: { usuarioId },
+      });
+
+      for (const veiculo of veiculos) {
+        const jaExiste = await this.solicitacaoModel.findOne({
+          where: {
+            veiculoId: veiculo.id,
+            servicoId: 2,
+            status: {
+              [Op.ne]: 'cancelado',
+            },
+          },
+        });
+
+        if (!jaExiste) {
+          return {
+            id: 2,
+            nome: 'Transferência de Propriedade',
+            descricao:
+              'Identificamos que seu veículo ainda não possui transferência de titularidade. Regularize agora.',
+            ativo: true,
+          };
+        }
+      }
+
+      return null;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido';
+      this.logger.error(
+        `Erro na busca de transferência de propriedade: ${errorMessage}`,
+      );
+      return null;
     }
   }
 
