@@ -29,33 +29,12 @@ import type {
   ResultadoPrevisaoCaixa,
   ResultadoDistribuicaoMetodo,
   ResultadoDistribuicaoTipo,
+  StatusCountRaw,
+  ParcelasVencidasRaw,
+  TempoConclusaoRaw,
+  DebitoVeiculoRaw,
 } from './dashboard.types';
 import { MaisSolicitadosRow, ReceitaPorServicoRow } from './dashboard.types';
-
-interface StatusCountRaw {
-  status: string;
-  quantidade: number | string;
-}
-
-interface ParcelasVencidasRaw {
-  valorTotal: number | string | null;
-  quantidadeParcelas: number | string | null;
-}
-
-interface TempoConclusaoRaw {
-  servicoId: number | string;
-  servicoNome: string;
-  prazoEstimadoDias: number | string;
-  mediaRealDias: number | string;
-  totalConcluidas: number | string;
-}
-
-interface DebitoVeiculoRaw {
-  idVeiculo: number;
-  totalDebitos: number | string;
-  valorTotal: number | string;
-  veiculo: { placa: string };
-}
 
 @Injectable()
 export class DashboardService {
@@ -111,19 +90,9 @@ export class DashboardService {
   }
 
   /** Retorna dados gerais: solicitações, documentos, clientes e débitos do período */
-  async obterDadosGerais(
-    inicio?: string,
-    fim?: string,
-  ): Promise<DadosGeraisComStatus> {
+  async obterDadosGerais(inicio?: string, fim?: string): Promise<GeralDto> {
     const { dataInicio, dataFim } = this.converterData(fim, inicio);
     const hoje = new Date();
-
-    const statusAbertos = [
-      'recebido',
-      'aguardando_pagamento',
-      'aguardando_documento',
-      'em_andamento',
-    ];
 
     const porStatusRaw = (await this.solicitacaoModel.findAll({
       attributes: [
