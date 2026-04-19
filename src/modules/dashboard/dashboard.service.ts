@@ -78,7 +78,7 @@ export class DashboardService {
     return meses;
   }
 
-  private converterData(fimParam?: string, inicioParam?: string) {
+  private converterData(inicioParam?: string, fimParam?: string) {
     const dataFim = fimParam ? new Date(fimParam) : new Date();
     dataFim.setHours(23, 59, 59, 999);
 
@@ -91,7 +91,7 @@ export class DashboardService {
 
   /** Retorna dados gerais: solicitações, documentos, clientes e débitos do período */
   async obterDadosGerais(inicio?: string, fim?: string): Promise<GeralDto> {
-    const { dataInicio, dataFim } = this.converterData(fim, inicio);
+    const { dataInicio, dataFim } = this.converterData(inicio, fim);
     const hoje = new Date();
 
     const [
@@ -210,7 +210,7 @@ export class DashboardService {
     inicio?: string,
     fim?: string,
   ): Promise<SolicitacoesDto> {
-    const { dataInicio, dataFim } = this.converterData(fim, inicio);
+    const { dataInicio, dataFim } = this.converterData(inicio, fim);
 
     const statusAbertos = [
       'recebido',
@@ -423,7 +423,7 @@ export class DashboardService {
     inicio?: string,
     fim?: string,
   ): Promise<ServicosDto> {
-    const { dataInicio, dataFim } = this.converterData(fim, inicio);
+    const { dataInicio, dataFim } = this.converterData(inicio, fim);
     const [
       servicosAtivos,
       servicosPausados,
@@ -515,7 +515,7 @@ export class DashboardService {
     inicio?: string,
     fim?: string,
   ): Promise<FinanceiroDto> {
-    const { dataInicio, dataFim } = this.converterData(fim, inicio);
+    const { dataInicio, dataFim } = this.converterData(inicio, fim);
     const hoje = new Date();
     const em30Dias = new Date(hoje.getTime() + 30 * 24 * 60 * 60 * 1000);
 
