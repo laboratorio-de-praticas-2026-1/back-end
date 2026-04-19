@@ -1,10 +1,19 @@
+import { LOGO_ESCURA_B64 } from './template-assets';
+
+export { LOGO_ESCURA_B64 };
+
 export function pageShell(
   title: string,
   subtitle: string,
   content: string,
   logoBase64: string,
-  companyName = 'dados da empresa',
+  companyName = 'Despachante Bortone',
+  pageNumber?: number,
 ): string {
+  const pageNum = pageNumber !== undefined
+    ? `<span class="page-num">${pageNumber}</span>`
+    : '';
+
   return /* html */ `
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -16,86 +25,97 @@ export function pageShell(
   body{
     font-family:'Inter',Arial,sans-serif;
     color:#1A1A1A;
-    width:794px;          /* A4 @ 96dpi */
+    width:794px;
     min-height:1123px;
     background:#fff;
     display:flex;
     flex-direction:column;
   }
 
+  /* ── Header ── */
   .page-header{
-    background:#1B2B4B;
-    color:#fff;
     display:flex;
-    align-items:center;
+    align-items:flex-start;
     justify-content:space-between;
-    padding:18px 32px 12px;
+    padding:28px 40px 0;
     flex-shrink:0;
   }
-  .page-header .logo{height:46px;object-fit:contain;}
-  .page-header .hd-right{text-align:right;font-size:11px;opacity:.75;}
-  .page-title-block{
-    text-align:center;
-    padding:32px 32px 12px;
-  }
-  .page-title-block h1{font-size:28px;font-weight:700;color:#1B2B4B;}
-  .page-title-block h2{font-size:15px;color:#555;margin-top:4px;font-weight:400;}
+  .page-header .logo{height:52px;object-fit:contain;}
+  .page-header .hd-right{font-size:10px;color:#888;text-align:right;padding-top:6px;}
 
+  /* ── Title block ── */
+  .page-title-block{
+    padding:20px 40px 6px;
+  }
+  .page-title-block h1{
+    font-size:28px;font-weight:800;color:#0D2040;line-height:1.2;
+  }
+  .page-title-block h2{
+    font-size:13px;color:#666;margin-top:5px;font-weight:400;
+  }
+
+  /* ── Content ── */
   .content{
     flex:1;
-    padding:12px 40px 24px;
+    padding:8px 40px 20px;
   }
 
+  /* ── Footer ── */
   .page-footer{
-    background:#1B2B4B;
-    color:#fff;
     display:flex;
     justify-content:space-between;
-    padding:10px 32px;
-    font-size:11px;
+    align-items:center;
+    padding:10px 40px;
+    border-top:1px solid #E8EEF4;
+    font-size:10px;
+    color:#999;
     flex-shrink:0;
+    margin-top:auto;
+  }
+  .page-num{
+    background:#0D2040;color:#fff;
+    border-radius:50%;width:20px;height:20px;
+    display:inline-flex;align-items:center;justify-content:center;
+    font-size:10px;font-weight:700;
   }
 
+  /* ── Section labels ── */
   .section-label{
-    font-size:13px;font-weight:700;color:#1B2B4B;
-    border-left:4px solid #2D7D46;
-    padding-left:10px;
-    margin:22px 0 10px;
+    font-size:14px;font-weight:700;color:#0D2040;
+    margin:20px 0 10px;
   }
 
-  .kpi-row{display:flex;gap:16px;flex-wrap:wrap;margin:8px 0 18px;}
+  /* ── KPI cards ── */
+  .kpi-row{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 18px;}
   .kpi-card{
-    flex:1;min-width:150px;
-    background:#F7F9FC;
-    border:1px solid #E0E7EF;
-    border-radius:10px;
+    flex:1;min-width:140px;
+    background:#0D2040;
+    border-radius:8px;
     padding:14px 18px;
+    color:#fff;
   }
-  .kpi-card .kpi-label{font-size:11px;color:#666;margin-bottom:4px;}
-  .kpi-card .kpi-value{font-size:20px;font-weight:700;color:#1B2B4B;}
+  .kpi-card .kpi-label{font-size:10px;color:#8AAFCF;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;}
+  .kpi-card .kpi-value{font-size:18px;font-weight:700;color:#fff;}
 
+  /* ── Tables ── */
   table{
     width:100%;
     border-collapse:collapse;
     font-size:11px;
     margin-top:4px;
   }
-  thead tr{background:#1B2B4B;color:#fff;}
+  thead tr{background:#0D2040;color:#fff;}
   thead th{
     padding:8px 10px;
     text-align:left;
     font-weight:600;
     letter-spacing:.3px;
   }
-  tbody tr:nth-child(even){background:#F4F6FA;}
-  tbody td{padding:7px 10px;border-bottom:1px solid #E8EDF3;vertical-align:top;}
-  .badge{
-    display:inline-block;
-    padding:2px 8px;
-    border-radius:20px;
-    font-size:10px;
-    font-weight:600;
-  }
+  tbody tr:nth-child(even){background:#F4F7FB;}
+  tbody td{padding:7px 10px;border-bottom:1px solid #E8EEF4;vertical-align:top;color:#333;}
+
+  /* ── Badges ── */
+  .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;}
   .badge-pago{background:#D4EDDA;color:#1A5E2E;}
   .badge-pendente{background:#FFF3CD;color:#856404;}
   .badge-atrasado{background:#F8D7DA;color:#842029;}
@@ -108,15 +128,11 @@ export function pageShell(
   .badge-aguardando_pagamento{background:#FFF3CD;color:#856404;}
   .badge-aguardando_documento{background:#FDE2A3;color:#7D4900;}
   .badge-ativo{background:#CCE5FF;color:#004085;}
-  .ok-icon{color:#2D7D46;font-weight:700;}
+  .ok-icon{color:#1A5E2E;font-weight:700;}
   .nok-icon{color:#C0392B;font-weight:700;}
 
-  .chart-wrap{
-    display:flex;
-    align-items:flex-start;
-    gap:12px;
-    margin:8px 0 16px;
-  }
+  /* ── Charts ── */
+  .chart-wrap{display:flex;align-items:flex-start;gap:12px;margin:8px 0 16px;}
   .chart-wrap img{max-width:100%;height:auto;}
 
   .page-break{page-break-after:always;}
@@ -124,7 +140,7 @@ export function pageShell(
 </head>
 <body>
   <div class="page-header">
-    <img class="logo" src="${logoBase64}" alt="BRTN"/>
+    <img class="logo" src="${LOGO_ESCURA_B64}" alt="BRTN"/>
     <div class="hd-right">${companyName}</div>
   </div>
 
@@ -138,18 +154,15 @@ export function pageShell(
   </div>
 
   <div class="page-footer">
-    <span>Roda pe</span>
     <span>${companyName}</span>
+    ${pageNum}
   </div>
 </body>
 </html>`;
 }
 
 export function fmtBRL(value: number): string {
-  return value.toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  });
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
 export function fmtDate(date: Date | string | null | undefined): string {
