@@ -409,9 +409,10 @@ export class DashboardService {
 
   /** Retorna dados de serviços: ativos, pausados e receita por serviço */
   private async obterDadosServicos(
-    dataInicio: Date,
-    dataFim: Date,
+    inicio?: string,
+    fim?: string,
   ): Promise<ServicosDto> {
+    const { dataInicio, dataFim } = this.converterData(fim, inicio);
     const servicosAtivos = await this.servicoModel.count({
       where: { ativo: true },
     });
@@ -667,7 +668,7 @@ export class DashboardService {
     const [geral, veiculos, servicos, financeiro] = await Promise.all([
       this.obterDadosGerais(inicioParam, fimParam),
       this.obterDadosVeiculos(),
-      this.obterDadosServicos(dataInicio, dataFim),
+      this.obterDadosServicos(inicioParam, fimParam),
       this.obterDadosFinanceiro(dataInicio, dataFim),
     ]);
 
