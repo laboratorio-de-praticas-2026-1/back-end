@@ -208,15 +208,14 @@ export function clientesSection(
     .join('');
 
   const parcelasRows = parcelasAtrasadas
-    .slice(0, 30)
     .map(
       (p) => /* html */ `
     <tr>
-      <td>${p.pagamento?.debito?.debitoServico?.servico?.solicitacoes?.[0]?.usuario?.nome ?? '—'}</td>
-      <td>${p.idPagamento}</td>
-      <td>${fmtBRL(Number(p.valor))}</td>
-      <td>${fmtDate(p.pagamento?.createdAt)}</td>
-      <td>${fmtDate(p.vencimento)}</td>
+      <td>${p.nome}</td>
+      <td>${p.numParcelas}</td>
+      <td>${fmtBRL(Number(p.valorParcelas))}</td>
+      <td>${fmtDate(p.dataInicio)}</td>
+      <td>${fmtDate(p.dataVenc)}</td>
     </tr>`,
     )
     .join('');
@@ -249,7 +248,7 @@ export function clientesSection(
   <div class="section-label">Clientes com Parcelas em Atraso</div>
   <table>
     <thead><tr>
-      <th>Cliente</th><th>ID Pgto</th><th>Valor Parcela</th><th>Data Início</th><th>Vencimento</th>
+      <th>Cliente</th><th>Num. Parcelas</th><th>Valor Parcelas</th><th>Data Início</th><th>Vencimento</th>
     </tr></thead>
     <tbody>${parcelasRows || '<tr><td colspan="5" style="text-align:center;color:#999;">Nenhuma parcela em atraso</td></tr>'}</tbody>
   </table>`;

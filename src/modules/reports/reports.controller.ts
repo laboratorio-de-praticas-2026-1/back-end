@@ -13,7 +13,7 @@ import {
   ApiOperation,
   ApiProduces,
 } from '@nestjs/swagger';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { Relatorio } from 'src/models/relatorio.model';
 import { RelatorioCategoriaResponseDto } from './dto/categoria-response.dto';
 import { CreateReportDto } from './dto/create-report.dto';

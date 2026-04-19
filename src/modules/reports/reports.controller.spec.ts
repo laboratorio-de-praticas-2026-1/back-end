@@ -75,7 +75,7 @@ describe('ReportsController', () => {
         nome: createReportDto.nome,
         descricao: createReportDto.descricao,
         categoria: createReportDto.categoria,
-        urlDocumentoHash: 'https://temp-url.com',
+        urlDocumento: 'https://temp-url.com',
         dataGeracao: new Date(),
       } as unknown as never;
 
@@ -98,7 +98,7 @@ describe('ReportsController', () => {
         id: 1,
         nome: createReportDto.nome,
         categoria: createReportDto.categoria,
-        urlDocumentoHash: 'https://temp-url.com',
+        urlDocumento: 'https://temp-url.com',
         dataGeracao: new Date(),
       } as unknown as never;
 

@@ -85,9 +85,22 @@ describe('ReportsService', () => {
 
       expect(mockPdfGeneratorService.generate).toHaveBeenCalledWith(createReportDto);
       expect(mockCloudinaryService.uploadDocument).toHaveBeenCalled();
+      expect(mockCloudinaryService.uploadDocument).toHaveBeenCalledWith(
+        expect.objectContaining({
+          mimetype: 'application/pdf',
+          originalname: 'Relatório_de_Teste.pdf',
+          buffer: expect.any(Buffer),
+        }),
+      );
+      expect(mockCryptoUtil.encrypt).toHaveBeenCalledWith('raw|reports/fake-id');
+      expect(mockCryptoUtil.decrypt).toHaveBeenCalledWith('encrypted-value');
+      expect(mockCloudinaryService.generateTemporaryUrl).toHaveBeenCalledWith(
+        'raw|reports/fake-id',
+      );
       expect(mockRelatorioModel.create).toHaveBeenCalled();
       expect(resultado).toBeDefined();
       expect(resultado.nome).toBe(createReportDto.nome);
+      expect(resultado.urlDocumento).toBe('https://temp-url.com');
     });
 
     it('deve usar dataPeriodoInicio padrão (30 dias atrás) quando não fornecida', async () => {

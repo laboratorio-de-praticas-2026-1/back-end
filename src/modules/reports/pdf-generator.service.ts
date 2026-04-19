@@ -3,7 +3,7 @@ import puppeteer, { Browser } from 'puppeteer';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { ReportQueries } from './queries/report.queries';
+import { ReportQueries } from './queries/reports.queries';
 import { CreateReportDto } from './dto/create-report.dto';
 import { RelatorioCategoria } from 'src/models/relatorio.model';
 
