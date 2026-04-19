@@ -658,13 +658,6 @@ export class DashboardService {
     inicioParam?: string,
     fimParam?: string,
   ): Promise<DashboardReturnDto> {
-    const dataFim = fimParam ? new Date(fimParam) : new Date();
-    dataFim.setHours(23, 59, 59, 999);
-
-    const dataInicio = inicioParam
-      ? new Date(inicioParam)
-      : new Date(new Date(dataFim).setMonth(new Date(dataFim).getMonth() - 6));
-    dataInicio.setHours(0, 0, 0, 0);
 
     const [geral, solicitacoes, veiculos, servicos, financeiro] =
       await Promise.all([

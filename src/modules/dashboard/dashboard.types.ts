@@ -74,16 +74,3 @@ export type ReceitaPorServicoRow = DebitoServico & {
     key: 'servicoId' | 'totalSolicitacoes' | 'receitaTotal',
   ): string | number | null;
 };
-
-export type StatusCountRow = {
-  status: string;
-  quantidade: number | string;
-};
-
-export type TempoConclusaoRow = {
-  servicoId: number | string;
-  servicoNome: string;
-  prazoEstimadoDias: number | string;
-  mediaRealDias: number | string;
-  totalConcluidas: number | string;
-};
