@@ -38,6 +38,9 @@ export class RecomendacaoService {
     try {
       const listaRecomendacoes: RecomendacaoRespostaDto[] = [];
 
+      const licenciamento = await this.buscarLicenciamentoAnual(usuarioId); // << ADICIONAR
+      if (licenciamento) listaRecomendacoes.push(licenciamento);
+
       const infracao = await this.buscarRecursoMulta(usuarioId);
       if (infracao) {
         listaRecomendacoes.push(infracao);
@@ -252,6 +255,73 @@ export class RecomendacaoService {
         error instanceof Error ? error.message : 'Erro desconhecido';
       this.logger.error(
         `Erro na busca de comunicação de venda: ${errorMessage}`,
+      );
+      return null;
+    }
+  }
+
+  async buscarLicenciamentoAnual(
+    usuarioId: number,
+  ): Promise<RecomendacaoRespostaDto | null> {
+    const gatilhoPorDigito: Record<string, number> = {
+      '1': 3,
+      '2': 4,
+      '3': 5,
+      '4': 6,
+      '5': 7,
+      '6': 7,
+      '7': 8,
+      '8': 9,
+      '9': 10,
+      '0': 11,
+    };
+
+    try {
+      const veiculos = await this.veiculoModel.findAll({
+        where: { usuarioId },
+      });
+
+      const mesAtual = new Date().getMonth() + 1;
+      const anoAtual = new Date().getFullYear();
+
+      for (const veiculo of veiculos) {
+        const ultimoDigito = veiculo.placa.slice(-1);
+        const mesGatilho = gatilhoPorDigito[ultimoDigito];
+
+        if (mesAtual < mesGatilho) continue;
+
+        const jaExiste = await this.solicitacaoModel.findOne({
+          where: {
+            veiculoId: veiculo.id,
+            servicoId: 1,
+            status: {
+              [Op.notIn]: ['cancelado', 'concluido'],
+            },
+            dataSolicitacao: {
+              [Op.between]: [
+                new Date(`${anoAtual}-01-01`),
+                new Date(`${anoAtual}-12-31`),
+              ],
+            },
+          },
+        });
+
+        if (!jaExiste) {
+          return {
+            id: 1,
+            nome: 'Licenciamento Anual',
+            descricao: `O veículo de placa ${veiculo.placa} já está no período de licenciamento. Faça o licenciamento anual para evitar multas.`,
+            ativo: true,
+          };
+        }
+      }
+
+      return null;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido';
+      this.logger.error(
+        `Erro na busca de licenciamento anual: ${errorMessage}`,
       );
       return null;
     }
