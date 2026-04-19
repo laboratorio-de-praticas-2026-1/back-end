@@ -15,9 +15,10 @@ export class DashboardController {
   async retornarInfosDashboard(
     @Query() query: DashboardPeriodoQueryDto,
   ): Promise<DashboardReturnDto> {
-    return this.dashboardService.retornarInfosDashboard(
-      query.inicio,
-      query.fim,
-    );
+    return this.dashboardService.retornoTotalDashboard(query.inicio, query.fim);
   }
+
+
+
+  
 }

@@ -12,7 +12,14 @@ import { Usuario } from 'src/models/usuario.model';
 import { Veiculo } from 'src/models/veiculo.model';
 import { DebitoVeiculo } from 'src/models/debito-veiculo.model';
 
-import { DashboardReturnDto } from './dto/dashboard-return.dto';
+import {
+  DashboardReturnDto,
+  GeralDto,
+  SolicitacoesDto,
+  VeiculosDto,
+  ServicosDto,
+  FinanceiroDto,
+} from './dto/dashboard-return.dto';
 import type { ModelCtor } from 'sequelize-typescript';
 import type {
   ResultadoReceita,
@@ -29,6 +36,19 @@ import {
   StatusCountRow,
   TempoConclusaoRow,
 } from './dashboard.types';
+
+// Interface auxiliar para o retorno de obterDadosGerais
+interface DadosGeraisComStatus extends GeralDto {
+  porStatus: {
+    recebido: number;
+    emAndamento: number;
+    aguardandoPagamento: number;
+    aguardandoDocumento: number;
+    concluido: number;
+    cancelado: number;
+  };
+  statusAbertos: string[];
+}
 
 @Injectable()
 export class DashboardService {
@@ -72,20 +92,12 @@ export class DashboardService {
     return meses;
   }
 
-  async retornarInfosDashboard(
-    inicioParam?: string,
-    fimParam?: string,
-  ): Promise<DashboardReturnDto> {
-    const dataFim = fimParam ? new Date(fimParam) : new Date();
-    dataFim.setHours(23, 59, 59, 999);
-
-    const dataInicio = inicioParam
-      ? new Date(inicioParam)
-      : new Date(new Date(dataFim).setMonth(new Date(dataFim).getMonth() - 6));
-    dataInicio.setHours(0, 0, 0, 0);
-
+  /** Retorna dados gerais: solicitações, documentos, clientes e débitos do período */
+  private async obterDadosGerais(
+    dataInicio: Date,
+    dataFim: Date,
+  ): Promise<DadosGeraisComStatus> {
     const hoje = new Date();
-    const em30Dias = new Date(hoje.getTime() + 30 * 24 * 60 * 60 * 1000);
 
     const statusAbertos = [
       'recebido',
@@ -94,355 +106,56 @@ export class DashboardService {
       'em_andamento',
     ];
 
-    // ─── Query de solicitações ────────────────────────────────────────────────
+    const porStatusRaw = (await this.solicitacaoModel.findAll({
+      attributes: [
+        'status',
+        [fn('COUNT', col('Solicitacao.id')), 'quantidade'],
+      ],
+      where: {
+        dataSolicitacao: { [Op.between]: [dataInicio, dataFim] },
+      },
+      group: [col('Solicitacao.status')],
+      raw: true,
+    })) as unknown as any[];
 
-    const solicitacoesQuery = Promise.all([
-      this.solicitacaoModel.findAll({
-        attributes: [
-          'status',
-          [fn('COUNT', col('Solicitacao.id')), 'quantidade'],
-        ],
-        where: {
-          dataSolicitacao: { [Op.between]: [dataInicio, dataFim] },
-        },
-        group: [col('Solicitacao.status')],
-        raw: true,
-      }) as unknown as Promise<StatusCountRow[]>,
-
-      this.solicitacaoModel.count({
-        include: [{ model: Servico, attributes: [], required: true }],
-        where: {
-          status: { [Op.in]: statusAbertos },
-          dataSolicitacao: { [Op.between]: [dataInicio, dataFim] },
-          [Op.and]: [
-            literal('`servico`.`prazo_estimado_dias` IS NOT NULL'),
-            literal(`
-              DATEDIFF(NOW(), \`Solicitacao\`.\`data_solicitacao\`)
-              BETWEEN GREATEST(\`servico\`.\`prazo_estimado_dias\` - ${this.DIAS_ALERTA_VENCIMENTO}, 0)
-              AND \`servico\`.\`prazo_estimado_dias\`
-            `),
-          ],
-        },
-      }),
-
-      this.solicitacaoModel.findAll({
-        attributes: [
-          [col('Solicitacao.servico_id'), 'servicoId'],
-          [col('servico.nome'), 'servicoNome'],
-          [col('servico.prazo_estimado_dias'), 'prazoEstimadoDias'],
-          [
-            fn(
-              'AVG',
-              literal(
-                'DATEDIFF(`Solicitacao`.`data_conclusao`, `Solicitacao`.`data_solicitacao`)',
-              ),
-            ),
-            'mediaRealDias',
-          ],
-          [fn('COUNT', col('Solicitacao.id')), 'totalConcluidas'],
-        ],
-        include: [{ model: Servico, attributes: [], required: true }],
-        where: {
-          status: 'concluido',
-          dataConclusao: { [Op.between]: [dataInicio, dataFim] },
-          [Op.and]: [literal('`servico`.`prazo_estimado_dias` IS NOT NULL')],
-        },
-        group: [
-          col('Solicitacao.servico_id'),
-          col('servico.id'),
-          col('servico.nome'),
-          col('servico.prazo_estimado_dias'),
-        ],
-        order: [[literal('mediaRealDias'), 'DESC']],
-        raw: true,
-      }) as unknown as Promise<TempoConclusaoRow[]>,
-
-      this.solicitacaoModel.count({
-        include: [{ model: Servico, attributes: [], required: true }],
-        where: {
-          status: 'concluido',
-          dataConclusao: { [Op.between]: [dataInicio, dataFim] },
-          [Op.and]: [
-            literal('`servico`.`prazo_estimado_dias` IS NOT NULL'),
-            literal(`
-              DATEDIFF(\`Solicitacao\`.\`data_conclusao\`, \`Solicitacao\`.\`data_solicitacao\`)
-              > \`servico\`.\`prazo_estimado_dias\`
-            `),
-          ],
-        },
-      }),
-
-      this.solicitacaoModel.count({
-        where: { status: 'concluido' },
-      }),
-
-      this.documentoSolicitacaoModel.count({
+    const documentosPendentesValidacao =
+      await this.documentoSolicitacaoModel.count({
         where: { statusValidacao: 'pendente' },
-      }),
+      });
 
-      this.usuarioModel.count({
-        where: {
-          nivel: 'cliente',
-          dataCadastro: { [Op.between]: [dataInicio, dataFim] },
-        },
-      }),
+    const clientesNovosMesAtual = await this.usuarioModel.count({
+      where: {
+        nivel: 'cliente',
+        dataCadastro: { [Op.between]: [dataInicio, dataFim] },
+      },
+    });
 
-      this.solicitacaoModel.count({
-        where: {
-          status: 'concluido',
-          dataConclusao: { [Op.between]: [dataInicio, dataFim] },
-        },
-      }),
+    const solicitacoesConcluidas = await this.solicitacaoModel.count({
+      where: {
+        status: 'concluido',
+        dataConclusao: { [Op.between]: [dataInicio, dataFim] },
+      },
+    });
 
-      this.servicoModel.count({
-        where: { ativo: true },
-      }),
+    const debitosEmAbertoQuantidade = await this.debitoModel.count({
+      where: { status: 'pendente' },
+    });
 
-      this.servicoModel.count({
-        where: { [Op.or]: [{ ativo: false }, { ativo: null }] },
-      }),
+    const debitosEmAbertoValor = await this.debitoModel.sum('valor', {
+      where: { status: 'pendente' },
+    });
 
-      this.solicitacaoModel.findAll({
-        attributes: [
-          [col('Solicitacao.servico_id'), 'servicoId'],
-          [fn('COUNT', col('Solicitacao.id')), 'totalSolicitacoes'],
-        ],
-        include: [
-          { model: Servico, attributes: ['id', 'nome'], as: 'servico' },
-        ],
-        where: {
-          dataSolicitacao: { [Op.between]: [dataInicio, dataFim] },
-        },
-        group: ['servico.id', 'Solicitacao.servico_id'],
-        order: [[literal('totalSolicitacoes'), 'DESC']],
-        limit: 5,
-      }),
-
-      this.debitoServicoModel.findAll({
-        attributes: [
-          [col('DebitoServico.id_servico'), 'servicoId'],
-          [fn('COUNT', col('DebitoServico.id')), 'totalSolicitacoes'],
-          [fn('SUM', col('debito.valor')), 'receitaTotal'],
-        ],
-        include: [
-          { model: Servico, attributes: ['id', 'nome'], as: 'servico' },
-          {
-            model: Debito,
-            attributes: [],
-            as: 'debito',
-            where: { createdAt: { [Op.between]: [dataInicio, dataFim] } },
-          },
-        ],
-        group: ['servico.id', 'DebitoServico.id_servico'],
-        order: [[literal('receitaTotal'), 'DESC']],
-        limit: 5,
-      }),
-    ]);
-
-    // Queries veiculos
-
-    const [
-      totalVeiculosCadastrados,
-      veiculosComSolicitacaoAtiva,
-      debitosPendentesResult,
-    ] = await Promise.all([
-      // Total de veículos cadastrados
-      this.veiculoModel.count(),
-
-      // Veículos com solicitação ativa
-      this.solicitacaoModel.count({
-        where: {
-          veiculoId: { [Op.ne]: null },
-          status: {
-            [Op.in]: [
-              'recebido',
-              'aguardando_pagamento',
-              'aguardando_documento',
-              'em_andamento',
-            ],
-          },
-        },
-        distinct: true,
-        col: 'veiculo_id',
-      }),
-
-      // Débitos pendentes por veículo
-      this.debitoVeiculoModel.findAll({
-        include: [
-          {
-            model: Debito,
-            where: { status: 'pendente' },
-            attributes: [],
-          },
-          {
-            model: Veiculo,
-            attributes: ['id', 'placa'],
-          },
-        ],
-        attributes: [
-          'idVeiculo',
-          [fn('COUNT', col('DebitoVeiculo.id')), 'totalDebitos'],
-          [fn('SUM', col('debito.valor')), 'valorTotal'],
-        ],
-        group: ['idVeiculo', 'veiculo.id'],
-        raw: true,
-        nest: true,
-      }),
-    ]);
-
-    // ─── Query financeira ────────────────────────────────────────────────────
-
-    const financeiroQuery: Promise<
-      [
-        ResultadoReceita | null,
-        number,
-        number,
-        number,
-        ResultadoTicketMedio | null,
-        ResultadoHistoricoMensal[],
-        ResultadoInadimplencia | null,
-        ResultadoPrevisaoCaixa | null,
-        ResultadoDistribuicaoMetodo[],
-        ResultadoDistribuicaoTipo[],
-      ]
-    > = Promise.all([
-      this.pagamentoModel.findOne({
-        attributes: [[fn('SUM', col('debito.valor')), 'total']],
-        include: [{ model: Debito, where: { status: 'pago' }, attributes: [] }],
-        where: { createdAt: { [Op.between]: [dataInicio, dataFim] } },
-        raw: true,
-      }) as unknown as Promise<ResultadoReceita | null>,
-
-      this.debitoModel.sum('valor', {
-        where: { status: 'pendente' },
-      }),
-
-      this.debitoModel.count({
-        where: { status: 'pendente' },
-      }),
-
-      this.pagamentoModel.sum('taxa', {
-        where: { createdAt: { [Op.between]: [dataInicio, dataFim] } },
-      }),
-
-      this.pagamentoModel.findOne({
-        attributes: [[fn('AVG', col('valor_total')), 'media']],
-        where: { createdAt: { [Op.between]: [dataInicio, dataFim] } },
-        raw: true,
-      }) as unknown as Promise<ResultadoTicketMedio | null>,
-
-      this.pagamentoModel.findAll({
-        attributes: [
-          [fn('DATE_FORMAT', col('created_at'), '%Y-%m'), 'mes'],
-          [fn('SUM', col('valor_total')), 'receitaRealizada'],
-        ],
-        where: { createdAt: { [Op.between]: [dataInicio, dataFim] } },
-        group: [fn('DATE_FORMAT', col('created_at'), '%Y-%m')],
-        order: [[fn('DATE_FORMAT', col('created_at'), '%Y-%m'), 'ASC']],
-        raw: true,
-      }) as unknown as Promise<ResultadoHistoricoMensal[]>,
-
-      this.parcelaModel.findOne({
-        attributes: [
-          [fn('SUM', col('valor')), 'valorTotal'],
-          [literal('COUNT(DISTINCT id_pagamento)'), 'quantidadePagamentos'],
-          [fn('COUNT', col('id')), 'quantidadeParcelas'],
-        ],
-        where: {
-          vencimento: { [Op.lt]: hoje },
-          status: { [Op.ne]: 'pago' },
-        },
-        raw: true,
-      }) as unknown as Promise<ResultadoInadimplencia | null>,
-
-      this.parcelaModel.findOne({
-        attributes: [
-          [fn('SUM', col('valor')), 'valorTotal'],
-          [fn('COUNT', col('id')), 'quantidadeParcelas'],
-        ],
-        where: {
-          vencimento: { [Op.between]: [hoje, em30Dias] },
-          status: { [Op.ne]: 'pago' },
-        },
-        raw: true,
-      }) as unknown as Promise<ResultadoPrevisaoCaixa | null>,
-
-      this.pagamentoModel.findAll({
-        attributes: [
-          ['metodo_pagamento', 'metodo'],
-          [fn('COUNT', col('id')), 'quantidade'],
-          [fn('SUM', col('valor_total')), 'valorTotal'],
-        ],
-        where: { createdAt: { [Op.between]: [dataInicio, dataFim] } },
-        group: ['metodo_pagamento'],
-        raw: true,
-      }) as unknown as Promise<ResultadoDistribuicaoMetodo[]>,
-
-      this.pagamentoModel.findAll({
-        attributes: [
-          ['tipo_pagamento', 'tipo'],
-          [fn('COUNT', col('id')), 'quantidade'],
-          [fn('SUM', col('valor_total')), 'valorTotal'],
-        ],
-        where: { createdAt: { [Op.between]: [dataInicio, dataFim] } },
-        group: ['tipo_pagamento'],
-        raw: true,
-      }) as unknown as Promise<ResultadoDistribuicaoTipo[]>,
-    ]);
-
-    interface DebitoVeiculoRaw {
-      idVeiculo: number;
-      totalDebitos: string;
-      valorTotal: string;
-      veiculo: { placa: string };
-    }
-
-    const porVeiculo = (
-      debitosPendentesResult as unknown as DebitoVeiculoRaw[]
-    ).map((item) => ({
-      veiculoId: item.idVeiculo,
-      placa: item.veiculo.placa,
-      totalDebitos: Number(item.totalDebitos),
-      valorTotal: Number(item.valorTotal),
-    }));
-
-    const valorTotalGeral = porVeiculo.reduce(
-      (acc, item) => acc + item.valorTotal,
-      0,
-    );
-
-    // ─── Execução paralela e desestruturação ─────────────────────────────────
-
-    const [
-      [
-        porStatusRaw,
-        proximasDeVencerQuantidade,
-        tempoConclusaoPorServicoRaw,
-        foraDoPrazoQuantidade,
-        totalConcluidas,
-        documentosPendentesValidacao,
-        clientesNovosMesAtual,
-        solicitacoesConcluidas,
-        servicosAtivos,
-        servicosPausados,
-        maisSolicitadosRaw,
-        receitaPorServicoRaw,
+    const parcelasVencidasResult = (await this.parcelaModel.findOne({
+      attributes: [
+        [fn('SUM', col('valor')), 'valorTotal'],
+        [fn('COUNT', col('id')), 'quantidadeParcelas'],
       ],
-      [
-        receitaRealizadaResult,
-        receitaPendenteRaw,
-        debitosEmAbertoQuantidade,
-        receitaTaxaRaw,
-        ticketMedioResult,
-        historicoMensalResult,
-        inadimplenciaResult,
-        previsaoCaixaResult,
-        porMetodoResult,
-        porTipoResult,
-      ],
-    ] = await Promise.all([solicitacoesQuery, financeiroQuery]);
-
-    // ─── Processamento: solicitações ─────────────────────────────────────────
+      where: {
+        vencimento: { [Op.lt]: hoje },
+        status: { [Op.ne]: 'pago' },
+      },
+      raw: true,
+    })) as any;
 
     const porStatusBase = {
       recebido: 0,
@@ -455,7 +168,6 @@ export class DashboardService {
 
     const porStatus = porStatusRaw.reduce((acc, item) => {
       const quantidade = Number(item.quantidade ?? 0);
-
       if (item.status === 'recebido') acc.recebido = quantidade;
       if (item.status === 'em_andamento') acc.emAndamento = quantidade;
       if (item.status === 'aguardando_pagamento')
@@ -464,7 +176,6 @@ export class DashboardService {
         acc.aguardandoDocumento = quantidade;
       if (item.status === 'concluido') acc.concluido = quantidade;
       if (item.status === 'cancelado') acc.cancelado = quantidade;
-
       return acc;
     }, porStatusBase);
 
@@ -474,13 +185,9 @@ export class DashboardService {
       porStatus.aguardandoPagamento +
       porStatus.aguardandoDocumento;
 
-    const totalSolicitacoesPeriodo =
-      porStatus.recebido +
-      porStatus.emAndamento +
-      porStatus.aguardandoPagamento +
-      porStatus.aguardandoDocumento +
-      porStatus.concluido +
-      porStatus.cancelado;
+    const totalSolicitacoesPeriodo: number = (
+      Object.values(porStatus) as number[]
+    ).reduce((a: number, b: number) => a + b, 0);
 
     const taxaCancelamentoPct =
       totalSolicitacoesPeriodo > 0
@@ -489,44 +196,266 @@ export class DashboardService {
           )
         : 0;
 
-    const tempoConclusaoPorServico = tempoConclusaoPorServicoRaw.map(
-      (item) => ({
-        servicoId: Number(item.servicoId),
-        servicoNome: item.servicoNome,
-        prazoEstimadoDias: Number(item.prazoEstimadoDias),
-        mediaRealDias: Number(Number(item.mediaRealDias).toFixed(2)),
-        totalConcluidas: Number(item.totalConcluidas),
-      }),
-    );
+    return {
+      solicitacoesEmAberto,
+      solicitacoesConcluidas,
+      documentosPendentesValidacao,
+      clientesNovosMesAtual,
+      taxaCancelamentoPct,
+      debitosEmAberto: {
+        quantidade: Number(debitosEmAbertoQuantidade ?? 0),
+        valorTotal: Number(debitosEmAbertoValor ?? 0),
+      },
+      parcelasVencidasNaoPagas: {
+        quantidade: Number(parcelasVencidasResult?.quantidadeParcelas ?? 0),
+        valorTotal: Number(parcelasVencidasResult?.valorTotal ?? 0),
+      },
+      porStatus,
+      statusAbertos,
+    };
+  }
+
+  /** Retorna dados de solicitações: status, prazos, tempo de conclusão */
+  private async obterDadosSolicitacoes(
+    dataInicio: Date,
+    dataFim: Date,
+    porStatus: any,
+    statusAbertos: string[],
+  ): Promise<SolicitacoesDto> {
+    const proximasDeVencer = await this.solicitacaoModel.count({
+      include: [{ model: Servico, attributes: [], required: true }],
+      where: {
+        status: { [Op.in]: statusAbertos },
+        dataSolicitacao: { [Op.between]: [dataInicio, dataFim] },
+        [Op.and]: [
+          literal('`servico`.`prazo_estimado_dias` IS NOT NULL'),
+          literal(`
+            DATEDIFF(NOW(), \`Solicitacao\`.\`data_solicitacao\`)
+            BETWEEN GREATEST(\`servico\`.\`prazo_estimado_dias\` - ${this.DIAS_ALERTA_VENCIMENTO}, 0)
+            AND \`servico\`.\`prazo_estimado_dias\`
+          `),
+        ],
+      },
+    });
+
+    const tempoConclusaoRaw = (await this.solicitacaoModel.findAll({
+      attributes: [
+        [col('Solicitacao.servico_id'), 'servicoId'],
+        [col('servico.nome'), 'servicoNome'],
+        [col('servico.prazo_estimado_dias'), 'prazoEstimadoDias'],
+        [
+          fn(
+            'AVG',
+            literal(
+              'DATEDIFF(`Solicitacao`.`data_conclusao`, `Solicitacao`.`data_solicitacao`)',
+            ),
+          ),
+          'mediaRealDias',
+        ],
+        [fn('COUNT', col('Solicitacao.id')), 'totalConcluidas'],
+      ],
+      include: [{ model: Servico, attributes: [], required: true }],
+      where: {
+        status: 'concluido',
+        dataConclusao: { [Op.between]: [dataInicio, dataFim] },
+        [Op.and]: [literal('`servico`.`prazo_estimado_dias` IS NOT NULL')],
+      },
+      group: [
+        col('Solicitacao.servico_id'),
+        col('servico.id'),
+        col('servico.nome'),
+        col('servico.prazo_estimado_dias'),
+      ],
+      order: [[literal('mediaRealDias'), 'DESC']],
+      raw: true,
+    })) as unknown as any[];
+
+    const foraDoPrazoQuantidade = await this.solicitacaoModel.count({
+      include: [{ model: Servico, attributes: [], required: true }],
+      where: {
+        status: 'concluido',
+        dataConclusao: { [Op.between]: [dataInicio, dataFim] },
+        [Op.and]: [
+          literal('`servico`.`prazo_estimado_dias` IS NOT NULL'),
+          literal(`
+            DATEDIFF(\`Solicitacao\`.\`data_conclusao\`, \`Solicitacao\`.\`data_solicitacao\`)
+            > \`servico\`.\`prazo_estimado_dias\`
+          `),
+        ],
+      },
+    });
+
+    const totalConcluidas = await this.solicitacaoModel.count({
+      where: { status: 'concluido' },
+    });
+
+    const tempoConclusaoPorServico = tempoConclusaoRaw.map((item) => ({
+      servicoId: Number(item.servicoId),
+      servicoNome: item.servicoNome,
+      prazoEstimadoDias: Number(item.prazoEstimadoDias),
+      mediaRealDias: Number(Number(item.mediaRealDias).toFixed(2)),
+      totalConcluidas: Number(item.totalConcluidas),
+    }));
 
     const percentual =
       totalConcluidas > 0
         ? Number(((foraDoPrazoQuantidade / totalConcluidas) * 100).toFixed(2))
         : 0;
 
-    const maisSolicitados = (
-      maisSolicitadosRaw as unknown as MaisSolicitadosRow[]
-    ).map((item) => ({
-      servicoId: Number(item.get('servicoId') ?? 0),
-      nome: item.servico?.nome ?? '',
-      totalSolicitacoes: Number(item.get('totalSolicitacoes') ?? 0),
-    }));
+    return {
+      porStatus,
+      proximasDeVencer: { quantidade: proximasDeVencer },
+      tempoConclusaoPorServico,
+      foraDoPrazo: {
+        quantidade: foraDoPrazoQuantidade,
+        totalConcluidas,
+        percentual,
+      },
+    };
+  }
+
+  /** Retorna dados de veículos: cadastrados, com solicitações ativas e débitos pendentes */
+  private async obterDadosVeiculos(): Promise<VeiculosDto> {
+    const totalVeiculosCadastrados = await this.veiculoModel.count();
+
+    const veiculosComSolicitacaoAtiva = await this.solicitacaoModel.count({
+      where: {
+        veiculoId: { [Op.ne]: null },
+        status: {
+          [Op.in]: [
+            'recebido',
+            'aguardando_pagamento',
+            'aguardando_documento',
+            'em_andamento',
+          ],
+        },
+      },
+      distinct: true,
+      col: 'veiculo_id',
+    });
+
+    const debitosPendentesResult = (await this.debitoVeiculoModel.findAll({
+      include: [
+        {
+          model: Debito,
+          where: { status: 'pendente' },
+          attributes: [],
+        },
+        {
+          model: Veiculo,
+          attributes: ['id', 'placa'],
+        },
+      ],
+      attributes: [
+        'idVeiculo',
+        [fn('COUNT', col('DebitoVeiculo.id')), 'totalDebitos'],
+        [fn('SUM', col('debito.valor')), 'valorTotal'],
+      ],
+      group: ['idVeiculo', 'veiculo.id'],
+      raw: true,
+      nest: true,
+    })) as unknown as any[];
+
+    interface DebitoVeiculoRaw {
+      idVeiculo: number;
+      totalDebitos: string;
+      valorTotal: string;
+      veiculo: { placa: string };
+    }
+
+    const porVeiculo = (debitosPendentesResult as DebitoVeiculoRaw[]).map(
+      (item) => ({
+        veiculoId: item.idVeiculo,
+        placa: item.veiculo.placa,
+        totalDebitos: Number(item.totalDebitos),
+        valorTotal: Number(item.valorTotal),
+      }),
+    );
+
+    const valorTotalGeral = porVeiculo.reduce(
+      (acc, item) => acc + item.valorTotal,
+      0,
+    );
+
+    return {
+      totalCadastrados: totalVeiculosCadastrados,
+      comSolicitacaoAtiva: veiculosComSolicitacaoAtiva,
+      comDebitoPendente: porVeiculo.length,
+      debitosPendentes: {
+        valorTotal: valorTotalGeral,
+        porVeiculo,
+      },
+    };
+  }
+
+  /** Retorna dados de serviços: ativos, pausados e receita por serviço */
+  private async obterDadosServicos(
+    dataInicio: Date,
+    dataFim: Date,
+  ): Promise<ServicosDto> {
+    const servicosAtivos = await this.servicoModel.count({
+      where: { ativo: true },
+    });
+
+    const servicosPausados = await this.servicoModel.count({
+      where: { [Op.or]: [{ ativo: false }, { ativo: null }] },
+    });
+
+    const maisSolicitadosRaw = (await this.solicitacaoModel.findAll({
+      attributes: [
+        [col('Solicitacao.servico_id'), 'servicoId'],
+        [fn('COUNT', col('Solicitacao.id')), 'totalSolicitacoes'],
+      ],
+      include: [{ model: Servico, attributes: ['id', 'nome'], as: 'servico' }],
+      where: {
+        dataSolicitacao: { [Op.between]: [dataInicio, dataFim] },
+      },
+      group: ['servico.id', 'Solicitacao.servico_id'],
+      order: [[literal('totalSolicitacoes'), 'DESC']],
+      limit: 5,
+    })) as unknown as any[];
+
+    const receitaPorServicoRaw = (await this.debitoServicoModel.findAll({
+      attributes: [
+        [col('DebitoServico.id_servico'), 'servicoId'],
+        [fn('COUNT', col('DebitoServico.id')), 'totalSolicitacoes'],
+        [fn('SUM', col('debito.valor')), 'receitaTotal'],
+      ],
+      include: [
+        { model: Servico, attributes: ['id', 'nome'], as: 'servico' },
+        {
+          model: Debito,
+          attributes: [],
+          as: 'debito',
+          where: { createdAt: { [Op.between]: [dataInicio, dataFim] } },
+        },
+      ],
+      group: ['servico.id', 'DebitoServico.id_servico'],
+      order: [[literal('receitaTotal'), 'DESC']],
+      limit: 5,
+    })) as unknown as any[];
+
+    const todosServicos = await this.servicoModel.findAll({
+      where: { ativo: true },
+      attributes: ['id', 'nome'],
+    });
+
+    const maisSolicitados = (maisSolicitadosRaw as MaisSolicitadosRow[]).map(
+      (item) => ({
+        servicoId: Number(item.get('servicoId') ?? 0),
+        nome: item.servico?.nome ?? '',
+        totalSolicitacoes: Number(item.get('totalSolicitacoes') ?? 0),
+      }),
+    );
 
     const receitaPorServico = (
-      receitaPorServicoRaw as unknown as ReceitaPorServicoRow[]
+      receitaPorServicoRaw as ReceitaPorServicoRow[]
     ).map((item) => ({
       servicoId: Number(item.get('servicoId') ?? 0),
       nome: item.servico?.nome ?? '',
       totalSolicitacoes: Number(item.get('totalSolicitacoes') ?? 0),
       receitaTotal: Number(item.get('receitaTotal') ?? 0),
     }));
-
-    // ─── Processamento: serviços ─────────────────────────────────────────────
-
-    const todosServicos = await this.servicoModel.findAll({
-      where: { ativo: true },
-      attributes: ['id', 'nome'],
-    });
 
     const receitaMap = new Map(receitaPorServico.map((r) => [r.servicoId, r]));
 
@@ -540,15 +469,109 @@ export class DashboardService {
       };
     });
 
-    // ─── Processamento: financeiro ───────────────────────────────────────────
+    return {
+      ativos: servicosAtivos,
+      pausados: servicosPausados,
+      maisSolicitados,
+      receitaPorServicoCompleto,
+    };
+  }
+
+  /** Retorna dados financeiros: receita, débitos, parcelas, histórico mensal e distribuição de pagamentos */
+  private async obterDadosFinanceiro(
+    dataInicio: Date,
+    dataFim: Date,
+  ): Promise<FinanceiroDto> {
+    const hoje = new Date();
+    const em30Dias = new Date(hoje.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    const receitaRealizadaResult = (await this.pagamentoModel.findOne({
+      attributes: [[fn('SUM', col('debito.valor')), 'total']],
+      include: [{ model: Debito, where: { status: 'pago' }, attributes: [] }],
+      where: { createdAt: { [Op.between]: [dataInicio, dataFim] } },
+      raw: true,
+    })) as any;
+
+    const receitaPendente = await this.debitoModel.sum('valor', {
+      where: { status: 'pendente' },
+    });
+
+    const receitaTaxa = await this.pagamentoModel.sum('taxa', {
+      where: { createdAt: { [Op.between]: [dataInicio, dataFim] } },
+    });
+
+    const ticketMedioResult = (await this.pagamentoModel.findOne({
+      attributes: [[fn('AVG', col('valor_total')), 'media']],
+      where: { createdAt: { [Op.between]: [dataInicio, dataFim] } },
+      raw: true,
+    })) as any;
+
+    const historicoMensalResult = (await this.pagamentoModel.findAll({
+      attributes: [
+        [fn('DATE_FORMAT', col('created_at'), '%Y-%m'), 'mes'],
+        [fn('SUM', col('valor_total')), 'receitaRealizada'],
+      ],
+      where: { createdAt: { [Op.between]: [dataInicio, dataFim] } },
+      group: [fn('DATE_FORMAT', col('created_at'), '%Y-%m')],
+      order: [[fn('DATE_FORMAT', col('created_at'), '%Y-%m'), 'ASC']],
+      raw: true,
+    })) as any[];
+
+    const inadimplenciaResult = (await this.parcelaModel.findOne({
+      attributes: [
+        [fn('SUM', col('valor')), 'valorTotal'],
+        [literal('COUNT(DISTINCT id_pagamento)'), 'quantidadePagamentos'],
+        [fn('COUNT', col('id')), 'quantidadeParcelas'],
+      ],
+      where: {
+        vencimento: { [Op.lt]: hoje },
+        status: { [Op.ne]: 'pago' },
+      },
+      raw: true,
+    })) as any;
+
+    const previsaoCaixaResult = (await this.parcelaModel.findOne({
+      attributes: [
+        [fn('SUM', col('valor')), 'valorTotal'],
+        [fn('COUNT', col('id')), 'quantidadeParcelas'],
+      ],
+      where: {
+        vencimento: { [Op.between]: [hoje, em30Dias] },
+        status: { [Op.ne]: 'pago' },
+      },
+      raw: true,
+    })) as any;
+
+    const porMetodoResult = (await this.pagamentoModel.findAll({
+      attributes: [
+        ['metodo_pagamento', 'metodo'],
+        [fn('COUNT', col('id')), 'quantidade'],
+        [fn('SUM', col('valor_total')), 'valorTotal'],
+      ],
+      where: { createdAt: { [Op.between]: [dataInicio, dataFim] } },
+      group: ['metodo_pagamento'],
+      raw: true,
+    })) as any[];
+
+    const porTipoResult = (await this.pagamentoModel.findAll({
+      attributes: [
+        ['tipo_pagamento', 'tipo'],
+        [fn('COUNT', col('id')), 'quantidade'],
+        [fn('SUM', col('valor_total')), 'valorTotal'],
+      ],
+      where: { createdAt: { [Op.between]: [dataInicio, dataFim] } },
+      group: ['tipo_pagamento'],
+      raw: true,
+    })) as any[];
+
+    // ─── Processamento dos dados financeiros ─────────────────────────────────
 
     const receitaRealizada = Number(receitaRealizadaResult?.total ?? 0);
-    const receitaPendente = Number(receitaPendenteRaw ?? 0);
-    const receitaTaxa = Number(receitaTaxaRaw ?? 0);
+    const receitaPendenteNum = Number(receitaPendente ?? 0);
+    const receitaTaxaNum = Number(receitaTaxa ?? 0);
     const ticketMedio = Number(ticketMedioResult?.media ?? 0);
 
     const mesesPeriodo = this.gerarMesesNoPeriodo(dataInicio, dataFim);
-
     const mapaHistorico = new Map<string, number>(
       historicoMensalResult.map((m: ResultadoHistoricoMensal) => [
         m.mes,
@@ -570,29 +593,6 @@ export class DashboardService {
         ? Number((somaHistorico / mesesPeriodo.length).toFixed(2))
         : 0;
 
-    const inadimplencia = {
-      valorTotal: Number(inadimplenciaResult?.valorTotal ?? 0),
-      quantidadePagamentos: Number(
-        inadimplenciaResult?.quantidadePagamentos ?? 0,
-      ),
-      quantidadeParcelas: Number(inadimplenciaResult?.quantidadeParcelas ?? 0),
-    };
-
-    const previsaoCaixa30Dias = {
-      valorTotal: Number(previsaoCaixaResult?.valorTotal ?? 0),
-      quantidadeParcelas: Number(previsaoCaixaResult?.quantidadeParcelas ?? 0),
-    };
-
-    const debitosEmAberto = {
-      quantidade: Number(debitosEmAbertoQuantidade ?? 0),
-      valorTotal: Number(receitaPendenteRaw ?? 0),
-    };
-
-    const parcelasVencidasNaoPagas = {
-      quantidade: Number(inadimplenciaResult?.quantidadeParcelas ?? 0),
-      valorTotal: Number(inadimplenciaResult?.valorTotal ?? 0),
-    };
-
     const porMetodoPagamento = porMetodoResult.map(
       (m: ResultadoDistribuicaoMetodo) => ({
         metodo: m.metodo,
@@ -609,57 +609,80 @@ export class DashboardService {
       }),
     );
 
-    // ─── Retorno ─────────────────────────────────────────────────────────────
+    return {
+      receitaRealizada,
+      receitaPendente: receitaPendenteNum,
+      receitaTaxa: receitaTaxaNum,
+      ticketMedio,
+      mediaMensalReceita,
+      historicoMensal,
+      inadimplencia: {
+        valorTotal: Number(inadimplenciaResult?.valorTotal ?? 0),
+        quantidadePagamentos: Number(
+          inadimplenciaResult?.quantidadePagamentos ?? 0,
+        ),
+        quantidadeParcelas: Number(
+          inadimplenciaResult?.quantidadeParcelas ?? 0,
+        ),
+      },
+      previsaoCaixa30Dias: {
+        valorTotal: Number(previsaoCaixaResult?.valorTotal ?? 0),
+        quantidadeParcelas: Number(
+          previsaoCaixaResult?.quantidadeParcelas ?? 0,
+        ),
+      },
+      porMetodoPagamento,
+      porTipoPagamento,
+    };
+  }
+
+  /** Função principal que orquestra o retorno geral do dashboard */
+  async retornoTotalDashboard(
+    inicioParam?: string,
+    fimParam?: string,
+  ): Promise<DashboardReturnDto> {
+    const dataFim = fimParam ? new Date(fimParam) : new Date();
+    dataFim.setHours(23, 59, 59, 999);
+
+    const dataInicio = inicioParam
+      ? new Date(inicioParam)
+      : new Date(new Date(dataFim).setMonth(new Date(dataFim).getMonth() - 6));
+    dataInicio.setHours(0, 0, 0, 0);
+
+    // ─── Execução paralela de todas as queries ───────────────────────────────
+
+    const [geral, veiculos, servicos, financeiro] = await Promise.all([
+      this.obterDadosGerais(dataInicio, dataFim),
+      this.obterDadosVeiculos(),
+      this.obterDadosServicos(dataInicio, dataFim),
+      this.obterDadosFinanceiro(dataInicio, dataFim),
+    ]);
+
+    // ─── Solicitações depende de dados gerais ────────────────────────────────
+
+    const solicitacoes = await this.obterDadosSolicitacoes(
+      dataInicio,
+      dataFim,
+      geral.porStatus,
+      geral.statusAbertos,
+    );
+
+    // ─── Retorno consolidado ────────────────────────────────────────────────
 
     return {
       geral: {
-        solicitacoesEmAberto,
-        solicitacoesConcluidas,
-        documentosPendentesValidacao,
-        clientesNovosMesAtual,
-        taxaCancelamentoPct,
-        debitosEmAberto,
-        parcelasVencidasNaoPagas,
+        solicitacoesEmAberto: geral.solicitacoesEmAberto,
+        solicitacoesConcluidas: geral.solicitacoesConcluidas,
+        documentosPendentesValidacao: geral.documentosPendentesValidacao,
+        clientesNovosMesAtual: geral.clientesNovosMesAtual,
+        taxaCancelamentoPct: geral.taxaCancelamentoPct,
+        debitosEmAberto: geral.debitosEmAberto,
+        parcelasVencidasNaoPagas: geral.parcelasVencidasNaoPagas,
       },
-      solicitacoes: {
-        porStatus,
-        proximasDeVencer: {
-          quantidade: proximasDeVencerQuantidade,
-        },
-        tempoConclusaoPorServico,
-        foraDoPrazo: {
-          quantidade: foraDoPrazoQuantidade,
-          totalConcluidas,
-          percentual,
-        },
-      },
-      servicos: {
-        ativos: servicosAtivos,
-        pausados: servicosPausados,
-        maisSolicitados,
-        receitaPorServicoCompleto,
-      },
-      financeiro: {
-        receitaRealizada,
-        receitaPendente,
-        receitaTaxa,
-        ticketMedio,
-        mediaMensalReceita,
-        historicoMensal,
-        inadimplencia,
-        previsaoCaixa30Dias,
-        porMetodoPagamento,
-        porTipoPagamento,
-      },
-      veiculos: {
-        totalCadastrados: totalVeiculosCadastrados,
-        comSolicitacaoAtiva: veiculosComSolicitacaoAtiva,
-        comDebitoPendente: porVeiculo.length,
-        debitosPendentes: {
-          valorTotal: valorTotalGeral,
-          porVeiculo,
-        },
-      },
+      solicitacoes,
+      servicos,
+      financeiro,
+      veiculos,
     };
   }
 }
