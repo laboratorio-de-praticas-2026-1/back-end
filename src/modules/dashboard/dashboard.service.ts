@@ -298,7 +298,10 @@ export class DashboardService {
         },
       }),
       this.solicitacaoModel.count({
-        where: { status: 'concluido' },
+        where: {
+          status: 'concluido',
+          dataConclusao: { [Op.between]: [dataInicio, dataFim] },
+        },
       }),
     ]);
 
