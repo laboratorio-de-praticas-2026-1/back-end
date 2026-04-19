@@ -47,9 +47,7 @@ export class DashboardController {
   }
 
   @Get('/veiculos')
-  async retornarVeiculosDashboard(
-    @Query() query: DashboardPeriodoQueryDto,
-  ): Promise<VeiculosDto> {
+  async retornarVeiculosDashboard(): Promise<VeiculosDto> {
     return this.dashboardService.obterDadosVeiculos();
   }
 
