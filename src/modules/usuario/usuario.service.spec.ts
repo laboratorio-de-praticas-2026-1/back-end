@@ -298,7 +298,39 @@ describe('UsuarioService', () => {
       ).resolves.not.toThrow();
     });
   });
+  
+describe('findOne', () => {
+  it('deve retornar um usuário por id sem senha', async () => {
+    mockUsuarioModel.findByPk.mockResolvedValue(mockUsuario);
 
+    const result = await service.findOne(1);
+
+    expect(mockUsuarioModel.findByPk).toHaveBeenCalledWith(1, {
+      attributes: { exclude: ['senha'] },
+    });
+
+    expect(result).toMatchObject({
+      id: mockUsuario.id,
+      nome: mockUsuario.nome,
+      email: mockUsuario.email,
+      nivel: mockUsuario.nivel,
+      cpf_cnpj: mockUsuario.cpfCnpj ?? null,
+      celular: mockUsuario.celular,
+      data_cadastro: mockUsuario.dataCadastro,
+    });
+
+    expect(result).not.toHaveProperty('senha');
+  });
+
+  it('deve lançar NotFoundException se usuário não existir', async () => {
+    mockUsuarioModel.findByPk.mockResolvedValue(null);
+
+    await expect(service.findOne(999)).rejects.toThrow(
+      NotFoundException,
+    );
+  });
+});
+  
   describe('findAll', () => {
     it('deve retornar lista de usuários sem senha', async () => {
       const usuariosMock = [
