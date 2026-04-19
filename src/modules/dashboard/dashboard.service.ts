@@ -666,17 +666,14 @@ export class DashboardService {
       : new Date(new Date(dataFim).setMonth(new Date(dataFim).getMonth() - 6));
     dataInicio.setHours(0, 0, 0, 0);
 
-    const [geral, veiculos, servicos, financeiro] = await Promise.all([
-      this.obterDadosGerais(inicioParam, fimParam),
-      this.obterDadosVeiculos(),
-      this.obterDadosServicos(inicioParam, fimParam),
-      this.obterDadosFinanceiro(inicioParam, fimParam),
-    ]);
-
-    const solicitacoes = await this.obterDadosSolicitacoes(
-      inicioParam,
-      fimParam,
-    );
+    const [geral, solicitacoes, veiculos, servicos, financeiro] =
+      await Promise.all([
+        this.obterDadosGerais(inicioParam, fimParam),
+        this.obterDadosSolicitacoes(inicioParam, fimParam),
+        this.obterDadosVeiculos(),
+        this.obterDadosServicos(inicioParam, fimParam),
+        this.obterDadosFinanceiro(inicioParam, fimParam),
+      ]);
 
     return {
       geral: {
