@@ -3,6 +3,7 @@ import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
 import {
   DashboardReturnDto,
+  FinanceiroDto,
   GeralDto,
   ServicosDto,
   SolicitacoesDto,
@@ -50,5 +51,23 @@ export class DashboardController {
     @Query() query: DashboardPeriodoQueryDto,
   ): Promise<VeiculosDto> {
     return this.dashboardService.obterDadosVeiculos();
+  }
+
+  @Get('/servicos')
+  @ApiQuery({ name: 'inicio', required: false, example: '2025-01-01' })
+  @ApiQuery({ name: 'fim', required: false, example: '2025-06-30' })
+  async retornarServicosDashboard(
+    @Query() query: DashboardPeriodoQueryDto,
+  ): Promise<ServicosDto> {
+    return this.dashboardService.obterDadosServicos(query.inicio, query.fim);
+  }
+
+  @Get('/financeiro')
+  @ApiQuery({ name: 'inicio', required: false, example: '2025-01-01' })
+  @ApiQuery({ name: 'fim', required: false, example: '2025-06-30' })
+  async retornarFinanceiroDashboard(
+    @Query() query: DashboardPeriodoQueryDto,
+  ): Promise<FinanceiroDto> {
+    return this.dashboardService.obterDadosFinanceiro(query.inicio, query.fim);
   }
 }

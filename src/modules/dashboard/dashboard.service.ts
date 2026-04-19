@@ -408,7 +408,7 @@ export class DashboardService {
   }
 
   /** Retorna dados de serviços: ativos, pausados e receita por serviço */
-  private async obterDadosServicos(
+  async obterDadosServicos(
     inicio?: string,
     fim?: string,
   ): Promise<ServicosDto> {
@@ -494,10 +494,11 @@ export class DashboardService {
   }
 
   /** Retorna dados financeiros: receita, débitos, parcelas, histórico mensal e distribuição de pagamentos */
-  private async obterDadosFinanceiro(
-    dataInicio: Date,
-    dataFim: Date,
+  async obterDadosFinanceiro(
+    inicio?: string,
+    fim?: string,
   ): Promise<FinanceiroDto> {
+    const { dataInicio, dataFim } = this.converterData(fim, inicio);
     const hoje = new Date();
     const em30Dias = new Date(hoje.getTime() + 30 * 24 * 60 * 60 * 1000);
 
@@ -669,7 +670,7 @@ export class DashboardService {
       this.obterDadosGerais(inicioParam, fimParam),
       this.obterDadosVeiculos(),
       this.obterDadosServicos(inicioParam, fimParam),
-      this.obterDadosFinanceiro(dataInicio, dataFim),
+      this.obterDadosFinanceiro(inicioParam, fimParam),
     ]);
 
     const solicitacoes = await this.obterDadosSolicitacoes(
