@@ -4,15 +4,22 @@ import { getModelToken } from '@nestjs/sequelize';
 import { ContatoService } from './contato.service';
 import { Empresa } from 'src/models/empresa.model';
 import { EmpresaDto } from './dto/empresa-response.dto';
+import { EmailService } from 'src/infra/email/email.service';
+import { EmailParams } from 'src/infra/email/dto/email-params';
 
 type MockEmpresaModel = {
   findOne: jest.Mock;
   update: jest.Mock;
 };
 
+type MockEmailService = {
+  enviarEmail: jest.Mock;
+};
+
 describe('ContatoService', () => {
   let service: ContatoService;
   let mockEmpresaModel: MockEmpresaModel;
+  let mockEmailService: MockEmailService;
 
   const mockEmpresa = {
     id: 1,
@@ -35,12 +42,20 @@ describe('ContatoService', () => {
       update: jest.fn(),
     };
 
+    mockEmailService = {
+      enviarEmail: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ContatoService,
         {
           provide: getModelToken(Empresa),
           useValue: mockEmpresaModel,
+        },
+        {
+          provide: EmailService,
+          useValue: mockEmailService,
         },
       ],
     }).compile();
@@ -50,6 +65,47 @@ describe('ContatoService', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+  });
+
+  describe('enviarEmail', () => {
+    it('deve chamar EmailService.enviarEmail corretamente', async () => {
+      const payload: EmailParams = new EmailParams(
+        'destino@teste.com',
+        'contato',
+        'Teste',
+        {
+          nome: 'Victor',
+          email: 'victor@email.com',
+          mensagem: 'Olá mundo',
+        },
+        true,
+      );
+
+      mockEmailService.enviarEmail.mockResolvedValue(undefined);
+
+      await service.enviarEmail(payload);
+
+      expect(mockEmailService.enviarEmail).toHaveBeenCalledWith(payload);
+      expect(mockEmailService.enviarEmail).toHaveBeenCalledTimes(1);
+    });
+
+    it('deve propagar erro do EmailService', async () => {
+      mockEmailService.enviarEmail.mockRejectedValue(new Error('Erro email'));
+
+      const payload: EmailParams = new EmailParams(
+        'destino@teste.com',
+        'contato',
+        'Erro',
+        {
+          nome: 'Victor',
+          email: 'victor@email.com',
+          mensagem: 'teste',
+        },
+        true,
+      );
+
+      await expect(service.enviarEmail(payload)).rejects.toThrow('Erro email');
+    });
   });
 
   describe('buscarContatoById', () => {

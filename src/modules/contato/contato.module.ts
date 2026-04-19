@@ -1,12 +1,15 @@
 import { Module } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { Empresa } from 'src/models/empresa.model';
-// import { FaqModule } from '../faq/faq.module';
 import { ContatoController } from './contato.controller';
 import { ContatoService } from './contato.service';
+import { EmailModule } from 'src/infra/email/email.module';
 
 @Module({
-  imports: [SequelizeModule.forFeature([Empresa])],
+  imports: [
+    SequelizeModule.forFeature([Empresa]),
+    EmailModule,
+  ],
   controllers: [ContatoController],
   providers: [ContatoService],
   exports: [ContatoService],

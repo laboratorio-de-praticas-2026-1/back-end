@@ -2,25 +2,29 @@ import {
   Controller,
   Get,
   Put,
+  Post,
   Body,
   Logger,
   Param,
   ParseIntPipe,
   ForbiddenException,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiCreatedResponse,
 } from '@nestjs/swagger';
 import { ContatoService } from './contato.service';
 import { EmpresaDto } from './dto/empresa-response.dto';
 import { ContatoUpdateDto } from './dto/contato-update.dto';
+import { EmailParams } from 'src/infra/email/dto/email-params';
 
 @Controller('contato')
 export class ContatoController {
   private readonly logger = new Logger(ContatoController.name);
-
   private readonly EMPRESA_ID = 1;
 
   constructor(private readonly contatoService: ContatoService) {}
@@ -62,5 +66,29 @@ export class ContatoController {
 
     this.logger.log(`Atualizando contato ID: ${id}`);
     return this.contatoService.atualizarContato(id, data);
+  }
+  
+  @Post('enviar')
+  @ApiOperation({ summary: 'Envia email de contato' })
+  @ApiCreatedResponse({ description: 'E-mail enviado com sucesso' })
+  async enviarEmail(@Body() data: EmailParams) {
+    try {
+      this.logger.log(`Email recebido de: ${data.dados?.email}`);
+
+      await this.contatoService.enviarEmail(data);
+
+      return {
+        message: 'E-mail enviado com sucesso',
+      };
+    } catch (error) {
+      this.logger.error('Erro ao enviar email', error);
+
+      throw new HttpException(
+        {
+          message: 'Erro ao enviar e-mail',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }

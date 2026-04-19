@@ -4,6 +4,13 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "deleteOutDir": true,
-    "plugins": ["@nestjs/swagger"]
+    "plugins": ["@nestjs/swagger"],
+    "assets": [
+      {
+        "include": "infra/email/templates/**/*",
+        "outDir": "dist"
+      }
+    ],
+    "watchAssets": true
   }
 }
