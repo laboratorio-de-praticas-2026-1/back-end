@@ -38,6 +38,31 @@ export interface ResultadoDistribuicaoTipo {
   valorTotal: string | null;
 }
 
+export interface StatusCountRaw {
+  status: string;
+  quantidade: number | string;
+}
+
+export interface ParcelasVencidasRaw {
+  valorTotal: number | string | null;
+  quantidadeParcelas: number | string | null;
+}
+
+export interface TempoConclusaoRaw {
+  servicoId: number | string;
+  servicoNome: string;
+  prazoEstimadoDias: number | string;
+  mediaRealDias: number | string;
+  totalConcluidas: number | string;
+}
+
+export interface DebitoVeiculoRaw {
+  idVeiculo: number;
+  totalDebitos: number | string;
+  valorTotal: number | string;
+  veiculo: { placa: string };
+}
+
 export type MaisSolicitadosRow = Solicitacao & {
   servico?: Servico;
   get(key: 'servicoId' | 'totalSolicitacoes'): string | number | null;
@@ -48,17 +73,4 @@ export type ReceitaPorServicoRow = DebitoServico & {
   get(
     key: 'servicoId' | 'totalSolicitacoes' | 'receitaTotal',
   ): string | number | null;
-};
-
-export type StatusCountRow = {
-  status: string;
-  quantidade: number | string;
-};
-
-export type TempoConclusaoRow = {
-  servicoId: number | string;
-  servicoNome: string;
-  prazoEstimadoDias: number | string;
-  mediaRealDias: number | string;
-  totalConcluidas: number | string;
 };
