@@ -14,6 +14,7 @@ const mockUsuarioService = {
   login: jest.fn(),
   remove: jest.fn(),
   update: jest.fn(),
+  findOne: jest.fn(),
   findAll: jest.fn(),
 };
 
@@ -225,6 +226,52 @@ describe('UsuarioController', () => {
       );
     });
   });
+  describe('findOne', () => {
+    it('deve retornar um usuário por id', async () => {
+      const usuario = {
+        id: 1,
+        nome: 'Arthur',
+        email: 'arthur@email.com',
+        nivel: 'cliente',
+        cpf_cnpj: null,
+        celular: null,
+        data_cadastro: new Date(),
+      };
+
+      mockUsuarioService.findOne.mockResolvedValue(usuario);
+
+      const result = await controller.findOne(1);
+
+      expect(mockUsuarioService.findOne).toHaveBeenCalledWith(1);
+      expect(result).toEqual(usuario);
+    });
+
+    it('deve propagar NotFoundException quando usuário não existir', async () => {
+      mockUsuarioService.findOne.mockRejectedValue(
+        new NotFoundException('Usuário não encontrado'),
+      );
+
+      await expect(controller.findOne(999)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('não deve retornar o campo senha', async () => {
+      const usuario = {
+        id: 1,
+        nome: 'Arthur',
+        email: 'arthur@email.com',
+        nivel: 'cliente',
+      };
+
+      mockUsuarioService.findOne.mockResolvedValue(usuario);
+
+      const result = await controller.findOne(1);
+
+      expect(result).not.toHaveProperty('senha');
+    });
+  });
+
 
   describe('findAll', () => {
     it('deve retornar uma lista de usuários', async () => {

@@ -71,4 +71,10 @@ export class UsuarioController {
   findAll() {
     return this.usuarioService.findAll();
   }
+
+  @Get(':id')
+  @UseGuards(UsuarioOwnerGuard)
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.usuarioService.findOne(id);
+  }
 }

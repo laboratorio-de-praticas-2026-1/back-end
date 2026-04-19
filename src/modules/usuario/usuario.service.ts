@@ -152,4 +152,18 @@ export class UsuarioService {
       excludeExtraneousValues: true,
     });
   }
+
+  async findOne(id: number): Promise<ResponseUsuarioDto> {
+    const usuario = await this.usuarioModel.findByPk(id, {
+      attributes: { exclude: ['senha'] },
+    });
+
+    if (!usuario) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+
+    return plainToInstance(ResponseUsuarioDto, usuario.get({ plain: true }), {
+      excludeExtraneousValues: true,
+    });
+  }
 }
