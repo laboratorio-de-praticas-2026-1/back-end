@@ -194,6 +194,43 @@ export class BuscaService {
     return Array.from(new Set(valores));
   }
 
+  async listarEmpresasByTermo(termo?: string): Promise<{
+    itens: Empresa[];
+    mensagem?: string;
+  }> {
+    const termoNormalizado = termo?.trim();
+
+    if (!termoNormalizado) {
+      const itens = await this.empresaModel.findAll({
+        order: [['id', 'DESC']],
+      });
+
+      return {
+        itens,
+        mensagem:
+          itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+      };
+    }
+
+    const filtros: Array<Record<string, unknown>> = [
+      { nomeFantasia: { [Op.like]: `%${termoNormalizado}%` } },
+      { cnpj: { [Op.like]: `%${termoNormalizado}%` } },
+      { telefone: { [Op.like]: `%${termoNormalizado}%` } },
+      { cidade: { [Op.like]: `%${termoNormalizado}%` } },
+      { site: { [Op.like]: `%${termoNormalizado}%` } },
+    ];
+
+    const itens = await this.empresaModel.findAll({
+      where: { [Op.or]: filtros },
+      order: [['id', 'DESC']],
+    });
+
+    return {
+      itens,
+      mensagem: itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+    };
+  }
+
   private parseYmdDate(
     valor: string,
     campo: string,
