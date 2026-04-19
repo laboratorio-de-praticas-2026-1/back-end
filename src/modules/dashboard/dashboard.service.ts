@@ -649,8 +649,6 @@ export class DashboardService {
       : new Date(new Date(dataFim).setMonth(new Date(dataFim).getMonth() - 6));
     dataInicio.setHours(0, 0, 0, 0);
 
-    // ─── Execução paralela de todas as queries ───────────────────────────────
-
     const [geral, veiculos, servicos, financeiro] = await Promise.all([
       this.obterDadosGerais(dataInicio, dataFim),
       this.obterDadosVeiculos(),
@@ -658,16 +656,12 @@ export class DashboardService {
       this.obterDadosFinanceiro(dataInicio, dataFim),
     ]);
 
-    // ─── Solicitações depende de dados gerais ────────────────────────────────
-
     const solicitacoes = await this.obterDadosSolicitacoes(
       dataInicio,
       dataFim,
       geral.porStatus,
       geral.statusAbertos,
     );
-
-    // ─── Retorno consolidado ────────────────────────────────────────────────
 
     return {
       geral: {
