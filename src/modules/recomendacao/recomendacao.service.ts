@@ -38,15 +38,15 @@ export class RecomendacaoService {
     try {
       const listaRecomendacoes: RecomendacaoRespostaDto[] = [];
 
-      const licenciamento = await this.buscarLicenciamentoAnual(usuarioId);
-      if (licenciamento) listaRecomendacoes.push(licenciamento);
-
-      const cnh = await this.buscarRenovacaoCNH(usuarioId);
-      if (cnh) listaRecomendacoes.push(cnh);
-
-      const transferencia =
-        await this.buscarTransferenciaPropriedade(usuarioId);
-      if (transferencia) listaRecomendacoes.push(transferencia);
+      const recomendacaoSemVeiculo =
+        await this.buscarUsuarioSemVeiculo(usuarioId);
+      if (recomendacaoSemVeiculo) {
+        return recomendacaoSemVeiculo.map(({ id, nome, descricao }) => ({
+          id,
+          nome,
+          descricao,
+        }));
+      }
 
       const infracao = await this.buscarRecursoMulta(usuarioId);
       if (infracao) {
@@ -97,43 +97,34 @@ export class RecomendacaoService {
     }
   }
 
-  async buscarTransferenciaPropriedade(
+  async buscarUsuarioSemVeiculo(
     usuarioId: number,
-  ): Promise<RecomendacaoRespostaDto | null> {
+  ): Promise<RecomendacaoRespostaDto[] | null> {
     try {
       const veiculos = await this.veiculoModel.findAll({
         where: { usuarioId },
       });
 
-      for (const veiculo of veiculos) {
-        const jaExiste = await this.solicitacaoModel.findOne({
-          where: {
-            veiculoId: veiculo.id,
-            servicoId: 2,
-            status: {
-              [Op.ne]: 'cancelado',
-            },
-          },
-        });
-
-        if (!jaExiste) {
-          return {
+      if (!veiculos || veiculos.length === 0) {
+        return [
+          {
             id: 2,
-            nome: 'Transferência de Propriedade',
+            nome: 'Renovação de CNH',
             descricao:
-              'Identificamos que seu veículo ainda não possui transferência de titularidade. Regularize agora.',
-            ativo: true,
-          };
-        }
+              'Mantenha sua habilitação em dia. Verifique o prazo para renovação.',
+          },
+          {
+            id: 3,
+            nome: 'Mudança de Categoria',
+            descricao:
+              'Deseja dirigir outros tipos de veículo? Veja como mudar sua categoria de CNH.',
+          },
+        ] as unknown as RecomendacaoRespostaDto[];
       }
 
       return null;
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Erro desconhecido';
-      this.logger.error(
-        `Erro na busca de transferência de propriedade: ${errorMessage}`,
-      );
+    } catch (error) {
+      this.logger.error('Erro ao verificar usuário sem veículo', error);
       return null;
     }
   }
