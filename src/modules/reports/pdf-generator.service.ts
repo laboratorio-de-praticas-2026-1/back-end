@@ -1,7 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import puppeteer, { Browser } from 'puppeteer';
-import * as fs from 'fs';
-import * as path from 'path';
 
 import { ReportQueries } from './queries/reports.queries';
 import { CreateReportDto } from './dto/create-report.dto';
@@ -38,14 +36,7 @@ import {
   renderPieChart,
 } from './utils/chart-renderer';
 
-function loadLogoBase64(): string {
-  const logoPath = path.join(__dirname, '..', '..', 'assets', 'logo-branca.png');
-  if (fs.existsSync(logoPath)) {
-    const buf = fs.readFileSync(logoPath);
-    return `data:image/png;base64,${buf.toString('base64')}`;
-  }
-  return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
-}
+const COMPANY_NAME = 'Despachante Bortone';
 
 @Injectable()
 export class PdfGeneratorService {
@@ -66,15 +57,18 @@ export class PdfGeneratorService {
     inicio.setUTCHours(0, 0, 0, 0);
     fim.setUTCHours(23, 59, 59, 999);
 
-    const logoBase64 = loadLogoBase64();
     const periodoLabel = `Período: ${fmtDate(inicio)} — ${fmtDate(fim)}`;
 
     const categoria = dto.categoria;
     const isCompleto = categoria === RelatorioCategoria.RELATORIO_COMPLETO;
 
+    // logoBase64 is no longer needed — logo is embedded via template-assets.ts
+    const logoBase64 = '';
+
     const htmlPages: string[] = [];
     const summaryItems: string[] = [];
 
+    // Capa (page 0 — no number shown)
     htmlPages.push(
       coverPage(
         dto.nome,
@@ -84,6 +78,7 @@ export class PdfGeneratorService {
         fim,
         logoBase64,
         new Date(),
+        COMPANY_NAME,
       ),
     );
 
@@ -143,12 +138,7 @@ export class PdfGeneratorService {
         arrecadacaoPorServico(ranking);
 
       htmlPages.push(
-        pageShell(
-          'Indicadores Financeiros',
-          periodoLabel,
-          finContent,
-          logoBase64,
-        ),
+        pageShell('Indicadores Financeiros', periodoLabel, finContent, logoBase64, COMPANY_NAME),
       );
     }
 
@@ -173,7 +163,7 @@ export class PdfGeneratorService {
         solicitacoesPorServicoSection(porServico, pieServicos);
 
       htmlPages.push(
-        pageShell('Serviços', periodoLabel, srvContent, logoBase64),
+        pageShell('Serviços', periodoLabel, srvContent, logoBase64, COMPANY_NAME),
       );
     }
 
@@ -197,7 +187,7 @@ export class PdfGeneratorService {
         todasSolicitacoesSection(todas);
 
       htmlPages.push(
-        pageShell('Solicitações', periodoLabel, solContent, logoBase64),
+        pageShell('Solicitações', periodoLabel, solContent, logoBase64, COMPANY_NAME),
       );
     }
 
@@ -209,29 +199,13 @@ export class PdfGeneratorService {
       summaryItems.push('Gestão de Documentos');
       const { total, porStatus } =
         await this.queries.getDocumentosPorStatus(inicio, fim);
-      const pendentes = await this.queries.getDocumentosByStatus(
-        'pendente',
-        inicio,
-        fim,
-      );
-      const aprovados = await this.queries.getDocumentosByStatus(
-        'aprovado',
-        inicio,
-        fim,
-      );
-      const rejeitados = await this.queries.getDocumentosByStatus(
-        'rejeitado',
-        inicio,
-        fim,
-      );
+      const pendentes = await this.queries.getDocumentosByStatus('pendente', inicio, fim);
+      const aprovados = await this.queries.getDocumentosByStatus('aprovado', inicio, fim);
+      const rejeitados = await this.queries.getDocumentosByStatus('rejeitado', inicio, fim);
 
       const pieDocStatus = await renderPieChart(
         ['Pendente', 'Aprovado', 'Rejeitado'],
-        [
-          porStatus['pendente'] ?? 0,
-          porStatus['aprovado'] ?? 0,
-          porStatus['rejeitado'] ?? 0,
-        ],
+        [porStatus['pendente'] ?? 0, porStatus['aprovado'] ?? 0, porStatus['rejeitado'] ?? 0],
       );
 
       const docContent =
@@ -241,7 +215,7 @@ export class PdfGeneratorService {
         documentosListSection(rejeitados, 'Documentos Rejeitados');
 
       htmlPages.push(
-        pageShell('Documentos', periodoLabel, docContent, logoBase64),
+        pageShell('Documentos', periodoLabel, docContent, logoBase64, COMPANY_NAME),
       );
     }
 
@@ -257,12 +231,7 @@ export class PdfGeneratorService {
       ]);
 
       htmlPages.push(
-        pageShell(
-          'Veículos',
-          periodoLabel,
-          veiculosSection(totalVeiculos, debVeiculos),
-          logoBase64,
-        ),
+        pageShell('Veículos', periodoLabel, veiculosSection(totalVeiculos, debVeiculos), logoBase64, COMPANY_NAME),
       );
     }
 
@@ -279,12 +248,7 @@ export class PdfGeneratorService {
         ]);
 
       htmlPages.push(
-        pageShell(
-          'Clientes',
-          periodoLabel,
-          clientesSection(clientes, total, taxaConversao, parcelasAtrasadas),
-          logoBase64,
-        ),
+        pageShell('Clientes', periodoLabel, clientesSection(clientes, total, taxaConversao, parcelasAtrasadas), logoBase64, COMPANY_NAME),
       );
     }
 
@@ -300,12 +264,7 @@ export class PdfGeneratorService {
       ]);
 
       htmlPages.push(
-        pageShell(
-          'Tempo Médio de Conclusão',
-          periodoLabel,
-          tempoMedioSection(tempoMedio, comparativo, casosVencimento),
-          logoBase64,
-        ),
+        pageShell('Tempo Médio de Conclusão', periodoLabel, tempoMedioSection(tempoMedio, comparativo, casosVencimento), logoBase64, COMPANY_NAME),
       );
     }
 
@@ -324,17 +283,7 @@ export class PdfGeneratorService {
       );
 
       htmlPages.push(
-        pageShell(
-          'Taxa de Conversão',
-          periodoLabel,
-          funilConversaoSection(
-            totalConcluidas,
-            porServico,
-            naoConvertidas,
-            pieFunil,
-          ),
-          logoBase64,
-        ),
+        pageShell('Taxa de Conversão', periodoLabel, funilConversaoSection(totalConcluidas, porServico, naoConvertidas, pieFunil), logoBase64, COMPANY_NAME),
       );
     }
 
@@ -352,18 +301,25 @@ export class PdfGeneratorService {
       );
 
       htmlPages.push(
-        pageShell(
-          'Gargalos Operacionais',
-          periodoLabel,
-          gargalosSection({ ...gargalos, acumuloPieBase64: acumuloPie }),
-          logoBase64,
-        ),
+        pageShell('Gargalos Operacionais', periodoLabel, gargalosSection({ ...gargalos, acumuloPieBase64: acumuloPie }), logoBase64, COMPANY_NAME),
       );
     }
 
-    htmlPages.splice(1, 0, summaryPage(summaryItems, logoBase64));
+    // Insert summary as page 2 (index 1), then inject page numbers:
+    // capa = no number; sumário = page 1; content pages = 2, 3, 4...
+    htmlPages.splice(1, 0, summaryPage(summaryItems, logoBase64, COMPANY_NAME));
 
-    return this.renderHtmlsToPdf(htmlPages);
+    // Inject page numbers into content pages (from index 2 onward)
+    const numberedPages = htmlPages.map((html, idx) => {
+      if (idx < 2) return html; // capa and sumário already handled
+      const pageNum = idx; // sumário = 1, so first content page = 2
+      return html.replace(
+        /<span class="page-num"><\/span>/,
+        `<span class="page-num">${pageNum}</span>`,
+      );
+    });
+
+    return this.renderHtmlsToPdf(numberedPages);
   }
 
   private async renderHtmlsToPdf(pages: string[]): Promise<Buffer> {
@@ -399,10 +355,7 @@ export class PdfGeneratorService {
 
       for (const buf of pdfBuffers) {
         const doc = await PDFDocument.load(buf);
-        const copiedPages = await merged.copyPages(
-          doc,
-          doc.getPageIndices(),
-        );
+        const copiedPages = await merged.copyPages(doc, doc.getPageIndices());
         copiedPages.forEach((p) => merged.addPage(p));
       }
 
