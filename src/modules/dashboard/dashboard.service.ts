@@ -716,7 +716,7 @@ export class DashboardService {
           attributes: [
             [col('veiculo.usuario_id'), 'usuarioId'],
             [col('veiculo->usuario.nome'), 'nome'],
-            [fn('SUM', col('debito.valor')), 'valorTotalPago'],
+            [fn('SUM', col('debito->pagamento.valor_total')), 'valorTotalPago'],
           ],
           include: [
             {
@@ -725,8 +725,17 @@ export class DashboardService {
               required: true,
               where: {
                 status: 'pago',
-                createdAt: { [Op.between]: [dataInicio, dataFim] },
               },
+              include: [
+                {
+                  model: Pagamento,
+                  attributes: [],
+                  required: true,
+                  where: {
+                    createdAt: { [Op.between]: [dataInicio, dataFim] },
+                  },
+                },
+              ],
             },
             {
               model: Veiculo,
@@ -853,7 +862,6 @@ export class DashboardService {
       this.solicitacaoModel.count({
         where: {
           status: 'aguardando_documento',
-          dataSolicitacao: { [Op.between]: [dataInicio, dataFim] },
         },
       }),
 
