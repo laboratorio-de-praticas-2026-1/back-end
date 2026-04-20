@@ -23,24 +23,37 @@ export class NotificacaoService implements OnModuleInit {
     private readonly emailService: EmailService,
   ) {}
 
- 
   async onModuleInit() {
     this.logger.log('Serviço de Notificação Automática iniciado com sucesso.');
     this.iniciarCicloDeNotificacoes();
   }
 
   private iniciarCicloDeNotificacoes() {
-    const vinteQuatroHorasEmMs = 1000 * 60 * 60 * 24;
-
-   
     this.processarEnvioDeDebitos();
-
-    // Agendamento periódico
-    setInterval(async () => {
-      await this.processarEnvioDeDebitos();
-    }, vinteQuatroHorasEmMs);
+    this.agendarProximaSegunda();
   }
 
+  private agendarProximaSegunda() {
+    const agora = new Date();
+    const diasParaProximaSegunda = this.calcularDiasProximaSegunda(agora);
+    const msAteProximaSegunda = diasParaProximaSegunda * 24 * 60 * 60 * 1000;
+
+    this.logger.log(`Próxima execução agendada para segunda-feira, daqui a ${diasParaProximaSegunda} dia(s).`);
+
+    setTimeout(() => {
+      this.processarEnvioDeDebitos();
+      this.agendarProximaSegunda();
+    }, msAteProximaSegunda);
+  }
+
+  private calcularDiasProximaSegunda(data: Date): number {
+    const diaAtual = data.getDay();
+    let diasParaSegunda = 1 - diaAtual;
+    if (diasParaSegunda <= 0) {
+      diasParaSegunda += 7;
+    }
+    return diasParaSegunda;
+  }
 
   async processarEnvioDeDebitos() {
     try {
@@ -61,7 +74,6 @@ export class NotificacaoService implements OnModuleInit {
         return;
       }
 
-    
       const listaDeEnvio = resultados.reduce((acc, current) => {
         if (!acc[current.email]) {
           acc[current.email] = { nome: current.nome, debitos: [] };
@@ -100,7 +112,6 @@ export class NotificacaoService implements OnModuleInit {
     }
   }
 
-  
   async getUserNotifications(userId: number) {
     return [];
   }
