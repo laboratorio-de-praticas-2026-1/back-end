@@ -4,6 +4,7 @@ import {
   DataType,
   ForeignKey,
   HasMany,
+  HasOne,
   Model,
   Table,
 } from 'sequelize-typescript';
@@ -11,6 +12,7 @@ import { Servico } from './servico.model';
 import { Usuario } from './usuario.model';
 import { Veiculo } from './veiculo.model';
 import { DocumentoSolicitacao } from './documento-solicitacao.model';
+import { DebitoSolicitacao } from './debito-solicitacao.model';
 
 @Table({ tableName: 'solicitacao' })
 export class Solicitacao extends Model {
@@ -40,6 +42,9 @@ export class Solicitacao extends Model {
 
   @HasMany(() => DocumentoSolicitacao)
   declare documentos: DocumentoSolicitacao[];
+
+  @HasOne(() => DebitoSolicitacao, { foreignKey: 'idSolicitacao' })
+  declare debitoSolicitacao: DebitoSolicitacao | null;
 
   @Column({
     type: DataType.ENUM(

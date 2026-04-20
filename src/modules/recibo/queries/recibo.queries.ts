@@ -17,12 +17,12 @@ export class ReciboQueries {
 
   async getValoresRecibo(id: number) {
     return this.solicitacaoModel.findOne({
-      where: { id: id },
-      attributes: ['createdAt' as 'data_inicio'],
+      where: { id },
+      attributes: ['id', 'dataSolicitacao'],
       include: [
         {
           model: Usuario,
-          attributes: ['nome', 'email', 'cpf_cnpj', 'celular'],
+          attributes: ['nome', 'email', 'cpfCnpj', 'celular'],
         },
         {
           model: Veiculo,
@@ -31,29 +31,31 @@ export class ReciboQueries {
             'modelo',
             'placa',
             'renavam',
-            'ano_fabricacao',
-            'ano_modelo',
+            'anoFabricacao',
+            'anoModelo',
           ],
         },
         {
           model: Servico,
-          attributes: ['nome' as 'servico'],
+          attributes: ['nome'],
         },
         {
           model: DebitoSolicitacao,
+          attributes: ['id'],
           include: [
             {
               model: Debito,
+              attributes: ['id', 'tipo', 'status', 'valor'],
               include: [
                 {
                   model: Pagamento,
                   attributes: [
-                    'valor_total',
-                    'qtd_parcelas',
-                    'tipo_pagamento',
-                    'metodo_pagamento',
+                    'valorTotal',
+                    'qtdParcelas',
+                    'tipoPagamento',
+                    'metodoPagamento',
                     'taxa',
-                    'createdAt' as 'data_pagamento',
+                    'createdAt',
                   ],
                 },
               ],

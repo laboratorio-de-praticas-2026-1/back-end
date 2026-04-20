@@ -16,6 +16,7 @@ import { NotificacaoModule } from './modules/notificacao/notificacao.module';
 import { PublicidadeModule } from './modules/publicidade/publicidade.module';
 import { EmailModule } from './infra/email/email.module';
 import { RecomendacaoModule } from './modules/recomendacao/recomendacao.module';
+import { ReciboModule } from './modules/recibo/recibo.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { ServicosModule } from './modules/servicos/servicos.module';
 import { SimuladorModule } from './modules/simulador/simulador.module';
@@ -48,6 +49,7 @@ import { UsuarioModule } from './modules/usuario/usuario.module';
     ReportsModule,
     DashboardModule,
     RecomendacaoModule,
+    ReciboModule,
     UsuarioModule,
     HeaderModule,
     BuscaModule,
