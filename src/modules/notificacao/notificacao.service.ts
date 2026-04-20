@@ -23,13 +23,15 @@ export class NotificacaoService implements OnModuleInit {
     private readonly emailService: EmailService,
   ) {}
 
-  async onModuleInit() {
+
+  onModuleInit() {
     this.logger.log('Serviço de Notificação Automática iniciado com sucesso.');
     this.iniciarCicloDeNotificacoes();
   }
 
   private iniciarCicloDeNotificacoes() {
-    this.processarEnvioDeDebitos();
+  
+    void this.processarEnvioDeDebitos();
     this.agendarProximaSegunda();
   }
 
@@ -38,10 +40,12 @@ export class NotificacaoService implements OnModuleInit {
     const diasParaProximaSegunda = this.calcularDiasProximaSegunda(agora);
     const msAteProximaSegunda = diasParaProximaSegunda * 24 * 60 * 60 * 1000;
 
-    this.logger.log(`Próxima execução agendada para segunda-feira, daqui a ${diasParaProximaSegunda} dia(s).`);
+    this.logger.log(
+      `Próxima execução agendada para segunda-feira, daqui a ${diasParaProximaSegunda} dia(s).`,
+    );
 
     setTimeout(() => {
-      this.processarEnvioDeDebitos();
+      void this.processarEnvioDeDebitos();
       this.agendarProximaSegunda();
     }, msAteProximaSegunda);
   }
@@ -74,21 +78,34 @@ export class NotificacaoService implements OnModuleInit {
         return;
       }
 
-      const listaDeEnvio = resultados.reduce((acc, current) => {
-        if (!acc[current.email]) {
-          acc[current.email] = { nome: current.nome, debitos: [] };
-        }
-        acc[current.email].debitos.push(current);
-        return acc;
-      }, {} as Record<string, { nome: string; debitos: DebitoRow[] }>);
+      const listaDeEnvio = resultados.reduce(
+        (acc, current) => {
+          if (!acc[current.email]) {
+            acc[current.email] = { nome: current.nome, debitos: [] };
+          }
+          acc[current.email].debitos.push(current);
+          return acc;
+        },
+        {} as Record<string, { nome: string; debitos: DebitoRow[] }>,
+      );
 
       for (const [email, info] of Object.entries(listaDeEnvio)) {
         try {
-          const totalValor = info.debitos.reduce((sum, d) => sum + Number(d.valor), 0);
-          
+          const totalValor = info.debitos.reduce(
+            (sum, d) => sum + Number(d.valor),
+            0,
+          );
+
           const params = new EmailParams(
             email,
-            join(process.cwd(), 'src', 'infra', 'email', 'templates', 'contato-duvida-cliente.ejs'),
+            join(
+              process.cwd(),
+              'src',
+              'infra',
+              'email',
+              'templates',
+              'contato-duvida-cliente.ejs',
+            ),
             '⚠️ Aviso: Você possui débitos pendentes',
             {
               nome: info.nome,
@@ -102,21 +119,34 @@ export class NotificacaoService implements OnModuleInit {
 
           await this.emailService.enviarEmail(params);
           this.logger.log(`[NOTIFICAÇÃO] Resumo enviado para: ${email}`);
-
-        } catch (mailError: any) {
-          this.logger.error(`[ERRO ENVIO] Falha ao processar e-mail para ${email}: ${mailError.message}`);
+        } catch (mailError: unknown) {
+          const errorMessage =
+            mailError instanceof Error
+              ? mailError.message
+              : 'Erro desconhecido';
+          this.logger.error(
+            `[ERRO ENVIO] Falha ao processar e-mail para ${email}: ${errorMessage}`,
+          );
         }
       }
-    } catch (dbError: any) {
-      this.logger.error(`[ERRO BANCO] Falha crítica na consulta SQL: ${dbError.message}`);
+    } catch (dbError: unknown) {
+      const errorMessage =
+        dbError instanceof Error ? dbError.message : 'Erro desconhecido';
+      this.logger.error(
+        `[ERRO BANCO] Falha crítica na consulta SQL: ${errorMessage}`,
+      );
     }
   }
 
-  async getUserNotifications(userId: number) {
+
+  async getUserNotifications(_userId: number) {
+    await Promise.resolve();
     return [];
   }
 
-  async enviarConfirmacaoSolicitacao(data: any): Promise<void> {
+ 
+  async enviarConfirmacaoSolicitacao(_data: any): Promise<void> {
+    await Promise.resolve();
     return;
   }
 }
