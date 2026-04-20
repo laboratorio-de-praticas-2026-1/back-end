@@ -1,15 +1,19 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
+  Param,
+  ParseIntPipe,
   Post,
   Res,
   StreamableFile,
 } from '@nestjs/common';
 import {
   ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
   ApiProduces,
@@ -18,6 +22,7 @@ import type { Response } from 'express';
 import { Relatorio } from 'src/models/relatorio.model';
 import { RelatorioCategoriaResponseDto } from './dto/categoria-response.dto';
 import { CreateReportDto } from './dto/create-report.dto';
+import { ResponseReportDto } from './dto/response-report.dto';
 import { ReportsService } from './reports.service';
 import { PdfGeneratorService } from './pdf-generator.service';
 
@@ -40,6 +45,28 @@ export class ReportsController {
   })
   getCategorias(): RelatorioCategoriaResponseDto[] {
     return this.reportsService.getCategorias();
+  }
+
+  @Get()
+  @ApiOperation({
+    summary: 'Listar relatórios',
+    description:
+      'Retorna todos os relatórios cadastrados com URL temporária gerada a partir do hash.',
+  })
+  @ApiOkResponse({
+    description: 'Lista de relatórios retornada com sucesso',
+    type: [ResponseReportDto],
+  })
+  listarRelatorios(): Promise<ResponseReportDto[]> {
+    return this.reportsService.listarRelatorios();
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Excluir relatório por id' })
+  @ApiNoContentResponse({ description: 'Relatório excluído com sucesso' })
+  deleteById(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    return this.reportsService.deleteById(id);
   }
 
   @Post('generate')

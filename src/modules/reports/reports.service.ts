@@ -2,6 +2,7 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { Readable } from 'stream';
 import { InjectModel } from '@nestjs/sequelize';
@@ -56,6 +57,46 @@ export class ReportsService {
           categoria,
         ),
     );
+  }
+
+  async listarRelatorios(): Promise<ResponseReportDto[]> {
+    try {
+      const relatorios = await this.relatorioModel.findAll({
+        order: [['dataGeracao', 'DESC']],
+      });
+
+      return relatorios.map((relatorio) => {
+        const decryptedInfo = this.cryptoUtil.decrypt(
+          relatorio.urlDocumentoHash,
+        );
+        const urlDocumento =
+          this.cloudinaryService.generateTemporaryUrl(decryptedInfo);
+
+        return plainToInstance(ResponseReportDto, {
+          ...relatorio.get(),
+          urlDocumento,
+        });
+      });
+    } catch (error) {
+      this.logger.error(
+        'Erro ao listar relatórios',
+        error instanceof Error ? (error.stack ?? error.message) : String(error),
+      );
+
+      throw new InternalServerErrorException(
+        'Erro ao listar relatórios. Tente novamente.',
+      );
+    }
+  }
+
+  async deleteById(id: number): Promise<void> {
+    const relatorio = await this.relatorioModel.findByPk(id);
+
+    if (!relatorio) {
+      throw new NotFoundException('Relatório não encontrado');
+    }
+
+    await relatorio.destroy();
   }
 
   async generateReport(
