@@ -119,7 +119,9 @@ export class NotificacaoService implements OnModuleInit {
           this.logger.log(`[NOTIFICAÇÃO] Resumo enviado para: ${email}`);
         } catch (mailError: unknown) {
           const errorMessage =
-            mailError instanceof Error ? mailError.message : 'Erro desconhecido';
+            mailError instanceof Error
+              ? mailError.message
+              : 'Erro desconhecido';
           this.logger.error(
             `[ERRO ENVIO] Falha ao processar e-mail para ${email}: ${errorMessage}`,
           );
