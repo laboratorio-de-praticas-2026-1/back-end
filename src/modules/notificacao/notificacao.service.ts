@@ -23,14 +23,12 @@ export class NotificacaoService implements OnModuleInit {
     private readonly emailService: EmailService,
   ) {}
 
-
   onModuleInit() {
     this.logger.log('Serviço de Notificação Automática iniciado com sucesso.');
     this.iniciarCicloDeNotificacoes();
   }
 
   private iniciarCicloDeNotificacoes() {
-  
     void this.processarEnvioDeDebitos();
     this.agendarProximaSegunda();
   }
@@ -121,9 +119,7 @@ export class NotificacaoService implements OnModuleInit {
           this.logger.log(`[NOTIFICAÇÃO] Resumo enviado para: ${email}`);
         } catch (mailError: unknown) {
           const errorMessage =
-            mailError instanceof Error
-              ? mailError.message
-              : 'Erro desconhecido';
+            mailError instanceof Error ? mailError.message : 'Erro desconhecido';
           this.logger.error(
             `[ERRO ENVIO] Falha ao processar e-mail para ${email}: ${errorMessage}`,
           );
@@ -138,14 +134,12 @@ export class NotificacaoService implements OnModuleInit {
     }
   }
 
-
   async getUserNotifications(_userId: number) {
     await Promise.resolve();
     return [];
   }
 
- 
-  async enviarConfirmacaoSolicitacao(_data: any): Promise<void> {
+  async enviarConfirmacaoSolicitacao(_data: unknown): Promise<void> {
     await Promise.resolve();
     return;
   }
