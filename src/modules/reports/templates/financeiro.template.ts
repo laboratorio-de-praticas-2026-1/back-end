@@ -1,5 +1,49 @@
 import { fmtBRL, fmtDate, badge } from './base.template';
 
+type DebitoTabelaRow = {
+  tipo: string;
+  valor: number | string;
+  status: string;
+  debitoServico?: {
+    servico?: {
+      nome?: string | null;
+    } | null;
+  } | null;
+  debitoVeiculo?: {
+    veiculo?: {
+      placa?: string | null;
+    } | null;
+  } | null;
+};
+
+type ParcelaTabelaRow = {
+  id: number | string;
+  idPagamento: number | string;
+  valor: number | string;
+  numeroParcela: number | string;
+  status: string;
+  vencimento: Date | string | null;
+  pagamento?: {
+    qtdParcelas?: number | string | null;
+  } | null;
+};
+
+type FluxoRecebimentoRow = {
+  id: number | string;
+  idDebito: number | string;
+  valorTotal: number | string;
+  qtdParcelas: number | string;
+  tipoPagamento: string;
+  metodoPagamento: string;
+  taxa: number | string;
+};
+
+type RankingArrecadacaoRow = {
+  top: number;
+  nome: string;
+  total: number;
+};
+
 // SEÇÃO: Indicadores Financeiros
 export function financialSummarySection(data: {
   totalArrecadado: number;
@@ -11,7 +55,8 @@ export function financialSummarySection(data: {
   lineChartBase64: string;
   pieChartBase64: string;
 }): string {
-  const { totalArrecadado, totalTaxas, totalPendente, faturamentoComTaxa } = data;
+  const { totalArrecadado, totalTaxas, totalPendente, faturamentoComTaxa } =
+    data;
 
   return /* html */ `
   <div class="section-label">Financeiro — Resumo do Período</div>
@@ -47,7 +92,25 @@ export function financialSummarySection(data: {
 `;
 }
 
-export function debitosTableSection(debitos: any[]): string {
+export function financialPartOneContent(data: {
+  totalArrecadado: number;
+  totalTaxas: number;
+  totalPendente: number;
+  faturamentoComTaxa: number;
+  faturamentoDiluido: { semana: string; valor: number }[];
+  metodosPagamento: Record<string, number>;
+  lineChartBase64: string;
+  pieChartBase64: string;
+}): string {
+  return /* html */ `
+  <div style="margin-bottom:12px;color:#5D6D7E;font-size:11px;">
+    Visão executiva do período com indicadores, tendência de faturamento e distribuição dos meios de pagamento.
+  </div>
+  ${financialSummarySection(data)}
+`;
+}
+
+export function debitosTableSection(debitos: DebitoTabelaRow[]): string {
   const rows = debitos
     .map(
       (d, i) => /* html */ `
@@ -71,7 +134,7 @@ export function debitosTableSection(debitos: any[]): string {
   </table>`;
 }
 
-export function parcelasVencer30Section(parcelas: any[]): string {
+export function parcelasVencer30Section(parcelas: ParcelaTabelaRow[]): string {
   const rows = parcelas
     .map(
       (p) => /* html */ `
@@ -96,7 +159,9 @@ export function parcelasVencer30Section(parcelas: any[]): string {
   </table>`;
 }
 
-export function fluxoRecebimentoSection(pagamentos: any[]): string {
+export function fluxoRecebimentoSection(
+  pagamentos: FluxoRecebimentoRow[],
+): string {
   const rows = pagamentos
     .map(
       (p) => /* html */ `
@@ -123,10 +188,15 @@ export function fluxoRecebimentoSection(pagamentos: any[]): string {
   </table>`;
 }
 
-export function detalheParcelas(parcelas: any[], vencidas: any[]): string {
+export function detalheParcelas(
+  parcelas: ParcelaTabelaRow[],
+  vencidas: ParcelaTabelaRow[],
+  options?: { showResumo?: boolean },
+): string {
   const valorVencido = vencidas.reduce((a, p) => a + Number(p.valor), 0);
-  // Group unique payers from vencidas  
+  // Group unique payers from vencidas
   const devedores = new Set(vencidas.map((p) => p.idPagamento)).size;
+  const showResumo = options?.showResumo !== false;
 
   const rows = parcelas
     .map(
@@ -144,16 +214,20 @@ export function detalheParcelas(parcelas: any[], vencidas: any[]): string {
 
   return /* html */ `
   <div class="section-label">Detalhamento de Parcelas</div>
-  <div class="kpi-row" style="margin-bottom:12px;">
+  ${
+    showResumo
+      ? `<div class="kpi-row" style="margin-bottom:12px;">
     <div class="kpi-card">
-      <div class="kpi-label">Total Vencido (não pago)</div>
+      <div class="kpi-label">Total Vencido (não pago ou próximo de vencer)</div>
       <div class="kpi-value" style="color:#C0392B;">${fmtBRL(valorVencido)}</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Clientes Inadimplentes</div>
       <div class="kpi-value" style="color:#C0392B;">${devedores}</div>
     </div>
-  </div>
+  </div>`
+      : ''
+  }
   <table>
     <thead><tr>
       <th>ID</th><th>ID Pgto</th><th>Valor</th><th>Nº Parcela</th><th>Status</th><th>Vencimento</th>
@@ -162,7 +236,9 @@ export function detalheParcelas(parcelas: any[], vencidas: any[]): string {
   </table>`;
 }
 
-export function arrecadacaoPorServico(ranking: any[]): string {
+export function arrecadacaoPorServico(
+  ranking: RankingArrecadacaoRow[],
+): string {
   const rows = ranking
     .map(
       (r) => /* html */ `
@@ -180,4 +256,31 @@ export function arrecadacaoPorServico(ranking: any[]): string {
     <thead><tr><th>Rank</th><th>Serviço</th><th>Valor Total</th></tr></thead>
     <tbody>${rows || '<tr><td colspan="3" style="text-align:center;color:#999;">Sem dados</td></tr>'}</tbody>
   </table>`;
+}
+
+export function financialPartTwoContent(params: {
+  debitos: DebitoTabelaRow[];
+  parcelas30: ParcelaTabelaRow[];
+  fluxo: FluxoRecebimentoRow[];
+  parcelas: ParcelaTabelaRow[];
+  vencidas: ParcelaTabelaRow[];
+  ranking: RankingArrecadacaoRow[];
+}): string {
+  const { debitos, parcelas30, fluxo, parcelas, vencidas, ranking } = params;
+
+  return /* html */ `
+  <style>
+    .fin-part2-block { margin-bottom: 22px; }
+    .fin-part2-block:last-child { margin-bottom: 0; }
+    .fin-part2-block .section-label { margin-top: 0; margin-bottom: 12px; }
+  </style>
+  <div style="margin-bottom:12px;color:#5D6D7E;font-size:11px;">
+    Detalhamento financeiro para acompanhamento operacional e cobrança.
+  </div>
+  <div class="fin-part2-block">${debitosTableSection(debitos)}</div>
+  <div class="fin-part2-block">${parcelasVencer30Section(parcelas30)}</div>
+  <div class="fin-part2-block">${fluxoRecebimentoSection(fluxo)}</div>
+  <div class="fin-part2-block">${detalheParcelas(parcelas, vencidas)}</div>
+  <div class="fin-part2-block">${arrecadacaoPorServico(ranking)}</div>
+`;
 }

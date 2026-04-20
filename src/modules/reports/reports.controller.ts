@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Post,
   Res,
+  StreamableFile,
 } from '@nestjs/common';
 import {
   ApiCreatedResponse,
@@ -49,13 +50,14 @@ export class ReportsController {
       'Gera o PDF completo, sobe no Cloudinary e retorna URL temporária + registro salvo.',
   })
   @ApiCreatedResponse({
-    description: 'Relatório gerado e salvo. Retorna dados do registro + URL temporária.',
+    description:
+      'Relatório gerado e salvo. Retorna dados do registro + URL temporária.',
     type: Relatorio,
   })
   generateReport(@Body() createReportDto: CreateReportDto) {
     return this.reportsService.generateReport(createReportDto);
   }
- 
+
   //endpoint alternativo antes de ir para o Cloudnary. Visualizar antes de confirmar o salvamento.
   @Post('preview')
   @HttpCode(HttpStatus.OK)
@@ -68,7 +70,7 @@ export class ReportsController {
   @ApiOkResponse({ description: 'PDF retornado diretamente como stream.' })
   async previewReport(
     @Body() createReportDto: CreateReportDto,
-    @Res() res: Response,
+    @Res({ passthrough: true }) res: Response,
   ) {
     const pdfBuffer = await this.pdfGeneratorService.generate(createReportDto);
 
@@ -76,12 +78,11 @@ export class ReportsController {
       createReportDto.nome.replace(/\s+/g, '_') + '.pdf',
     );
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="${filename}"`,
-    );
-    res.setHeader('Content-Length', pdfBuffer.length);
-    res.end(pdfBuffer);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    return new StreamableFile(pdfBuffer, {
+      type: 'application/pdf',
+      length: pdfBuffer.length,
+    });
   }
 }

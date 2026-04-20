@@ -1,0 +1,28 @@
+<div class="section-label">Documentos — Resumo</div>
+<div style="margin-top:8px;">
+  <div style="display:flex;flex-direction:column;gap:10px;width:320px;max-width:100%;">
+    <div class="kpi-card" style="width:100%;min-width:0;">
+      <div class="kpi-label">Total de Documentos</div>
+      <div class="kpi-value"><%= total %></div>
+    </div>
+    <div class="kpi-card" style="width:100%;min-width:0;">
+      <div class="kpi-label">Pendentes</div>
+      <div class="kpi-value" style="color:#856404;"><%= porStatus['pendente'] ?? 0 %></div>
+    </div>
+    <div class="kpi-card" style="width:100%;min-width:0;">
+      <div class="kpi-label">Aprovados</div>
+      <div class="kpi-value" style="color:#1A5E2E;"><%= porStatus['aprovado'] ?? 0 %></div>
+    </div>
+    <div class="kpi-card" style="width:100%;min-width:0;">
+      <div class="kpi-label">Rejeitados</div>
+      <div class="kpi-value" style="color:#842029;"><%= porStatus['rejeitado'] ?? 0 %></div>
+    </div>
+  </div>
+
+  <div style="margin-top:18px;">
+    <div class="section-label" style="margin-top:0;">Distribuição por Status dos Documentos</div>
+    <div class="chart-wrap" style="margin-top:6px;">
+      <img src="<%= pieBase64 %>" style="width:350px;" />
+    </div>
+  </div>
+</div>

@@ -1,6 +1,9 @@
+import { Formatters } from 'src/commons/utils/formatters';
 import { LOGO_ESCURA_B64 } from './template-assets';
 
 export { LOGO_ESCURA_B64 };
+
+const formatters = new Formatters();
 
 export function pageShell(
   title: string,
@@ -10,9 +13,10 @@ export function pageShell(
   companyName = 'Despachante Bortone',
   pageNumber?: number,
 ): string {
-  const pageNum = pageNumber !== undefined
-    ? `<span class="page-num">${pageNumber}</span>`
-    : '';
+  const pageNum =
+    pageNumber !== undefined
+      ? `<span class="page-num">${pageNumber}</span>`
+      : '';
 
   return /* html */ `
 <!DOCTYPE html>
@@ -26,26 +30,31 @@ export function pageShell(
     font-family:'Inter',Arial,sans-serif;
     color:#1A1A1A;
     width:794px;
-    min-height:1123px;
     background:#fff;
-    display:flex;
-    flex-direction:column;
+    position:relative;
   }
 
   /* ── Header ── */
   .page-header{
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    z-index:10;
     display:flex;
     align-items:flex-start;
     justify-content:space-between;
-    padding:28px 40px 0;
-    flex-shrink:0;
+    height:78px;
+    padding:20px 40px 0;
+    background:#fff;
   }
   .page-header .logo{height:52px;object-fit:contain;}
   .page-header .hd-right{font-size:10px;color:#888;text-align:right;padding-top:6px;}
 
   /* ── Title block ── */
   .page-title-block{
-    padding:20px 40px 6px;
+    margin-top:78px;
+    padding:18px 40px 6px;
   }
   .page-title-block h1{
     font-size:28px;font-weight:800;color:#0D2040;line-height:1.2;
@@ -56,21 +65,24 @@ export function pageShell(
 
   /* ── Content ── */
   .content{
-    flex:1;
-    padding:8px 40px 20px;
+    padding:8px 40px 58px;
   }
 
   /* ── Footer ── */
   .page-footer{
+    position:fixed;
+    left:0;
+    right:0;
+    bottom:0;
+    z-index:10;
     display:flex;
     justify-content:space-between;
     align-items:center;
-    padding:10px 40px;
+    padding:8px 40px;
     border-top:1px solid #E8EEF4;
     font-size:10px;
     color:#999;
-    flex-shrink:0;
-    margin-top:auto;
+    background:#fff;
   }
   .page-num{
     background:#0D2040;color:#fff;
@@ -93,26 +105,51 @@ export function pageShell(
     border-radius:8px;
     padding:14px 18px;
     color:#fff;
+    display:flex;
+    flex-direction:column;
+    min-height:84px;
   }
-  .kpi-card .kpi-label{font-size:10px;color:#8AAFCF;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;}
-  .kpi-card .kpi-value{font-size:18px;font-weight:700;color:#fff;}
+  .kpi-card .kpi-label{font-size:10px;color:#8AAFCF;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;line-height:1.2;min-height:24px;}
+  .kpi-card .kpi-value{font-size:18px;font-weight:700;color:#fff;line-height:1;margin-top:auto;}
 
   /* ── Tables ── */
   table{
     width:100%;
+    table-layout:fixed;
     border-collapse:collapse;
     font-size:11px;
     margin-top:4px;
+    page-break-inside:auto;
+    break-inside:auto;
   }
+  thead{display:table-header-group;}
+  tfoot{display:table-footer-group;}
   thead tr{background:#0D2040;color:#fff;}
   thead th{
     padding:8px 10px;
     text-align:left;
     font-weight:600;
     letter-spacing:.3px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
   }
   tbody tr:nth-child(even){background:#F4F7FB;}
-  tbody td{padding:7px 10px;border-bottom:1px solid #E8EEF4;vertical-align:top;color:#333;}
+  tbody td{
+    padding:7px 10px;
+    border-bottom:1px solid #E8EEF4;
+    vertical-align:top;
+    color:#333;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    line-height:1.2;
+  }
+
+  tr{
+    page-break-inside:avoid;
+    break-inside:avoid;
+  }
 
   /* ── Badges ── */
   .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;}
@@ -161,15 +198,6 @@ export function pageShell(
 </html>`;
 }
 
-export function fmtBRL(value: number): string {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
-
-export function fmtDate(date: Date | string | null | undefined): string {
-  if (!date) return '—';
-  return new Date(date).toLocaleDateString('pt-BR');
-}
-
 export function badge(status: string): string {
   const cls = `badge badge-${status.replace(/ /g, '_').toLowerCase()}`;
   const labels: Record<string, string> = {
@@ -187,4 +215,12 @@ export function badge(status: string): string {
     ativo: 'Ativo',
   };
   return `<span class="${cls}">${labels[status] ?? status}</span>`;
+}
+
+export function fmtBRL(value: number): string {
+  return formatters.fmtBRL(value);
+}
+
+export function fmtDate(date: Date | string | null | undefined): string {
+  return formatters.fmtDate(date);
 }

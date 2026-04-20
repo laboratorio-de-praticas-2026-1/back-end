@@ -11,6 +11,8 @@ import { Servico } from 'src/models/servico.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
 import { Usuario } from 'src/models/usuario.model';
 import { Veiculo } from 'src/models/veiculo.model';
+import { logger } from 'sequelize/lib/utils/logger';
+import { fmtBRL } from '../templates/base.template';
 
 type StatusSolicitacao =
   | 'recebido'
@@ -69,7 +71,8 @@ function normalizeMethod(method: string): string {
   const v = method.trim().toLowerCase();
   if (v.includes('pix')) return 'pix';
   if (v.includes('boleto')) return 'boleto';
-  if (v.includes('cart') || v.includes('card') || v.includes('crédito')) return 'cartao';
+  if (v.includes('cart') || v.includes('card') || v.includes('crédito'))
+    return 'cartao';
   return v || 'outros';
 }
 
@@ -113,7 +116,10 @@ export class ReportQueries {
     });
 
     const pagos = debitos.filter((d) => d.status === 'pago');
-    const totalArrecadado = pagos.reduce((acc, d) => acc + toNumber(d.valor), 0);
+    const totalArrecadado = pagos.reduce(
+      (acc, d) => acc + toNumber(d.valor),
+      0,
+    );
     const totalTaxas = pagos.reduce(
       (acc, d) => acc + toNumber(d.pagamento?.taxa ?? 0),
       0,
@@ -133,25 +139,56 @@ export class ReportQueries {
       order: [['createdAt', 'ASC']],
     });
 
-    const buckets = new Map<string, { label: string; value: number; start: Date }>();
+    const monthKey = (date: Date) =>
+      `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+    const monthLabel = (date: Date) =>
+      date.toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' });
+
+    const firstMonth = new Date(inicio.getFullYear(), inicio.getMonth(), 1);
+    const lastMonth = new Date(fim.getFullYear(), fim.getMonth(), 1);
+
+    const buckets = new Map<
+      string,
+      { label: string; value: number; start: Date }
+    >();
+
+    // Preenche todos os meses do intervalo com zero para o gráfico ficar contínuo.
+    for (
+      let cursor = new Date(firstMonth);
+      cursor.getTime() <= lastMonth.getTime();
+      cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1)
+    ) {
+      const key = monthKey(cursor);
+      buckets.set(key, {
+        label: monthLabel(cursor),
+        value: 0,
+        start: new Date(cursor),
+      });
+    }
 
     for (const pagamento of pagamentos) {
       const createdAt = new Date(pagamento.createdAt);
-      const weekStart = startOfWeekMonday(createdAt);
-      const weekEnd = addDays(weekStart, 6);
-      const key = `${weekStart.toISOString().slice(0, 10)}`;
+      const bucketStart = new Date(
+        createdAt.getFullYear(),
+        createdAt.getMonth(),
+        1,
+      );
+      const key = monthKey(bucketStart);
       const current = buckets.get(key) ?? {
-        label: `${formatDatePt(weekStart)} - ${formatDatePt(weekEnd)}`,
+        label: monthLabel(bucketStart),
         value: 0,
-        start: weekStart,
+        start: bucketStart,
       };
       current.value += toNumber(pagamento.valorTotal);
       buckets.set(key, current);
     }
 
-    return [...buckets.values()]
+    const result = [...buckets.values()]
       .sort((a, b) => a.start.getTime() - b.start.getTime())
       .map(({ label, value }) => ({ semana: label, valor: value }));
+
+    return result;
   }
 
   async getTodosDebitos(inicio: Date, fim: Date) {
@@ -260,7 +297,9 @@ export class ReportQueries {
 
     const hoje = startOfDay(new Date());
     const vencidas = parcelas.filter(
-      (p) => new Date(p.vencimento).getTime() < hoje.getTime() && p.status !== 'pago',
+      (p) =>
+        new Date(p.vencimento).getTime() < hoje.getTime() &&
+        p.status !== 'pago',
     );
 
     return { parcelas, vencidas };
@@ -299,6 +338,13 @@ export class ReportQueries {
       where: {
         createdAt: { [Op.between]: [startOfDay(inicio), endOfDay(fim)] },
       },
+      include: [
+        {
+          model: Debito,
+          required: true,
+          where: { status: 'pago' },
+        },
+      ],
     });
 
     return pagamentos.reduce(
@@ -314,14 +360,23 @@ export class ReportQueries {
   }
 
   async getSolicitacoesPorServico(inicio: Date, fim: Date) {
-    const solicitacoes = await this.solicitacaoModel.findAll({
-      where: {
-        dataSolicitacao: { [Op.between]: [startOfDay(inicio), endOfDay(fim)] },
-      },
-      include: [{ model: Servico, required: true }],
-    });
+    const [servicos, solicitacoes] = await Promise.all([
+      this.servicoModel.findAll({ order: [['id', 'ASC']] }),
+      this.solicitacaoModel.findAll({
+        where: {
+          dataSolicitacao: {
+            [Op.between]: [startOfDay(inicio), endOfDay(fim)],
+          },
+        },
+        include: [{ model: Servico, required: true }],
+      }),
+    ]);
 
     const map = new Map<string, { nome: string; total: number }>();
+    for (const servico of servicos) {
+      map.set(servico.nome, { nome: servico.nome, total: 0 });
+    }
+
     for (const solicitacao of solicitacoes) {
       const nome = solicitacao.servico?.nome ?? 'Sem serviço';
       const current = map.get(nome) ?? { nome, total: 0 };
@@ -376,7 +431,8 @@ export class ReportQueries {
     };
 
     for (const doc of docs) {
-      porStatus[doc.statusValidacao] = (porStatus[doc.statusValidacao] ?? 0) + 1;
+      porStatus[doc.statusValidacao] =
+        (porStatus[doc.statusValidacao] ?? 0) + 1;
     }
 
     return { total: docs.length, porStatus };
@@ -451,7 +507,9 @@ export class ReportQueries {
           model: Solicitacao,
           required: false,
           where: {
-            dataSolicitacao: { [Op.between]: [startOfDay(inicio), endOfDay(fim)] },
+            dataSolicitacao: {
+              [Op.between]: [startOfDay(inicio), endOfDay(fim)],
+            },
           },
         },
       ],
@@ -535,7 +593,9 @@ export class ReportQueries {
             include: [{ model: Usuario, required: true }],
             order: [['dataSolicitacao', 'DESC']],
           });
-          cached = ultimaSolicitacao?.usuario?.nome ?? debito.debitoServico.servico.nome;
+          cached =
+            ultimaSolicitacao?.usuario?.nome ??
+            debito.debitoServico.servico.nome;
           serviceNames.set(servicoId, cached);
         }
         nomeCliente = cached;
@@ -557,7 +617,10 @@ export class ReportQueries {
       ) {
         atual.dataInicio = parcela.pagamento?.createdAt ?? atual.dataInicio;
       }
-      if (new Date(parcela.vencimento).getTime() < new Date(atual.dataVenc).getTime()) {
+      if (
+        new Date(parcela.vencimento).getTime() <
+        new Date(atual.dataVenc).getTime()
+      ) {
         atual.dataVenc = parcela.vencimento;
       }
 
@@ -678,7 +741,9 @@ export class ReportQueries {
     const porServico = [...porServicoMap.values()].sort(
       (a, b) => b.concluidas - a.concluidas,
     );
-    const totalConcluidas = solicitacoes.filter((s) => s.status === 'concluido').length;
+    const totalConcluidas = solicitacoes.filter(
+      (s) => s.status === 'concluido',
+    ).length;
     const naoConvertidas = solicitacoes.filter(
       (s) => s.status !== 'concluido' && s.status !== 'cancelado',
     );
@@ -706,7 +771,9 @@ export class ReportQueries {
     const paradasComTempo = paradas.map((s) => {
       const diasDecorridos = Math.max(
         0,
-        Math.round((hoje.getTime() - new Date(s.dataSolicitacao).getTime()) / 86400000),
+        Math.round(
+          (hoje.getTime() - new Date(s.dataSolicitacao).getTime()) / 86400000,
+        ),
       );
       return {
         id: s.id,
@@ -717,10 +784,17 @@ export class ReportQueries {
       };
     });
 
-    const concluidas = solicitacoes.filter((s) => s.status === 'concluido' && s.dataConclusao);
+    const concluidas = solicitacoes.filter(
+      (s) => s.status === 'concluido' && s.dataConclusao,
+    );
     const tempoAcimaMap = new Map<
       string,
-      { servico: string; totalDias: number; count: number; prazoEstimado: number }
+      {
+        servico: string;
+        totalDias: number;
+        count: number;
+        prazoEstimado: number;
+      }
     >();
 
     for (const s of concluidas) {

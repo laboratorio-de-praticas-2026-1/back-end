@@ -3,6 +3,7 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
+import { Readable } from 'stream';
 import { InjectModel } from '@nestjs/sequelize';
 import { plainToInstance } from 'class-transformer';
 import { CryptoUtil } from 'src/commons/utils/crypto';
@@ -72,9 +73,13 @@ export class ReportsService {
       ? new Date(createReportDto.dataPeriodoFim)
       : currentDate;
     dataPeriodoFim.setUTCHours(23, 59, 59, 999);
+    createReportDto.dataPeriodoInicio = dataPeriodoInicio;
+    createReportDto.dataPeriodoFim = dataPeriodoFim;
 
     try {
-      const pdfBuffer = await this.pdfGeneratorService.generate(createReportDto);
+      const pdfBuffer =
+        await this.pdfGeneratorService.generate(createReportDto);
+
       const multerFile: Express.Multer.File = {
         fieldname: 'report',
         originalname: `${createReportDto.nome.replace(/\s+/g, '_')}.pdf`,
@@ -82,13 +87,14 @@ export class ReportsService {
         mimetype: 'application/pdf',
         buffer: pdfBuffer,
         size: pdfBuffer.length,
-        stream: null as any,
+        stream: Readable.from([]),
         destination: '',
         filename: '',
         path: '',
       };
 
-      const uploadResult = await this.cloudinaryService.uploadDocument(multerFile);
+      const uploadResult =
+        await this.cloudinaryService.uploadDocument(multerFile);
       const publicId = uploadResult.public_id as string;
       const resourceType = uploadResult.resource_type as 'raw' | 'image';
 
