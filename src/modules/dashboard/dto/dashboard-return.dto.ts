@@ -146,10 +146,6 @@ export class ClientesDto {
   comParcelasEmAtraso!: ClienteComParcelasEmAtrasoDto[];
 }
 
-export class ClientesDashboardDto {
-  clientes!: ClientesDto;
-}
-
 export class RejeicaoPorTipoDocumentoDto {
   tipoDocumento!: string;
   totalRejeitados!: number;
@@ -163,16 +159,12 @@ export class DocumentosDto {
   rejeicoesPorTipo!: RejeicaoPorTipoDocumentoDto[];
 }
 
-export class DocumentosDashboardDto {
-  documentos!: DocumentosDto;
-}
-
 export class DashboardReturnDto {
   geral!: GeralDto;
   solicitacoes!: SolicitacoesDto;
   financeiro!: FinanceiroDto;
   servicos!: ServicosDto;
   veiculos!: VeiculosDto;
-  clientes!: ClientesDashboardDto;
-  documentos!: DocumentosDashboardDto;
+  clientes!: ClientesDto;
+  documentos!: DocumentosDto;
 }

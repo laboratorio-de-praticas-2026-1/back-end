@@ -19,8 +19,8 @@ import {
   VeiculosDto,
   ServicosDto,
   FinanceiroDto,
-  ClientesDashboardDto,
-  DocumentosDashboardDto,
+  ClientesDto,
+  DocumentosDto,
 } from './dto/dashboard-return.dto';
 import type { ModelCtor } from 'sequelize-typescript';
 import type {
@@ -687,7 +687,7 @@ export class DashboardService {
   async obterDadosClientes(
     inicio?: string,
     fim?: string,
-  ): Promise<ClientesDashboardDto> {
+  ): Promise<ClientesDto> {
     const { dataInicio, dataFim } = this.converterData(inicio, fim);
     const hoje = new Date();
     const [topPorVolumeRaw, topPorValorPagoRaw, comParcelasEmAtrasoRaw] =
@@ -800,33 +800,31 @@ export class DashboardService {
       ]);
 
     return {
-      clientes: {
-        topPorVolume: topPorVolumeRaw.map((item) => ({
-          usuarioId: Number(item.usuarioId),
-          nome: item.nome,
-          totalSolicitacoes: Number(item.totalSolicitacoes ?? 0),
-        })),
-        topPorValorPago: topPorValorPagoRaw.map((item) => ({
-          usuarioId: Number(item.usuarioId),
-          nome: item.nome,
-          valorTotalPago: Number(item.valorTotalPago ?? 0),
-        })),
-        comParcelasEmAtraso: comParcelasEmAtrasoRaw.map((item) => ({
-          usuarioId: Number(item.usuarioId),
-          nome: item.nome,
-          quantidadeParcelasAtrasadas: Number(
-            item.quantidadeParcelasAtrasadas ?? 0,
-          ),
-          valorTotalAtrasado: Number(item.valorTotalAtrasado ?? 0),
-        })),
-      },
+      topPorVolume: topPorVolumeRaw.map((item) => ({
+        usuarioId: Number(item.usuarioId),
+        nome: item.nome,
+        totalSolicitacoes: Number(item.totalSolicitacoes ?? 0),
+      })),
+      topPorValorPago: topPorValorPagoRaw.map((item) => ({
+        usuarioId: Number(item.usuarioId),
+        nome: item.nome,
+        valorTotalPago: Number(item.valorTotalPago ?? 0),
+      })),
+      comParcelasEmAtraso: comParcelasEmAtrasoRaw.map((item) => ({
+        usuarioId: Number(item.usuarioId),
+        nome: item.nome,
+        quantidadeParcelasAtrasadas: Number(
+          item.quantidadeParcelasAtrasadas ?? 0,
+        ),
+        valorTotalAtrasado: Number(item.valorTotalAtrasado ?? 0),
+      })),
     };
   }
 
   async obterDadosDocumentos(
     inicio?: string,
     fim?: string,
-  ): Promise<DocumentosDashboardDto> {
+  ): Promise<DocumentosDto> {
     const { dataInicio, dataFim } = this.converterData(inicio, fim);
 
     const [
@@ -882,16 +880,14 @@ export class DashboardService {
     );
 
     return {
-      documentos: {
-        pendentes: Number(pendentes ?? 0),
-        aprovados: Number(aprovados?.quantidade ?? 0),
-        rejeitados: Number(rejeitados?.quantidade ?? 0),
-        solicitacoesTravadas: Number(solicitacoesTravadas ?? 0),
-        rejeicoesPorTipo: rejeicoesPorTipoRaw.map((item) => ({
-          tipoDocumento: item.tipoDocumento ?? 'nao_informado',
-          totalRejeitados: Number(item.totalRejeitados ?? 0),
-        })),
-      },
+      pendentes: Number(pendentes ?? 0),
+      aprovados: Number(aprovados?.quantidade ?? 0),
+      rejeitados: Number(rejeitados?.quantidade ?? 0),
+      solicitacoesTravadas: Number(solicitacoesTravadas ?? 0),
+      rejeicoesPorTipo: rejeicoesPorTipoRaw.map((item) => ({
+        tipoDocumento: item.tipoDocumento ?? 'nao_informado',
+        totalRejeitados: Number(item.totalRejeitados ?? 0),
+      })),
     };
   }
 
@@ -919,15 +915,6 @@ export class DashboardService {
     ]);
 
     return {
-      /*  geral: {
-        solicitacoesEmAberto: geral.solicitacoesEmAberto,
-        solicitacoesConcluidas: geral.solicitacoesConcluidas,
-        documentosPendentesValidacao: geral.documentosPendentesValidacao,
-        clientesNovosMesAtual: geral.clientesNovosMesAtual,
-        taxaCancelamentoPct: geral.taxaCancelamentoPct,
-        debitosEmAberto: geral.debitosEmAberto,
-        parcelasVencidasNaoPagas: geral.parcelasVencidasNaoPagas,
-      }, */
       geral,
       solicitacoes,
       servicos,
