@@ -63,6 +63,25 @@ export interface DebitoVeiculoRaw {
   veiculo: { placa: string };
 }
 
+export interface TopClienteVolumeRaw {
+  usuarioId: number | string;
+  nome: string;
+  totalSolicitacoes: number | string;
+}
+
+export interface TopClienteValorPagoRaw {
+  usuarioId: number | string;
+  nome: string;
+  valorTotalPago: number | string;
+}
+
+export interface ClienteParcelaAtrasoRaw {
+  usuarioId: number | string;
+  nome: string;
+  quantidadeParcelasAtrasadas: number | string;
+  valorTotalAtrasado: number | string;
+}
+
 export type MaisSolicitadosRow = Solicitacao & {
   servico?: Servico;
   get(key: 'servicoId' | 'totalSolicitacoes'): string | number | null;

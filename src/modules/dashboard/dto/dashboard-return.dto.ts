@@ -121,10 +121,40 @@ export class GeralDto {
   };
 }
 
+export class ClienteTopPorVolumeDto {
+  usuarioId!: number;
+  nome!: string;
+  totalSolicitacoes!: number;
+}
+
+export class ClienteTopPorValorPagoDto {
+  usuarioId!: number;
+  nome!: string;
+  valorTotalPago!: number;
+}
+
+export class ClienteComParcelasEmAtrasoDto {
+  usuarioId!: number;
+  nome!: string;
+  quantidadeParcelasAtrasadas!: number;
+  valorTotalAtrasado!: number;
+}
+
+export class ClientesDto {
+  topPorVolume!: ClienteTopPorVolumeDto[];
+  topPorValorPago!: ClienteTopPorValorPagoDto[];
+  comParcelasEmAtraso!: ClienteComParcelasEmAtrasoDto[];
+}
+
+export class ClientesDashboardDto {
+  clientes!: ClientesDto;
+}
+
 export class DashboardReturnDto {
   geral!: GeralDto;
   solicitacoes!: SolicitacoesDto;
   financeiro!: FinanceiroDto;
   servicos!: ServicosDto;
   veiculos!: VeiculosDto;
+  clientes!: ClientesDashboardDto;
 }

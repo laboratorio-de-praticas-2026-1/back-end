@@ -19,6 +19,7 @@ import {
   VeiculosDto,
   ServicosDto,
   FinanceiroDto,
+  ClientesDashboardDto,
 } from './dto/dashboard-return.dto';
 import type { ModelCtor } from 'sequelize-typescript';
 import type {
@@ -33,6 +34,9 @@ import type {
   ParcelasVencidasRaw,
   TempoConclusaoRaw,
   DebitoVeiculoRaw,
+  TopClienteVolumeRaw,
+  TopClienteValorPagoRaw,
+  ClienteParcelaAtrasoRaw,
 } from './dashboard.types';
 import { MaisSolicitadosRow, ReceitaPorServicoRow } from './dashboard.types';
 
@@ -677,18 +681,158 @@ export class DashboardService {
     };
   }
 
+  async obterDadosClientes(
+    inicio?: string,
+    fim?: string,
+  ): Promise<ClientesDashboardDto> {
+    const { dataInicio, dataFim } = this.converterData(inicio, fim);
+    const hoje = new Date();
+    const [topPorVolumeRaw, topPorValorPagoRaw, comParcelasEmAtrasoRaw] =
+      await Promise.all([
+        this.solicitacaoModel.findAll({
+          attributes: [
+            [col('Solicitacao.usuario_id'), 'usuarioId'],
+            [col('usuario.nome'), 'nome'],
+            [fn('COUNT', col('Solicitacao.id')), 'totalSolicitacoes'],
+          ],
+          include: [{ model: Usuario, attributes: [], required: true }],
+          where: {
+            dataSolicitacao: { [Op.between]: [dataInicio, dataFim] },
+          },
+          group: [
+            col('Solicitacao.usuario_id'),
+            col('usuario.id'),
+            col('usuario.nome'),
+          ],
+          order: [[literal('totalSolicitacoes'), 'DESC']],
+          limit: 5,
+          raw: true,
+        }) as unknown as Promise<TopClienteVolumeRaw[]>,
+
+        this.debitoVeiculoModel.findAll({
+          attributes: [
+            [col('veiculo.usuario_id'), 'usuarioId'],
+            [col('veiculo->usuario.nome'), 'nome'],
+            [fn('SUM', col('debito.valor')), 'valorTotalPago'],
+          ],
+          include: [
+            {
+              model: Debito,
+              attributes: [],
+              required: true,
+              where: {
+                status: 'pago',
+                createdAt: { [Op.between]: [dataInicio, dataFim] },
+              },
+            },
+            {
+              model: Veiculo,
+              attributes: [],
+              required: true,
+              include: [{ model: Usuario, attributes: [], required: true }],
+            },
+          ],
+          group: [
+            col('veiculo.usuario_id'),
+            col('veiculo->usuario.id'),
+            col('veiculo->usuario.nome'),
+          ],
+          order: [[literal('valorTotalPago'), 'DESC']],
+          limit: 5,
+          raw: true,
+        }) as unknown as Promise<TopClienteValorPagoRaw[]>,
+
+        this.debitoVeiculoModel.findAll({
+          attributes: [
+            [col('veiculo.usuario_id'), 'usuarioId'],
+            [col('veiculo->usuario.nome'), 'nome'],
+            [
+              fn('COUNT', col('debito->pagamento->parcelas.id')),
+              'quantidadeParcelasAtrasadas',
+            ],
+            [
+              fn('SUM', col('debito->pagamento->parcelas.valor')),
+              'valorTotalAtrasado',
+            ],
+          ],
+          include: [
+            {
+              model: Debito,
+              attributes: [],
+              required: true,
+              include: [
+                {
+                  model: Pagamento,
+                  attributes: [],
+                  required: true,
+                  include: [
+                    {
+                      model: Parcela,
+                      attributes: [],
+                      required: true,
+                      where: {
+                        vencimento: { [Op.lt]: hoje },
+                        status: { [Op.ne]: 'pago' },
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              model: Veiculo,
+              attributes: [],
+              required: true,
+              include: [{ model: Usuario, attributes: [], required: true }],
+            },
+          ],
+          group: [
+            col('veiculo.usuario_id'),
+            col('veiculo->usuario.id'),
+            col('veiculo->usuario.nome'),
+          ],
+          order: [[literal('quantidadeParcelasAtrasadas'), 'DESC']],
+          raw: true,
+        }) as unknown as Promise<ClienteParcelaAtrasoRaw[]>,
+      ]);
+
+    return {
+      clientes: {
+        topPorVolume: topPorVolumeRaw.map((item) => ({
+          usuarioId: Number(item.usuarioId),
+          nome: item.nome,
+          totalSolicitacoes: Number(item.totalSolicitacoes ?? 0),
+        })),
+        topPorValorPago: topPorValorPagoRaw.map((item) => ({
+          usuarioId: Number(item.usuarioId),
+          nome: item.nome,
+          valorTotalPago: Number(item.valorTotalPago ?? 0),
+        })),
+        comParcelasEmAtraso: comParcelasEmAtrasoRaw.map((item) => ({
+          usuarioId: Number(item.usuarioId),
+          nome: item.nome,
+          quantidadeParcelasAtrasadas: Number(
+            item.quantidadeParcelasAtrasadas ?? 0,
+          ),
+          valorTotalAtrasado: Number(item.valorTotalAtrasado ?? 0),
+        })),
+      },
+    };
+  }
+
   /** Função principal que orquestra o retorno geral do dashboard */
   async retornoTotalDashboard(
     inicioParam?: string,
     fimParam?: string,
   ): Promise<DashboardReturnDto> {
-    const [geral, solicitacoes, veiculos, servicos, financeiro] =
+    const [geral, solicitacoes, veiculos, servicos, financeiro, clientes] =
       await Promise.all([
         this.obterDadosGerais(inicioParam, fimParam),
         this.obterDadosSolicitacoes(inicioParam, fimParam),
         this.obterDadosVeiculos(),
         this.obterDadosServicos(inicioParam, fimParam),
         this.obterDadosFinanceiro(inicioParam, fimParam),
+        this.obterDadosClientes(inicioParam, fimParam),
       ]);
 
     return {
@@ -705,6 +849,7 @@ export class DashboardService {
       servicos,
       financeiro,
       veiculos,
+      clientes,
     };
   }
 }
