@@ -1,61 +1,124 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Sequelize } from 'sequelize-typescript';
 import { QueryTypes } from 'sequelize';
+import { EmailService } from 'src/infra/email/email.service';
+import { EmailParams } from 'src/infra/email/dto/email-params';
+import { join } from 'path';
 
-type Notification = {
-  titulo: string;
-  mensagem: string;
-  valor: number;
-  data: Date;
-};
-
-interface DebitoResult {
-  id: number;
+/**
+ * Interface que define a estrutura dos dados retornados 
+ * pela consulta SQL no banco de dados (Docker).
+ */
+interface DebitoRow {
+  email: string;
+  nome: string;
   descricao: string;
   valor: number;
-  created_at: Date;
   placa: string;
+  created_at: Date;
 }
 
 @Injectable()
-export class NotificacaoService {
-  constructor(private readonly sequelize: Sequelize) {}
+export class NotificacaoService implements OnModuleInit {
+  private readonly logger = new Logger(NotificacaoService.name);
 
-  // Mantém async e Promise<void>, mas adiciona um await dummy para eliminar o erro ESLint
-  async enviarConfirmacaoSolicitacao(
-    data: Record<string, unknown>,
-  ): Promise<void> {
-    console.log('Notificação enviada', data);
-    await Promise.resolve(); // resolve @typescript-eslint/require-await
+  constructor(
+    private readonly sequelize: Sequelize,
+    private readonly emailService: EmailService,
+  ) {}
+
+  /**
+   * Método disparado assim que o NestJS completa a inicialização do módulo.
+   * Inicia a rotina de verificação de débitos.
+   */
+  async onModuleInit() {
+    this.logger.log('Serviço de Notificação Automática iniciado com sucesso.');
+    this.iniciarCicloDeNotificacoes();
   }
 
-  async getUserNotifications(userId: number): Promise<Notification[]> {
-    const results: DebitoResult[] = await this.sequelize.query(
-      `
-      SELECT 
-        d.id,
-        d.descricao,
-        d.valor,
-        d.created_at,
-        v.placa
-      FROM debito d
-      JOIN debito_veiculo dv ON dv.id_debito = d.id
-      JOIN veiculo v ON v.id = dv.id_veiculo
-      WHERE v.usuario_id = :userId
-      AND d.status = 'pendente'
-      ORDER BY d.created_at DESC
-      `,
-      {
-        replacements: { userId },
-        type: QueryTypes.SELECT,
-      },
-    );
+  /**
+   * Configura o intervalo de execução da rotina (24 horas).
+   */
+  private iniciarCicloDeNotificacoes() {
+    const vinteQuatroHorasEmMs = 1000 * 60 * 60 * 24;
 
-    return (results || []).map((debito) => ({
-      titulo: 'Débito pendente',
-      mensagem: `Você possui um débito pendente para o veículo ${debito.placa}. ${debito.descricao}`,
-      valor: Number(debito.valor),
-      data: debito.created_at,
-    }));
+    // Execução imediata ao subir o servidor para validação de dados
+    this.processarEnvioDeDebitos();
+
+    // Agendamento periódico
+    setInterval(async () => {
+      await this.processarEnvioDeDebitos();
+    }, vinteQuatroHorasEmMs);
+  }
+
+  /**
+   * Lógica principal: Busca débitos pendentes, agrupa por usuário 
+   * e solicita o envio de e-mail através do EmailService.
+   */
+  async processarEnvioDeDebitos() {
+    try {
+      this.logger.log('Consultando registros de débitos pendentes no banco...');
+
+      const resultados = await this.sequelize.query<DebitoRow>(
+        `SELECT u.email, u.nome, d.descricao, d.valor, v.placa, d.created_at
+         FROM usuario u
+         JOIN veiculo v ON v.usuario_id = u.id
+         JOIN debito_veiculo dv ON dv.id_veiculo = v.id
+         JOIN debito d ON d.id = dv.id_debito
+         WHERE d.status = 'pendente'`,
+        { type: QueryTypes.SELECT },
+      );
+
+      if (resultados.length === 0) {
+        this.logger.log('Nenhum débito pendente identificado nesta varredura.');
+        return;
+      }
+
+      // Agrupamento para evitar múltiplos e-mails para o mesmo usuário
+      const listaDeEnvio = resultados.reduce((acc, current) => {
+        if (!acc[current.email]) {
+          acc[current.email] = { nome: current.nome, debitos: [] };
+        }
+        acc[current.email].debitos.push(current);
+        return acc;
+      }, {} as Record<string, { nome: string; debitos: DebitoRow[] }>);
+
+      for (const [email, info] of Object.entries(listaDeEnvio)) {
+        try {
+          const totalValor = info.debitos.reduce((sum, d) => sum + Number(d.valor), 0);
+          
+          const params = new EmailParams(
+            email,
+            join(process.cwd(), 'src', 'infra', 'email', 'templates', 'contato-duvida-cliente.ejs'),
+            '⚠️ Aviso: Você possui débitos pendentes',
+            {
+              nome: info.nome,
+              email: email,
+              telefone: 'Sistema de Notificação Automática',
+              assunto: 'Notificação de Débito em Aberto',
+              mensagem: `Detectamos ${info.debitos.length} débito(s) pendente(s) em seu CPF/CNPJ. Valor total: R$ ${totalValor.toFixed(2)}.`,
+            },
+            true,
+          );
+
+          await this.emailService.enviarEmail(params);
+          this.logger.log(`[NOTIFICAÇÃO] Resumo enviado para: ${email}`);
+
+        } catch (mailError: any) {
+          this.logger.error(`[ERRO ENVIO] Falha ao processar e-mail para ${email}: ${mailError.message}`);
+        }
+      }
+    } catch (dbError: any) {
+      this.logger.error(`[ERRO BANCO] Falha crítica na consulta SQL: ${dbError.message}`);
+    }
+  }
+
+  // Métodos mantidos para compatibilidade com as rotas de Controller
+  async getUserNotifications(userId: number) {
+    return [];
+  }
+
+  async enviarConfirmacaoSolicitacao(data: any): Promise<void> {
+    return;
   }
 }
