@@ -4,6 +4,7 @@ import { DashboardService } from './dashboard.service';
 import {
   ClientesDashboardDto,
   DashboardReturnDto,
+  DocumentosDashboardDto,
   FinanceiroDto,
   GeralDto,
   ServicosDto,
@@ -68,6 +69,15 @@ export class DashboardController {
     @Query() query: DashboardPeriodoQueryDto,
   ): Promise<FinanceiroDto> {
     return this.dashboardService.obterDadosFinanceiro(query.inicio, query.fim);
+  }
+
+  @Get('documentos')
+  @ApiQuery({ name: 'inicio', required: false, example: '2025-01-01' })
+  @ApiQuery({ name: 'fim', required: false, example: '2025-06-30' })
+  async retornarDocumentosDashboard(
+    @Query() query: DashboardPeriodoQueryDto,
+  ): Promise<DocumentosDashboardDto> {
+    return this.dashboardService.obterDadosDocumentos(query.inicio, query.fim);
   }
 
   @Get('clientes')

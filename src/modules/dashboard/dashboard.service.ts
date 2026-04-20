@@ -20,6 +20,7 @@ import {
   ServicosDto,
   FinanceiroDto,
   ClientesDashboardDto,
+  DocumentosDashboardDto,
 } from './dto/dashboard-return.dto';
 import type { ModelCtor } from 'sequelize-typescript';
 import type {
@@ -37,6 +38,8 @@ import type {
   TopClienteVolumeRaw,
   TopClienteValorPagoRaw,
   ClienteParcelaAtrasoRaw,
+  RejeicaoPorTipoRaw,
+  DocumentoStatusRaw,
 } from './dashboard.types';
 import { MaisSolicitadosRow, ReceitaPorServicoRow } from './dashboard.types';
 
@@ -820,23 +823,103 @@ export class DashboardService {
     };
   }
 
+  async obterDadosDocumentos(
+    inicio?: string,
+    fim?: string,
+  ): Promise<DocumentosDashboardDto> {
+    const { dataInicio, dataFim } = this.converterData(inicio, fim);
+
+    const [
+      pendentes,
+      aprovadosRejeitadosRaw,
+      solicitacoesTravadas,
+      rejeicoesPorTipoRaw,
+    ] = await Promise.all([
+      this.documentoSolicitacaoModel.count({
+        where: { statusValidacao: 'pendente' },
+      }),
+
+      this.documentoSolicitacaoModel.findAll({
+        attributes: [
+          'statusValidacao',
+          [fn('COUNT', col('DocumentoSolicitacao.id')), 'quantidade'],
+        ],
+        where: {
+          statusValidacao: { [Op.in]: ['aprovado', 'rejeitado'] },
+          dataUpload: { [Op.between]: [dataInicio, dataFim] },
+        },
+        group: [col('DocumentoSolicitacao.status_validacao')],
+        raw: true,
+      }) as unknown as Promise<DocumentoStatusRaw[]>,
+
+      this.solicitacaoModel.count({
+        where: {
+          status: 'aguardando_documento',
+          dataSolicitacao: { [Op.between]: [dataInicio, dataFim] },
+        },
+      }),
+
+      this.documentoSolicitacaoModel.findAll({
+        attributes: [
+          'tipoDocumento',
+          [fn('COUNT', col('DocumentoSolicitacao.id')), 'totalRejeitados'],
+        ],
+        where: {
+          statusValidacao: 'rejeitado',
+          dataUpload: { [Op.between]: [dataInicio, dataFim] },
+        },
+        group: [col('DocumentoSolicitacao.tipo_documento')],
+        order: [[literal('totalRejeitados'), 'DESC']],
+        raw: true,
+      }) as unknown as Promise<RejeicaoPorTipoRaw[]>,
+    ]);
+
+    const aprovados = aprovadosRejeitadosRaw.find(
+      (item) => item.statusValidacao === 'aprovado',
+    );
+    const rejeitados = aprovadosRejeitadosRaw.find(
+      (item) => item.statusValidacao === 'rejeitado',
+    );
+
+    return {
+      documentos: {
+        pendentes: Number(pendentes ?? 0),
+        aprovados: Number(aprovados?.quantidade ?? 0),
+        rejeitados: Number(rejeitados?.quantidade ?? 0),
+        solicitacoesTravadas: Number(solicitacoesTravadas ?? 0),
+        rejeicoesPorTipo: rejeicoesPorTipoRaw.map((item) => ({
+          tipoDocumento: item.tipoDocumento ?? 'nao_informado',
+          totalRejeitados: Number(item.totalRejeitados ?? 0),
+        })),
+      },
+    };
+  }
+
   /** Função principal que orquestra o retorno geral do dashboard */
   async retornoTotalDashboard(
     inicioParam?: string,
     fimParam?: string,
   ): Promise<DashboardReturnDto> {
-    const [geral, solicitacoes, veiculos, servicos, financeiro, clientes] =
-      await Promise.all([
-        this.obterDadosGerais(inicioParam, fimParam),
-        this.obterDadosSolicitacoes(inicioParam, fimParam),
-        this.obterDadosVeiculos(),
-        this.obterDadosServicos(inicioParam, fimParam),
-        this.obterDadosFinanceiro(inicioParam, fimParam),
-        this.obterDadosClientes(inicioParam, fimParam),
-      ]);
+    const [
+      geral,
+      solicitacoes,
+      veiculos,
+      servicos,
+      financeiro,
+      documentos,
+      clientes,
+    ] = await Promise.all([
+      this.obterDadosGerais(inicioParam, fimParam),
+      this.obterDadosSolicitacoes(inicioParam, fimParam),
+      this.obterDadosVeiculos(),
+      this.obterDadosServicos(inicioParam, fimParam),
+      this.obterDadosFinanceiro(inicioParam, fimParam),
+      this.obterDadosDocumentos(inicioParam, fimParam),
+      this.obterDadosClientes(inicioParam, fimParam),
+    ]);
 
     return {
-      geral: {
+      /*  geral: {
         solicitacoesEmAberto: geral.solicitacoesEmAberto,
         solicitacoesConcluidas: geral.solicitacoesConcluidas,
         documentosPendentesValidacao: geral.documentosPendentesValidacao,
@@ -844,11 +927,13 @@ export class DashboardService {
         taxaCancelamentoPct: geral.taxaCancelamentoPct,
         debitosEmAberto: geral.debitosEmAberto,
         parcelasVencidasNaoPagas: geral.parcelasVencidasNaoPagas,
-      },
+      }, */
+      geral,
       solicitacoes,
       servicos,
       financeiro,
       veiculos,
+      documentos,
       clientes,
     };
   }

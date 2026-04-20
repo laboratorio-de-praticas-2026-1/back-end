@@ -150,6 +150,23 @@ export class ClientesDashboardDto {
   clientes!: ClientesDto;
 }
 
+export class RejeicaoPorTipoDocumentoDto {
+  tipoDocumento!: string;
+  totalRejeitados!: number;
+}
+
+export class DocumentosDto {
+  pendentes!: number;
+  aprovados!: number;
+  rejeitados!: number;
+  solicitacoesTravadas!: number;
+  rejeicoesPorTipo!: RejeicaoPorTipoDocumentoDto[];
+}
+
+export class DocumentosDashboardDto {
+  documentos!: DocumentosDto;
+}
+
 export class DashboardReturnDto {
   geral!: GeralDto;
   solicitacoes!: SolicitacoesDto;
@@ -157,4 +174,5 @@ export class DashboardReturnDto {
   servicos!: ServicosDto;
   veiculos!: VeiculosDto;
   clientes!: ClientesDashboardDto;
+  documentos!: DocumentosDashboardDto;
 }

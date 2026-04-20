@@ -82,6 +82,16 @@ export interface ClienteParcelaAtrasoRaw {
   valorTotalAtrasado: number | string;
 }
 
+export interface DocumentoStatusRaw {
+  statusValidacao: 'aprovado' | 'rejeitado';
+  quantidade: number | string;
+}
+
+export interface RejeicaoPorTipoRaw {
+  tipoDocumento: string | null;
+  totalRejeitados: number | string;
+}
+
 export type MaisSolicitadosRow = Solicitacao & {
   servico?: Servico;
   get(key: 'servicoId' | 'totalSolicitacoes'): string | number | null;
