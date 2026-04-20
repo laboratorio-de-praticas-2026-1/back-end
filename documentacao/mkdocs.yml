@@ -38,3 +38,4 @@ nav:
   - Dados:
       - Modelos Sequelize: dados/modelos-sequelize.md
   - Status de Implementacao: status-implementacao.md
+  - Algoritmo de Recomendação: algoritmo-recomendacao.md
