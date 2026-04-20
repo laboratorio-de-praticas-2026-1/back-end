@@ -5,10 +5,6 @@ import { EmailService } from 'src/infra/email/email.service';
 import { EmailParams } from 'src/infra/email/dto/email-params';
 import { join } from 'path';
 
-/**
- * Interface que define a estrutura dos dados retornados 
- * pela consulta SQL no banco de dados (Docker).
- */
 interface DebitoRow {
   email: string;
   nome: string;
@@ -27,22 +23,16 @@ export class NotificacaoService implements OnModuleInit {
     private readonly emailService: EmailService,
   ) {}
 
-  /**
-   * Método disparado assim que o NestJS completa a inicialização do módulo.
-   * Inicia a rotina de verificação de débitos.
-   */
+ 
   async onModuleInit() {
     this.logger.log('Serviço de Notificação Automática iniciado com sucesso.');
     this.iniciarCicloDeNotificacoes();
   }
 
-  /**
-   * Configura o intervalo de execução da rotina (24 horas).
-   */
   private iniciarCicloDeNotificacoes() {
     const vinteQuatroHorasEmMs = 1000 * 60 * 60 * 24;
 
-    // Execução imediata ao subir o servidor para validação de dados
+   
     this.processarEnvioDeDebitos();
 
     // Agendamento periódico
@@ -51,10 +41,7 @@ export class NotificacaoService implements OnModuleInit {
     }, vinteQuatroHorasEmMs);
   }
 
-  /**
-   * Lógica principal: Busca débitos pendentes, agrupa por usuário 
-   * e solicita o envio de e-mail através do EmailService.
-   */
+
   async processarEnvioDeDebitos() {
     try {
       this.logger.log('Consultando registros de débitos pendentes no banco...');
@@ -74,7 +61,7 @@ export class NotificacaoService implements OnModuleInit {
         return;
       }
 
-      // Agrupamento para evitar múltiplos e-mails para o mesmo usuário
+    
       const listaDeEnvio = resultados.reduce((acc, current) => {
         if (!acc[current.email]) {
           acc[current.email] = { nome: current.nome, debitos: [] };
@@ -113,7 +100,7 @@ export class NotificacaoService implements OnModuleInit {
     }
   }
 
-  // Métodos mantidos para compatibilidade com as rotas de Controller
+  
   async getUserNotifications(userId: number) {
     return [];
   }
