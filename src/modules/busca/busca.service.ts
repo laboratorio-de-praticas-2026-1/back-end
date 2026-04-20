@@ -23,7 +23,7 @@ export class BuscaService {
     @InjectModel(Publicidade) private publicidadeModel: typeof Publicidade,
     @InjectModel(Usuario) private usuarioModel: typeof Usuario,
     @InjectModel(Empresa) private empresaModel: typeof Empresa,
-  ) { }
+  ) {}
 
   async buscarBlogsPorIntervaloDeData(
     dto: BuscaBlogIntervaloDto,
@@ -64,17 +64,17 @@ export class BuscaService {
     const filtros = [
       ...(dto.valor_base !== undefined
         ? [
-          where(cast(col('valor_base'), 'TEXT'), {
-            [Op.like]: `%${String(dto.valor_base)}%`,
-          }),
-        ]
+            where(cast(col('valor_base'), 'TEXT'), {
+              [Op.like]: `%${String(dto.valor_base)}%`,
+            }),
+          ]
         : []),
       ...(dto.prazo_estimado !== undefined
         ? [
-          where(cast(col('prazo_estimado_dias'), 'TEXT'), {
-            [Op.like]: `%${String(dto.prazo_estimado)}%`,
-          }),
-        ]
+            where(cast(col('prazo_estimado_dias'), 'TEXT'), {
+              [Op.like]: `%${String(dto.prazo_estimado)}%`,
+            }),
+          ]
         : []),
       ...(dto.status
         ? [where(col('ativo'), Op.eq, dto.status === 'ativo')]
@@ -449,9 +449,8 @@ export class BuscaService {
       filtrosData.push(where(col('data_cadastro'), Op.between, [inicio, fim]));
     }
 
-    const dataParcialNormalizada = this.normalizarDataBuscaParcial(
-      termoNormalizado,
-    );
+    const dataParcialNormalizada =
+      this.normalizarDataBuscaParcial(termoNormalizado);
     if (dataParcialNormalizada) {
       filtrosData.push(
         where(cast(fn('DATE', col('data_cadastro')), 'TEXT'), {
@@ -461,9 +460,8 @@ export class BuscaService {
     }
 
     if (/\d/.test(termoNormalizado)) {
-      const termoNumericoData = this.extrairFragmentoNumericoData(
-        termoNormalizado,
-      );
+      const termoNumericoData =
+        this.extrairFragmentoNumericoData(termoNormalizado);
       if (termoNumericoData) {
         filtrosData.push(
           where(
@@ -599,12 +597,12 @@ export class BuscaService {
 
   private normalizarDataBuscaParcial(valor: string): string | undefined {
     const termo = valor.trim();
-    if (!termo || !/[\d/\-]/.test(termo)) {
+    if (!termo || !/[\d/-]/.test(termo)) {
       return undefined;
     }
 
-    const somenteData = termo.replace(/[^\d/\-]/g, '');
-    if (!somenteData || !/[\/-]/.test(somenteData)) {
+    const somenteData = termo.replace(/[^\d/-]/g, '');
+    if (!somenteData || !/[/-]/.test(somenteData)) {
       return undefined;
     }
 
