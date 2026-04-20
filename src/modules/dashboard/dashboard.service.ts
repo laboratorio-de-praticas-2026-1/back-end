@@ -19,6 +19,8 @@ import {
   VeiculosDto,
   ServicosDto,
   FinanceiroDto,
+  ClientesDto,
+  DocumentosDto,
 } from './dto/dashboard-return.dto';
 import type { ModelCtor } from 'sequelize-typescript';
 import type {
@@ -33,6 +35,11 @@ import type {
   ParcelasVencidasRaw,
   TempoConclusaoRaw,
   DebitoVeiculoRaw,
+  TopClienteVolumeRaw,
+  TopClienteValorPagoRaw,
+  ClienteParcelaAtrasoRaw,
+  RejeicaoPorTipoRaw,
+  DocumentoStatusRaw,
 } from './dashboard.types';
 import { MaisSolicitadosRow, ReceitaPorServicoRow } from './dashboard.types';
 
@@ -677,34 +684,252 @@ export class DashboardService {
     };
   }
 
+  async obterDadosClientes(
+    inicio?: string,
+    fim?: string,
+  ): Promise<ClientesDto> {
+    const { dataInicio, dataFim } = this.converterData(inicio, fim);
+    const hoje = new Date();
+    const [topPorVolumeRaw, topPorValorPagoRaw, comParcelasEmAtrasoRaw] =
+      await Promise.all([
+        this.solicitacaoModel.findAll({
+          attributes: [
+            [col('Solicitacao.usuario_id'), 'usuarioId'],
+            [col('usuario.nome'), 'nome'],
+            [fn('COUNT', col('Solicitacao.id')), 'totalSolicitacoes'],
+          ],
+          include: [{ model: Usuario, attributes: [], required: true }],
+          where: {
+            dataSolicitacao: { [Op.between]: [dataInicio, dataFim] },
+          },
+          group: [
+            col('Solicitacao.usuario_id'),
+            col('usuario.id'),
+            col('usuario.nome'),
+          ],
+          order: [[literal('totalSolicitacoes'), 'DESC']],
+          limit: 5,
+          raw: true,
+        }) as unknown as Promise<TopClienteVolumeRaw[]>,
+
+        this.debitoVeiculoModel.findAll({
+          attributes: [
+            [col('veiculo.usuario_id'), 'usuarioId'],
+            [col('veiculo->usuario.nome'), 'nome'],
+            [fn('SUM', col('debito->pagamento.valor_total')), 'valorTotalPago'],
+          ],
+          include: [
+            {
+              model: Debito,
+              attributes: [],
+              required: true,
+              where: {
+                status: 'pago',
+              },
+              include: [
+                {
+                  model: Pagamento,
+                  attributes: [],
+                  required: true,
+                  where: {
+                    createdAt: { [Op.between]: [dataInicio, dataFim] },
+                  },
+                },
+              ],
+            },
+            {
+              model: Veiculo,
+              attributes: [],
+              required: true,
+              include: [{ model: Usuario, attributes: [], required: true }],
+            },
+          ],
+          group: [
+            col('veiculo.usuario_id'),
+            col('veiculo->usuario.id'),
+            col('veiculo->usuario.nome'),
+          ],
+          order: [[literal('valorTotalPago'), 'DESC']],
+          limit: 5,
+          raw: true,
+        }) as unknown as Promise<TopClienteValorPagoRaw[]>,
+
+        this.debitoVeiculoModel.findAll({
+          attributes: [
+            [col('veiculo.usuario_id'), 'usuarioId'],
+            [col('veiculo->usuario.nome'), 'nome'],
+            [
+              fn('COUNT', col('debito->pagamento->parcelas.id')),
+              'quantidadeParcelasAtrasadas',
+            ],
+            [
+              fn('SUM', col('debito->pagamento->parcelas.valor')),
+              'valorTotalAtrasado',
+            ],
+          ],
+          include: [
+            {
+              model: Debito,
+              attributes: [],
+              required: true,
+              include: [
+                {
+                  model: Pagamento,
+                  attributes: [],
+                  required: true,
+                  include: [
+                    {
+                      model: Parcela,
+                      attributes: [],
+                      required: true,
+                      where: {
+                        vencimento: { [Op.lt]: hoje },
+                        status: { [Op.ne]: 'pago' },
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              model: Veiculo,
+              attributes: [],
+              required: true,
+              include: [{ model: Usuario, attributes: [], required: true }],
+            },
+          ],
+          group: [
+            col('veiculo.usuario_id'),
+            col('veiculo->usuario.id'),
+            col('veiculo->usuario.nome'),
+          ],
+          order: [[literal('quantidadeParcelasAtrasadas'), 'DESC']],
+          raw: true,
+        }) as unknown as Promise<ClienteParcelaAtrasoRaw[]>,
+      ]);
+
+    return {
+      topPorVolume: topPorVolumeRaw.map((item) => ({
+        usuarioId: Number(item.usuarioId),
+        nome: item.nome,
+        totalSolicitacoes: Number(item.totalSolicitacoes ?? 0),
+      })),
+      topPorValorPago: topPorValorPagoRaw.map((item) => ({
+        usuarioId: Number(item.usuarioId),
+        nome: item.nome,
+        valorTotalPago: Number(item.valorTotalPago ?? 0),
+      })),
+      comParcelasEmAtraso: comParcelasEmAtrasoRaw.map((item) => ({
+        usuarioId: Number(item.usuarioId),
+        nome: item.nome,
+        quantidadeParcelasAtrasadas: Number(
+          item.quantidadeParcelasAtrasadas ?? 0,
+        ),
+        valorTotalAtrasado: Number(item.valorTotalAtrasado ?? 0),
+      })),
+    };
+  }
+
+  async obterDadosDocumentos(
+    inicio?: string,
+    fim?: string,
+  ): Promise<DocumentosDto> {
+    const { dataInicio, dataFim } = this.converterData(inicio, fim);
+
+    const [
+      pendentes,
+      aprovadosRejeitadosRaw,
+      solicitacoesTravadas,
+      rejeicoesPorTipoRaw,
+    ] = await Promise.all([
+      this.documentoSolicitacaoModel.count({
+        where: { statusValidacao: 'pendente' },
+      }),
+
+      this.documentoSolicitacaoModel.findAll({
+        attributes: [
+          'statusValidacao',
+          [fn('COUNT', col('DocumentoSolicitacao.id')), 'quantidade'],
+        ],
+        where: {
+          statusValidacao: { [Op.in]: ['aprovado', 'rejeitado'] },
+          dataUpload: { [Op.between]: [dataInicio, dataFim] },
+        },
+        group: [col('DocumentoSolicitacao.status_validacao')],
+        raw: true,
+      }) as unknown as Promise<DocumentoStatusRaw[]>,
+
+      this.solicitacaoModel.count({
+        where: {
+          status: 'aguardando_documento',
+        },
+      }),
+
+      this.documentoSolicitacaoModel.findAll({
+        attributes: [
+          'tipoDocumento',
+          [fn('COUNT', col('DocumentoSolicitacao.id')), 'totalRejeitados'],
+        ],
+        where: {
+          statusValidacao: 'rejeitado',
+          dataUpload: { [Op.between]: [dataInicio, dataFim] },
+        },
+        group: [col('DocumentoSolicitacao.tipo_documento')],
+        order: [[literal('totalRejeitados'), 'DESC']],
+        raw: true,
+      }) as unknown as Promise<RejeicaoPorTipoRaw[]>,
+    ]);
+
+    const aprovados = aprovadosRejeitadosRaw.find(
+      (item) => item.statusValidacao === 'aprovado',
+    );
+    const rejeitados = aprovadosRejeitadosRaw.find(
+      (item) => item.statusValidacao === 'rejeitado',
+    );
+
+    return {
+      pendentes: Number(pendentes ?? 0),
+      aprovados: Number(aprovados?.quantidade ?? 0),
+      rejeitados: Number(rejeitados?.quantidade ?? 0),
+      solicitacoesTravadas: Number(solicitacoesTravadas ?? 0),
+      rejeicoesPorTipo: rejeicoesPorTipoRaw.map((item) => ({
+        tipoDocumento: item.tipoDocumento ?? 'nao_informado',
+        totalRejeitados: Number(item.totalRejeitados ?? 0),
+      })),
+    };
+  }
+
   /** Função principal que orquestra o retorno geral do dashboard */
   async retornoTotalDashboard(
     inicioParam?: string,
     fimParam?: string,
   ): Promise<DashboardReturnDto> {
-    const [geral, solicitacoes, veiculos, servicos, financeiro] =
-      await Promise.all([
-        this.obterDadosGerais(inicioParam, fimParam),
-        this.obterDadosSolicitacoes(inicioParam, fimParam),
-        this.obterDadosVeiculos(),
-        this.obterDadosServicos(inicioParam, fimParam),
-        this.obterDadosFinanceiro(inicioParam, fimParam),
-      ]);
+    const [
+      geral,
+      solicitacoes,
+      veiculos,
+      servicos,
+      financeiro,
+      documentos,
+      clientes,
+    ] = await Promise.all([
+      this.obterDadosGerais(inicioParam, fimParam),
+      this.obterDadosSolicitacoes(inicioParam, fimParam),
+      this.obterDadosVeiculos(),
+      this.obterDadosServicos(inicioParam, fimParam),
+      this.obterDadosFinanceiro(inicioParam, fimParam),
+      this.obterDadosDocumentos(inicioParam, fimParam),
+      this.obterDadosClientes(inicioParam, fimParam),
+    ]);
 
     return {
-      geral: {
-        solicitacoesEmAberto: geral.solicitacoesEmAberto,
-        solicitacoesConcluidas: geral.solicitacoesConcluidas,
-        documentosPendentesValidacao: geral.documentosPendentesValidacao,
-        clientesNovosMesAtual: geral.clientesNovosMesAtual,
-        taxaCancelamentoPct: geral.taxaCancelamentoPct,
-        debitosEmAberto: geral.debitosEmAberto,
-        parcelasVencidasNaoPagas: geral.parcelasVencidasNaoPagas,
-      },
+      geral,
       solicitacoes,
       servicos,
       financeiro,
       veiculos,
+      documentos,
+      clientes,
     };
   }
 }
