@@ -14,7 +14,8 @@ export class BuscaServicoFiltroDto {
   )
   @Min(0, { message: 'Campo "valor_base_de" deve ser maior ou igual a 0' })
   @ApiPropertyOptional({
-    description: 'Valor base inicial do intervalo do serviço (decimal, 2 casas)',
+    description:
+      'Valor base inicial do intervalo do serviço (decimal, 2 casas)',
     example: 50,
     type: Number,
   })

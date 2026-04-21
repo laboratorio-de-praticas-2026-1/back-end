@@ -714,7 +714,9 @@ describe('BuscaService', () => {
       } as unknown as BuscaServicoFiltroDto);
 
       expect(servicoFindAllMock).toHaveBeenCalledTimes(1);
-      const calls = servicoFindAllMock.mock.calls as Array<Array<FindAllOptions>>;
+      const calls = servicoFindAllMock.mock.calls as Array<
+        Array<FindAllOptions>
+      >;
       const args = calls[0]?.[0];
       expect(args.where).toBeDefined();
       const whereClause = args.where as WhereClause;
@@ -731,7 +733,9 @@ describe('BuscaService', () => {
       } as unknown as BuscaServicoFiltroDto);
 
       expect(servicoFindAllMock).toHaveBeenCalledTimes(1);
-      const calls = servicoFindAllMock.mock.calls as Array<Array<FindAllOptions>>;
+      const calls = servicoFindAllMock.mock.calls as Array<
+        Array<FindAllOptions>
+      >;
       const args = calls[0]?.[0];
       const whereClause = args.where as WhereClause;
       expect(whereClause[Op.and]).toHaveLength(1);
@@ -765,7 +769,9 @@ describe('BuscaService', () => {
       } as unknown as BuscaServicoFiltroDto);
 
       expect(servicoFindAllMock).toHaveBeenCalledTimes(1);
-      const calls = servicoFindAllMock.mock.calls as Array<Array<FindAllOptions>>;
+      const calls = servicoFindAllMock.mock.calls as Array<
+        Array<FindAllOptions>
+      >;
       const args = calls[0]?.[0];
       const whereClause = args.where as WhereClause;
       expect(whereClause[Op.and]).toHaveLength(3);
