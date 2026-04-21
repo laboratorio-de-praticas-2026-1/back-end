@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { col, fn, Op, where } from 'sequelize';
+import { cast, col, fn, Op, where } from 'sequelize';
 import { Banner } from 'src/models/banner.model';
 import { Blog } from 'src/models/blog.model';
 import { Empresa } from 'src/models/empresa.model';
@@ -63,10 +63,18 @@ export class BuscaService {
   ): Promise<Servico[]> {
     const filtros = [
       ...(dto.valor_base !== undefined
-        ? [where(col('valor_base'), Op.eq, dto.valor_base)]
+        ? [
+            where(cast(col('valor_base'), 'TEXT'), {
+              [Op.like]: `%${String(dto.valor_base)}%`,
+            }),
+          ]
         : []),
       ...(dto.prazo_estimado !== undefined
-        ? [where(col('prazo_estimado_dias'), Op.eq, dto.prazo_estimado)]
+        ? [
+            where(cast(col('prazo_estimado_dias'), 'TEXT'), {
+              [Op.like]: `%${String(dto.prazo_estimado)}%`,
+            }),
+          ]
         : []),
       ...(dto.status
         ? [where(col('ativo'), Op.eq, dto.status === 'ativo')]
@@ -361,16 +369,16 @@ export class BuscaService {
       };
     }
 
-    const idExtraido = this.extrairIdExato(termoNormalizado);
-    const buscaIdExplicita = this.termoRepresentaIdExplicito(termoNormalizado);
+    const idExato = this.extrairIdExatoDoTermo(termoNormalizado);
 
-    if (idExtraido !== undefined) {
+    if (idExato !== undefined) {
       const itensPorId = await this.publicidadeModel.findAll({
-        where: { id: idExtraido },
+        where: { id: idExato },
         order: [['id', 'DESC']],
       });
 
-      if (itensPorId.length > 0 || buscaIdExplicita) {
+      const termoNoFormatoId = /^id\s+\d+$/i.test(termoNormalizado);
+      if (itensPorId.length > 0 || termoNoFormatoId) {
         return {
           itens: itensPorId,
           mensagem:
@@ -379,13 +387,13 @@ export class BuscaService {
       }
     }
 
-    const filtros: Array<Record<string, unknown>> = [
-      { urlImagem: { [Op.like]: `%${termoNormalizado}%` } },
-      { conteudo: { [Op.like]: `%${termoNormalizado}%` } },
-    ];
-
     const itens = await this.publicidadeModel.findAll({
-      where: { [Op.or]: filtros },
+      where: {
+        [Op.or]: [
+          { urlImagem: { [Op.like]: `%${termoNormalizado}%` } },
+          { conteudo: { [Op.like]: `%${termoNormalizado}%` } },
+        ],
+      },
       order: [['id', 'DESC']],
     });
 
@@ -393,24 +401,6 @@ export class BuscaService {
       itens,
       mensagem: itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
     };
-  }
-
-  private extrairIdExato(valor: string): number | undefined {
-    const valorNumerico = valor.match(/^(0|[1-9]\d*)$/);
-    if (valorNumerico) {
-      return parseInt(valorNumerico[1], 10);
-    }
-
-    const valorComPrefixoId = valor.match(/^id\s*[:#-]?\s*(0|[1-9]\d*)$/i);
-    if (valorComPrefixoId) {
-      return parseInt(valorComPrefixoId[1], 10);
-    }
-
-    return undefined;
-  }
-
-  private termoRepresentaIdExplicito(valor: string): boolean {
-    return /^id\s*[:#-]?\s*(0|[1-9]\d*)$/i.test(valor);
   }
 
   async listarUsuariosByTermo(termo?: string): Promise<{
@@ -444,6 +434,24 @@ export class BuscaService {
       const inicio = new Date(`${dataNormalizada}T00:00:00.000Z`);
       const fim = new Date(`${dataNormalizada}T23:59:59.999Z`);
       filtros.push(where(col('data_cadastro'), Op.between, [inicio, fim]));
+    } else {
+      const dataParcialNormalizada =
+        this.normalizarDataBuscaParcial(termoNormalizado);
+      if (dataParcialNormalizada) {
+        filtros.push(
+          where(cast(fn('DATE', col('data_cadastro')), 'TEXT'), {
+            [Op.like]: `%${dataParcialNormalizada}%`,
+          }),
+        );
+      }
+    }
+
+    if (/\d/.test(termoNormalizado) && !dataNormalizada) {
+      filtros.push(
+        where(cast(col('id'), 'TEXT'), {
+          [Op.like]: `%${termoNormalizado}%`,
+        }),
+      );
     }
 
     const itens = await this.usuarioModel.findAll({
@@ -481,22 +489,22 @@ export class BuscaService {
       { descricao: { [Op.like]: `%${termoNormalizado}%` } },
     ];
 
-    const termoEhNumero = /^(0|[1-9]\d*)(\.\d+)?$/.test(termoNormalizado);
-    if (termoEhNumero) {
-      const termoComoNumero = Number(termoNormalizado);
-      if (!Number.isNaN(termoComoNumero)) {
-        filtros.push(where(col('valor_base'), Op.eq, termoComoNumero));
-      }
-    }
-
-    const termoEhInteiroDecimal = /^(0|[1-9]\d*)$/.test(termoNormalizado);
-    if (termoEhInteiroDecimal) {
-      const termoComoInteiro = parseInt(termoNormalizado, 10);
-      if (!Number.isNaN(termoComoInteiro)) {
-        filtros.push(
-          where(col('prazo_estimado_dias'), Op.eq, termoComoInteiro),
-        );
-      }
+    if (/\d/.test(termoNormalizado)) {
+      filtros.push(
+        where(cast(col('valor_base'), 'TEXT'), {
+          [Op.like]: `%${termoNormalizado}%`,
+        }),
+      );
+      filtros.push(
+        where(cast(col('prazo_estimado_dias'), 'TEXT'), {
+          [Op.like]: `%${termoNormalizado}%`,
+        }),
+      );
+      filtros.push(
+        where(cast(col('id'), 'TEXT'), {
+          [Op.like]: `%${termoNormalizado}%`,
+        }),
+      );
     }
 
     const itens = await this.servicoModel.findAll({
@@ -529,6 +537,34 @@ export class BuscaService {
       return this.validarData(ano, mes, dia)
         ? `${valorBr[3]}-${valorBr[2]}-${valorBr[1]}`
         : undefined;
+    }
+
+    return undefined;
+  }
+
+  private normalizarDataBuscaParcial(valor: string): string | undefined {
+    const termo = valor.trim();
+    if (!termo || !/[\d/-]/.test(termo)) {
+      return undefined;
+    }
+
+    const somenteData = termo.replace(/[^\d/-]/g, '');
+    if (!somenteData || !/[/-]/.test(somenteData)) {
+      return undefined;
+    }
+
+    return somenteData.replace(/\//g, '-');
+  }
+
+  private extrairIdExatoDoTermo(valor: string): number | undefined {
+    const somenteNumero = valor.match(/^\d+$/);
+    if (somenteNumero) {
+      return Number(somenteNumero[0]);
+    }
+
+    const formatoId = valor.match(/^id\s+(\d+)$/i);
+    if (formatoId) {
+      return Number(formatoId[1]);
     }
 
     return undefined;
