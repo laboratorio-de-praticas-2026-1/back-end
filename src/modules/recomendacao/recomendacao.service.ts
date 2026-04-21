@@ -38,8 +38,15 @@ export class RecomendacaoService {
     try {
       const listaRecomendacoes: RecomendacaoRespostaDto[] = [];
 
-      const licenciamento = await this.buscarLicenciamentoAnual(usuarioId); // << ADICIONAR
+      const licenciamento = await this.buscarLicenciamentoAnual(usuarioId);
       if (licenciamento) listaRecomendacoes.push(licenciamento);
+
+      const cnh = await this.buscarRenovacaoCNH(usuarioId);
+      if (cnh) listaRecomendacoes.push(cnh);
+
+      const transferencia =
+        await this.buscarTransferenciaPropriedade(usuarioId);
+      if (transferencia) listaRecomendacoes.push(transferencia);
 
       const infracao = await this.buscarRecursoMulta(usuarioId);
       if (infracao) {
@@ -90,6 +97,47 @@ export class RecomendacaoService {
     }
   }
 
+  async buscarTransferenciaPropriedade(
+    usuarioId: number,
+  ): Promise<RecomendacaoRespostaDto | null> {
+    try {
+      const veiculos = await this.veiculoModel.findAll({
+        where: { usuarioId },
+      });
+
+      for (const veiculo of veiculos) {
+        const jaExiste = await this.solicitacaoModel.findOne({
+          where: {
+            veiculoId: veiculo.id,
+            servicoId: 2,
+            status: {
+              [Op.ne]: 'cancelado',
+            },
+          },
+        });
+
+        if (!jaExiste) {
+          return {
+            id: 2,
+            nome: 'Transferência de Propriedade',
+            descricao:
+              'Identificamos que seu veículo ainda não possui transferência de titularidade. Regularize agora.',
+            ativo: true,
+          };
+        }
+      }
+
+      return null;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido';
+      this.logger.error(
+        `Erro na busca de transferência de propriedade: ${errorMessage}`,
+      );
+      return null;
+    }
+  }
+
   async buscarRecursoMulta(
     usuarioId: number,
   ): Promise<RecomendacaoRespostaDto | null> {
@@ -129,7 +177,7 @@ export class RecomendacaoService {
               servicoId: 6,
               veiculoId: veiculo.id,
               status: {
-                [Op.notIn]: ['concluido', 'cancelado'],
+                [Op.notIn]: ['cancelado', 'rejeitado'],
               },
             },
           });
@@ -295,7 +343,7 @@ export class RecomendacaoService {
             veiculoId: veiculo.id,
             servicoId: 1,
             status: {
-              [Op.notIn]: ['cancelado', 'concluido'],
+              [Op.notIn]: ['cancelado', 'rejeitado'],
             },
             dataSolicitacao: {
               [Op.between]: [
@@ -323,6 +371,44 @@ export class RecomendacaoService {
       this.logger.error(
         `Erro na busca de licenciamento anual: ${errorMessage}`,
       );
+      return null;
+    }
+  }
+
+  async buscarRenovacaoCNH(
+    usuarioId: number,
+  ): Promise<RecomendacaoRespostaDto | null> {
+    try {
+      const dezAnosAtras = new Date();
+      dezAnosAtras.setFullYear(dezAnosAtras.getFullYear() - 10);
+
+      const jaExiste = await this.solicitacaoModel.findOne({
+        where: {
+          usuarioId,
+          servicoId: 4,
+          status: {
+            [Op.notIn]: ['cancelado', 'rejeitado'],
+          },
+          dataSolicitacao: {
+            [Op.gte]: dezAnosAtras,
+          },
+        },
+      });
+
+      if (!jaExiste) {
+        return {
+          id: 4,
+          nome: 'Renovação de CNH',
+          descricao: 'Renove sua CNH',
+          ativo: true,
+        };
+      }
+
+      return null;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido';
+      this.logger.error(`Erro na busca de renovação de CNH: ${errorMessage}`);
       return null;
     }
   }
