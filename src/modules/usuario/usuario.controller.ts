@@ -24,6 +24,7 @@ import {
 } from '@nestjs/swagger';
 import { ResponseUsuarioDto } from './dto/response-usuario.dto';
 import { LoginUsuarioDto } from './dto/login-usuario.dto';
+import { CreateAdminUsuarioDto } from './dto/create-admin.dto';
 
 @Controller('usuario')
 export class UsuarioController {
@@ -41,6 +42,21 @@ export class UsuarioController {
   @ApiConflictResponse({ description: 'E-mail já cadastrado no sistema' })
   register(@Body() createUsuarioDto: CreateUsuarioDto) {
     return this.usuarioService.create(createUsuarioDto);
+  }
+
+  @Post('/admin/usuarios')
+  @UseGuards(AdminGuard)
+  @ApiOperation({ summary: 'Cria um usuário via painel administrativo' })
+  @ApiCreatedResponse({
+    description: 'Usuário criado com sucesso',
+    type: ResponseUsuarioDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token inválido ou sem permissão de administrador',
+  })
+  @ApiConflictResponse({ description: 'E-mail ou CPF/CNPJ já cadastrado' })
+  createByAdmin(@Body() createAdminUsuarioDto: CreateAdminUsuarioDto) {
+    return this.usuarioService.createByAdmin(createAdminUsuarioDto);
   }
 
   @Post('login')

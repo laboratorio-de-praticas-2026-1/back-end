@@ -14,6 +14,7 @@ import { ResponseUsuarioDto } from './dto/response-usuario.dto';
 import { plainToInstance } from 'class-transformer';
 import { LoginUsuarioDto } from './dto/login-usuario.dto';
 import { JwtService } from '@nestjs/jwt';
+import { CreateAdminUsuarioDto } from './dto/create-admin.dto';
 
 @Injectable()
 export class UsuarioService {
@@ -40,6 +41,47 @@ export class UsuarioService {
         email: dto.email,
         senha: senhaHash,
         nivel: 'cliente',
+        cpfCnpj: dto.cpfCnpj ?? null,
+        celular: dto.celular ?? null,
+      });
+
+      return plainToInstance(ResponseUsuarioDto, usuario.toJSON(), {
+        excludeExtraneousValues: true,
+      });
+    } catch {
+      throw new InternalServerErrorException('Erro ao criar usuário');
+    }
+  }
+
+  async createByAdmin(dto: CreateAdminUsuarioDto): Promise<ResponseUsuarioDto> {
+    const emailExistente = await this.usuarioModel.findOne({
+      where: { email: dto.email },
+    });
+
+    if (emailExistente) {
+      throw new ConflictException('Esse e-mail já está cadastrado no sistema.');
+    }
+
+    if (dto.cpfCnpj) {
+      const cpfExistente = await this.usuarioModel.findOne({
+        where: { cpfCnpj: dto.cpfCnpj },
+      });
+
+      if (cpfExistente) {
+        throw new ConflictException(
+          'Esse CPF/CNPJ já está cadastrado no sistema.',
+        );
+      }
+    }
+
+    const senhaHash = await bcrypt.hash(dto.senha, 10);
+
+    try {
+      const usuario = await this.usuarioModel.create({
+        nome: dto.nome,
+        email: dto.email,
+        senha: senhaHash,
+        nivel: dto.nivel,
         cpfCnpj: dto.cpfCnpj ?? null,
         celular: dto.celular ?? null,
       });
