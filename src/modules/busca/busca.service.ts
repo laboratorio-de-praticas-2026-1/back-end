@@ -62,12 +62,16 @@ export class BuscaService {
     dto: BuscaServicoFiltroDto,
   ): Promise<Servico[]> {
     const filtros = [
-      ...(dto.valor_base !== undefined
-        ? [where(col('valor_base'), Op.eq, dto.valor_base)]
-        : []),
-      ...(dto.prazo_estimado !== undefined
-        ? [where(col('prazo_estimado_dias'), Op.eq, dto.prazo_estimado)]
-        : []),
+      ...this.montarFiltroIntervalo(
+        'valor_base',
+        dto.valor_base_de,
+        dto.valor_base_ate,
+      ),
+      ...this.montarFiltroIntervalo(
+        'prazo_estimado_dias',
+        dto.prazo_estimado_de,
+        dto.prazo_estimado_ate,
+      ),
       ...(dto.status
         ? [where(col('ativo'), Op.eq, dto.status === 'ativo')]
         : []),
@@ -83,6 +87,32 @@ export class BuscaService {
       },
       order: [['id', 'ASC']],
     });
+  }
+
+  private montarFiltroIntervalo(
+    campo: string,
+    valorInicial?: number,
+    valorFinal?: number,
+  ): Array<ReturnType<typeof where>> {
+    if (valorInicial !== undefined && valorFinal !== undefined) {
+      if (valorInicial > valorFinal) {
+        throw new BadRequestException(
+          `Intervalo inválido para "${campo}": o valor inicial não pode ser maior que o valor final`,
+        );
+      }
+
+      return [where(col(campo), Op.between, [valorInicial, valorFinal])];
+    }
+
+    if (valorInicial !== undefined) {
+      return [where(col(campo), Op.gte, valorInicial)];
+    }
+
+    if (valorFinal !== undefined) {
+      return [where(col(campo), Op.lte, valorFinal)];
+    }
+
+    return [];
   }
 
   async buscarUsuariosPorFiltros(
