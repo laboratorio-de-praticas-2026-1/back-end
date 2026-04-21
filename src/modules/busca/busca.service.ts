@@ -369,44 +369,32 @@ export class BuscaService {
       };
     }
 
-    const filtros: Array<Record<string, unknown>> = [
-      { titulo: { [Op.like]: `%${termoNormalizado}%` } },
-      { urlImagem: { [Op.like]: `%${termoNormalizado}%` } },
-      { conteudo: { [Op.like]: `%${termoNormalizado}%` } },
-      where(cast(col('id'), 'TEXT'), {
-        [Op.like]: `%${termoNormalizado}%`,
-      }) as unknown as Record<string, unknown>,
-    ];
+    const idExato = this.extrairIdExatoDoTermo(termoNormalizado);
 
-    const itensDiretos = await this.publicidadeModel.findAll({
-      where: { [Op.or]: filtros },
-      order: [['id', 'DESC']],
-    });
+    if (idExato !== undefined) {
+      const itensPorId = await this.publicidadeModel.findAll({
+        where: { id: idExato },
+        order: [['id', 'DESC']],
+      });
 
-    if (itensDiretos.length > 0) {
-      return {
-        itens: itensDiretos,
-        mensagem: undefined,
-      };
+      const termoNoFormatoId = /^id\s+\d+$/i.test(termoNormalizado);
+      if (itensPorId.length > 0 || termoNoFormatoId) {
+        return {
+          itens: itensPorId,
+          mensagem:
+            itensPorId.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+        };
+      }
     }
 
-    const termoSemAcento = this.normalizarTextoBusca(termoNormalizado);
-    const todos = await this.publicidadeModel.findAll({
+    const itens = await this.publicidadeModel.findAll({
+      where: {
+        [Op.or]: [
+          { urlImagem: { [Op.like]: `%${termoNormalizado}%` } },
+          { conteudo: { [Op.like]: `%${termoNormalizado}%` } },
+        ],
+      },
       order: [['id', 'DESC']],
-    });
-
-    const itens = todos.filter((item) => {
-      const titulo = this.normalizarTextoBusca(item.titulo ?? '');
-      const conteudo = this.normalizarTextoBusca(item.conteudo ?? '');
-      const urlImagem = this.normalizarTextoBusca(item.urlImagem ?? '');
-      const id = String(item.id);
-
-      return (
-        titulo.includes(termoSemAcento) ||
-        conteudo.includes(termoSemAcento) ||
-        urlImagem.includes(termoSemAcento) ||
-        id.includes(termoSemAcento)
-      );
     });
 
     return {
@@ -441,70 +429,29 @@ export class BuscaService {
       { celular: { [Op.like]: `%${termoNormalizado}%` } },
     ];
 
-    const filtrosData: Array<ReturnType<typeof where>> = [];
     const dataNormalizada = this.normalizarDataBusca(termoNormalizado);
     if (dataNormalizada) {
       const inicio = new Date(`${dataNormalizada}T00:00:00.000Z`);
       const fim = new Date(`${dataNormalizada}T23:59:59.999Z`);
-      filtrosData.push(where(col('data_cadastro'), Op.between, [inicio, fim]));
-    }
-
-    const dataParcialNormalizada =
-      this.normalizarDataBuscaParcial(termoNormalizado);
-    if (dataParcialNormalizada) {
-      filtrosData.push(
-        where(cast(fn('DATE', col('data_cadastro')), 'TEXT'), {
-          [Op.like]: `%${dataParcialNormalizada}%`,
-        }),
-      );
-    }
-
-    if (/\d/.test(termoNormalizado)) {
-      const termoNumericoData =
-        this.extrairFragmentoNumericoData(termoNormalizado);
-      if (termoNumericoData) {
-        filtrosData.push(
-          where(
-            fn(
-              'REPLACE',
-              cast(fn('DATE', col('data_cadastro')), 'TEXT'),
-              '-',
-              '',
-            ),
-            {
-              [Op.like]: `%${termoNumericoData}%`,
-            },
-          ),
+      filtros.push(where(col('data_cadastro'), Op.between, [inicio, fim]));
+    } else {
+      const dataParcialNormalizada =
+        this.normalizarDataBuscaParcial(termoNormalizado);
+      if (dataParcialNormalizada) {
+        filtros.push(
+          where(cast(fn('DATE', col('data_cadastro')), 'TEXT'), {
+            [Op.like]: `%${dataParcialNormalizada}%`,
+          }),
         );
       }
     }
 
-    const termoEhApenasDigitosOuSeparadores = /^[\d/\-\s]+$/.test(
-      termoNormalizado,
-    );
-
-    if (termoEhApenasDigitosOuSeparadores && filtrosData.length > 0) {
-      const itensPorData = await this.usuarioModel.findAll({
-        attributes: { exclude: ['senha'] },
-        where: { [Op.or]: filtrosData },
-        order: [['id', 'DESC']],
-      });
-
-      if (itensPorData.length > 0) {
-        return {
-          itens: itensPorData,
-          mensagem: undefined,
-        };
-      }
-    }
-
-    if (/\d/.test(termoNormalizado)) {
+    if (/\d/.test(termoNormalizado) && !dataNormalizada) {
       filtros.push(
         where(cast(col('id'), 'TEXT'), {
           [Op.like]: `%${termoNormalizado}%`,
         }),
       );
-      filtros.push(...filtrosData);
     }
 
     const itens = await this.usuarioModel.findAll({
@@ -609,9 +556,18 @@ export class BuscaService {
     return somenteData.replace(/\//g, '-');
   }
 
-  private extrairFragmentoNumericoData(valor: string): string | undefined {
-    const numeros = valor.replace(/\D/g, '');
-    return numeros.length > 0 ? numeros : undefined;
+  private extrairIdExatoDoTermo(valor: string): number | undefined {
+    const somenteNumero = valor.match(/^\d+$/);
+    if (somenteNumero) {
+      return Number(somenteNumero[0]);
+    }
+
+    const formatoId = valor.match(/^id\s+(\d+)$/i);
+    if (formatoId) {
+      return Number(formatoId[1]);
+    }
+
+    return undefined;
   }
 
   private validarData(ano: number, mes: number, dia: number): boolean {
@@ -621,12 +577,5 @@ export class BuscaService {
       dataUtc.getUTCMonth() === mes - 1 &&
       dataUtc.getUTCDate() === dia
     );
-  }
-
-  private normalizarTextoBusca(valor: string): string {
-    return valor
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase();
   }
 }
