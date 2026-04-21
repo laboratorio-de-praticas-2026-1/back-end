@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PdfGeneratorService } from './pdf-generator.service';
-import { ReportQueries } from './queries/report.queries';
+import { ReportQueries } from './queries/reports.queries';
 import { RelatorioCategoria } from 'src/models/relatorio.model';
 import { CreateReportDto } from './dto/create-report.dto';
+import { Formatters } from 'src/commons/utils/formatters';
 
 jest.mock('puppeteer', () => ({
   launch: jest.fn().mockResolvedValue({
@@ -32,9 +33,9 @@ jest.mock('pdf-lib', () => ({
 }));
 
 jest.mock('./utils/chart-renderer', () => ({
-  renderLineChart: jest.fn().mockResolvedValue('data:image/png;base64,fake'),
-  renderPieChart: jest.fn().mockResolvedValue('data:image/png;base64,fake'),
-  renderBarChart: jest.fn().mockResolvedValue('data:image/png;base64,fake'),
+  renderLineChart: jest.fn().mockReturnValue('data:image/svg+xml;base64,fake'),
+  renderPieChart: jest.fn().mockReturnValue('data:image/svg+xml;base64,fake'),
+  renderBarChart: jest.fn().mockReturnValue('data:image/svg+xml;base64,fake'),
 }));
 
 const makeMockQueries = (): jest.Mocked<ReportQueries> =>
@@ -70,24 +71,42 @@ const makeMockQueries = (): jest.Mocked<ReportQueries> =>
     }),
   }) as any;
 
+const makeMockFormatters = (): jest.Mocked<Formatters> =>
+  ({
+    fmtBRL: jest.fn().mockImplementation((value: number) => `R$ ${value.toFixed(2)}`),
+    fmtDate: jest.fn().mockImplementation((date: Date | string | null | undefined) =>
+      date ? new Date(date).toISOString().slice(0, 10) : '—',
+    ),
+  }) as any;
+
 describe('PdfGeneratorService', () => {
   let service: PdfGeneratorService;
   let mockQueries: jest.Mocked<ReportQueries>;
+  let mockFormatters: jest.Mocked<Formatters>;
+  let renderHtmlsToPdfSpy: jest.SpyInstance;
 
   beforeEach(async () => {
     mockQueries = makeMockQueries();
+    mockFormatters = makeMockFormatters();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PdfGeneratorService,
         { provide: ReportQueries, useValue: mockQueries },
+        { provide: Formatters, useValue: mockFormatters },
       ],
     }).compile();
 
     service = module.get<PdfGeneratorService>(PdfGeneratorService);
+    renderHtmlsToPdfSpy = jest
+      .spyOn(service as any, 'renderHtmlsToPdf')
+      .mockResolvedValue(Buffer.from('fake-pdf'));
   });
 
-  afterEach(() => jest.clearAllMocks());
+  afterEach(() => {
+    renderHtmlsToPdfSpy?.mockRestore();
+    jest.clearAllMocks();
+  });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
@@ -141,19 +160,19 @@ describe('PdfGeneratorService', () => {
       expect(mockQueries.getTotalVeiculos).not.toHaveBeenCalled();
     });
 
-    it('deve usar período padrão de 30 dias quando dataPeriodoInicio não fornecida', async () => {
+    it('deve aceitar período indefinido no DTO', async () => {
       const dto: CreateReportDto = {
         nome: 'Test',
         categoria: RelatorioCategoria.GESTAO_SOLICITACOES,
       };
 
-      const antes = new Date();
-      antes.setDate(antes.getDate() - 31); // margem de 1 dia
-
       await service.generate(dto);
 
-      const [chamadaInicio] = mockQueries.getSolicitacoesPorStatus.mock.calls[0] as [Date, Date];
-      expect(chamadaInicio.getTime()).toBeGreaterThan(antes.getTime());
+      expect(mockQueries.getSolicitacoesPorStatus).toHaveBeenCalledWith(
+        undefined,
+        undefined,
+      );
+      expect(mockFormatters.fmtDate).toHaveBeenCalledWith(undefined);
     });
 
     it('deve respeitar dataPeriodoInicio e dataPeriodoFim quando fornecidas', async () => {

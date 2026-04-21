@@ -219,11 +219,11 @@ export function detalheParcelas(
       ? `<div class="kpi-row" style="margin-bottom:12px;">
     <div class="kpi-card">
       <div class="kpi-label">Total Vencido (não pago ou próximo de vencer)</div>
-      <div class="kpi-value" style="color:#C0392B;">${fmtBRL(valorVencido)}</div>
+      <div class="kpi-value" style="color:#E65C4F;">${fmtBRL(valorVencido)}</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Clientes Inadimplentes</div>
-      <div class="kpi-value" style="color:#C0392B;">${devedores}</div>
+      <div class="kpi-value" style="color:#E65C4F;">${devedores}</div>
     </div>
   </div>`
       : ''

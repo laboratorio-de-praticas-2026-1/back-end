@@ -102,15 +102,17 @@ export function pageShell(
   .kpi-card{
     flex:1;min-width:140px;
     background:#0D2040;
+    border:1px solid #21406A;
     border-radius:8px;
+    box-shadow:0 2px 6px rgba(13,32,64,.16);
     padding:14px 18px;
     color:#fff;
     display:flex;
     flex-direction:column;
     min-height:84px;
   }
-  .kpi-card .kpi-label{font-size:10px;color:#8AAFCF;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;line-height:1.2;min-height:24px;}
-  .kpi-card .kpi-value{font-size:18px;font-weight:700;color:#fff;line-height:1;margin-top:auto;}
+  .kpi-card .kpi-label{font-size:10px;color:#EEF7FF;font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;line-height:1.2;min-height:24px;text-shadow:0 1px 1px rgba(0,0,0,.22);}
+  .kpi-card .kpi-value{font-size:18px;font-weight:700;color:#F7FBFF;line-height:1;margin-top:auto;text-shadow:0 1px 1px rgba(0,0,0,.18);}
 
   /* ── Tables ── */
   table{
