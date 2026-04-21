@@ -1,7 +1,16 @@
-import { Column, DataType, HasOne, Model, Table } from 'sequelize-typescript';
+import {
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  HasOne,
+  Model,
+  Table,
+} from 'sequelize-typescript';
 import { DebitoServico } from './debito-servico.model';
 import { DebitoVeiculo } from './debito-veiculo.model';
 import { Pagamento } from './pagamento.model';
+import { Solicitacao } from './solicitacao.model';
 
 @Table({ tableName: 'debito' })
 export class Debito extends Model {
@@ -36,6 +45,13 @@ export class Debito extends Model {
     defaultValue: DataType.NOW,
   })
   declare createdAt: Date;
+
+  @ForeignKey(() => Solicitacao)
+  @Column({ field: 'solicitacao_id', type: DataType.INTEGER, allowNull: false })
+  declare solicitacaoId: number;
+
+  @BelongsTo(() => Solicitacao)
+  declare solicitacao: Solicitacao;
 
   @HasOne(() => Pagamento)
   declare pagamento: Pagamento | null;
