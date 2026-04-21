@@ -23,7 +23,7 @@ export class BuscaService {
     @InjectModel(Publicidade) private publicidadeModel: typeof Publicidade,
     @InjectModel(Usuario) private usuarioModel: typeof Usuario,
     @InjectModel(Empresa) private empresaModel: typeof Empresa,
-  ) { }
+  ) {}
 
   async buscarBlogsPorIntervaloDeData(
     dto: BuscaBlogIntervaloDto,
@@ -64,17 +64,17 @@ export class BuscaService {
     const filtros = [
       ...(dto.valor_base !== undefined
         ? [
-          where(cast(col('valor_base'), 'TEXT'), {
-            [Op.like]: `%${String(dto.valor_base)}%`,
-          }),
-        ]
+            where(cast(col('valor_base'), 'TEXT'), {
+              [Op.like]: `%${String(dto.valor_base)}%`,
+            }),
+          ]
         : []),
       ...(dto.prazo_estimado !== undefined
         ? [
-          where(cast(col('prazo_estimado_dias'), 'TEXT'), {
-            [Op.like]: `%${String(dto.prazo_estimado)}%`,
-          }),
-        ]
+            where(cast(col('prazo_estimado_dias'), 'TEXT'), {
+              [Op.like]: `%${String(dto.prazo_estimado)}%`,
+            }),
+          ]
         : []),
       ...(dto.status
         ? [where(col('ativo'), Op.eq, dto.status === 'ativo')]
