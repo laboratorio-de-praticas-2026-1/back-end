@@ -193,7 +193,7 @@ export class ReciboService {
         error instanceof Error ? (error.stack ?? error.message) : String(error),
       );
       throw new InternalServerErrorException(
-        'Erro ao gerar PDF do recibo. Tente novamente.',
+        error instanceof Error ? (error.stack ?? error.message) : String(error),
       );
     } finally {
       if (browser) {
