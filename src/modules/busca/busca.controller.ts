@@ -106,15 +106,15 @@ export class BuscaController {
   @Get('servico/filtros')
   @ApiOperation({
     summary:
-      'Buscar serviços por filtros (valor base, prazo estimado e status)',
+      'Buscar serviços por filtros (faixa de valor base, faixa de prazo estimado e status)',
     description:
-      'Parâmetros opcionais: valor_base (decimal), prazo_estimado (inteiro em dias) e status (ativo|inativo).',
+      'Parâmetros opcionais: valor_base_de, valor_base_ate, prazo_estimado_de, prazo_estimado_ate e status (ativo|inativo).',
   })
   buscarServicosPorFiltros(
     @Query() dto: BuscaServicoFiltroDto,
   ): Promise<Servico[]> {
     this.logger.log(
-      `Buscando servicos por filtros: valor_base=${dto.valor_base ?? 'n/a'} prazo_estimado=${dto.prazo_estimado ?? 'n/a'} status=${dto.status ?? 'n/a'}`,
+      `Buscando servicos por filtros: valor_base_de=${dto.valor_base_de ?? 'n/a'} valor_base_ate=${dto.valor_base_ate ?? 'n/a'} prazo_estimado_de=${dto.prazo_estimado_de ?? 'n/a'} prazo_estimado_ate=${dto.prazo_estimado_ate ?? 'n/a'} status=${dto.status ?? 'n/a'}`,
     );
     return this.buscaService.buscarServicosPorFiltros(dto);
   }

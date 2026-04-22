@@ -705,11 +705,12 @@ describe('BuscaService', () => {
       });
     });
 
-    it('deve filtrar por valor_base quando informado', async () => {
+    it('deve filtrar por intervalo de valor_base quando informado', async () => {
       servicoFindAllMock.mockResolvedValue([]);
 
       await service.buscarServicosPorFiltros({
-        valor_base: 180,
+        valor_base_de: 50,
+        valor_base_ate: 150,
       } as unknown as BuscaServicoFiltroDto);
 
       expect(servicoFindAllMock).toHaveBeenCalledTimes(1);
@@ -723,11 +724,12 @@ describe('BuscaService', () => {
       expect(args.order).toEqual([['id', 'ASC']]);
     });
 
-    it('deve filtrar por prazo_estimado quando informado', async () => {
+    it('deve filtrar por intervalo de prazo_estimado quando informado', async () => {
       servicoFindAllMock.mockResolvedValue([]);
 
       await service.buscarServicosPorFiltros({
-        prazo_estimado: 5,
+        prazo_estimado_de: 10,
+        prazo_estimado_ate: 30,
       } as unknown as BuscaServicoFiltroDto);
 
       expect(servicoFindAllMock).toHaveBeenCalledTimes(1);
@@ -759,8 +761,10 @@ describe('BuscaService', () => {
       servicoFindAllMock.mockResolvedValue([]);
 
       await service.buscarServicosPorFiltros({
-        valor_base: 350,
-        prazo_estimado: 5,
+        valor_base_de: 350,
+        valor_base_ate: 500,
+        prazo_estimado_de: 5,
+        prazo_estimado_ate: 15,
         status: 'ativo',
       } as unknown as BuscaServicoFiltroDto);
 
