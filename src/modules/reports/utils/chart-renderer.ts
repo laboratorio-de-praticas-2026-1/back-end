@@ -37,9 +37,16 @@ function svgToDataUrl(svg: string): string {
  * Normaliza e escapa texto dinâmico para uso seguro dentro de SVG/XML.
  */
 function escapeSvgText(value: string): string {
-  return String(value ?? '')
+  const normalized = String(value ?? '')
     .normalize('NFC')
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, ' ')
+    .split('')
+    .map((char) => {
+      const code = char.charCodeAt(0);
+      return code <= 31 || code === 127 ? ' ' : char;
+    })
+    .join('');
+
+  return normalized
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')

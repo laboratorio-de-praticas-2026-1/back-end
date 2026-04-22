@@ -121,7 +121,7 @@ export class ReciboService {
 
     const data = await this.getDataFromSolicitacaoId(
       createReciboDto.idSolicitacao,
-    );    
+    );
     const temDebito = !!data.debito;
 
     return this.renderReciboTemplate({

@@ -54,7 +54,7 @@ describe('ReciboController', () => {
     expect(reciboService.previewDownload).toHaveBeenCalledWith({ idSolicitacao: 7 });
     expect(res.setHeader).toHaveBeenCalledWith(
       'Content-Disposition',
-      'attachment; filename="recibo_solicitacao_7.pdf"',
+      'attachment; filename="recibo-solicitacao.pdf"',
     );
     expect(resultado).toBeInstanceOf(StreamableFile);
   });
