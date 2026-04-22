@@ -42,7 +42,8 @@ export class ServicosService {
       nome: servicoDto.nome ?? servico.nome,
       descricao: servicoDto.descricao ?? servico.descricao,
       valorBase: servicoDto.valor_base ?? servico.valorBase,
-      prazoEstimadoDias: servicoDto.prazo_estimado_dias ?? servico.prazoEstimadoDias,
+      prazoEstimadoDias:
+        servicoDto.prazo_estimado_dias ?? servico.prazoEstimadoDias,
       ativo: servicoDto.ativo ?? servico.ativo,
       exigeVeiculo: servicoDto.exige_veiculo ?? servico.exigeVeiculo,
     });
