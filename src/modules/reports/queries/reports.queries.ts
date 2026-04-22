@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Op, literal } from 'sequelize';
-import { Debito } from 'src/models/debito.model';
 import { DebitoServico } from 'src/models/debito-servico.model';
 import { DebitoVeiculo } from 'src/models/debito-veiculo.model';
+import { Debito } from 'src/models/debito.model';
 import { DocumentoSolicitacao } from 'src/models/documento-solicitacao.model';
 import { Pagamento } from 'src/models/pagamento.model';
 import { Parcela } from 'src/models/parcela.model';
@@ -11,8 +11,6 @@ import { Servico } from 'src/models/servico.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
 import { Usuario } from 'src/models/usuario.model';
 import { Veiculo } from 'src/models/veiculo.model';
-import { logger } from 'sequelize/lib/utils/logger';
-import { fmtBRL } from '../templates/base.template';
 
 type StatusSolicitacao =
   | 'recebido'

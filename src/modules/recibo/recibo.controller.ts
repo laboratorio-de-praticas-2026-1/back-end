@@ -29,7 +29,7 @@ export class ReciboController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const pdfBuffer = await this.reciboService.previewDownload(createReciboDto);
-    const filename = `recibo_solicitacao_${createReciboDto.idSolicitacao}.pdf`;
+    const filename = `recibo-solicitacao.pdf`;
 
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
 

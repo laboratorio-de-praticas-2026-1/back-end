@@ -85,7 +85,7 @@ export class ReportsController {
     return this.reportsService.generateReport(createReportDto);
   }
 
-  //endpoint alternativo antes de ir para o Cloudnary. Visualizar antes de confirmar o salvamento.
+  //endpoint alternativo antes de ir para o Cloudinary. Visualizar antes de confirmar o salvamento.
   @Post('preview')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({

@@ -18,7 +18,7 @@ export class Servico extends Model {
     type: DataType.DECIMAL(10, 2),
     allowNull: true,
   })
-  declare valorBase: string | null;
+  declare valorBase: number | null;
 
   @Column({
     field: 'prazo_estimado_dias',

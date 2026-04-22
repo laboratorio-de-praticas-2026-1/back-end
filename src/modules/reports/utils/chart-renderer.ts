@@ -34,6 +34,20 @@ function svgToDataUrl(svg: string): string {
 }
 
 /**
+ * Normaliza e escapa texto dinâmico para uso seguro dentro de SVG/XML.
+ */
+function escapeSvgText(value: string): string {
+  return String(value ?? '')
+    .normalize('NFC')
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, ' ')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+/**
  * Renderiza gráfico de linhas em SVG
  */
 export function renderLineChart(
@@ -100,12 +114,13 @@ export function renderLineChart(
 
       const x = leftPadding + i * xStep;
       const y = height - (rotateLabels ? 22 : 18);
+      const safeLabel = escapeSvgText(label);
 
       if (rotateLabels) {
-        return `<text x="${x}" y="${y}" text-anchor="end" transform="rotate(-35 ${x} ${y})" font-size="10" fill="${BRAND.text}">${label}</text>`;
+        return `<text x="${x}" y="${y}" text-anchor="end" transform="rotate(-35 ${x} ${y})" font-size="10" fill="${BRAND.text}">${safeLabel}</text>`;
       }
 
-      return `<text x="${x}" y="${y}" text-anchor="middle" font-size="11" fill="${BRAND.text}">${label}</text>`;
+      return `<text x="${x}" y="${y}" text-anchor="middle" font-size="11" fill="${BRAND.text}">${safeLabel}</text>`;
     })
     .join('');
 
@@ -119,7 +134,7 @@ export function renderLineChart(
 
   const maxIndex = data.indexOf(maxValue);
   const maxPoint = points[maxIndex];
-  const maxLabel = labels[maxIndex] ?? '';
+  const maxLabel = escapeSvgText(labels[maxIndex] ?? '');
 
   // Gera grid e labels do eixo Y
   let gridAndLabels = '';
@@ -285,10 +300,11 @@ export function renderPieChart(
         ? ((item.value / total) * 100).toFixed(1).replace(/\.0$/, '')
         : '0';
     const legendY = legendTop + i * legendLineHeight;
+    const safeLabel = escapeSvgText(item.label);
     legend += `
       <rect x="20" y="${legendY - 10}" width="14" height="14" fill="${color}"/>
       <text x="40" y="${legendY}" font-size="11" fill="${BRAND.text}">
-        ${item.label}: ${percentage}%
+        ${safeLabel}: ${percentage}%
       </text>
     `;
   });
@@ -345,6 +361,7 @@ export function renderBarChart(
     const barWidth = (data[i] / maxValue) * (width - padding * 2) || 0;
     const y = padding + i * (barHeight + barGap);
     const color = PALETTE[i % PALETTE.length];
+    const safeLabel = escapeSvgText(label);
 
     bars += `<rect x="${padding}" y="${y}" width="${barWidth}" height="${barHeight}" fill="${color}" rx="4"/>`;
 
@@ -356,7 +373,7 @@ export function renderBarChart(
     `;
 
     // Y axis label
-    labels_svg += `<text x="${padding - 10}" y="${y + barHeight / 2 + 4}" text-anchor="end" font-size="11" fill="${BRAND.text}">${label}</text>`;
+    labels_svg += `<text x="${padding - 10}" y="${y + barHeight / 2 + 4}" text-anchor="end" font-size="11" fill="${BRAND.text}">${safeLabel}</text>`;
   });
 
   const svg = `

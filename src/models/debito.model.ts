@@ -46,6 +46,8 @@ export class Debito extends Model {
   })
   declare createdAt: Date;
 
+
+  
   @ForeignKey(() => Solicitacao)
   @Column({ field: 'solicitacao_id', type: DataType.INTEGER, allowNull: false })
   declare solicitacaoId: number;

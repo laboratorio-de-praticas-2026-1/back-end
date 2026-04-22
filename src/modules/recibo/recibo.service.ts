@@ -121,24 +121,7 @@ export class ReciboService {
 
     const data = await this.getDataFromSolicitacaoId(
       createReciboDto.idSolicitacao,
-    );
-    this.logger.log(
-      `Dados encontrados para solicitação ID: ${createReciboDto.idSolicitacao}`,
-    );
-    //Print de tudo do data:
-    this.logger.log(
-      `Usuário:  ${data.usuario ? JSON.stringify(data.usuario.toJSON()) : 'N/A'}`,
-    );
-    this.logger.log(
-      `Veículo:  ${data.veiculo ? JSON.stringify(data.veiculo.toJSON()) : 'N/A'}`,
-    );
-    this.logger.log(
-      `Serviço:  ${data.servico ? JSON.stringify(data.servico.toJSON()) : 'N/A'}`,
-    );
-    this.logger.log(
-      `Débito:  ${data.debito ? JSON.stringify(data.debito.toJSON()) : 'N/A'}`,
-    );
-
+    );    
     const temDebito = !!data.debito;
 
     return this.renderReciboTemplate({
