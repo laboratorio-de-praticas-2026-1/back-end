@@ -498,7 +498,6 @@ export class DashboardService {
         },
         group: ['servico.id', 'Solicitacao.servico_id'],
         order: [[literal('totalSolicitacoes'), 'DESC']],
-        limit: 5,
       }) as unknown as Promise<MaisSolicitadosRow[]>,
       this.debitoServicoModel.findAll({
         attributes: [
@@ -525,11 +524,27 @@ export class DashboardService {
       }),
     ]);
 
-    const maisSolicitados = maisSolicitadosRaw.map((item) => ({
-      servicoId: Number(item.get('servicoId') ?? 0),
-      nome: item.servico?.nome ?? '',
-      totalSolicitacoes: Number(item.get('totalSolicitacoes') ?? 0),
-    }));
+    const maisSolicitadosMap = new Map(
+      maisSolicitadosRaw.map((item) => [
+        Number(item.get('servicoId') ?? 0),
+        Number(item.get('totalSolicitacoes') ?? 0),
+      ]),
+    );
+
+    const maisSolicitados = todosServicos
+      .map((servico) => ({
+        servicoId: servico.id,
+        nome: servico.nome,
+        totalSolicitacoes: maisSolicitadosMap.get(servico.id) ?? 0,
+      }))
+      .sort((a, b) => {
+        if (b.totalSolicitacoes !== a.totalSolicitacoes) {
+          return b.totalSolicitacoes - a.totalSolicitacoes;
+        }
+
+        return a.nome.localeCompare(b.nome);
+      })
+      .slice(0, 5);
 
     const receitaPorServico = receitaPorServicoRaw.map((item) => ({
       servicoId: Number(item.get('servicoId') ?? 0),
