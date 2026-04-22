@@ -69,8 +69,12 @@ export class ReportsService {
         const decryptedInfo = this.cryptoUtil.decrypt(
           relatorio.urlDocumentoHash,
         );
+        this.logger.log(
+          `Informações do documento descriptografadas: ${decryptedInfo}`,
+        );
         const urlDocumento =
           this.cloudinaryService.generateTemporaryUrl(decryptedInfo);
+        console.log(`URL temporária gerada: ${urlDocumento}`);
 
         return plainToInstance(ResponseReportDto, {
           ...relatorio.get(),
@@ -84,7 +88,7 @@ export class ReportsService {
       );
 
       throw new InternalServerErrorException(
-        'Erro ao listar relatórios. Tente novamente.',
+        error instanceof Error ? (error.stack ?? error.message) : String(error),
       );
     }
   }
@@ -169,7 +173,7 @@ export class ReportsService {
         error instanceof Error ? (error.stack ?? error.message) : String(error),
       );
       throw new InternalServerErrorException(
-        'Erro ao gerar relatório. Tente novamente.',
+        error instanceof Error ? (error.stack ?? error.message) : String(error),
       );
     }
   }
