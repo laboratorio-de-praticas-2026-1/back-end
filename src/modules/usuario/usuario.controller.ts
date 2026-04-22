@@ -16,6 +16,7 @@ import { AdminGuard } from './guards/admin.guard';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiOkResponse,
@@ -46,6 +47,7 @@ export class UsuarioController {
 
   @Post('/admin/usuarios')
   @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Cria um usuário via painel administrativo' })
   @ApiCreatedResponse({
     description: 'Usuário criado com sucesso',
