@@ -136,7 +136,7 @@ describe('ServicosService', () => {
         expect.objectContaining({
           nome: 'Original',
           descricao: 'Descricao Antiga',
-          valor_base: 100,
+          valorBase: 100,
         }),
       );
     });
@@ -169,23 +169,40 @@ describe('ServicosService', () => {
       const dto: CreateServicoDto = {
         nome: 'Troca de óleo',
         descricao: 'Troca completa do óleo do motor',
-        valor_base: 120.5,
-        prazo_estimado_dias: 2,
+        valorBase: 120.5,
+        prazoEstimadoDias: 2,
         ativo: true,
-        exige_veiculo: true,
+        exigeVeiculo: true,
       };
-      const mockResult = { id: 1, ...dto };
+      const mockResult = {
+        id: 1,
+        nome: dto.nome,
+        descricao: dto.descricao,
+        valorBase: dto.valorBase,
+        prazoEstimadoDias: dto.prazoEstimadoDias,
+        ativo: dto.ativo,
+        exigeVeiculo: dto.exigeVeiculo,
+      };
       mockServicoModel.create.mockResolvedValue(mockResult);
       const result = await service.createServico(dto);
 
       expect(result).toEqual(mockResult);
-      expect(mockServicoModel.create).toHaveBeenCalledWith(dto);
+      expect(mockServicoModel.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        nome: dto.nome,
+        descricao: dto.descricao,
+        valorBase: dto.valorBase,
+        prazoEstimadoDias: dto.prazoEstimadoDias,
+        ativo: dto.ativo,
+        exigeVeiculo: dto.exigeVeiculo,
+      }),
+    );
     });
 
     it('deve lançar BadRequestException se campos obrigatórios faltarem', async () => {
       const semNome = {
-        valor_base: 100,
-        prazo_estimado_dias: 2,
+        valorBase: 100,
+        prazoEstimadoDias: 2,
       } as unknown as CreateServicoDto;
       await expect(service.createServico(semNome)).rejects.toThrow(
         BadRequestException,
@@ -193,7 +210,7 @@ describe('ServicosService', () => {
 
       const semValor = {
         nome: 'Troca de Óleo',
-        prazo_estimado_dias: 2,
+        prazoEstimadoDias: 2,
       } as unknown as CreateServicoDto;
       await expect(service.createServico(semValor)).rejects.toThrow(
         BadRequestException,
@@ -201,7 +218,7 @@ describe('ServicosService', () => {
 
       const semPrazo = {
         nome: 'Troca de Óleo',
-        valor_base: 100,
+        valorBase: 100,
       } as unknown as CreateServicoDto;
       await expect(service.createServico(semPrazo)).rejects.toThrow(
         BadRequestException,
@@ -211,23 +228,19 @@ describe('ServicosService', () => {
     it('deve usar valores padrão no createServico', async () => {
       const dtoMinimo = {
         nome: 'Teste',
-        valor_base: 50,
-        prazo_estimado_dias: 1,
+        valorBase: 50,
+        prazoEstimadoDias: 1,
       };
-
-      mockServicoModel.create.mockResolvedValue({
-        id: 1,
-        ...dtoMinimo,
-        ativo: true,
-        exige_veiculo: false,
-      });
 
       await service.createServico(dtoMinimo as CreateServicoDto);
 
       expect(mockServicoModel.create).toHaveBeenCalledWith(
         expect.objectContaining({
+          nome: dtoMinimo.nome,
+          valorBase: dtoMinimo.valorBase,
+          prazoEstimadoDias: dtoMinimo.prazoEstimadoDias,
           ativo: true,
-          exige_veiculo: false,
+          exigeVeiculo: false,
         }),
       );
     });
