@@ -157,6 +157,7 @@ export class DashboardService {
       }) as Promise<ParcelasVencidasRaw | null>,
 
       // query de debitos em aberto, devido a complexidade e necessidade de joins, optamos por raw query para otimizar a consulta e evitar sobrecarga no ORM
+      // TODO: essa query precisa ser mais robusta, pra isso acontecer, a relação entre as tabelas precisa ser melhor definida, hoje temos que fazer muitos joins e usar muitos CASEs para conseguir chegar no resultado esperado, o ideal seria ter uma relação mais direta entre debitos, solicitacoes, veiculos e usuarios (isso esta sendo trabalhado no BD, mas ainda não foi implementado)
       this.debitoModel.sequelize?.query(
         `
         SELECT DISTINCT 
@@ -171,13 +172,22 @@ export class DashboardService {
         FROM debito d
         LEFT JOIN debito_servico ds ON d.id = ds.id_debito AND d.tipo = 'servico'
         LEFT JOIN servico s ON ds.id_servico = s.id
-        LEFT JOIN solicitacao sol ON sol.servico_id = s.id
+        LEFT JOIN (
+          SELECT sol1.servico_id, sol1.usuario_id
+          FROM solicitacao sol1
+          INNER JOIN (
+            SELECT servico_id, MAX(id) AS id
+            FROM solicitacao
+            GROUP BY servico_id
+          ) sol_recente
+            ON sol_recente.servico_id = sol1.servico_id
+           AND sol_recente.id = sol1.id
+        ) sol ON sol.servico_id = s.id
         LEFT JOIN usuario u ON sol.usuario_id = u.id
         LEFT JOIN debito_veiculo dv ON d.id = dv.id_debito AND d.tipo = 'veiculo'
         LEFT JOIN veiculo v ON dv.id_veiculo = v.id
         LEFT JOIN usuario u2 ON v.usuario_id = u2.id
         WHERE d.status = 'pendente'
-        AND (u.id IS NOT NULL OR u2.id IS NOT NULL)
         ORDER BY d.id
       `,
         { type: QueryTypes.SELECT, raw: true },
