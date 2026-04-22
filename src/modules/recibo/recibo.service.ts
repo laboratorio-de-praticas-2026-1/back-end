@@ -153,10 +153,11 @@ export class ReciboService {
       numeroParcelas: data.debito?.pagamento?.qtdParcelas
         ? String(data.debito.pagamento.qtdParcelas)
         : '',
-      valorTaxas: data.debito?.pagamento?.taxa
-        ? data.debito.pagamento.taxa
-        : '',
-      valorPago: data.debito?.valor ? data.debito.valor : '',
+      valorTaxas:
+        data.debito?.pagamento?.taxa != null
+          ? String(data.debito.pagamento.taxa)
+          : '',
+      valorPago: data.debito?.valor != null ? String(data.debito.valor) : '',
       dataAtual: new Date().toLocaleDateString('pt-BR'),
       horaAtual: new Date().toLocaleTimeString('pt-BR'),
       temDebito,
