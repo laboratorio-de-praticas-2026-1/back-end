@@ -21,6 +21,7 @@ import { ServicosModule } from './modules/servicos/servicos.module';
 import { SimuladorModule } from './modules/simulador/simulador.module';
 import { SolicitacaoModule } from './modules/solicitacao/solicitacao.module';
 import { UsuarioModule } from './modules/usuario/usuario.module';
+import { ReciboModule } from './modules/recibo/recibo.module';
 
 @Module({
   imports: [
@@ -76,6 +77,7 @@ import { UsuarioModule } from './modules/usuario/usuario.module';
     SolicitacaoModule,
     UtilsModule,
     FileConversorModule,
+    ReciboModule,
   ],
   controllers: [],
   providers: [],

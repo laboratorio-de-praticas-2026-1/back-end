@@ -1,5 +1,7 @@
+import { Column, DataType, HasMany, Model, Table } from 'sequelize-typescript';
+import { Solicitacao } from './solicitacao.model';
+import { DebitoServico } from './debito-servico.model';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Column, DataType, Model, Table } from 'sequelize-typescript';
 
 @Table({ tableName: 'servico' })
 export class Servico extends Model {
@@ -54,6 +56,12 @@ export class Servico extends Model {
     defaultValue: true,
   })
   declare ativo: boolean | null;
+
+  @HasMany(() => Solicitacao)
+  declare solicitacoes: Solicitacao[];
+
+  @HasMany(() => DebitoServico)
+  declare debitoServicos: DebitoServico[];
 
   @ApiPropertyOptional({
     description: 'Indica se o serviço exige vínculo com veículo',

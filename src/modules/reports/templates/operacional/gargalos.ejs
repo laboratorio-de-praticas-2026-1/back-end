@@ -1,0 +1,108 @@
+<% const exibirParadas = showParadas !== false; %>
+<% const exibirTempoAcima = showTempoAcima !== false; %>
+<% const exibirAcumulo = showAcumulo !== false; %>
+<% const exibirDocs = showDocs !== false; %>
+<% const exibirClientes = showClientes !== false; %>
+<% const tituloParadas = typeof paradasTitle === 'string' && paradasTitle ? paradasTitle : 'Solicitações Paradas'; %>
+<% const tituloTempoAcima = typeof tempoAcimaTitle === 'string' && tempoAcimaTitle ? tempoAcimaTitle : 'Tempo Acima do Esperado por Serviço'; %>
+<% const tituloDocs = typeof docsTitle === 'string' && docsTitle ? docsTitle : 'Documentos Pendentes'; %>
+<% const tituloClientes = typeof clientesTitle === 'string' && clientesTitle ? clientesTitle : 'Clientes Travando o Fluxo'; %>
+
+<% if (exibirParadas) { %>
+<div class="section-label"><%= tituloParadas %></div>
+<table>
+  <thead><tr>
+    <th>ID</th><th>Serviço</th><th>Status</th><th>Dias Decorridos</th><th>Prazo Estimado</th>
+  </tr></thead>
+  <tbody>
+    <% if (gargalos.paradasComTempo.length) { %>
+      <% gargalos.paradasComTempo.forEach((s) => { %>
+        <tr>
+          <td><%= s.id %></td>
+          <td><%= s.servico %></td>
+          <td><%- badge(s.status) %></td>
+          <td><%= s.diasDecorridos %> dias</td>
+          <td><%= s.prazoEstimado %> dias</td>
+        </tr>
+      <% }) %>
+    <% } else { %>
+      <tr><td colspan="5" style="text-align:center;color:#999;">Nenhuma solicitação parada</td></tr>
+    <% } %>
+  </tbody>
+</table>
+<% } %>
+
+<% if (exibirTempoAcima) { %>
+<div class="section-label"><%= tituloTempoAcima %></div>
+<table>
+  <thead><tr><th>Serviço</th><th>Tempo Médio</th><th>Prazo Estimado</th></tr></thead>
+  <tbody>
+    <% if (gargalos.tempoAcima.length) { %>
+      <% gargalos.tempoAcima.forEach((t) => { %>
+        <tr>
+          <td><%= t.servico %></td>
+          <td><%= t.tempoMedio %> dias</td>
+          <td><%= t.prazoEstimado %> dias</td>
+        </tr>
+      <% }) %>
+    <% } else { %>
+      <tr><td colspan="3" style="text-align:center;color:#999;">Nenhum serviço acima do prazo</td></tr>
+    <% } %>
+  </tbody>
+</table>
+<% } %>
+
+<% if (exibirAcumulo) { %>
+  <div class="section-label">Acúmulo por Status</div>
+  <div class="chart-wrap">
+    <img src="<%= gargalos.acumuloPieBase64 %>" style="width:380px;" />
+  </div>
+<% } %>
+
+<% if (exibirDocs) { %>
+<div class="section-label"><%= tituloDocs %></div>
+<table>
+  <thead><tr>
+    <th>ID</th><th>Tipo</th><th>Cliente</th><th>Serviço</th><th>Data Upload</th>
+  </tr></thead>
+  <tbody>
+    <% if (gargalos.docsPendentes.length) { %>
+      <% gargalos.docsPendentes.forEach((d) => { %>
+        <tr>
+          <td><%= d.id %></td>
+          <td><%= d.tipoDocumento ?? '—' %></td>
+          <td><%= d.solicitacao?.usuario?.nome ?? '—' %></td>
+          <td><%= d.solicitacao?.servico?.nome ?? '—' %></td>
+          <td><%= fmtDate(d.dataUpload) %></td>
+        </tr>
+      <% }) %>
+    <% } else { %>
+      <tr><td colspan="5" style="text-align:center;color:#999;">Nenhum documento pendente</td></tr>
+    <% } %>
+  </tbody>
+</table>
+<% } %>
+
+<% if (exibirClientes) { %>
+<div class="section-label"><%= tituloClientes %></div>
+<table>
+  <thead><tr>
+    <th>ID</th><th>Cliente</th><th>Serviço</th><th>Status</th><th>Data Solic.</th>
+  </tr></thead>
+  <tbody>
+    <% if (gargalos.clientesTravando.length) { %>
+      <% gargalos.clientesTravando.forEach((s) => { %>
+        <tr>
+          <td><%= s.id %></td>
+          <td><%= s.usuario?.nome ?? '—' %></td>
+          <td><%= s.servico?.nome ?? '—' %></td>
+          <td><%- badge(s.status) %></td>
+          <td><%= fmtDate(s.dataSolicitacao) %></td>
+        </tr>
+      <% }) %>
+    <% } else { %>
+      <tr><td colspan="5" style="text-align:center;color:#999;">Nenhum cliente travando</td></tr>
+    <% } %>
+  </tbody>
+</table>
+<% } %>

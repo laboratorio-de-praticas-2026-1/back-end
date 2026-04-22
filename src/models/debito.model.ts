@@ -1,9 +1,18 @@
-import { Column, DataType, HasOne, Model, Table } from 'sequelize-typescript';
-import { Pagamento } from './pagamento.model';
+import {
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  HasOne,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { DebitoServico } from './debito-servico.model';
 import { DebitoVeiculo } from './debito-veiculo.model';
+import { Pagamento } from './pagamento.model';
+import { Solicitacao } from './solicitacao.model';
 
-/*Representa uma cobrança gerada para um cliente*/
-@Table({ tableName: 'debito', timestamps: false })
+@Table({ tableName: 'debito' })
 export class Debito extends Model {
   @Column({ primaryKey: true, autoIncrement: true, allowNull: false })
   declare id: number;
@@ -37,10 +46,19 @@ export class Debito extends Model {
   })
   declare createdAt: Date;
 
-  /*Quando o débito é quitado, um registro de Pagamento é criado*/
-  @HasOne(() => Pagamento, { foreignKey: 'idDebito' })
+  @ForeignKey(() => Solicitacao)
+  @Column({ field: 'solicitacao_id', type: DataType.INTEGER, allowNull: false })
+  declare solicitacaoId: number;
+
+  @BelongsTo(() => Solicitacao)
+  declare solicitacao: Solicitacao;
+
+  @HasOne(() => Pagamento)
   declare pagamento: Pagamento | null;
 
+  @HasOne(() => DebitoServico)
+  declare debitoServico: DebitoServico | null;
+
   @HasOne(() => DebitoVeiculo)
-  declare debitoVeiculo: DebitoVeiculo;
+  declare debitoVeiculo: DebitoVeiculo | null;
 }
