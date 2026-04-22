@@ -8,7 +8,8 @@ import {
 } from 'sequelize-typescript';
 import { Pagamento } from './pagamento.model';
 
-@Table({ tableName: 'parcela' })
+/*Representa uma parcela individual de um Pagamento parcelado*/
+@Table({ tableName: 'parcela', timestamps: false })
 export class Parcela extends Model {
   @Column({ primaryKey: true, autoIncrement: true, allowNull: false })
   declare id: number;
@@ -20,11 +21,9 @@ export class Parcela extends Model {
   @BelongsTo(() => Pagamento)
   declare pagamento: Pagamento;
 
-  @Column({
-    type: DataType.DECIMAL(10, 2),
-    allowNull: false,
-  })
-  declare valor: string;
+  /** Valor desta parcela específica. */
+  @Column({ type: DataType.DECIMAL(10, 2), allowNull: false })
+  declare valor: number;
 
   @Column({
     field: 'numero_parcela',
@@ -33,13 +32,17 @@ export class Parcela extends Model {
   })
   declare numeroParcela: number;
 
+  /*Estado da parcela*/
   @Column({
     type: DataType.ENUM('pago', 'atrasado', 'ativo'),
-    allowNull: false,
     defaultValue: 'ativo',
   })
   declare status: 'pago' | 'atrasado' | 'ativo';
 
-  @Column({ type: DataType.DATEONLY, allowNull: false })
+  /*Data de vencimento desta parcela*/
+  @Column({
+    type: DataType.DATEONLY,
+    allowNull: false,
+  })
   declare vencimento: Date;
 }

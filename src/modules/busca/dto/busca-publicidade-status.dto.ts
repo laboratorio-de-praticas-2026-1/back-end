@@ -2,7 +2,7 @@ import { Transform, type TransformFnParams } from 'class-transformer';
 import { IsIn, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class BuscaBannerStatusDto {
+export class BuscaPublicidadeStatusDto {
   @Transform(({ value }: TransformFnParams) =>
     typeof value === 'string' ? value.trim().toLowerCase() : (value as unknown),
   )
@@ -11,7 +11,7 @@ export class BuscaBannerStatusDto {
     message: 'Campo "status" deve ser "ativo" ou "inativo"',
   })
   @ApiProperty({
-    description: 'Status do banner',
+    description: 'Status da publicidade',
     example: 'ativo',
     type: String,
   })

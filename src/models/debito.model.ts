@@ -17,6 +17,7 @@ export class Debito extends Model {
   @Column({ primaryKey: true, autoIncrement: true, allowNull: false })
   declare id: number;
 
+  /*Classifica se o débito veio de um serviço contratado ou de um veículo*/
   @Column({
     type: DataType.ENUM('servico', 'veiculo'),
     allowNull: false,
@@ -26,19 +27,18 @@ export class Debito extends Model {
   @Column({ type: DataType.TEXT, allowNull: true })
   declare descricao: string | null;
 
-  @Column({
-    type: DataType.DECIMAL(10, 2),
-    allowNull: false,
-  })
-  declare valor: string;
+  /*Valor base da cobrança (sem taxas/juros)*/
+  @Column({ type: DataType.DECIMAL(10, 2), allowNull: false })
+  declare valor: number;
 
+  /*Estado atual do débito*/
   @Column({
     type: DataType.ENUM('pago', 'pendente'),
-    allowNull: false,
     defaultValue: 'pendente',
   })
   declare status: 'pago' | 'pendente';
 
+  /*Data de criação do débito*/
   @Column({
     field: 'created_at',
     type: DataType.DATE,
