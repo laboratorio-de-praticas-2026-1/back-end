@@ -205,7 +205,7 @@ export class SolicitacaoService {
       servico: {
         id: solicitacao.servico.id,
         tipo: solicitacao.servico.nome,
-        valorBase: solicitacao.servico.valorBase || 0,
+        valorBase: Number(solicitacao.servico.valorBase) || 0,
       },
       solicitacao: {
         status:

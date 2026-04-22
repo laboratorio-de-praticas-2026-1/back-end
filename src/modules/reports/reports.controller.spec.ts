@@ -4,36 +4,28 @@ import { getModelToken } from '@nestjs/sequelize';
 import { jest } from '@jest/globals';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
+import { PdfGeneratorService } from './pdf-generator.service';
 import { Relatorio } from 'src/models/relatorio.model';
 import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
 import { CryptoUtil } from 'src/commons/utils/crypto';
 import { CreateReportDto } from './dto/create-report.dto';
 
-type MockRelatorioModel = {
-  create: jest.Mock;
-};
-
-type MockCloudinaryService = {
-  uploadDocument: jest.Mock;
-  generateTemporaryUrl: jest.Mock;
-};
-
-type MockCryptoUtil = {
-  encrypt: jest.Mock;
-  decrypt: jest.Mock;
-};
+type MockRelatorioModel = { create: jest.Mock };
+type MockCloudinaryService = { uploadDocument: jest.Mock; generateTemporaryUrl: jest.Mock };
+type MockCryptoUtil = { encrypt: jest.Mock; decrypt: jest.Mock };
+type MockPdfGeneratorService = { generate: jest.Mock };
 
 describe('ReportsController', () => {
   let controller: ReportsController;
   let service: ReportsService;
+
   let mockRelatorioModel: MockRelatorioModel;
   let mockCloudinaryService: MockCloudinaryService;
   let mockCryptoUtil: MockCryptoUtil;
+  let mockPdfGeneratorService: MockPdfGeneratorService;
 
   beforeEach(async () => {
-    mockRelatorioModel = {
-      create: jest.fn() as jest.Mock,
-    };
+    mockRelatorioModel = { create: jest.fn() };
 
     mockCloudinaryService = {
       uploadDocument: jest.fn(),
@@ -45,22 +37,18 @@ describe('ReportsController', () => {
       decrypt: jest.fn().mockReturnValue('decrypted-value'),
     };
 
+    mockPdfGeneratorService = {
+      generate: jest.fn().mockResolvedValue(Buffer.from('fake-pdf')),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ReportsController],
       providers: [
         ReportsService,
-        {
-          provide: getModelToken(Relatorio),
-          useValue: mockRelatorioModel,
-        },
-        {
-          provide: CloudinaryService,
-          useValue: mockCloudinaryService,
-        },
-        {
-          provide: CryptoUtil,
-          useValue: mockCryptoUtil,
-        },
+        { provide: getModelToken(Relatorio), useValue: mockRelatorioModel },
+        { provide: CloudinaryService, useValue: mockCloudinaryService },
+        { provide: CryptoUtil, useValue: mockCryptoUtil },
+        { provide: PdfGeneratorService, useValue: mockPdfGeneratorService },
       ],
     }).compile();
 
@@ -68,9 +56,7 @@ describe('ReportsController', () => {
     service = module.get<ReportsService>(ReportsService);
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
+  afterEach(() => jest.clearAllMocks());
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
@@ -89,21 +75,17 @@ describe('ReportsController', () => {
         nome: createReportDto.nome,
         descricao: createReportDto.descricao,
         categoria: createReportDto.categoria,
-        urlDocumentoHash: 'https://temp-url.com',
+        urlDocumento: 'https://temp-url.com',
         dataGeracao: new Date(),
       } as unknown as never;
 
-      jest
-        .spyOn(service, 'generateReport' as any)
-        .mockResolvedValue(mockResult);
+      jest.spyOn(service, 'generateReport' as any).mockResolvedValue(mockResult);
 
       const resultado = await controller.generateReport(createReportDto);
 
       expect(resultado).toBeDefined();
       expect(resultado.nome).toBe(createReportDto.nome);
-      expect((service.generateReport as any).mock.calls.length).toBeGreaterThan(
-        0,
-      );
+      expect((service.generateReport as any).mock.calls.length).toBeGreaterThan(0);
     });
 
     it('deve chamar service.generateReport com os parâmetros corretos', async () => {
@@ -116,19 +98,15 @@ describe('ReportsController', () => {
         id: 1,
         nome: createReportDto.nome,
         categoria: createReportDto.categoria,
-        urlDocumentoHash: 'https://temp-url.com',
+        urlDocumento: 'https://temp-url.com',
         dataGeracao: new Date(),
-      } as unknown as never as unknown as never;
+      } as unknown as never;
 
-      jest
-        .spyOn(service, 'generateReport' as any)
-        .mockResolvedValue(mockResult);
+      jest.spyOn(service, 'generateReport' as any).mockResolvedValue(mockResult);
 
       await controller.generateReport(createReportDto);
 
-      expect((service.generateReport as any).mock.calls.length).toBeGreaterThan(
-        0,
-      );
+      expect((service.generateReport as any).mock.calls.length).toBeGreaterThan(0);
     });
 
     it('deve propagar exceções do serviço', async () => {

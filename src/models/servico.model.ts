@@ -1,4 +1,6 @@
-import { Column, DataType, Model, Table } from 'sequelize-typescript';
+import { Column, DataType, HasMany, Model, Table } from 'sequelize-typescript';
+import { Solicitacao } from './solicitacao.model';
+import { DebitoServico } from './debito-servico.model';
 
 @Table({ tableName: 'servico' })
 export class Servico extends Model {
@@ -31,4 +33,10 @@ export class Servico extends Model {
     defaultValue: true,
   })
   declare ativo: boolean | null;
+
+  @HasMany(() => Solicitacao)
+  declare solicitacoes: Solicitacao[];
+
+  @HasMany(() => DebitoServico)
+  declare debitoServicos: DebitoServico[];
 }

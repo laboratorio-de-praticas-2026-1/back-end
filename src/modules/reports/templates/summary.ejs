@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        @page {
+            size: A4 portrait;
+            margin: 0;
+        }
+
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            width: 794px;
+            min-height: 1123px;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            color: #1A1A1A;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding: 28px 40px 0;
+        }
+
+        .page-header img {
+            height: 52px;
+            object-fit: contain;
+        }
+
+        .page-header .hd-right {
+            font-size: 10px;
+            color: #888;
+            text-align: right;
+            padding-top: 6px;
+        }
+
+        .page-title-block {
+            padding: 20px 40px 6px;
+        }
+
+        .page-title-block h1 {
+            font-size: 28px;
+            font-weight: 800;
+            color: #0D2040;
+        }
+
+        .content {
+            flex: 1;
+            padding: 12px 40px 24px;
+        }
+
+        ol {
+            list-style: none;
+        }
+
+        li {
+            display: flex;
+            align-items: baseline;
+            gap: 14px;
+            padding: 12px 0;
+            border-bottom: 1px solid #EEF1F5;
+            font-size: 13px;
+            color: #2C3E50;
+        }
+
+        li .num {
+            color: #0D2040;
+            font-weight: 800;
+            font-size: 16px;
+            min-width: 24px;
+        }
+
+        .page-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 40px;
+            border-top: 1px solid #E8EEF4;
+            font-size: 10px;
+            color: #999;
+            margin-top: auto;
+        }
+
+        .page-num {
+            background: #0D2040;
+            color: #fff;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-header">
+        <img src="<%= LOGO_ESCURA_B64 %>" alt="BRTN" />
+        <div class="hd-right">
+            <%= companyName %>
+        </div>
+    </div>
+
+    <div class="page-title-block">
+        <h1>Sumário</h1>
+    </div>
+
+    <div class="content">
+        <ol>
+            <% sections.forEach((s, i)=> { %>
+                <li><span class="num">
+                        <%= i + 1 %>.
+                    </span>
+                    <%= s %>
+                </li>
+                <% }) %>
+        </ol>
+    </div>
+
+    <div class="page-footer">
+        <span>
+            <%= companyName %>
+        </span>
+        <span class="page-num">1</span>
+    </div>
+</body>
+
+</html>
