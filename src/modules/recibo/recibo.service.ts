@@ -93,9 +93,8 @@ export class ReciboService {
       path: '',
     };
 
-    const uploadResult = await this.cloudinaryService.uploadDocument(
-      multerFile as any,
-    );
+    const uploadResult =
+      await this.cloudinaryService.uploadDocument(multerFile);
     const publicId = uploadResult.public_id as string;
     const resourceType = uploadResult.resource_type as 'raw' | 'image';
 
@@ -245,7 +244,7 @@ export class ReciboService {
     const compiled = ejs.compile(templateContent, {
       cache: true,
       filename: templatePath,
-    }) as CompiledReciboTemplate;
+    });
 
     return compiled(context);
   }
