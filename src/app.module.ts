@@ -37,7 +37,7 @@ import { UsuarioModule } from './modules/usuario/usuario.module';
         const port = Number(configService.get<string>('DATABASE_PORT') ?? 3306);
         const username = configService.get<string>('DATABASE_USERNAME');
         const password = configService.get<string>('DATABASE_PASSWORD');
-        const database = configService.get<string>('DATABASE_DB');    
+        const database = configService.get<string>('DATABASE_DB');
 
         return {
           dialect: 'mysql',

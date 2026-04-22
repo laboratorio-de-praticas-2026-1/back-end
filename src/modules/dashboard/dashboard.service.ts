@@ -692,7 +692,7 @@ export class DashboardService {
 
     const historicoMensal = mesesPeriodo.map((mes) => ({
       mes,
-      receitaRealizada: mapaHistorico.get(mes) ?? (0 as number),
+      receitaRealizada: mapaHistorico.get(mes) ?? 0,
     }));
 
     const somaHistorico = historicoMensal.reduce(
