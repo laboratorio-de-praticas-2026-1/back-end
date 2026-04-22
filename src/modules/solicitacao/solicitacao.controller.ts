@@ -164,6 +164,56 @@ export class SolicitacaoController {
     );
   }
 
+  @Post(':id/cancelar')
+  @ApiOperation({
+    summary: 'Cancelar solicitaÃ§Ã£o',
+    description:
+      'Cancela uma solicitaÃ§Ã£o utilizando a funÃ§Ã£o central de atualizaÃ§Ã£o de status.',
+  })
+  @ApiOkResponse({
+    description: 'Cancelamento realizado com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'number', example: 123 },
+        status: { type: 'string', example: 'cancelado' },
+      },
+    },
+  })
+  @ApiNotFoundResponse({
+    description: 'SolicitaÃ§Ã£o nÃ£o encontrada',
+  })
+  cancelarSolicitacao(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ id: number; status: 'cancelado' }> {
+    return this.solicitacaoService.cancelarSolicitacao(id);
+  }
+
+  @Post(':id/reabrir')
+  @ApiOperation({
+    summary: 'Reabrir solicitaÃ§Ã£o',
+    description:
+      'Reabre uma solicitaÃ§Ã£o cancelada utilizando a funÃ§Ã£o central de atualizaÃ§Ã£o de status.',
+  })
+  @ApiOkResponse({
+    description: 'Reabertura realizada com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'number', example: 123 },
+        status: { type: 'string', example: 'em_andamento' },
+      },
+    },
+  })
+  @ApiNotFoundResponse({
+    description: 'SolicitaÃ§Ã£o nÃ£o encontrada',
+  })
+  reabrirSolicitacao(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ id: number; status: 'em_andamento' }> {
+    return this.solicitacaoService.reabrirSolicitacao(id);
+  }
+
   @Post(':id/documentos')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
