@@ -1,7 +1,6 @@
 import {
   BadRequestException,
-  HttpException,
-  HttpStatus,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -308,6 +307,51 @@ export class SolicitacaoService implements OnModuleDestroy {
 
     return {
       message: 'Status da solicitação atualizado com sucesso.',
+    };
+  }
+
+  async cancelarSolicitacao(
+    id: number,
+  ): Promise<{ id: number; status: StatusSolicitacaoEnum.CANCELADO }> {
+    const solicitacao = await this.findSolicitacaoById(id);
+    const statusAtual = solicitacao.status as StatusSolicitacaoEnum;
+
+    if (
+      statusAtual === StatusSolicitacaoEnum.CANCELADO ||
+      statusAtual === StatusSolicitacaoEnum.CONCLUIDO
+    ) {
+      throw new ConflictException(
+        'SolicitaÃ§Ã£o jÃ¡ estÃ¡ cancelada ou nÃ£o pode ser cancelada',
+      );
+    }
+
+    await this.updateSolicitacaoStatusById(id, {
+      status: StatusSolicitacaoEnum.CANCELADO,
+    });
+
+    return {
+      id,
+      status: StatusSolicitacaoEnum.CANCELADO,
+    };
+  }
+
+  async reabrirSolicitacao(
+    id: number,
+  ): Promise<{ id: number; status: StatusSolicitacaoEnum.EM_ANDAMENTO }> {
+    const solicitacao = await this.findSolicitacaoById(id);
+    const statusAtual = solicitacao.status as StatusSolicitacaoEnum;
+
+    if (statusAtual !== StatusSolicitacaoEnum.CANCELADO) {
+      throw new ConflictException('SolicitaÃ§Ã£o nÃ£o estÃ¡ cancelada');
+    }
+
+    await this.updateSolicitacaoStatusById(id, {
+      status: StatusSolicitacaoEnum.EM_ANDAMENTO,
+    });
+
+    return {
+      id,
+      status: StatusSolicitacaoEnum.EM_ANDAMENTO,
     };
   }
 
