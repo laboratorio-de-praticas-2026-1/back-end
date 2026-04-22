@@ -37,14 +37,7 @@ import { UsuarioModule } from './modules/usuario/usuario.module';
         const port = Number(configService.get<string>('DATABASE_PORT') ?? 3306);
         const username = configService.get<string>('DATABASE_USERNAME');
         const password = configService.get<string>('DATABASE_PASSWORD');
-        const database = configService.get<string>('DATABASE_DB');
-
-        /*         console.log('===== CONFIG DO BANCO =====');
-        console.log('DATABASE_HOST:', host);
-        console.log('DATABASE_PORT:', port);
-        console.log('DATABASE_USERNAME:', username);
-        console.log('DATABASE_DB:', database);
-        console.log('==========================='); */
+        const database = configService.get<string>('DATABASE_DB');    
 
         return {
           dialect: 'mysql',
