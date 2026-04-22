@@ -8,9 +8,12 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { UsuarioOwnerGuard } from './guards/usuario-owner.guard';
+import { NivelUsuario } from './dto/create-usuario.dto';
+import { AdminGuard } from './guards/admin.guard';
 
 const mockUsuarioService = {
   create: jest.fn(),
+  createByAdmin: jest.fn(),
   login: jest.fn(),
   remove: jest.fn(),
   update: jest.fn(),
@@ -34,6 +37,8 @@ describe('UsuarioController', () => {
       ],
     })
       .overrideGuard(UsuarioOwnerGuard)
+      .useValue(mockGuard)
+      .overrideGuard(AdminGuard)
       .useValue(mockGuard)
       .compile();
 
@@ -115,6 +120,62 @@ describe('UsuarioController', () => {
       const result = await controller.register(dtoCompleto);
 
       expect(result).toEqual(respostaCompleta);
+    });
+  });
+
+  describe('createByAdmin', () => {
+    const dtoAdmin = {
+      nome: 'João Silva',
+      email: 'joao@empresa.com',
+      senha: 'senhaTemporaria123',
+      nivel: NivelUsuario.administrador,
+    };
+
+    const respostaMock = {
+      id: 45,
+      nome: 'João Silva',
+      email: 'joao@empresa.com',
+      nivel: 'administrador',
+      cpf_cnpj: null,
+      celular: null,
+      data_cadastro: new Date(),
+    };
+
+    it('deve chamar o service com o dto correto e retornar o usuário criado', async () => {
+      mockUsuarioService.createByAdmin.mockResolvedValue(respostaMock);
+
+      const result = await controller.createByAdmin(dtoAdmin);
+
+      expect(mockUsuarioService.createByAdmin).toHaveBeenCalledWith(dtoAdmin);
+      expect(result).toEqual(respostaMock);
+    });
+
+    it('não deve retornar o campo senha na resposta', async () => {
+      mockUsuarioService.createByAdmin.mockResolvedValue(respostaMock);
+
+      const result = await controller.createByAdmin(dtoAdmin);
+
+      expect(result).not.toHaveProperty('senha');
+    });
+
+    it('deve propagar ConflictException quando e-mail já estiver cadastrado', async () => {
+      mockUsuarioService.createByAdmin.mockRejectedValue(
+        new ConflictException('Esse e-mail já está cadastrado no sistema.'),
+      );
+
+      await expect(controller.createByAdmin(dtoAdmin)).rejects.toThrow(
+        ConflictException,
+      );
+    });
+
+    it('deve propagar ConflictException quando CPF/CNPJ já estiver cadastrado', async () => {
+      mockUsuarioService.createByAdmin.mockRejectedValue(
+        new ConflictException('Esse CPF/CNPJ já está cadastrado no sistema.'),
+      );
+
+      await expect(
+        controller.createByAdmin({ ...dtoAdmin, cpfCnpj: '00000000000' }),
+      ).rejects.toThrow(ConflictException);
     });
   });
 

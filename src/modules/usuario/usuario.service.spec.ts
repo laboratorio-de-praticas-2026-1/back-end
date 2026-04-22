@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+import { NivelUsuario } from './dto/create-usuario.dto';
 
 jest.mock('bcrypt', () => ({
   hash: jest.fn().mockResolvedValue('hashed_password'),
@@ -132,7 +133,71 @@ describe('UsuarioService', () => {
     });
   });
 
-   describe('login', () => {
+  describe('createByAdmin', () => {
+    const dtoAdmin = {
+      nome: 'João Silva',
+      email: 'joao@empresa.com',
+      senha: 'senhaTemporaria123',
+      nivel: NivelUsuario.administrador,
+    };
+
+    const mockAdminUsuario = {
+      ...mockUsuario,
+      nivel: 'administrador',
+      toJSON: jest.fn().mockReturnValue({
+        ...mockUsuarioToJSON,
+        nivel: 'administrador',
+      }),
+    };
+
+    it('deve criar usuário com o nível definido pelo admin', async () => {
+      mockUsuarioModel.findOne.mockResolvedValue(null);
+      mockUsuarioModel.create.mockResolvedValue(mockAdminUsuario);
+
+      const result = await service.createByAdmin(dtoAdmin);
+
+      expect(mockUsuarioModel.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          nome: dtoAdmin.nome,
+          email: dtoAdmin.email,
+          senha: 'hashed_password',
+          nivel: 'administrador',
+        }),
+      );
+      expect(result).not.toHaveProperty('senha');
+    });
+
+    it('deve lançar ConflictException se e-mail já estiver cadastrado', async () => {
+      mockUsuarioModel.findOne.mockResolvedValue(mockUsuario);
+
+      await expect(service.createByAdmin(dtoAdmin)).rejects.toThrow(
+        ConflictException,
+      );
+      expect(mockUsuarioModel.create).not.toHaveBeenCalled();
+    });
+
+    it('deve lançar ConflictException se CPF/CNPJ já estiver cadastrado', async () => {
+      mockUsuarioModel.findOne
+        .mockResolvedValueOnce(null)       // email livre
+        .mockResolvedValueOnce(mockUsuario); // cpf duplicado
+
+      await expect(
+        service.createByAdmin({ ...dtoAdmin, cpfCnpj: '00000000000' }),
+      ).rejects.toThrow(ConflictException);
+      expect(mockUsuarioModel.create).not.toHaveBeenCalled();
+    });
+
+    it('deve lançar InternalServerErrorException se o create falhar', async () => {
+      mockUsuarioModel.findOne.mockResolvedValue(null);
+      mockUsuarioModel.create.mockRejectedValue(new Error('DB error'));
+
+      await expect(service.createByAdmin(dtoAdmin)).rejects.toThrow(
+        InternalServerErrorException,
+      );
+    });
+  });
+
+  describe('login', () => {
     const dtoLogin = {
       email: 'davi@example.com',
       senha: 'senha123',
@@ -298,39 +363,39 @@ describe('UsuarioService', () => {
       ).resolves.not.toThrow();
     });
   });
-  
-describe('findOne', () => {
-  it('deve retornar um usuário por id sem senha', async () => {
-    mockUsuarioModel.findByPk.mockResolvedValue(mockUsuario);
 
-    const result = await service.findOne(1);
+  describe('findOne', () => {
+    it('deve retornar um usuário por id sem senha', async () => {
+      mockUsuarioModel.findByPk.mockResolvedValue(mockUsuario);
 
-    expect(mockUsuarioModel.findByPk).toHaveBeenCalledWith(1, {
-      attributes: { exclude: ['senha'] },
+      const result = await service.findOne(1);
+
+      expect(mockUsuarioModel.findByPk).toHaveBeenCalledWith(1, {
+        attributes: { exclude: ['senha'] },
+      });
+
+      expect(result).toMatchObject({
+        id: mockUsuario.id,
+        nome: mockUsuario.nome,
+        email: mockUsuario.email,
+        nivel: mockUsuario.nivel,
+        cpf_cnpj: mockUsuario.cpfCnpj ?? null,
+        celular: mockUsuario.celular,
+        data_cadastro: mockUsuario.dataCadastro,
+      });
+
+      expect(result).not.toHaveProperty('senha');
     });
 
-    expect(result).toMatchObject({
-      id: mockUsuario.id,
-      nome: mockUsuario.nome,
-      email: mockUsuario.email,
-      nivel: mockUsuario.nivel,
-      cpf_cnpj: mockUsuario.cpfCnpj ?? null,
-      celular: mockUsuario.celular,
-      data_cadastro: mockUsuario.dataCadastro,
+    it('deve lançar NotFoundException se usuário não existir', async () => {
+      mockUsuarioModel.findByPk.mockResolvedValue(null);
+
+      await expect(service.findOne(999)).rejects.toThrow(
+        NotFoundException,
+      );
     });
-
-    expect(result).not.toHaveProperty('senha');
   });
 
-  it('deve lançar NotFoundException se usuário não existir', async () => {
-    mockUsuarioModel.findByPk.mockResolvedValue(null);
-
-    await expect(service.findOne(999)).rejects.toThrow(
-      NotFoundException,
-    );
-  });
-});
-  
   describe('findAll', () => {
     it('deve retornar lista de usuários sem senha', async () => {
       const usuariosMock = [
