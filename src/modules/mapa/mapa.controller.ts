@@ -1,70 +1,64 @@
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import {
-  Controller,
-  Get,
-  Param,
-  Query,
-  BadRequestException,
-} from '@nestjs/common';
+  ApiOkResponse,
+  ApiOperation,
+  ApiNotFoundResponse,
+} from '@nestjs/swagger';
 import { MapaService } from './mapa.service';
+import { EmpresaResponseDto } from './dto/empresa-response.dto';
 
 @Controller('mapa')
 export class MapaController {
   constructor(private readonly mapaService: MapaService) {}
 
   @Get()
-  async findAll() {
-    try {
-      return await this.mapaService.findAll();
-    } catch {
-      throw new BadRequestException('Erro ao buscar empresas');
-    }
+  @ApiOperation({
+    summary: 'Lista todas as empresas com coordenadas para exibição no mapa',
+  })
+  @ApiOkResponse({ type: EmpresaResponseDto, isArray: true })
+  @ApiNotFoundResponse({ description: 'Nenhuma empresa encontrada' })
+  findAll(): Promise<EmpresaResponseDto[]> {
+    return this.mapaService.findAll();
   }
 
   @Get('tipo/:tipo')
-  async findByTipo(@Param('tipo') tipo: string) {
-    if (!tipo?.trim()) {
-      throw new BadRequestException('O parâmetro tipo é obrigatório');
-    }
-
-    try {
-      return await this.mapaService.findByTipo(tipo.trim());
-    } catch (error) {
-      throw error instanceof BadRequestException
-        ? error
-        : new BadRequestException(`Erro ao buscar empresas do tipo: ${tipo}`);
-    }
+  @ApiOperation({
+    summary: 'Filtra empresas por tipo (clinica, vistoria, detran)',
+  })
+  @ApiOkResponse({ type: EmpresaResponseDto, isArray: true })
+  @ApiNotFoundResponse({
+    description: 'Nenhuma empresa encontrada para o tipo informado',
+  })
+  findByTipo(@Param('tipo') tipo: string): Promise<EmpresaResponseDto[]> {
+    return this.mapaService.findByTipo(tipo);
   }
 
   @Get('cidade/:cidade')
-  async findByCidade(@Param('cidade') cidade: string) {
-    if (!cidade?.trim()) {
-      throw new BadRequestException('O parâmetro cidade é obrigatório');
-    }
-
-    try {
-      return await this.mapaService.findByCidade(cidade.trim());
-    } catch {
-      throw new BadRequestException(
-        `Erro ao buscar empresas da cidade: ${cidade}`,
-      );
-    }
+  @ApiOperation({
+    summary: 'Filtra empresas por cidade',
+  })
+  @ApiOkResponse({ type: EmpresaResponseDto, isArray: true })
+  @ApiNotFoundResponse({
+    description: 'Nenhuma empresa encontrada para a cidade informada',
+  })
+  findByCidade(
+    @Param('cidade') cidade: string,
+  ): Promise<EmpresaResponseDto[]> {
+    return this.mapaService.findByCidade(cidade);
   }
 
   @Get('filtro')
-  async findComFiltro(
+  @ApiOperation({
+    summary: 'Filtra empresas por tipo e/ou cidade',
+  })
+  @ApiOkResponse({ type: EmpresaResponseDto, isArray: true })
+  @ApiNotFoundResponse({
+    description: 'Nenhuma empresa encontrada com os filtros informados',
+  })
+  findComFiltro(
     @Query('tipo') tipo?: string,
     @Query('cidade') cidade?: string,
-  ) {
-    try {
-      if (!tipo && !cidade) {
-        return await this.mapaService.findAll();
-      }
-
-      return await this.mapaService.findComFiltro(tipo, cidade);
-    } catch (error) {
-      throw error instanceof BadRequestException
-        ? error
-        : new BadRequestException('Erro ao aplicar filtros');
-    }
+  ): Promise<EmpresaResponseDto[]> {
+    return this.mapaService.findComFiltro(tipo, cidade);
   }
 }
