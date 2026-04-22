@@ -41,9 +41,7 @@ export class MapaController {
   @ApiNotFoundResponse({
     description: 'Nenhuma empresa encontrada para a cidade informada',
   })
-  findByCidade(
-    @Param('cidade') cidade: string,
-  ): Promise<EmpresaResponseDto[]> {
+  findByCidade(@Param('cidade') cidade: string): Promise<EmpresaResponseDto[]> {
     return this.mapaService.findByCidade(cidade);
   }
 
