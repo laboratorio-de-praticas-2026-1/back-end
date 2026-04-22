@@ -166,8 +166,8 @@ export class ReciboService {
         data.debito?.pagamento?.tipoPagamento === 'avista'
           ? 'À Vista'
           : data.debito?.pagamento?.tipoPagamento === 'parcelado'
-          ? 'Parcelado'
-          : 'Método Não Informado',
+            ? 'Parcelado'
+            : 'Método Não Informado',
       numeroParcelas: data.debito?.pagamento?.qtdParcelas
         ? String(data.debito.pagamento.qtdParcelas)
         : '',

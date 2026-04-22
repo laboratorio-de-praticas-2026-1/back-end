@@ -1,10 +1,4 @@
-import {
-  Body,
-  Controller,
-  Post,
-  Res,
-  StreamableFile,
-} from '@nestjs/common';
+import { Body, Controller, Post, Res, StreamableFile } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { CreateReciboDto } from './dto/create-recibo.dto';

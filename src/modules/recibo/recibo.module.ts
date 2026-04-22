@@ -22,7 +22,7 @@ import { ReciboService } from './recibo.service';
       Solicitacao,
       Veiculo,
       Usuario,
-      DebitoServico,      
+      DebitoServico,
       DebitoVeiculo,
       Debito,
       Pagamento,
