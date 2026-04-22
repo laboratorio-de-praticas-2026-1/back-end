@@ -38,12 +38,12 @@ import { UsuarioModule } from './modules/usuario/usuario.module';
         const password = configService.get<string>('DATABASE_PASSWORD');
         const database = configService.get<string>('DATABASE_DB');
 
-        console.log('===== CONFIG DO BANCO =====');
+        /*         console.log('===== CONFIG DO BANCO =====');
         console.log('DATABASE_HOST:', host);
         console.log('DATABASE_PORT:', port);
         console.log('DATABASE_USERNAME:', username);
         console.log('DATABASE_DB:', database);
-        console.log('===========================');
+        console.log('==========================='); */
 
         return {
           dialect: 'mysql',
@@ -57,6 +57,7 @@ import { UsuarioModule } from './modules/usuario/usuario.module';
             timestamps: false,
           },
           synchronize: false,
+          logging: false,
         };
       },
     }),

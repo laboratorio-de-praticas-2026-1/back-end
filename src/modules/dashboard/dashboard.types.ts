@@ -92,6 +92,13 @@ export interface RejeicaoPorTipoRaw {
   totalRejeitados: number | string;
 }
 
+export interface DebitosEmAbertoListaRaw {
+  id: number;
+  nomeCliente: string;
+  nomeServico: string;
+  valor: number;
+}
+
 export type MaisSolicitadosRow = Solicitacao & {
   servico?: Servico;
   get(key: 'servicoId' | 'totalSolicitacoes'): string | number | null;

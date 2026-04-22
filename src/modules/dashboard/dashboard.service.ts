@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { col, fn, literal, Op } from 'sequelize';
+import { col, fn, literal, Op, QueryTypes } from 'sequelize';
 import { Debito } from 'src/models/debito.model';
 import { DocumentoSolicitacao } from 'src/models/documento-solicitacao.model';
 import { Pagamento } from 'src/models/pagamento.model';
@@ -40,6 +40,7 @@ import type {
   ClienteParcelaAtrasoRaw,
   RejeicaoPorTipoRaw,
   DocumentoStatusRaw,
+  DebitosEmAbertoListaRaw,
 } from './dashboard.types';
 import { MaisSolicitadosRow, ReceitaPorServicoRow } from './dashboard.types';
 
@@ -109,6 +110,7 @@ export class DashboardService {
       debitosEmAbertoQuantidade,
       debitosEmAbertoValor,
       parcelasVencidasResult,
+      debitosAbertosDetalhesRaw,
     ] = await Promise.all([
       this.solicitacaoModel.findAll({
         attributes: [
@@ -153,6 +155,43 @@ export class DashboardService {
         },
         raw: true,
       }) as Promise<ParcelasVencidasRaw | null>,
+
+      // query de debitos em aberto, devido a complexidade e necessidade de joins, optamos por raw query para otimizar a consulta e evitar sobrecarga no ORM
+      // TODO: essa query precisa ser mais robusta, pra isso acontecer, a relação entre as tabelas precisa ser melhor definida, hoje temos que fazer muitos joins e usar muitos CASEs para conseguir chegar no resultado esperado, o ideal seria ter uma relação mais direta entre debitos, solicitacoes, veiculos e usuarios (isso esta sendo trabalhado no BD, mas ainda não foi implementado)
+      this.debitoModel.sequelize?.query(
+        `
+        SELECT DISTINCT 
+          d.id,
+          COALESCE(u.nome, u2.nome, 'Sem informação') as nomeCliente,
+          CASE 
+            WHEN d.tipo = 'servico' THEN s.nome
+            WHEN d.tipo = 'veiculo' THEN 'Débito de Veículo'
+            ELSE 'Desconhecido'
+          END as nomeServico,
+          d.valor
+        FROM debito d
+        LEFT JOIN debito_servico ds ON d.id = ds.id_debito AND d.tipo = 'servico'
+        LEFT JOIN servico s ON ds.id_servico = s.id
+        LEFT JOIN (
+          SELECT sol1.servico_id, sol1.usuario_id
+          FROM solicitacao sol1
+          INNER JOIN (
+            SELECT servico_id, MAX(id) AS id
+            FROM solicitacao
+            GROUP BY servico_id
+          ) sol_recente
+            ON sol_recente.servico_id = sol1.servico_id
+           AND sol_recente.id = sol1.id
+        ) sol ON sol.servico_id = s.id
+        LEFT JOIN usuario u ON sol.usuario_id = u.id
+        LEFT JOIN debito_veiculo dv ON d.id = dv.id_debito AND d.tipo = 'veiculo'
+        LEFT JOIN veiculo v ON dv.id_veiculo = v.id
+        LEFT JOIN usuario u2 ON v.usuario_id = u2.id
+        WHERE d.status = 'pendente'
+        ORDER BY d.id
+      `,
+        { type: QueryTypes.SELECT, raw: true },
+      ) as unknown as Promise<DebitosEmAbertoListaRaw[]>,
     ]);
 
     const porStatusBase = {
@@ -195,6 +234,14 @@ export class DashboardService {
           )
         : 0;
 
+    // Processa os débitos em aberto para o DTO
+    const listaDetalhada = (debitosAbertosDetalhesRaw ?? []).map((debito) => ({
+      id: debito.id,
+      nomeCliente: debito.nomeCliente,
+      nomeServico: debito.nomeServico,
+      valor: Number(debito.valor),
+    }));
+
     return {
       solicitacoesEmAberto,
       solicitacoesConcluidas,
@@ -204,6 +251,7 @@ export class DashboardService {
       debitosEmAberto: {
         quantidade: Number(debitosEmAbertoQuantidade ?? 0),
         valorTotal: Number(debitosEmAbertoValor ?? 0),
+        listaDetalhada,
       },
       parcelasVencidasNaoPagas: {
         quantidade: Number(parcelasVencidasResult?.quantidadeParcelas ?? 0),
@@ -460,7 +508,6 @@ export class DashboardService {
         },
         group: ['servico.id', 'Solicitacao.servico_id'],
         order: [[literal('totalSolicitacoes'), 'DESC']],
-        limit: 5,
       }) as unknown as Promise<MaisSolicitadosRow[]>,
       this.debitoServicoModel.findAll({
         attributes: [
@@ -487,11 +534,27 @@ export class DashboardService {
       }),
     ]);
 
-    const maisSolicitados = maisSolicitadosRaw.map((item) => ({
-      servicoId: Number(item.get('servicoId') ?? 0),
-      nome: item.servico?.nome ?? '',
-      totalSolicitacoes: Number(item.get('totalSolicitacoes') ?? 0),
-    }));
+    const maisSolicitadosMap = new Map(
+      maisSolicitadosRaw.map((item) => [
+        Number(item.get('servicoId') ?? 0),
+        Number(item.get('totalSolicitacoes') ?? 0),
+      ]),
+    );
+
+    const maisSolicitados = todosServicos
+      .map((servico) => ({
+        servicoId: servico.id,
+        nome: servico.nome,
+        totalSolicitacoes: maisSolicitadosMap.get(servico.id) ?? 0,
+      }))
+      .sort((a, b) => {
+        if (b.totalSolicitacoes !== a.totalSolicitacoes) {
+          return b.totalSolicitacoes - a.totalSolicitacoes;
+        }
+
+        return a.nome.localeCompare(b.nome);
+      })
+      .slice(0, 5);
 
     const receitaPorServico = receitaPorServicoRaw.map((item) => ({
       servicoId: Number(item.get('servicoId') ?? 0),
@@ -641,21 +704,45 @@ export class DashboardService {
         ? Number((somaHistorico / mesesPeriodo.length).toFixed(2))
         : 0;
 
-    const porMetodoPagamento = porMetodoResult.map(
-      (m: ResultadoDistribuicaoMetodo) => ({
-        metodo: m.metodo,
-        quantidade: Number(m.quantidade ?? 0),
-        valorTotal: Number(m.valorTotal ?? 0),
-      }),
+    const porMetodoMap = new Map(
+      porMetodoResult.map((m: ResultadoDistribuicaoMetodo) => [
+        m.metodo,
+        {
+          quantidade: Number(m.quantidade ?? 0),
+          valorTotal: Number(m.valorTotal ?? 0),
+        },
+      ]),
     );
 
-    const porTipoPagamento = porTipoResult.map(
-      (t: ResultadoDistribuicaoTipo) => ({
-        tipo: t.tipo,
-        quantidade: Number(t.quantidade ?? 0),
-        valorTotal: Number(t.valorTotal ?? 0),
-      }),
+    const metodosBase = ['cartao', 'pix'];
+    const porMetodoPagamento = metodosBase.map((metodo) => {
+      const dados = porMetodoMap.get(metodo);
+      return {
+        metodo,
+        quantidade: dados?.quantidade ?? 0,
+        valorTotal: dados?.valorTotal ?? 0,
+      };
+    });
+
+    const porTipoMap = new Map(
+      porTipoResult.map((t: ResultadoDistribuicaoTipo) => [
+        t.tipo,
+        {
+          quantidade: Number(t.quantidade ?? 0),
+          valorTotal: Number(t.valorTotal ?? 0),
+        },
+      ]),
     );
+
+    const tiposBase: Array<'avista' | 'parcelado'> = ['avista', 'parcelado'];
+    const porTipoPagamento = tiposBase.map((tipo) => {
+      const dados = porTipoMap.get(tipo);
+      return {
+        tipo,
+        quantidade: dados?.quantidade ?? 0,
+        valorTotal: dados?.valorTotal ?? 0,
+      };
+    });
 
     return {
       receitaRealizada,
