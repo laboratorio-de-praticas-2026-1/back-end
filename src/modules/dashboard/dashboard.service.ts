@@ -694,21 +694,45 @@ export class DashboardService {
         ? Number((somaHistorico / mesesPeriodo.length).toFixed(2))
         : 0;
 
-    const porMetodoPagamento = porMetodoResult.map(
-      (m: ResultadoDistribuicaoMetodo) => ({
-        metodo: m.metodo,
-        quantidade: Number(m.quantidade ?? 0),
-        valorTotal: Number(m.valorTotal ?? 0),
-      }),
+    const porMetodoMap = new Map(
+      porMetodoResult.map((m: ResultadoDistribuicaoMetodo) => [
+        m.metodo,
+        {
+          quantidade: Number(m.quantidade ?? 0),
+          valorTotal: Number(m.valorTotal ?? 0),
+        },
+      ]),
     );
 
-    const porTipoPagamento = porTipoResult.map(
-      (t: ResultadoDistribuicaoTipo) => ({
-        tipo: t.tipo,
-        quantidade: Number(t.quantidade ?? 0),
-        valorTotal: Number(t.valorTotal ?? 0),
-      }),
+    const metodosBase = ['cartao', 'pix'];
+    const porMetodoPagamento = metodosBase.map((metodo) => {
+      const dados = porMetodoMap.get(metodo);
+      return {
+        metodo,
+        quantidade: dados?.quantidade ?? 0,
+        valorTotal: dados?.valorTotal ?? 0,
+      };
+    });
+
+    const porTipoMap = new Map(
+      porTipoResult.map((t: ResultadoDistribuicaoTipo) => [
+        t.tipo,
+        {
+          quantidade: Number(t.quantidade ?? 0),
+          valorTotal: Number(t.valorTotal ?? 0),
+        },
+      ]),
     );
+
+    const tiposBase: Array<'avista' | 'parcelado'> = ['avista', 'parcelado'];
+    const porTipoPagamento = tiposBase.map((tipo) => {
+      const dados = porTipoMap.get(tipo);
+      return {
+        tipo,
+        quantidade: dados?.quantidade ?? 0,
+        valorTotal: dados?.valorTotal ?? 0,
+      };
+    });
 
     return {
       receitaRealizada,
