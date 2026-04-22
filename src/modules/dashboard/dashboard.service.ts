@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { col, fn, literal, Op } from 'sequelize';
+import { col, fn, literal, Op, QueryTypes } from 'sequelize';
 import { Debito } from 'src/models/debito.model';
 import { DocumentoSolicitacao } from 'src/models/documento-solicitacao.model';
 import { Pagamento } from 'src/models/pagamento.model';
@@ -40,6 +40,7 @@ import type {
   ClienteParcelaAtrasoRaw,
   RejeicaoPorTipoRaw,
   DocumentoStatusRaw,
+  DebitosEmAbertoListaRaw,
 } from './dashboard.types';
 import { MaisSolicitadosRow, ReceitaPorServicoRow } from './dashboard.types';
 
@@ -109,6 +110,7 @@ export class DashboardService {
       debitosEmAbertoQuantidade,
       debitosEmAbertoValor,
       parcelasVencidasResult,
+      debitosAbertosDetalhesRaw,
     ] = await Promise.all([
       this.solicitacaoModel.findAll({
         attributes: [
@@ -153,6 +155,33 @@ export class DashboardService {
         },
         raw: true,
       }) as Promise<ParcelasVencidasRaw | null>,
+
+      // query de debitos em aberto, devido a complexidade e necessidade de joins, optamos por raw query para otimizar a consulta e evitar sobrecarga no ORM
+      this.debitoModel.sequelize?.query(
+        `
+        SELECT DISTINCT 
+          d.id,
+          COALESCE(u.nome, u2.nome, 'Sem informação') as nomeCliente,
+          CASE 
+            WHEN d.tipo = 'servico' THEN s.nome
+            WHEN d.tipo = 'veiculo' THEN 'Débito de Veículo'
+            ELSE 'Desconhecido'
+          END as nomeServico,
+          d.valor
+        FROM debito d
+        LEFT JOIN debito_servico ds ON d.id = ds.id_debito AND d.tipo = 'servico'
+        LEFT JOIN servico s ON ds.id_servico = s.id
+        LEFT JOIN solicitacao sol ON sol.servico_id = s.id
+        LEFT JOIN usuario u ON sol.usuario_id = u.id
+        LEFT JOIN debito_veiculo dv ON d.id = dv.id_debito AND d.tipo = 'veiculo'
+        LEFT JOIN veiculo v ON dv.id_veiculo = v.id
+        LEFT JOIN usuario u2 ON v.usuario_id = u2.id
+        WHERE d.status = 'pendente'
+        AND (u.id IS NOT NULL OR u2.id IS NOT NULL)
+        ORDER BY d.id
+      `,
+        { type: QueryTypes.SELECT, raw: true },
+      ) as unknown as Promise<DebitosEmAbertoListaRaw[]>,
     ]);
 
     const porStatusBase = {
@@ -195,6 +224,14 @@ export class DashboardService {
           )
         : 0;
 
+    // Processa os débitos em aberto para o DTO
+    const listaDetalhada = (debitosAbertosDetalhesRaw ?? []).map((debito) => ({
+      id: debito.id,
+      nomeCliente: debito.nomeCliente,
+      nomeServico: debito.nomeServico,
+      valor: Number(debito.valor),
+    }));
+
     return {
       solicitacoesEmAberto,
       solicitacoesConcluidas,
@@ -204,6 +241,7 @@ export class DashboardService {
       debitosEmAberto: {
         quantidade: Number(debitosEmAbertoQuantidade ?? 0),
         valorTotal: Number(debitosEmAbertoValor ?? 0),
+        listaDetalhada,
       },
       parcelasVencidasNaoPagas: {
         quantidade: Number(parcelasVencidasResult?.quantidadeParcelas ?? 0),

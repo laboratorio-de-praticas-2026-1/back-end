@@ -105,6 +105,13 @@ export class ServicosDto {
   }[];
 }
 
+export class DebitoEmAbertoDto {
+  id!: number;
+  nomeCliente!: string;
+  nomeServico!: string;
+  valor!: number;
+}
+
 export class GeralDto {
   solicitacoesEmAberto!: number;
   solicitacoesConcluidas!: number;
@@ -114,6 +121,7 @@ export class GeralDto {
   debitosEmAberto!: {
     quantidade: number;
     valorTotal: number;
+    listaDetalhada: DebitoEmAbertoDto[];
   };
   parcelasVencidasNaoPagas!: {
     quantidade: number;
