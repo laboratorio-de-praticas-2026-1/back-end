@@ -2,57 +2,38 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class EmpresaResponseDto {
   @ApiProperty()
-  id: number;
+  id!: number;
 
-  @ApiProperty()
-  nomeFantasia: string;
+  @ApiProperty({ nullable: true })
+  nomeFantasia!: string | null;
 
-  @ApiProperty({
-    description: 'Tipo da empresa (clinica, vistoria, detran)',
-  })
-  tipo: string;
+  @ApiProperty({ nullable: true })
+  cnpj!: string | null;
 
-  @ApiProperty()
-  cidade: string;
+  @ApiProperty({ nullable: true })
+  telefone!: string | null;
 
-  @ApiProperty()
-  estado: string;
+  @ApiProperty({ nullable: true })
+  email!: string | null;
 
-  @ApiProperty()
-  endereco: string;
+  @ApiProperty({ nullable: true })
+  endereco!: string | null;
 
-  @ApiProperty()
-  latitude: string;
+  @ApiProperty({ nullable: true })
+  cidade!: string | null;
 
-  @ApiProperty()
-  longitude: string;
+  @ApiProperty({ nullable: true })
+  estado!: string | null;
 
-  @ApiProperty({
-    description: 'Endereço completo formatado',
-  })
-  enderecoCompleto: string;
+  @ApiProperty({ nullable: true })
+  site!: string | null;
 
-  constructor(
-    id: number,
-    nomeFantasia: string,
-    tipo: string,
-    cidade: string,
-    estado: string,
-    endereco: string,
-    latitude: string,
-    longitude: string,
-  ) {
-    this.id = id;
-    this.nomeFantasia = nomeFantasia;
-    this.tipo = tipo;
-    this.cidade = cidade;
-    this.estado = estado;
-    this.endereco = endereco;
-    this.latitude = latitude;
-    this.longitude = longitude;
+  @ApiProperty({ enum: ['clinica', 'vistoria', 'detran'], nullable: true })
+  tipo!: 'clinica' | 'vistoria' | 'detran' | null;
 
-    this.enderecoCompleto = [endereco, cidade, estado]
-      .filter(Boolean)
-      .join(', ');
-  }
+  @ApiProperty({ nullable: true })
+  latitude!: string | null;
+
+  @ApiProperty({ nullable: true })
+  longitude!: string | null;
 }

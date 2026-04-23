@@ -3,84 +3,78 @@ import { InjectModel } from '@nestjs/sequelize';
 import { Op, WhereOptions } from 'sequelize';
 import { Empresa } from 'src/models/empresa.model';
 
-
-const tipos_empresas = ['clinica', 'vistoria', 'detran'];
-
 @Injectable()
 export class MapaService {
   constructor(
     @InjectModel(Empresa)
-    private empresaModel: typeof Empresa,
+    private readonly empresaModel: typeof Empresa,
   ) {}
 
-  private get defaultFiltroMapa() {
-    return {
-      latitude: { [Op.notIn]: [null, ''] },
-      longitude: { [Op.notIn]: [null, ''] },
-    };
-  }
+  private readonly tiposValidos = ['clinica', 'vistoria', 'detran'];
 
-  private validateTipo(tipo: string): string {
-    const tipoFormatado = tipo.toLowerCase();
-
-    if (!tipos_empresas.includes(tipoFormatado)) {
-      throw new BadRequestException(
-        `O tipo '${tipo}' não é válido para o mapa`,
-      );
+  private validarTipo(tipo?: string): void {
+    if (tipo && !this.tiposValidos.includes(tipo)) {
+      throw new BadRequestException('Tipo inválido');
     }
-
-    return tipoFormatado;
   }
+
+  private coordenadasValidas = {
+    [Op.notIn]: [null, ''],
+  };
 
   async findAll(): Promise<Empresa[]> {
     return this.empresaModel.findAll({
-      where: this.defaultFiltroMapa,
+      where: {
+        latitude: this.coordenadasValidas,
+        longitude: this.coordenadasValidas,
+      },
     });
-
   }
 
   async findByTipo(tipo: string): Promise<Empresa[]> {
-    const tipoFormatado = this.validateTipo(tipo);
+    this.validarTipo(tipo);
 
     return this.empresaModel.findAll({
       where: {
-        ...this.defaultFiltroMapa,
-        tipo: tipoFormatado,
+        latitude: this.coordenadasValidas,
+        longitude: this.coordenadasValidas,
+        tipo,
       },
     });
-
   }
 
   async findByCidade(cidade: string): Promise<Empresa[]> {
     return this.empresaModel.findAll({
       where: {
-        ...this.defaultFiltroMapa,
+        latitude: this.coordenadasValidas,
+        longitude: this.coordenadasValidas,
         cidade: {
           [Op.like]: `%${cidade}%`,
         },
       },
     });
-
   }
 
   async findComFiltro(tipo?: string, cidade?: string): Promise<Empresa[]> {
-    const condicoesFiltro: WhereOptions<Empresa> = {
-      ...this.defaultFiltroMapa,
+    this.validarTipo(tipo);
+
+    const where: WhereOptions<Empresa> = {
+      latitude: this.coordenadasValidas,
+      longitude: this.coordenadasValidas,
     };
 
     if (tipo) {
-      condicoesFiltro.tipo = this.validateTipo(tipo);
+      Object.assign(where, { tipo });
     }
 
     if (cidade) {
-      condicoesFiltro.cidade = {
-        [Op.like]: `%${cidade}%`,
-      };
+      Object.assign(where, {
+        cidade: {
+          [Op.like]: `%${cidade}%`,
+        },
+      });
     }
 
-    return this.empresaModel.findAll({
-      where: condicoesFiltro,
-    });
-
+    return this.empresaModel.findAll({ where });
   }
 }

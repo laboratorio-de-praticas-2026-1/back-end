@@ -1,127 +1,68 @@
-import {
-  Controller,
-  Get,
-  Param,
-  Query,
-  BadRequestException,
-} from '@nestjs/common';
-import {
-  ApiOperation,
-  ApiOkResponse,
-  ApiBadRequestResponse,
-} from '@nestjs/swagger';
+import { Controller, Get, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { MapaService } from './mapa.service';
 import { EmpresaResponseDto } from './dto/empresa-response.dto';
-import { Empresa } from 'src/models/empresa.model';
+import { Empresa } from '../../models/empresa.model';
 
+@ApiTags('Mapa')
 @Controller('mapa')
 export class MapaController {
   constructor(private readonly mapaService: MapaService) {}
 
   private toDto(empresas: Empresa[]): EmpresaResponseDto[] {
-    return empresas.map(
-      (e) =>
-        new EmpresaResponseDto(
-          e.id,
-          e.nomeFantasia ?? '',
-          e.cnpj ?? '',
-          e.telefone ?? '',
-          e.email ?? '',
-          e.endereco ?? '',
-          e.cidade ?? '',
-          e.estado ?? '',
-          e.site ?? '',
-        ),
-    );
+    return empresas.map((e) => ({
+      id: e.id,
+      nomeFantasia: e.nomeFantasia,
+      cnpj: e.cnpj,
+      telefone: e.telefone,
+      email: e.email,
+      endereco: e.endereco,
+      cidade: e.cidade,
+      estado: e.estado,
+      site: e.site,
+      tipo: e.tipo,
+      latitude: e.latitude,
+      longitude: e.longitude,
+    }));
   }
 
   @Get()
-  @ApiOperation({
-    summary: 'Lista todas as empresas com coordenadas válidas para o mapa',
-  })
-  @ApiOkResponse({ type: [EmpresaResponseDto] })
-  @ApiBadRequestResponse({ description: 'Erro ao buscar empresas' })
+  @ApiOperation({ summary: 'Listar empresas com coordenadas válidas' })
+  @ApiResponse({ status: 200, type: [EmpresaResponseDto] })
   async findAll(): Promise<EmpresaResponseDto[]> {
-    try {
-      const empresas = await this.mapaService.findAll();
-      return this.toDto(empresas);
-    } catch {
-      throw new BadRequestException('Erro ao buscar empresas');
-    }
+    return this.toDto(await this.mapaService.findAll());
   }
 
-  @Get('tipo/:tipo')
-  @ApiOperation({
-    summary: 'Lista empresas filtradas por tipo',
-  })
-  @ApiOkResponse({ type: [EmpresaResponseDto] })
-  @ApiBadRequestResponse({ description: 'Tipo inválido ou erro na busca' })
+  @Get('tipo')
+  @ApiQuery({ name: 'tipo', enum: ['clinica', 'vistoria', 'detran'] })
+  @ApiResponse({ status: 200, type: [EmpresaResponseDto] })
   async findByTipo(
-    @Param('tipo') tipo: string,
+    @Query('tipo') tipo: 'clinica' | 'vistoria' | 'detran',
   ): Promise<EmpresaResponseDto[]> {
-    if (!tipo?.trim()) {
-      throw new BadRequestException('O parâmetro tipo é obrigatório');
-    }
-
-    try {
-      const empresas = await this.mapaService.findByTipo(tipo.trim());
-      return this.toDto(empresas);
-    } catch (error) {
-      throw error instanceof BadRequestException
-        ? error
-        : new BadRequestException(
-            `Erro ao buscar empresas do tipo: ${tipo}`,
-          );
-    }
+    return this.toDto(await this.mapaService.findByTipo(tipo));
   }
 
-  @Get('cidade/:cidade')
-  @ApiOperation({
-    summary: 'Lista empresas filtradas por cidade',
-  })
-  @ApiOkResponse({ type: [EmpresaResponseDto] })
-  @ApiBadRequestResponse({ description: 'Erro ao buscar por cidade' })
+  @Get('cidade')
+  @ApiQuery({ name: 'cidade', type: String })
+  @ApiResponse({ status: 200, type: [EmpresaResponseDto] })
   async findByCidade(
-    @Param('cidade') cidade: string,
+    @Query('cidade') cidade: string,
   ): Promise<EmpresaResponseDto[]> {
-    if (!cidade?.trim()) {
-      throw new BadRequestException('O parâmetro cidade é obrigatório');
-    }
-
-    try {
-      const empresas = await this.mapaService.findByCidade(cidade.trim());
-      return this.toDto(empresas);
-    } catch {
-      throw new BadRequestException(
-        `Erro ao buscar empresas da cidade: ${cidade}`,
-      );
-    }
+    return this.toDto(await this.mapaService.findByCidade(cidade));
   }
 
   @Get('filtro')
-  @ApiOperation({
-    summary: 'Filtra empresas por tipo, cidade ou ambos',
+  @ApiQuery({
+    name: 'tipo',
+    required: false,
+    enum: ['clinica', 'vistoria', 'detran'],
   })
-  @ApiOkResponse({ type: [EmpresaResponseDto] })
-  @ApiBadRequestResponse({ description: 'Erro ao aplicar filtros' })
+  @ApiQuery({ name: 'cidade', required: false, type: String })
+  @ApiResponse({ status: 200, type: [EmpresaResponseDto] })
   async findComFiltro(
-    @Query('tipo') tipo?: string,
+    @Query('tipo') tipo?: 'clinica' | 'vistoria' | 'detran',
     @Query('cidade') cidade?: string,
   ): Promise<EmpresaResponseDto[]> {
-    try {
-      let empresas: Empresa[];
-
-      if (!tipo && !cidade) {
-        empresas = await this.mapaService.findAll();
-      } else {
-        empresas = await this.mapaService.findComFiltro(tipo, cidade);
-      }
-
-      return this.toDto(empresas);
-    } catch (error) {
-      throw error instanceof BadRequestException
-        ? error
-        : new BadRequestException('Erro ao aplicar filtros');
-    }
+    return this.toDto(await this.mapaService.findComFiltro(tipo, cidade));
   }
 }
