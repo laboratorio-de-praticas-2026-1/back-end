@@ -166,4 +166,214 @@ export class BuscaService {
       mensagem: itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
     };
   }
+
+  async listarPublicidadeByTermo(termo?: string): Promise<{
+    itens: Publicidade[];
+    mensagem?: string;
+  }> {
+    const termoNormalizado = termo?.trim();
+
+    if (!termoNormalizado) {
+      const itens = await this.publicidadeModel.findAll({
+        order: [['id', 'DESC']],
+      });
+
+      return {
+        itens,
+        mensagem:
+          itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+      };
+    }
+
+    const itens = await this.publicidadeModel.findAll({
+      where: {
+        [Op.or]: [
+          { titulo: { [Op.like]: `%${termoNormalizado}%` } },
+          { conteudo: { [Op.like]: `%${termoNormalizado}%` } },
+        ],
+      },
+      order: [['id', 'DESC']],
+    });
+
+    return {
+      itens,
+      mensagem: itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+    };
+  }
+
+  async listarUsuariosByTermo(termo?: string): Promise<{
+    itens: Usuario[];
+    mensagem?: string;
+  }> {
+    const termoNormalizado = termo?.trim();
+
+    if (!termoNormalizado) {
+      const itens = await this.usuarioModel.findAll({
+        attributes: { exclude: ['senha'] },
+        order: [['id', 'DESC']],
+      });
+
+      return {
+        itens,
+        mensagem:
+          itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+      };
+    }
+
+    const filtros: Array<Record<string, unknown> | ReturnType<typeof where>> = [
+      { nome: { [Op.like]: `%${termoNormalizado}%` } },
+      { email: { [Op.like]: `%${termoNormalizado}%` } },
+      { cpfCnpj: { [Op.like]: `%${termoNormalizado}%` } },
+      { celular: { [Op.like]: `%${termoNormalizado}%` } },
+    ];
+
+    const dataNormalizada = this.normalizarDataBusca(termoNormalizado);
+    if (dataNormalizada) {
+      const inicio = new Date(`${dataNormalizada}T00:00:00.000Z`);
+      const fim = new Date(`${dataNormalizada}T23:59:59.999Z`);
+      filtros.push(where(col('data_cadastro'), Op.between, [inicio, fim]));
+    } else {
+      const dataParcialNormalizada =
+        this.normalizarDataBuscaParcial(termoNormalizado);
+      if (dataParcialNormalizada) {
+        filtros.push(
+          where(cast(fn('DATE', col('data_cadastro')), 'TEXT'), {
+            [Op.like]: `%${dataParcialNormalizada}%`,
+          }),
+        );
+      }
+    }
+
+    if (/\d/.test(termoNormalizado) && !dataNormalizada) {
+      filtros.push(
+        where(cast(col('id'), 'TEXT'), {
+          [Op.like]: `%${termoNormalizado}%`,
+        }),
+      );
+    }
+
+    const itens = await this.usuarioModel.findAll({
+      attributes: { exclude: ['senha'] },
+      where: { [Op.or]: filtros },
+      order: [['id', 'DESC']],
+    });
+
+    return {
+      itens,
+      mensagem: itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+    };
+  }
+
+  async listarServicosByTermo(termo?: string): Promise<{
+    itens: Servico[];
+    mensagem?: string;
+  }> {
+    const termoNormalizado = termo?.trim();
+
+    if (!termoNormalizado) {
+      const itens = await this.servicoModel.findAll({
+        order: [['id', 'DESC']],
+      });
+
+      return {
+        itens,
+        mensagem:
+          itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+      };
+    }
+
+    const filtros: Array<Record<string, unknown> | ReturnType<typeof where>> = [
+      { nome: { [Op.like]: `%${termoNormalizado}%` } },
+      { descricao: { [Op.like]: `%${termoNormalizado}%` } },
+    ];
+
+    if (/\d/.test(termoNormalizado)) {
+      filtros.push(
+        where(cast(col('valor_base'), 'TEXT'), {
+          [Op.like]: `%${termoNormalizado}%`,
+        }),
+      );
+      filtros.push(
+        where(cast(col('prazo_estimado_dias'), 'TEXT'), {
+          [Op.like]: `%${termoNormalizado}%`,
+        }),
+      );
+      filtros.push(
+        where(cast(col('id'), 'TEXT'), {
+          [Op.like]: `%${termoNormalizado}%`,
+        }),
+      );
+    }
+
+    const itens = await this.servicoModel.findAll({
+      where: { [Op.or]: filtros },
+      order: [['id', 'DESC']],
+    });
+
+    return {
+      itens,
+      mensagem: itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+    };
+  }
+
+  private normalizarDataBusca(valor: string): string | undefined {
+    const valorYmd = valor.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (valorYmd) {
+      const ano = Number(valorYmd[1]);
+      const mes = Number(valorYmd[2]);
+      const dia = Number(valorYmd[3]);
+      return this.validarData(ano, mes, dia)
+        ? `${valorYmd[1]}-${valorYmd[2]}-${valorYmd[3]}`
+        : undefined;
+    }
+
+    const valorBr = valor.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (valorBr) {
+      const dia = Number(valorBr[1]);
+      const mes = Number(valorBr[2]);
+      const ano = Number(valorBr[3]);
+      return this.validarData(ano, mes, dia)
+        ? `${valorBr[3]}-${valorBr[2]}-${valorBr[1]}`
+        : undefined;
+    }
+
+    return undefined;
+  }
+
+  private normalizarDataBuscaParcial(valor: string): string | undefined {
+    const termo = valor.trim();
+    if (!termo || !/[\d/-]/.test(termo)) {
+      return undefined;
+    }
+
+    const somenteData = termo.replace(/[^\d/-]/g, '');
+    if (!somenteData || !/[/-]/.test(somenteData)) {
+      return undefined;
+    }
+
+    return somenteData.replace(/\//g, '-');
+  }
+
+  private extrairIdExatoDoTermo(valor: string): number | undefined {
+    const somenteNumero = valor.match(/^\d+$/);
+    if (somenteNumero) {
+      return Number(somenteNumero[0]);
+    }
+
+    const formatoId = valor.match(/^id\s+(\d+)$/i);
+    if (formatoId) {
+      return Number(formatoId[1]);
+    }
+
+    return undefined;
+  }
+
+  private validarData(ano: number, mes: number, dia: number): boolean {
+    const dataUtc = new Date(Date.UTC(ano, mes - 1, dia, 0, 0, 0, 0));
+    return (
+      dataUtc.getUTCFullYear() === ano &&
+      dataUtc.getUTCMonth() === mes - 1 &&
+      dataUtc.getUTCDate() === dia
+    );
+  }
 }
