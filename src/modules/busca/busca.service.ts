@@ -1,8 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { col, Op, where } from 'sequelize';
+import { cast, col, fn, Op, where } from 'sequelize';
 import { Banner } from 'src/models/banner.model';
 import { Blog } from 'src/models/blog.model';
+import { Publicidade } from 'src/models/publicidade.model';
+import { Servico } from 'src/models/servico.model';
+import { Usuario } from 'src/models/usuario.model';
 import { BuscaBannerStatusDto } from './dto/busca-banner-status.dto';
 import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
 
@@ -11,6 +14,9 @@ export class BuscaService {
   constructor(
     @InjectModel(Blog) private blogModel: typeof Blog,
     @InjectModel(Banner) private bannerModel: typeof Banner,
+    @InjectModel(Publicidade) private publicidadeModel: typeof Publicidade,
+    @InjectModel(Usuario) private usuarioModel: typeof Usuario,
+    @InjectModel(Servico) private servicoModel: typeof Servico,
   ) {}
 
   async buscarBlogsPorIntervaloDeData(
