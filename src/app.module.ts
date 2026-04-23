@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { UtilsModule } from './commons/utils/utils.module';
 import { CloudinaryModule } from './infra/cloudinary/cloudinary.module';
@@ -57,6 +58,7 @@ import { ReciboModule } from './modules/recibo/recibo.module';
       },
     }),
 
+    ScheduleModule.forRoot(),
     ContatoModule,
     FaqModule,
     ChatModule,
