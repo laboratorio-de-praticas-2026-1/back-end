@@ -287,20 +287,14 @@ export class SolicitacaoService implements OnModuleDestroy {
         const textos = obterTextosEmailPorStatus(novoStatus, isReabertura);
 
         if (textos) {
-          void this.dispararEmailStatus(
+          await this.dispararEmailStatus(
             solicitacao,
             textos.assunto,
             textos.titulo,
             textos.mensagem,
             textos.cor,
             observacao,
-          ).catch((error: unknown) => {
-            const mensagemErro =
-              error instanceof Error ? error.message : 'Erro desconhecido';
-            this.logger.warn(
-              `Falha ao enviar email de status para solicitacao ${id}: ${mensagemErro}`,
-            );
-          });
+          );
         }
       }
     }
