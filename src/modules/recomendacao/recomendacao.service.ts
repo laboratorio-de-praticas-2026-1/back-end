@@ -38,6 +38,16 @@ export class RecomendacaoService {
     try {
       const listaRecomendacoes: RecomendacaoRespostaDto[] = [];
 
+      const recomendacaoSemVeiculo =
+        await this.buscarUsuarioSemVeiculo(usuarioId);
+      if (recomendacaoSemVeiculo) {
+        return recomendacaoSemVeiculo.map(({ id, nome, descricao }) => ({
+          id,
+          nome,
+          descricao,
+        }));
+      }
+
       const licenciamento = await this.buscarLicenciamentoAnual(usuarioId);
       if (licenciamento) listaRecomendacoes.push(licenciamento);
 
@@ -94,6 +104,38 @@ export class RecomendacaoService {
         error instanceof Error ? error.message : 'Erro desconhecido';
       this.logger.error(`Erro ao gerar recomendações: ${errorMessage}`);
       throw new InternalServerErrorException('Erro ao processar recomendações');
+    }
+  }
+
+  async buscarUsuarioSemVeiculo(
+    usuarioId: number,
+  ): Promise<RecomendacaoRespostaDto[] | null> {
+    try {
+      const veiculos = await this.veiculoModel.findAll({
+        where: { usuarioId },
+      });
+
+      if (!veiculos || veiculos.length === 0) {
+        return [
+          {
+            id: 2,
+            nome: 'Renovação de CNH',
+            descricao:
+              'Mantenha sua habilitação em dia. Verifique o prazo para renovação.',
+          },
+          {
+            id: 3,
+            nome: 'Mudança de Categoria',
+            descricao:
+              'Deseja dirigir outros tipos de veículo? Veja como mudar sua categoria de CNH.',
+          },
+        ] as unknown as RecomendacaoRespostaDto[];
+      }
+
+      return null;
+    } catch (error) {
+      this.logger.error('Erro ao verificar usuário sem veículo', error);
+      return null;
     }
   }
 
