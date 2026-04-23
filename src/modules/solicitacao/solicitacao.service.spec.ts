@@ -715,6 +715,26 @@ describe('SolicitacaoService', () => {
         }),
       );
     });
+
+    it('deve falhar quando o envio do email de status falhar', async () => {
+      const solicitacao = mockSolicitacaoComRelacoes('em_andamento', 10);
+      mockSolicitacaoModel.findByPk.mockResolvedValue(solicitacao);
+      mockEmailService.enviarEmail.mockRejectedValue(
+        new Error('Falha no envio de email'),
+      );
+
+      await expect(
+        service.updateSolicitacaoStatusById(10, {
+          status: StatusSolicitacaoEnum.CANCELADO,
+        }),
+      ).rejects.toThrow('Falha no envio de email');
+
+      expect(solicitacao.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: StatusSolicitacaoEnum.CANCELADO,
+        }),
+      );
+    });
   });
 
   describe('rotas diretas de status', () => {
