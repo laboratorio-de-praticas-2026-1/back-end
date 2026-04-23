@@ -8,7 +8,6 @@ import { NotFoundException } from '@nestjs/common';
 
 describe('HeaderService', () => {
   let service: HeaderService;
-  let bannerModel: typeof Banner;
 
   const mockBanner = {
     id: 1,
@@ -48,7 +47,6 @@ describe('HeaderService', () => {
     }).compile();
 
     service = module.get<HeaderService>(HeaderService);
-    bannerModel = module.get<typeof Banner>(getModelToken(Banner));
   });
 
   it('should be defined', () => {
@@ -121,9 +119,7 @@ describe('HeaderService', () => {
         reload: jest.fn().mockResolvedValue(undefined),
       };
 
-      jest
-        .spyOn(mockBannerModel, 'create')
-        .mockResolvedValue(createdBanner as any);
+      jest.spyOn(mockBannerModel, 'create').mockResolvedValue(createdBanner);
 
       const result = await service.create(createDto, mockFile);
       expect(result).toEqual(createdBanner);

@@ -2,10 +2,14 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, type TransformFnParams } from 'class-transformer';
 import { IsIn, IsOptional, IsString } from 'class-validator';
 
+const trimString = (value: unknown): string | undefined =>
+  typeof value === 'string' ? value.trim() : undefined;
+
+const trimUpperString = (value: unknown): string | undefined =>
+  typeof value === 'string' ? value.trim().toUpperCase() : undefined;
+
 export class BuscaEmpresaFiltroDto {
-  @Transform(({ value }: TransformFnParams) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
+  @Transform(({ value }: TransformFnParams) => trimString(value))
   @IsOptional()
   @IsString()
   @IsIn(['clinica', 'detran', 'vistoria'], {
@@ -18,9 +22,7 @@ export class BuscaEmpresaFiltroDto {
   })
   declare tipo?: string;
 
-  @Transform(({ value }: TransformFnParams) =>
-    typeof value === 'string' ? value.trim().toUpperCase() : value,
-  )
+  @Transform(({ value }: TransformFnParams) => trimUpperString(value))
   @IsOptional()
   @IsString()
   @ApiPropertyOptional({
@@ -30,9 +32,7 @@ export class BuscaEmpresaFiltroDto {
   })
   declare estado?: string;
 
-  @Transform(({ value }: TransformFnParams) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
+  @Transform(({ value }: TransformFnParams) => trimString(value))
   @IsOptional()
   @IsString()
   @ApiPropertyOptional({

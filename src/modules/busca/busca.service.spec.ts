@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/sequelize';
 import { Op } from 'sequelize';
-import { BuscaService } from './busca.service';
+import { BuscaService } from './busca.service.js';
 import { BadRequestException } from '@nestjs/common';
 import { Blog } from 'src/models/blog.model';
 import { Banner } from 'src/models/banner.model';
@@ -9,9 +9,8 @@ import { Servico } from 'src/models/servico.model';
 import { Publicidade } from 'src/models/publicidade.model';
 import { Usuario } from 'src/models/usuario.model';
 import { Empresa } from 'src/models/empresa.model';
-import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
-import { BuscaServicoFiltroDto } from './dto/busca-servico-filtro.dto';
-import { BuscaUsuarioFiltroDto } from './dto/busca-usuario-filtro.dto';
+import { BuscaServicoFiltroDto } from './dto/busca-servico-filtro.dto.js';
+import { BuscaUsuarioFiltroDto } from './dto/busca-usuario-filtro.dto.js';
 
 describe('BuscaService', () => {
   let service: BuscaService;
@@ -316,17 +315,13 @@ describe('BuscaService', () => {
   });
 
   it('deve falhar quando nenhuma data é informada', async () => {
-    await expect(
-      service.buscarBlogsPorIntervaloDeData(
-        {} as unknown as BuscaBlogIntervaloDto,
-      ),
-    ).rejects.toThrow(BadRequestException);
+    await expect(service.buscarBlogsPorIntervaloDeData({})).rejects.toThrow(
+      BadRequestException,
+    );
 
-    await expect(
-      service.buscarBlogsPorIntervaloDeData(
-        {} as unknown as BuscaBlogIntervaloDto,
-      ),
-    ).rejects.toThrow('Informe ao menos uma data: "de" ou "ate"');
+    await expect(service.buscarBlogsPorIntervaloDeData({})).rejects.toThrow(
+      'Informe ao menos uma data: "de" ou "ate"',
+    );
     expect(blogFindAllMock).not.toHaveBeenCalled();
   });
 
@@ -546,7 +541,7 @@ describe('BuscaService', () => {
 
       await service.buscarUsuariosPorFiltros({
         data_cadastro: '2026-03-03',
-      } as unknown as BuscaUsuarioFiltroDto);
+      });
 
       expect(usuarioFindAllMock).toHaveBeenCalledTimes(1);
       const calls = usuarioFindAllMock.mock.calls as Array<
@@ -666,7 +661,7 @@ describe('BuscaService', () => {
       await service.buscarServicosPorFiltros({
         valor_base_de: 50,
         valor_base_ate: 150,
-      } as unknown as BuscaServicoFiltroDto);
+      });
 
       expect(servicoFindAllMock).toHaveBeenCalledTimes(1);
       const calls = servicoFindAllMock.mock.calls as Array<
@@ -685,7 +680,7 @@ describe('BuscaService', () => {
       await service.buscarServicosPorFiltros({
         prazo_estimado_de: 10,
         prazo_estimado_ate: 30,
-      } as unknown as BuscaServicoFiltroDto);
+      });
 
       expect(servicoFindAllMock).toHaveBeenCalledTimes(1);
       const calls = servicoFindAllMock.mock.calls as Array<

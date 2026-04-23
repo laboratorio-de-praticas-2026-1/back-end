@@ -145,7 +145,9 @@ export class BuscaService {
 
     const rows = (await this.empresaModel.findAll({
       attributes: ['cidade'],
-      ...(estadoNormalizado ? { where: { estado: estadoNormalizado } } : undefined),
+      ...(estadoNormalizado
+        ? { where: { estado: estadoNormalizado } }
+        : undefined),
       group: ['cidade'],
       order: [['cidade', 'ASC']],
       raw: true,
@@ -338,7 +340,9 @@ export class BuscaService {
     if (dataNormalizada) {
       const inicio = new Date(`${dataNormalizada}T00:00:00.000Z`);
       const fim = new Date(`${dataNormalizada}T23:59:59.999Z`);
-      filtros.push(where(fn('DATE', col('data_cadastro')), Op.between, [inicio, fim]));
+      filtros.push(
+        where(fn('DATE', col('data_cadastro')), Op.between, [inicio, fim]),
+      );
     } else {
       const dataParcialNormalizada =
         this.normalizarDataBuscaParcial(termoNormalizado);

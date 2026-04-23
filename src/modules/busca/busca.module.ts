@@ -10,7 +10,16 @@ import { Servico } from 'src/models/servico.model';
 import { Empresa } from 'src/models/empresa.model';
 
 @Module({
-  imports: [SequelizeModule.forFeature([Blog, Banner, Publicidade, Usuario, Servico, Empresa])],
+  imports: [
+    SequelizeModule.forFeature([
+      Blog,
+      Banner,
+      Publicidade,
+      Usuario,
+      Servico,
+      Empresa,
+    ]),
+  ],
   controllers: [BuscaController],
   providers: [BuscaService],
 })

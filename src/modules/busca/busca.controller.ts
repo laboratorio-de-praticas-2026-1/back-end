@@ -24,8 +24,8 @@ export class BuscaController {
   }
 
   @Get('banner/status')
-    @ApiOperation({
-      summary: "Buscar banners com base em status: 'ativo' e 'inativo'",
+  @ApiOperation({
+    summary: "Buscar banners com base em status: 'ativo' e 'inativo'",
   })
   buscarBannerPorStatus(@Query() dto: BuscaBannerStatusDto) {
     this.logger.log(`Buscando banners por status: status=${dto.status}`);

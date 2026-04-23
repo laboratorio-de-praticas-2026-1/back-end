@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BuscaController } from './busca.controller';
-import { BuscaService } from './busca.service';
+import { BuscaController } from './busca.controller.js';
+import { BuscaService } from './busca.service.js';
 
 describe('BuscaController', () => {
   let controller: BuscaController;
