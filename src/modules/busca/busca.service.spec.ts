@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/sequelize';
 import { Op } from 'sequelize';
-import { BuscaService } from './busca.service.js';
+import { BuscaService } from './busca.service';
 import { BadRequestException } from '@nestjs/common';
 import { Blog } from 'src/models/blog.model';
 import { Banner } from 'src/models/banner.model';
@@ -9,8 +9,8 @@ import { Servico } from 'src/models/servico.model';
 import { Publicidade } from 'src/models/publicidade.model';
 import { Usuario } from 'src/models/usuario.model';
 import { Empresa } from 'src/models/empresa.model';
-import { BuscaServicoFiltroDto } from './dto/busca-servico-filtro.dto.js';
-import { BuscaUsuarioFiltroDto } from './dto/busca-usuario-filtro.dto.js';
+import { BuscaServicoFiltroDto } from './dto/busca-servico-filtro.dto';
+import { BuscaUsuarioFiltroDto } from './dto/busca-usuario-filtro.dto';
 
 describe('BuscaService', () => {
   let service: BuscaService;
