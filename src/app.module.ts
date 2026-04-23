@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { UtilsModule } from './commons/utils/utils.module';
 import { CloudinaryModule } from './infra/cloudinary/cloudinary.module';
 import { FileConversorModule } from './infra/conversor/file-conversor/file-conversor.module';
+import { EmailModule } from './infra/email/email.module';
 import { BlogModule } from './modules/blog/blog.module';
 import { BuscaModule } from './modules/busca/busca.module';
 import { ChatModule } from './modules/chat/chat.module';
@@ -14,7 +16,6 @@ import { HeaderModule } from './modules/header/header.module';
 import { MapaModule } from './modules/mapa/mapa.module';
 import { NotificacaoModule } from './modules/notificacao/notificacao.module';
 import { PublicidadeModule } from './modules/publicidade/publicidade.module';
-import { EmailModule } from './infra/email/email.module';
 import { RecomendacaoModule } from './modules/recomendacao/recomendacao.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { ServicosModule } from './modules/servicos/servicos.module';
@@ -38,6 +39,7 @@ import { UsuarioModule } from './modules/usuario/usuario.module';
       },
       synchronize: false, // NÃO MODIFICAR PARA TRUE
     }),
+    ScheduleModule.forRoot(),
     ContatoModule,
     FaqModule,
     ChatModule,

@@ -4,6 +4,8 @@ import { QueryTypes } from 'sequelize';
 import { EmailService } from 'src/infra/email/email.service';
 import { EmailParams } from 'src/infra/email/dto/email-params';
 import { join } from 'path';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { NOTIFICACAO_DEBITOS_PRAZOS } from 'src/infra/email/templates/templates-names';
 
 interface DebitoRow {
   email: string;
@@ -15,46 +17,18 @@ interface DebitoRow {
 }
 
 @Injectable()
-export class NotificacaoService implements OnModuleInit {
+export class NotificacaoService {
   private readonly logger = new Logger(NotificacaoService.name);
-
   constructor(
     private readonly sequelize: Sequelize,
     private readonly emailService: EmailService,
   ) {}
 
-  onModuleInit() {
-    this.logger.log('Serviço de Notificação Automática iniciado com sucesso.');
-    this.iniciarCicloDeNotificacoes();
-  }
-
-  private iniciarCicloDeNotificacoes() {
-    void this.processarEnvioDeDebitos();
-    this.agendarProximaSegunda();
-  }
-
-  private agendarProximaSegunda() {
-    const agora = new Date();
-    const diasParaProximaSegunda = this.calcularDiasProximaSegunda(agora);
-    const msAteProximaSegunda = diasParaProximaSegunda * 24 * 60 * 60 * 1000;
-
-    this.logger.log(
-      `Próxima execução agendada para segunda-feira, daqui a ${diasParaProximaSegunda} dia(s).`,
-    );
-
-    setTimeout(() => {
-      void this.processarEnvioDeDebitos();
-      this.agendarProximaSegunda();
-    }, msAteProximaSegunda);
-  }
-
-  private calcularDiasProximaSegunda(data: Date): number {
-    const diaAtual = data.getDay();
-    let diasParaSegunda = 1 - diaAtual;
-    if (diasParaSegunda <= 0) {
-      diasParaSegunda += 7;
-    }
-    return diasParaSegunda;
+  //@Cron('*/2 * * * *') //Rodar a cada 2 minutos para testes
+  @Cron('0 9 * * 1') //Rodar toda segunda às 09:00
+  async handleCron() {
+    this.logger.log('Executando envio semanal de débitos...');
+    await this.processarEnvioDeDebitos();
   }
 
   async processarEnvioDeDebitos() {
@@ -96,14 +70,7 @@ export class NotificacaoService implements OnModuleInit {
 
           const params = new EmailParams(
             email,
-            join(
-              process.cwd(),
-              'src',
-              'infra',
-              'email',
-              'templates',
-              'notificacao-debitos-prazos.ejs',
-            ),
+            NOTIFICACAO_DEBITOS_PRAZOS,
             '⚠️ Aviso: Você possui débitos pendentes',
             {
               nome: info.nome,
