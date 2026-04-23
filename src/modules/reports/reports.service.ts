@@ -112,12 +112,12 @@ export class ReportsService {
     const dataPeriodoInicio = createReportDto.dataPeriodoInicio
       ? new Date(createReportDto.dataPeriodoInicio)
       : new Date(currentDate.getTime() - diasEmMs);
-    dataPeriodoInicio.setUTCHours(0, 0, 0, 0);
+    dataPeriodoInicio.setHours(0, 0, 0, 0);
 
     const dataPeriodoFim = createReportDto.dataPeriodoFim
       ? new Date(createReportDto.dataPeriodoFim)
       : currentDate;
-    dataPeriodoFim.setUTCHours(23, 59, 59, 999);
+    dataPeriodoFim.setHours(23, 59, 59, 999);
     createReportDto.dataPeriodoInicio = dataPeriodoInicio;
     createReportDto.dataPeriodoFim = dataPeriodoFim;
 

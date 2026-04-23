@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import {
   IsDate,
   IsEnum,
@@ -9,6 +9,25 @@ import {
   MaxLength,
 } from 'class-validator';
 import { RelatorioCategoria } from 'src/models/relatorio.model';
+
+function parseDateInput(value: unknown): unknown {
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  const dateOnlyMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+  if (dateOnlyMatch) {
+    const [, year, month, day] = dateOnlyMatch;
+    return new Date(Number(year), Number(month) - 1, Number(day));
+  }
+
+  return new Date(value);
+}
 
 export class CreateReportDto {
   @ApiProperty({
@@ -48,7 +67,7 @@ export class CreateReportDto {
     example: '2025-01-01',
   })
   @IsOptional()
-  @Type(() => Date)
+  @Transform(({ value }) => parseDateInput(value), { toClassOnly: true })
   @IsDate({ message: 'Data de início deve ser uma data válida' })
   dataPeriodoInicio?: Date;
 
@@ -58,7 +77,7 @@ export class CreateReportDto {
     example: '2026-02-01',
   })
   @IsOptional()
-  @Type(() => Date)
+  @Transform(({ value }) => parseDateInput(value), { toClassOnly: true })
   @IsDate({ message: 'Data de fim deve ser uma data válida' })
   dataPeriodoFim?: Date;
 }
