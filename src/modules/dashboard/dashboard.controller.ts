@@ -1,5 +1,5 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
 import {
   ClientesDto,
@@ -19,6 +19,11 @@ export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @Get('all')
+  @ApiOperation({
+    summary: 'Retorna todos os dados do dashboard',
+    description:
+      'Consolida os blocos geral, solicitações, veículos, serviços, financeiro, documentos e clientes em uma única resposta.',
+  })
   @ApiQuery({ name: 'inicio', required: false, example: '2025-01-01' })
   @ApiQuery({ name: 'fim', required: false, example: '2025-06-30' })
   async retornarTudoDashboard(
@@ -28,6 +33,11 @@ export class DashboardController {
   }
 
   @Get()
+  @ApiOperation({
+    summary: 'Retorna os dados gerais do dashboard',
+    description:
+      'Obtém os indicadores gerais exibidos na visão principal do dashboard para o período informado.',
+  })
   @ApiQuery({ name: 'inicio', required: false, example: '2025-01-01' })
   @ApiQuery({ name: 'fim', required: false, example: '2025-06-30' })
   async retornarGeralDashboard(
@@ -37,6 +47,11 @@ export class DashboardController {
   }
 
   @Get('solicitacoes')
+  @ApiOperation({
+    summary: 'Retorna os dados de solicitações do dashboard',
+    description:
+      'Obtém métricas e totais relacionados ao fluxo de solicitações no período informado.',
+  })
   @ApiQuery({ name: 'inicio', required: false, example: '2025-01-01' })
   @ApiQuery({ name: 'fim', required: false, example: '2025-06-30' })
   async retornarSolicitacoesDashboard(
@@ -49,11 +64,21 @@ export class DashboardController {
   }
 
   @Get('veiculos')
+  @ApiOperation({
+    summary: 'Retorna os dados de veículos do dashboard',
+    description:
+      'Obtém os indicadores de veículos para composição dos cartões e gráficos do dashboard.',
+  })
   async retornarVeiculosDashboard(): Promise<VeiculosDto> {
     return this.dashboardService.obterDadosVeiculos();
   }
 
   @Get('servicos')
+  @ApiOperation({
+    summary: 'Retorna os dados de serviços do dashboard',
+    description:
+      'Obtém métricas de serviços prestados e distribuição por período para o dashboard.',
+  })
   @ApiQuery({ name: 'inicio', required: false, example: '2025-01-01' })
   @ApiQuery({ name: 'fim', required: false, example: '2025-06-30' })
   async retornarServicosDashboard(
@@ -63,6 +88,11 @@ export class DashboardController {
   }
 
   @Get('financeiro')
+  @ApiOperation({
+    summary: 'Retorna os dados financeiros do dashboard',
+    description:
+      'Obtém os indicadores financeiros do período, como arrecadação, pendências e demais métricas exibidas no dashboard.',
+  })
   @ApiQuery({ name: 'inicio', required: false, example: '2025-01-01' })
   @ApiQuery({ name: 'fim', required: false, example: '2025-06-30' })
   async retornarFinanceiroDashboard(
@@ -72,6 +102,11 @@ export class DashboardController {
   }
 
   @Get('documentos')
+  @ApiOperation({
+    summary: 'Retorna os dados de documentos do dashboard',
+    description:
+      'Obtém os indicadores de documentos por status e volume no período informado.',
+  })
   @ApiQuery({ name: 'inicio', required: false, example: '2025-01-01' })
   @ApiQuery({ name: 'fim', required: false, example: '2025-06-30' })
   async retornarDocumentosDashboard(
@@ -81,6 +116,11 @@ export class DashboardController {
   }
 
   @Get('clientes')
+  @ApiOperation({
+    summary: 'Retorna os dados de clientes do dashboard',
+    description:
+      'Obtém os indicadores de base de clientes no período, incluindo crescimento e distribuição.',
+  })
   @ApiQuery({ name: 'inicio', required: false, example: '2025-01-01' })
   @ApiQuery({ name: 'fim', required: false, example: '2025-06-30' })
   async retornarClientesDashboard(
