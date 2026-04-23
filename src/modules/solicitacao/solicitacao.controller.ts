@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Logger,
   Param,
   ParseIntPipe,
@@ -163,6 +165,7 @@ export class SolicitacaoController {
   @ApiNotFoundResponse({
     description: 'SolicitaÃ§Ã£o nÃ£o encontrada',
   })
+  @HttpCode(HttpStatus.OK)
   cancelarSolicitacao(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<{ id: number; status: 'cancelado' }> {
@@ -188,6 +191,7 @@ export class SolicitacaoController {
   @ApiNotFoundResponse({
     description: 'SolicitaÃ§Ã£o nÃ£o encontrada',
   })
+  @HttpCode(HttpStatus.OK)
   reabrirSolicitacao(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<{ id: number; status: 'em_andamento' }> {
