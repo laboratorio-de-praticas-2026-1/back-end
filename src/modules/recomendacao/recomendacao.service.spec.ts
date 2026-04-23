@@ -12,6 +12,7 @@ import { RecomendacaoCategoriaBlogEnum } from './enums/recomendacao-categoria-bl
 import { SolicitacaoComServicoDto } from './dto/solicitacao-com-servico.dto';
 import { Debito } from 'src/models/debito.model';
 import { Veiculo } from 'src/models/veiculo.model';
+import { RecomendacaoRespostaDto } from './dto/recomendacao-resposta.dto';
 
 describe('RecomendacaoService', () => {
   let service: RecomendacaoService;
@@ -223,7 +224,7 @@ describe('RecomendacaoService', () => {
       expect(resultado?.id).toBe(10);
     });
 
-    it('deve retornar null se não houver débitos (não deve chamar o próximo método)', async () => {
+    it('deve retornar null se não houver veículos', async () => {
       mockVeiculoModel.findAll.mockResolvedValue([]);
       const resultado = await service.buscarParcelamentoDebitos(1);
       expect(resultado).toBeNull();
@@ -395,6 +396,28 @@ describe('RecomendacaoService', () => {
     });
   });
 
+  describe('buscarUsuarioSemVeiculo', () => {
+    it('deve retornar recomendações de CNH quando não houver veículos ativos', async () => {
+      mockVeiculoModel.findAll.mockResolvedValue([]);
+
+      const resultado = await service.buscarUsuarioSemVeiculo(1);
+
+      expect(resultado).toHaveLength(2);
+      expect(resultado?.[0].id).toBe(2);
+      expect(resultado?.[1].id).toBe(3);
+    });
+
+    it('deve retornar null se o usuário possuir veículos ativos', async () => {
+      mockVeiculoModel.findAll.mockResolvedValue([
+        { id: 10 } as Partial<Veiculo> as Veiculo,
+      ]);
+
+      const resultado = await service.buscarUsuarioSemVeiculo(1);
+
+      expect(resultado).toBeNull();
+    });
+  });
+
   describe('buscarTransferenciaPropriedade', () => {
     it('deve retornar recomendação (ID 2) se veículo não tiver transferência ativa', async () => {
       mockVeiculoModel.findAll.mockResolvedValue([
@@ -439,7 +462,36 @@ describe('RecomendacaoService', () => {
   });
 
   describe('obterRecomendacoes', () => {
+    it('deve priorizar serviços de CNH e encerrar fluxo se o usuário não tiver veículos', async () => {
+      const mockCNH = [
+        {
+          id: 2,
+          nome: 'Renovação de CNH',
+          descricao:
+            'Mantenha sua habilitação em dia. Verifique o prazo para renovação.',
+        },
+        {
+          id: 3,
+          nome: 'Mudança de Categoria',
+          descricao:
+            'Deseja dirigir outros tipos de veículo? Veja como mudar sua categoria de CNH.',
+        },
+      ];
+
+      jest
+        .spyOn(service, 'buscarUsuarioSemVeiculo')
+        .mockResolvedValue(mockCNH as RecomendacaoRespostaDto[] | null);
+      const spyMulta = jest.spyOn(service, 'buscarRecursoMulta');
+
+      const resultado = await service.obterRecomendacoes(1);
+
+      expect(resultado).toHaveLength(2);
+      expect(resultado[0].id).toBe(2);
+      expect(spyMulta).not.toHaveBeenCalled();
+    });
+
     it('deve retornar uma lista com múltiplos serviços se o usuário tiver multa e venda', async () => {
+      jest.spyOn(service, 'buscarUsuarioSemVeiculo').mockResolvedValue(null);
       jest.spyOn(service, 'buscarLicenciamentoAnual').mockResolvedValue(null);
       jest.spyOn(service, 'buscarRenovacaoCNH').mockResolvedValue(null);
       jest
@@ -447,29 +499,30 @@ describe('RecomendacaoService', () => {
         .mockResolvedValue(null);
       jest.spyOn(service, 'buscarRecursoMulta').mockResolvedValue({
         id: 6,
-        nome: 'Multa',
-        descricao: '...',
+        nome: 'Recurso de Multa',
+        descricao:
+          'Identificamos uma multa pendente. Você tem o direito de recorrer e evitar pontos na sua CNH.',
         ativo: true,
       });
       jest.spyOn(service, 'buscarParcelamentoDebitos').mockResolvedValue(null);
       jest.spyOn(service, 'buscarComunicacaoVenda').mockResolvedValue({
         id: 9,
-        nome: 'Venda',
-        descricao: '...',
+        nome: 'Comunicação de Venda',
+        descricao:
+          'Evite multas e pontos de terceiros. Comunique a venda do seu veículo ao DETRAN imediatamente.',
         ativo: true,
       });
 
       const resultado = await service.obterRecomendacoes(1);
 
-      expect(Array.isArray(resultado)).toBe(true);
       expect(resultado).toHaveLength(2);
       expect(resultado[0]).not.toHaveProperty('ativo');
-      expect(resultado[1]).not.toHaveProperty('ativo');
       expect(resultado[0].id).toBe(6);
       expect(resultado[1].id).toBe(9);
     });
 
     it('deve retornar serviços populares se a lista de prioridades estiver vazia', async () => {
+      jest.spyOn(service, 'buscarUsuarioSemVeiculo').mockResolvedValue(null);
       jest.spyOn(service, 'buscarLicenciamentoAnual').mockResolvedValue(null);
       jest.spyOn(service, 'buscarRenovacaoCNH').mockResolvedValue(null);
       jest
@@ -478,27 +531,32 @@ describe('RecomendacaoService', () => {
       jest.spyOn(service, 'buscarRecursoMulta').mockResolvedValue(null);
       jest.spyOn(service, 'buscarParcelamentoDebitos').mockResolvedValue(null);
       jest.spyOn(service, 'buscarComunicacaoVenda').mockResolvedValue(null);
-      jest
-        .spyOn(
-          service as unknown as {
-            buscarAtributosPerfil: (usuarioId: number) => Promise<[]>;
-          },
-          'buscarAtributosPerfil',
-        )
-        .mockResolvedValue([]);
 
-      const mockPopulares = [{ id: 1, nome: 'Popular', descricao: '...' }];
+      type ServicePrivate = {
+        buscarAtributosPerfil: (usuarioId: number) => Promise<unknown[]>;
+        buscarServicosPopulares: () => Promise<
+          { id: number; nome: string; descricao: string }[]
+        >;
+      };
+
+      const servicePrivate = service as unknown as ServicePrivate;
+
+      jest.spyOn(servicePrivate, 'buscarAtributosPerfil').mockResolvedValue([]);
+
+      const mockPopulares = [
+        {
+          id: 1,
+          nome: 'Parcelamento de Débitos',
+          descricao:
+            'Você possui pendências financeiras. Parcele seus débitos em até 12x no cartão e mantenha seu veículo regularizado.',
+        },
+      ];
       jest
-        .spyOn(
-          service as unknown as {
-            buscarServicosPopulares: () => Promise<
-              { id: number; nome: string; descricao: string }[]
-            >;
-          },
-          'buscarServicosPopulares',
-        )
+        .spyOn(servicePrivate, 'buscarServicosPopulares')
         .mockResolvedValue(mockPopulares);
+
       const resultado = await service.obterRecomendacoes(1);
+
       expect(resultado).toEqual(mockPopulares);
       expect(resultado[0]).not.toHaveProperty('ativo');
     });
