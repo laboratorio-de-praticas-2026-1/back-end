@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Op, WhereOptions } from 'sequelize';
 import { Empresa } from 'src/models/empresa.model';
-import { EmpresaResponseDto } from './dto/empresa-response.dto';
+
 
 const tipos_empresas = ['clinica', 'vistoria', 'detran'];
 
@@ -32,45 +32,27 @@ export class MapaService {
     return tipoFormatado;
   }
 
-  private mapToDto(empresas: Empresa[]): EmpresaResponseDto[] {
-    return empresas.map(
-      (e) =>
-        new EmpresaResponseDto(
-          e.id,
-          e.nomeFantasia ?? '',
-          e.tipo ?? '',
-          e.cidade ?? '',
-          e.estado ?? '',
-          e.endereco ?? '',
-          e.latitude ?? '',
-          e.longitude ?? '',
-        ),
-    );
-  }
-
-  async findAll(): Promise<EmpresaResponseDto[]> {
-    const empresas = await this.empresaModel.findAll({
+  async findAll(): Promise<Empresa[]> {
+    return this.empresaModel.findAll({
       where: this.defaultFiltroMapa,
     });
 
-    return this.mapToDto(empresas);
   }
 
-  async findByTipo(tipo: string): Promise<EmpresaResponseDto[]> {
+  async findByTipo(tipo: string): Promise<Empresa[]> {
     const tipoFormatado = this.validateTipo(tipo);
 
-    const empresas = await this.empresaModel.findAll({
+    return this.empresaModel.findAll({
       where: {
         ...this.defaultFiltroMapa,
         tipo: tipoFormatado,
       },
     });
 
-    return this.mapToDto(empresas);
   }
 
-  async findByCidade(cidade: string): Promise<EmpresaResponseDto[]> {
-    const empresas = await this.empresaModel.findAll({
+  async findByCidade(cidade: string): Promise<Empresa[]> {
+    return this.empresaModel.findAll({
       where: {
         ...this.defaultFiltroMapa,
         cidade: {
@@ -79,13 +61,9 @@ export class MapaService {
       },
     });
 
-    return this.mapToDto(empresas);
   }
 
-  async findComFiltro(
-    tipo?: string,
-    cidade?: string,
-  ): Promise<EmpresaResponseDto[]> {
+  async findComFiltro(tipo?: string, cidade?: string): Promise<Empresa[]> {
     const condicoesFiltro: WhereOptions<Empresa> = {
       ...this.defaultFiltroMapa,
     };
@@ -100,10 +78,9 @@ export class MapaService {
       };
     }
 
-    const empresas = await this.empresaModel.findAll({
+    return this.empresaModel.findAll({
       where: condicoesFiltro,
     });
 
-    return this.mapToDto(empresas);
   }
 }
