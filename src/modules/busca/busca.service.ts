@@ -308,6 +308,69 @@ export class BuscaService {
     };
   }
 
+  async listarUsuariosByTermo(termo?: string): Promise<{
+    itens: Usuario[];
+    mensagem?: string;
+  }> {
+    const termoNormalizado = termo?.trim();
+
+    if (!termoNormalizado) {
+      const itens = await this.usuarioModel.findAll({
+        attributes: { exclude: ['senha'] },
+        order: [['id', 'DESC']],
+      });
+
+      return {
+        itens,
+        mensagem:
+          itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+      };
+    }
+
+    const filtros: Array<Record<string, unknown> | ReturnType<typeof where>> = [
+      { nome: { [Op.like]: `%${termoNormalizado}%` } },
+      { email: { [Op.like]: `%${termoNormalizado}%` } },
+      { cpfCnpj: { [Op.like]: `%${termoNormalizado}%` } },
+      { celular: { [Op.like]: `%${termoNormalizado}%` } },
+    ];
+
+    const dataNormalizada = this.normalizarDataBusca(termoNormalizado);
+    if (dataNormalizada) {
+      const inicio = new Date(`${dataNormalizada}T00:00:00.000Z`);
+      const fim = new Date(`${dataNormalizada}T23:59:59.999Z`);
+      filtros.push(where(fn('DATE', col('data_cadastro')), Op.between, [inicio, fim]));
+    } else {
+      const dataParcialNormalizada =
+        this.normalizarDataBuscaParcial(termoNormalizado);
+      if (dataParcialNormalizada) {
+        filtros.push(
+          where(cast(fn('DATE', col('data_cadastro')), 'TEXT'), {
+            [Op.like]: `%${dataParcialNormalizada}%`,
+          }),
+        );
+      }
+    }
+
+    if (/\d/.test(termoNormalizado) && !dataNormalizada) {
+      filtros.push(
+        where(cast(col('id'), 'TEXT'), {
+          [Op.like]: `%${termoNormalizado}%`,
+        }),
+      );
+    }
+
+    const itens = await this.usuarioModel.findAll({
+      attributes: { exclude: ['senha'] },
+      where: { [Op.or]: filtros },
+      order: [['id', 'DESC']],
+    });
+
+    return {
+      itens,
+      mensagem: itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+    };
+  }
+
   async buscarUsuariosPorFiltros(
     dto: BuscaUsuarioFiltroDto,
   ): Promise<Usuario[]> {

@@ -1,7 +1,7 @@
 import { Controller, Get, Logger, Query } from '@nestjs/common';
-import { BuscaService } from './busca.service.js';
-import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto.js';
-import { BuscaBannerStatusDto } from './dto/busca-banner-status.dto.js';
+import { BuscaService } from './busca.service';
+import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
+import { BuscaBannerStatusDto } from './dto/busca-banner-status.dto';
 import { Blog } from 'src/models/blog.model';
 import { ApiOperation } from '@nestjs/swagger';
 
