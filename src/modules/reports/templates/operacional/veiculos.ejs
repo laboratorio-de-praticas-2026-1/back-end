@@ -1,0 +1,35 @@
+<% const exibirResumo = showResumo !== false; %>
+<% const tituloTabela = typeof tableTitle === 'string' && tableTitle ? tableTitle : 'Veículos com Débitos Pendentes'; %>
+<% const pendentes = debitosVeiculos.filter((dv) => dv.debito && dv.debito.status === 'pendente'); %>
+
+<% if (exibirResumo) { %>
+  <div class="section-label">Veículos</div>
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-label">Volume Total de Veículos</div>
+      <div class="kpi-value"><%= totalVeiculos %></div>
+    </div>
+  </div>
+<% } %>
+
+<div class="section-label"><%= tituloTabela %></div>
+<table>
+  <thead><tr>
+    <th>Placa</th><th>Usuário</th><th>Valor</th><th>Método Pgto</th><th>Tipo Pgto</th>
+  </tr></thead>
+  <tbody>
+    <% if (pendentes.length) { %>
+      <% pendentes.forEach((dv) => { %>
+        <tr>
+          <td><%= dv.veiculo?.placa ?? '—' %></td>
+          <td><%= dv.veiculo?.usuario?.nome ?? '—' %></td>
+          <td><%= fmtBRL(Number(dv.debito.valor)) %></td>
+          <td><%= dv.debito.pagamento?.metodoPagamento ?? '—' %></td>
+          <td><%= dv.debito.pagamento?.tipoPagamento ?? '—' %></td>
+        </tr>
+      <% }) %>
+    <% } else { %>
+      <tr><td colspan="5" style="text-align:center;color:#999;">Nenhum veículo com débito pendente</td></tr>
+    <% } %>
+  </tbody>
+</table>

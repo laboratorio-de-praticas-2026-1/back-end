@@ -11,6 +11,7 @@ import { Servico } from './servico.model';
 import { Usuario } from './usuario.model';
 import { Veiculo } from './veiculo.model';
 import { DocumentoSolicitacao } from './documento-solicitacao.model';
+import { Debito } from './debito.model';
 
 @Table({ tableName: 'solicitacao' })
 export class Solicitacao extends Model {
@@ -40,6 +41,9 @@ export class Solicitacao extends Model {
 
   @HasMany(() => DocumentoSolicitacao)
   declare documentos: DocumentoSolicitacao[];
+
+  @HasMany(() => Debito)
+  declare debitos: Debito[];
 
   @Column({
     type: DataType.ENUM(

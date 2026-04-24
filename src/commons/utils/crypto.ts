@@ -20,15 +20,19 @@ export class CryptoUtil {
   }
 
   decrypt(encryptedText: string): string {
-    const [ivHex, encrypted] = encryptedText.split(':');
+    try {
+      const [ivHex, encrypted] = encryptedText.split(':');
 
-    const iv = Buffer.from(ivHex, 'hex');
+      const iv = Buffer.from(ivHex, 'hex');
 
-    const decipher = crypto.createDecipheriv(this.algorithm, this.key, iv);
+      const decipher = crypto.createDecipheriv(this.algorithm, this.key, iv);
 
-    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
+      let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
 
-    return decrypted;
+      return decrypted;
+    } catch (error) {
+      return '';
+    }
   }
 }
