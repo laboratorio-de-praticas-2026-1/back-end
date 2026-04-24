@@ -1,0 +1,22 @@
+<div class="section-label"><%= titulo %></div>
+<table>
+  <thead><tr>
+    <th>ID</th><th>Tipo</th><th>Cliente</th><th>Serviço</th><th>Status</th><th>Data Upload</th>
+  </tr></thead>
+  <tbody>
+    <% if (docs.length) { %>
+      <% docs.forEach((d) => { %>
+        <tr>
+          <td><%= d.id %></td>
+          <td><%= d.tipoDocumento ?? '—' %></td>
+          <td><%= d.solicitacao?.usuario?.nome ?? '—' %></td>
+          <td><%= d.solicitacao?.servico?.nome ?? '—' %></td>
+          <td><%- badge(d.statusValidacao) %></td>
+          <td><%= fmtDate(d.dataUpload) %></td>
+        </tr>
+      <% }) %>
+    <% } else { %>
+      <tr><td colspan="6" style="text-align:center;color:#999;">Nenhum documento <%= titulo.toLowerCase() %></td></tr>
+    <% } %>
+  </tbody>
+</table>

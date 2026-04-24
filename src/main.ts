@@ -13,6 +13,7 @@ async function bootstrap() {
     .setTitle('Laboratório de Práticas')
     .setDescription('Documentação da API')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('swagger', app, documentFactory);

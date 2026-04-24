@@ -4,6 +4,14 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "deleteOutDir": true,
-    "plugins": ["@nestjs/swagger"]
+    "plugins": ["@nestjs/swagger"],
+    "assets": [
+      "infra/email/templates/**/*",
+      "modules/reports/templates/**/*.ejs",
+      "modules/recibo/template/**/*.ejs",
+      "modules/recibo/assets/**/*",
+      "static/**/*"
+    ],
+    "watchAssets": true
   }
 }
