@@ -1,7 +1,5 @@
 import {
   BadRequestException,
-  HttpException,
-  HttpStatus,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -513,6 +511,64 @@ export class SolicitacaoService implements OnModuleDestroy {
     });
     return {
       message: 'Documento enviado com sucesso e aguardando validação.',
+    };
+  }
+
+  async substituirDocumento(
+    solicitacaoId: number,
+    docId: number,
+    arquivo: Express.Multer.File,
+  ): Promise<{ id: number; mensagem: string }> {
+    const solicitacao = await this.solicitacaoModel.findByPk(solicitacaoId);
+    if (!solicitacao) {
+      throw new NotFoundException('Solicitação não encontrada');
+    }
+
+    const documento = await this.documentoModel.findByPk(docId);
+    if (!documento) {
+      throw new NotFoundException('Documento não encontrado');
+    }
+
+    if (documento.solicitacaoId !== solicitacaoId) {
+      throw new BadRequestException(
+        'Documento não pertence à solicitação informada',
+      );
+    }
+
+    let urlDocRestricted: CloudinaryResponse;
+
+    try {
+      urlDocRestricted = await this.cloudinaryService.uploadDocument(arquivo);
+    } catch (error) {
+      const mensagemErro =
+        error instanceof Error ? error.message : 'Erro desconhecido';
+
+      this.logger.error(
+        `Falha ao enviar documento substituto para a solicitacao ${solicitacaoId}: ${mensagemErro}`,
+      );
+
+      throw new BadRequestException(
+        `Erro ao enviar documento: ${mensagemErro}`,
+      );
+    }
+
+    const publicId = urlDocRestricted.public_id as string;
+    if (!publicId) {
+      throw new InternalServerErrorException(
+        'Resposta inválida do Cloudinary: public_id ausente',
+      );
+    }
+    const resourceType = urlDocRestricted.resource_type as 'raw' | 'image';
+    const nomeHash = this.cryptoUtil.encrypt(`${resourceType}|${publicId}`);
+
+    await documento.update({
+      nomeHash: nomeHash,
+      dataUpload: new Date(),
+    });
+
+    return {
+      id: documento.id,
+      mensagem: 'Documento substituído com sucesso',
     };
   }
 }
