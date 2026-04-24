@@ -1,7 +1,5 @@
 import {
   BadRequestException,
-  HttpException,
-  HttpStatus,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -497,7 +495,8 @@ export class SolicitacaoService implements OnModuleDestroy {
         {
           model: Usuario,
           attributes: ['id', 'nome', 'email'],
-          where: Object.keys(whereUsuario).length > 0 ? whereUsuario : undefined,
+          where:
+            Object.keys(whereUsuario).length > 0 ? whereUsuario : undefined,
           required: Object.keys(whereUsuario).length > 0,
         },
         {

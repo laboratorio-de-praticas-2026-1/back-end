@@ -1,14 +1,13 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
   Logger,
+  Patch,
   Param,
-  Query,
   ParseIntPipe,
   Post,
-  Put,
+  Query,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -20,7 +19,6 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
-  ApiProperty,
   ApiTags,
 } from '@nestjs/swagger';
 import { DocumentoFilePipe } from 'src/commons/pipes/file.pipe';
@@ -32,7 +30,6 @@ import { ListSolicitacoesQueryDto } from './dto/list-solicitacoes-query.dto';
 import { ListSolicitacoesResponseDto } from './dto/list-solicitacoes-response.dto';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 import { SolicitacaoService } from './solicitacao.service';
-import { Patch } from '@nestjs/common';
 
 @ApiTags('solicitacao')
 @Controller('solicitacoes')

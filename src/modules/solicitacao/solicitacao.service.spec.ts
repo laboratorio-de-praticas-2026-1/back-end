@@ -27,6 +27,16 @@ interface MockEmailService {
   enviarEmail: jest.Mock;
 }
 
+interface FindAllIncludeQuery {
+  where?: Record<string, unknown>;
+  required?: boolean;
+}
+
+interface FindAllQuery {
+  where: Record<string, unknown>;
+  include: FindAllIncludeQuery[];
+}
+
 describe('SolicitacaoService', () => {
   let service: SolicitacaoService;
 
@@ -513,6 +523,18 @@ describe('SolicitacaoService', () => {
   });
 
   describe('listarSolicitacoes', () => {
+    const getFindAllQuery = (): FindAllQuery => {
+      const calls =
+        (mockSolicitacaoModel.findAll?.mock.calls as unknown[][] | undefined) ??
+        [];
+
+      if (calls.length === 0 || !calls[0] || !calls[0][0]) {
+        throw new Error('findAll não foi chamado');
+      }
+
+      return calls[0][0] as FindAllQuery;
+    };
+
     it('deve listar sem filtros quando nenhum parametro for enviado', async () => {
       mockSolicitacaoModel.findAll?.mockResolvedValue([
         {
@@ -553,7 +575,7 @@ describe('SolicitacaoService', () => {
         ],
       });
 
-      const query = mockSolicitacaoModel.findAll?.mock.calls[0][0];
+      const query = getFindAllQuery();
       expect(query.where).toEqual({});
       expect(query.include[0].where).toBeUndefined();
       expect(query.include[0].required).toBe(false);
@@ -568,7 +590,7 @@ describe('SolicitacaoService', () => {
         nome: 'Amanda',
       });
 
-      const query = mockSolicitacaoModel.findAll?.mock.calls[0][0];
+      const query = getFindAllQuery();
       expect(query.where.status).toBe(StatusSolicitacaoEnum.EM_ANDAMENTO);
       expect(query.where.dataConclusao).toEqual({ [Op.is]: null });
       expect(query.include[0].where.nome).toEqual({ [Op.like]: '%Amanda%' });
@@ -593,13 +615,16 @@ describe('SolicitacaoService', () => {
         cpf_cnpj: '12345678901',
       });
 
-      const query = mockSolicitacaoModel.findAll?.mock.calls[0][0];
+      const query = getFindAllQuery();
 
       expect(query.where.usuarioId).toBe(10);
       expect(query.where.servicoId).toBe(20);
       expect(query.where.veiculoId).toBe(30);
       expect(query.where.status).toEqual({
-        [Op.in]: [StatusSolicitacaoEnum.RECEBIDO, StatusSolicitacaoEnum.CANCELADO],
+        [Op.in]: [
+          StatusSolicitacaoEnum.RECEBIDO,
+          StatusSolicitacaoEnum.CANCELADO,
+        ],
       });
       expect(query.where.dataSolicitacao[Op.gte]).toEqual(
         new Date('2026-04-01'),

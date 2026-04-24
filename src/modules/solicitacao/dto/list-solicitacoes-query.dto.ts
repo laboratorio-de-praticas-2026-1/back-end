@@ -40,8 +40,8 @@ export class ListSolicitacoesQueryDto {
     example: StatusSolicitacaoEnum.EM_ANDAMENTO,
   })
   @IsOptional()
-  @Transform(({ value }: TransformFnParams) =>
-    typeof value === 'string' ? value.trim().toLowerCase() : value,
+  @Transform(({ value }: { value: unknown }): string | undefined =>
+    typeof value === 'string' ? value.trim().toLowerCase() : undefined,
   )
   @IsEnum(StatusSolicitacaoEnum, {
     message: `Status inválido. Valores permitidos: ${Object.values(StatusSolicitacaoEnum).join(', ')}`,
@@ -82,7 +82,10 @@ export class ListSolicitacoesQueryDto {
     example: '2026-04-01',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'data_solicitacao_inicio deve ser uma data válida' })
+  @IsDateString(
+    {},
+    { message: 'data_solicitacao_inicio deve ser uma data válida' },
+  )
   declare data_solicitacao_inicio?: string;
 
   @ApiPropertyOptional({
@@ -90,7 +93,10 @@ export class ListSolicitacoesQueryDto {
     example: '2026-04-30',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'data_solicitacao_fim deve ser uma data válida' })
+  @IsDateString(
+    {},
+    { message: 'data_solicitacao_fim deve ser uma data válida' },
+  )
   declare data_solicitacao_fim?: string;
 
   @ApiPropertyOptional({
@@ -98,7 +104,10 @@ export class ListSolicitacoesQueryDto {
     example: '2026-05-01',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'data_conclusao_inicio deve ser uma data válida' })
+  @IsDateString(
+    {},
+    { message: 'data_conclusao_inicio deve ser uma data válida' },
+  )
   declare data_conclusao_inicio?: string;
 
   @ApiPropertyOptional({
@@ -114,10 +123,10 @@ export class ListSolicitacoesQueryDto {
     example: false,
   })
   @IsOptional()
-  @Transform(({ value }: TransformFnParams): boolean | unknown => {
+  @Transform(({ value }: { value: unknown }): boolean | undefined => {
     if (value === true || value === 'true') return true;
     if (value === false || value === 'false') return false;
-    return value;
+    return undefined;
   })
   @IsBoolean({ message: 'concluida deve ser true ou false' })
   declare concluida?: boolean;
@@ -128,8 +137,8 @@ export class ListSolicitacoesQueryDto {
   })
   @IsOptional()
   @IsString()
-  @Transform(({ value }: TransformFnParams) =>
-    typeof value === 'string' ? value.trim() : value,
+  @Transform(({ value }: { value: unknown }): string | undefined =>
+    typeof value === 'string' ? value.trim() : undefined,
   )
   declare nome?: string;
 
@@ -139,8 +148,8 @@ export class ListSolicitacoesQueryDto {
   })
   @IsOptional()
   @IsString()
-  @Transform(({ value }: TransformFnParams) =>
-    typeof value === 'string' ? value.trim() : value,
+  @Transform(({ value }: { value: unknown }): string | undefined =>
+    typeof value === 'string' ? value.trim() : undefined,
   )
   declare cpf_cnpj?: string;
 }
