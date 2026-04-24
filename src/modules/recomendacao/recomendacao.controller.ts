@@ -7,7 +7,7 @@ import {
   ParseIntPipe,
   Post,
 } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { RecomendacaoInteracaoRequestDto } from './dto/recomendacao-interacao-request.dto';
 import { RecomendacaoInteracaoResponseDto } from './dto/recomendacao-interacao-response.dto';
 import { RecomendacaoRespostaDto } from './dto/recomendacao-resposta.dto';
@@ -33,24 +33,6 @@ export class RecomendacaoController {
 
   @Post()
   @ApiOperation({ summary: 'Registrar interação do usuário com o blog' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        categoriaBlog: {
-          type: 'string',
-          enum: ['Documentacao', 'Debitos', 'Multas', 'Legislacao', 'Condutor'],
-          example: 'Documentacao',
-        },
-        dataInteracao: {
-          type: 'string',
-          format: 'date',
-          example: '2024-05-20',
-        },
-      },
-      required: ['categoriaBlog', 'dataInteracao'],
-    },
-  })
   criarInteracao(
     // @Req() req: Request & { user?: { id?: number } },
     @Body() interacaoDto: RecomendacaoInteracaoRequestDto,
@@ -61,7 +43,7 @@ export class RecomendacaoController {
     // if (!usuarioId) {
     //   throw new UnauthorizedException('Usuário não autenticado.');
     // }
-    const usuarioId = 1;
+    const { usuarioId } = interacaoDto;
 
     this.logger.log(
       `Registrando interação do usuário ${usuarioId} com blog na categoria ${interacaoDto.categoriaBlog}`,

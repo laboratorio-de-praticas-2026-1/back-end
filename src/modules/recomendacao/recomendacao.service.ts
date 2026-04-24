@@ -108,14 +108,14 @@ export class RecomendacaoService {
       if (!veiculos || veiculos.length === 0) {
         return [
           {
-            id: 2,
+            id: 4,
             nome: 'Renovação de CNH',
             descricao:
               'Mantenha sua habilitação em dia. Verifique o prazo para renovação.',
           },
           {
-            id: 3,
-            nome: 'Mudança de Categoria',
+            id: 8,
+            nome: 'Mudança de Categoria CNH',
             descricao:
               'Deseja dirigir outros tipos de veículo? Veja como mudar sua categoria de CNH.',
           },
@@ -125,6 +125,46 @@ export class RecomendacaoService {
       return null;
     } catch (error) {
       this.logger.error('Erro ao verificar usuário sem veículo', error);
+      return null;
+    }
+  }
+
+  async buscarTransferenciaPropriedade(
+    usuarioId: number,
+  ): Promise<RecomendacaoRespostaDto | null> {
+    try {
+      const veiculos = await this.veiculoModel.findAll({
+        where: { usuarioId },
+      });
+
+      for (const veiculo of veiculos) {
+        const jaExiste = await this.solicitacaoModel.findOne({
+          where: {
+            veiculoId: veiculo.id,
+            servicoId: 2,
+            status: {
+              [Op.ne]: 'cancelado',
+            },
+          },
+        });
+
+        if (!jaExiste) {
+          return {
+            id: 2,
+            nome: 'Transferência de Propriedade',
+            descricao:
+              'Identificamos que seu veículo ainda não possui transferência de titularidade. Regularize agora.',
+          };
+        }
+      }
+
+      return null;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido';
+      this.logger.error(
+        `Erro na busca de transferência de propriedade: ${errorMessage}`,
+      );
       return null;
     }
   }
@@ -179,7 +219,6 @@ export class RecomendacaoService {
               nome: 'Recurso de Multa',
               descricao:
                 'Identificamos uma multa pendente. Você tem o direito de recorrer e evitar pontos na sua CNH.',
-              ativo: true,
             };
           }
         }
@@ -238,7 +277,6 @@ export class RecomendacaoService {
             nome: 'Parcelamento de Débitos',
             descricao:
               'Você possui pendências financeiras. Parcele seus débitos em até 12x no cartão e mantenha seu veículo regularizado.',
-            ativo: true,
           };
         }
       }
@@ -284,7 +322,6 @@ export class RecomendacaoService {
           nome: 'Comunicação de Venda',
           descricao:
             'Evite multas e pontos de terceiros. Comunique a venda do seu veículo ao DETRAN imediatamente.',
-          ativo: true,
         };
       }
 
@@ -350,7 +387,6 @@ export class RecomendacaoService {
             id: 1,
             nome: 'Licenciamento Anual',
             descricao: `O veículo de placa ${veiculo.placa} já está no período de licenciamento. Faça o licenciamento anual para evitar multas.`,
-            ativo: true,
           };
         }
       }
@@ -390,8 +426,8 @@ export class RecomendacaoService {
         return {
           id: 4,
           nome: 'Renovação de CNH',
-          descricao: 'Renove sua CNH',
-          ativo: true,
+          descricao:
+            'Mantenha sua habilitação em dia. Verifique o prazo para renovação.',
         };
       }
 

@@ -51,7 +51,6 @@ describe('RecomendacaoController', () => {
           id: 7,
           nome: 'Licenciamento Anual (CRLV-e)',
           descricao: 'Processo de renovação do documento do veículo.',
-          ativo: true,
         },
       ];
 
@@ -83,6 +82,7 @@ describe('RecomendacaoController', () => {
     it('deve criar interação com o blog', async () => {
       const usuarioId = 1;
       const interacaoDto: RecomendacaoInteracaoRequestDto = {
+        usuarioId: usuarioId,
         categoriaBlog: RecomendacaoCategoriaBlogEnum.DOCUMENTACAO,
         dataInteracao: '2024-05-20',
       };

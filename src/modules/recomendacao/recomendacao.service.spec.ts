@@ -285,8 +285,8 @@ describe('RecomendacaoService', () => {
       const resultado = await service.buscarUsuarioSemVeiculo(1);
 
       expect(resultado).toHaveLength(2);
-      expect(resultado?.[0].id).toBe(2);
-      expect(resultado?.[1].id).toBe(3);
+      expect(resultado?.[0].id).toBe(4);
+      expect(resultado?.[1].id).toBe(8);
     });
 
     it('deve retornar null se o usuário possuir veículos ativos', async () => {
@@ -304,14 +304,14 @@ describe('RecomendacaoService', () => {
     it('deve priorizar serviços de CNH e encerrar fluxo se o usuário não tiver veículos', async () => {
       const mockCNH = [
         {
-          id: 2,
+          id: 4,
           nome: 'Renovação de CNH',
           descricao:
             'Mantenha sua habilitação em dia. Verifique o prazo para renovação.',
         },
         {
-          id: 3,
-          nome: 'Mudança de Categoria',
+          id: 8,
+          nome: 'Mudança de Categoria CNH',
           descricao:
             'Deseja dirigir outros tipos de veículo? Veja como mudar sua categoria de CNH.',
         },
@@ -325,7 +325,8 @@ describe('RecomendacaoService', () => {
       const resultado = await service.obterRecomendacoes(1);
 
       expect(resultado).toHaveLength(2);
-      expect(resultado[0].id).toBe(2);
+      expect(resultado[0].id).toBe(4);
+      expect(resultado[1].id).toBe(8);
       expect(spyMulta).not.toHaveBeenCalled();
     });
 
