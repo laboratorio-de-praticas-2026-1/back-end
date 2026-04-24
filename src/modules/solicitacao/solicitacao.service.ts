@@ -9,6 +9,7 @@ import {
   OnModuleDestroy,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
+import { Op } from 'sequelize';
 import { StatusSolicitacaoEnum } from 'src/commons/enums/status-solicitacao.enum';
 import { CryptoUtil } from 'src/commons/utils/crypto';
 import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
@@ -33,6 +34,7 @@ import {
 } from './dto/create-solicitacao-response.dto';
 import { CreateSolicitacaoDto } from './dto/create-solicitacao.dto';
 import { GetSolicitacaoResponseDto } from './dto/get-solicitacao-response.dto';
+import { ListSolicitacoesQueryDto } from './dto/list-solicitacoes-query.dto';
 import { ListSolicitacoesResponseDto } from './dto/list-solicitacoes-response.dto';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 
@@ -423,12 +425,80 @@ export class SolicitacaoService implements OnModuleDestroy {
     return data.toISOString().slice(0, 10);
   }
 
-  async listarSolicitacoes(): Promise<ListSolicitacoesResponseDto> {
+  async listarSolicitacoes(
+    filtros: ListSolicitacoesQueryDto = {},
+  ): Promise<ListSolicitacoesResponseDto> {
+    const whereSolicitacao: Record<string, unknown> = {};
+    const whereUsuario: Record<string, unknown> = {};
+
+    if (filtros.usuario_id) {
+      whereSolicitacao.usuarioId = filtros.usuario_id;
+    }
+
+    if (filtros.servico_id) {
+      whereSolicitacao.servicoId = filtros.servico_id;
+    }
+
+    if (filtros.veiculo_id) {
+      whereSolicitacao.veiculoId = filtros.veiculo_id;
+    }
+
+    if (filtros.status) {
+      whereSolicitacao.status = filtros.status;
+    }
+
+    if (filtros.status_in && filtros.status_in.length > 0) {
+      whereSolicitacao.status = { [Op.in]: filtros.status_in };
+    }
+
+    const dataSolicitacaoFiltro: Record<symbol, Date> = {};
+    if (filtros.data_solicitacao_inicio) {
+      dataSolicitacaoFiltro[Op.gte] = new Date(filtros.data_solicitacao_inicio);
+    }
+    if (filtros.data_solicitacao_fim) {
+      dataSolicitacaoFiltro[Op.lte] = this.normalizarDataFim(
+        filtros.data_solicitacao_fim,
+      );
+    }
+    if (Reflect.ownKeys(dataSolicitacaoFiltro).length > 0) {
+      whereSolicitacao.dataSolicitacao = dataSolicitacaoFiltro;
+    }
+
+    const dataConclusaoFiltro: Record<symbol, Date | null> = {};
+    if (filtros.data_conclusao_inicio) {
+      dataConclusaoFiltro[Op.gte] = new Date(filtros.data_conclusao_inicio);
+    }
+    if (filtros.data_conclusao_fim) {
+      dataConclusaoFiltro[Op.lte] = this.normalizarDataFim(
+        filtros.data_conclusao_fim,
+      );
+    }
+    if (filtros.concluida === true) {
+      dataConclusaoFiltro[Op.not] = null;
+    }
+
+    if (filtros.concluida === false) {
+      whereSolicitacao.dataConclusao = { [Op.is]: null };
+    } else if (Reflect.ownKeys(dataConclusaoFiltro).length > 0) {
+      whereSolicitacao.dataConclusao = dataConclusaoFiltro;
+    }
+
+    if (filtros.nome) {
+      whereUsuario.nome = { [Op.like]: `%${filtros.nome}%` };
+    }
+
+    if (filtros.cpf_cnpj) {
+      whereUsuario.cpfCnpj = { [Op.like]: `%${filtros.cpf_cnpj}%` };
+    }
+
     const solicitacoes = await this.solicitacaoModel.findAll({
+      where: whereSolicitacao,
       include: [
         {
           model: Usuario,
           attributes: ['id', 'nome', 'email'],
+          where: Object.keys(whereUsuario).length > 0 ? whereUsuario : undefined,
+          required: Object.keys(whereUsuario).length > 0,
         },
         {
           model: Servico,
@@ -463,6 +533,14 @@ export class SolicitacaoService implements OnModuleDestroy {
       total: solicitacoes.length,
       solicitacoes: solicitacoesFormatadas,
     };
+  }
+
+  private normalizarDataFim(data: string): Date {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(data)) {
+      return new Date(`${data}T23:59:59.999Z`);
+    }
+
+    return new Date(data);
   }
 
   async enviarDocumento(

@@ -11,6 +11,7 @@ import { NotificacaoService } from '../notificacao/notificacao.service';
 import { EmailService } from 'src/infra/email/email.service';
 import { SolicitacaoService } from './solicitacao.service';
 import { StatusSolicitacaoEnum } from 'src/commons/enums/status-solicitacao.enum';
+import { Op } from 'sequelize';
 
 interface MockModel {
   create: jest.Mock;
@@ -509,6 +510,112 @@ describe('SolicitacaoService', () => {
         servico_id: 3,
       }),
     ).rejects.toThrow('O veículo informado não pertence ao usuário');
+  });
+
+  describe('listarSolicitacoes', () => {
+    it('deve listar sem filtros quando nenhum parametro for enviado', async () => {
+      mockSolicitacaoModel.findAll?.mockResolvedValue([
+        {
+          usuario: { id: 1, nome: 'Amanda', email: 'amanda@email.com' },
+          servico: { id: 3, nome: 'Transferencia', valorBase: 200 },
+          status: 'recebido',
+          observacaoCliente: null,
+          observacaoAdmin: null,
+          dataSolicitacao: new Date('2026-04-10T10:00:00.000Z'),
+          dataConclusao: null,
+        },
+      ]);
+
+      const resposta = await service.listarSolicitacoes({});
+
+      expect(resposta).toEqual({
+        total: 1,
+        solicitacoes: [
+          {
+            cliente: {
+              id: 1,
+              nome: 'Amanda',
+              email: 'amanda@email.com',
+            },
+            servico: {
+              id: 3,
+              tipo: 'Transferencia',
+              valorBase: 200,
+            },
+            solicitacao: {
+              status: 'Recebido',
+              observacaoCliente: '',
+              observacaoAdmin: '',
+              dataSolicitacao: new Date('2026-04-10T10:00:00.000Z'),
+              dataConclusao: null,
+            },
+          },
+        ],
+      });
+
+      const query = mockSolicitacaoModel.findAll?.mock.calls[0][0];
+      expect(query.where).toEqual({});
+      expect(query.include[0].where).toBeUndefined();
+      expect(query.include[0].required).toBe(false);
+    });
+
+    it('deve combinar filtros por status, concluida e nome do cliente', async () => {
+      mockSolicitacaoModel.findAll?.mockResolvedValue([]);
+
+      await service.listarSolicitacoes({
+        status: StatusSolicitacaoEnum.EM_ANDAMENTO,
+        concluida: false,
+        nome: 'Amanda',
+      });
+
+      const query = mockSolicitacaoModel.findAll?.mock.calls[0][0];
+      expect(query.where.status).toBe(StatusSolicitacaoEnum.EM_ANDAMENTO);
+      expect(query.where.dataConclusao).toEqual({ [Op.is]: null });
+      expect(query.include[0].where.nome).toEqual({ [Op.like]: '%Amanda%' });
+      expect(query.include[0].required).toBe(true);
+    });
+
+    it('deve aplicar status_in, ids e intervalos de data quando enviados', async () => {
+      mockSolicitacaoModel.findAll?.mockResolvedValue([]);
+
+      await service.listarSolicitacoes({
+        usuario_id: 10,
+        servico_id: 20,
+        veiculo_id: 30,
+        status_in: [
+          StatusSolicitacaoEnum.RECEBIDO,
+          StatusSolicitacaoEnum.CANCELADO,
+        ],
+        data_solicitacao_inicio: '2026-04-01',
+        data_solicitacao_fim: '2026-04-30',
+        data_conclusao_inicio: '2026-05-01',
+        data_conclusao_fim: '2026-05-31',
+        cpf_cnpj: '12345678901',
+      });
+
+      const query = mockSolicitacaoModel.findAll?.mock.calls[0][0];
+
+      expect(query.where.usuarioId).toBe(10);
+      expect(query.where.servicoId).toBe(20);
+      expect(query.where.veiculoId).toBe(30);
+      expect(query.where.status).toEqual({
+        [Op.in]: [StatusSolicitacaoEnum.RECEBIDO, StatusSolicitacaoEnum.CANCELADO],
+      });
+      expect(query.where.dataSolicitacao[Op.gte]).toEqual(
+        new Date('2026-04-01'),
+      );
+      expect(query.where.dataSolicitacao[Op.lte]).toEqual(
+        new Date('2026-04-30T23:59:59.999Z'),
+      );
+      expect(query.where.dataConclusao[Op.gte]).toEqual(new Date('2026-05-01'));
+      expect(query.where.dataConclusao[Op.lte]).toEqual(
+        new Date('2026-05-31T23:59:59.999Z'),
+      );
+      expect(query.include[0].where.cpfCnpj).toEqual({
+        [Op.like]: '%12345678901%',
+      });
+      expect(query.include[0].required).toBe(true);
+    });
   });
 
   describe('updateSolicitacaoStatusById', () => {
