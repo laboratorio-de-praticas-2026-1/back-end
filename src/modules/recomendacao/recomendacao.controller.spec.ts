@@ -86,7 +86,6 @@ describe('RecomendacaoController', () => {
         categoriaBlog: RecomendacaoCategoriaBlogEnum.DOCUMENTACAO,
         dataInteracao: '2024-05-20',
       };
-      // const req = { user: { id: usuarioId } };
 
       mockRecomendacaoService.criarInteracao.mockResolvedValue({
         id: 7,
@@ -96,7 +95,6 @@ describe('RecomendacaoController', () => {
       } as RecomendacaoInteracaoResponseDto);
 
       const resultado = await controller.criarInteracao(interacaoDto);
-      // const resultado = await controller.criarInteracao(req, interacaoDto);
 
       expect(mockRecomendacaoService.criarInteracao).toHaveBeenCalledWith(
         usuarioId,

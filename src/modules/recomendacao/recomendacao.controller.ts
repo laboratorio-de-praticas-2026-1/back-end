@@ -33,22 +33,8 @@ export class RecomendacaoController {
 
   @Post()
   @ApiOperation({ summary: 'Registrar interação do usuário com o blog' })
-  criarInteracao(
-    // @Req() req: Request & { user?: { id?: number } },
-    @Body() interacaoDto: RecomendacaoInteracaoRequestDto,
-  ): Promise<RecomendacaoInteracaoResponseDto> {
-    // import de @nestjs/common: Req, UnauthorizedException
-    // import { Request } from 'express';
-    // const usuarioId = req.user?.id;
-    // if (!usuarioId) {
-    //   throw new UnauthorizedException('Usuário não autenticado.');
-    // }
+  criarInteracao(@Body() interacaoDto: RecomendacaoInteracaoRequestDto,): Promise<RecomendacaoInteracaoResponseDto> {
     const { usuarioId } = interacaoDto;
-
-    this.logger.log(
-      `Registrando interação do usuário ${usuarioId} com blog na categoria ${interacaoDto.categoriaBlog}`,
-    );
-
     return this.recomendacaoService.criarInteracao(usuarioId, interacaoDto);
   }
 }
