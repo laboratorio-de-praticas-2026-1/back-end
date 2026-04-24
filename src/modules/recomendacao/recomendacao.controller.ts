@@ -33,7 +33,9 @@ export class RecomendacaoController {
 
   @Post()
   @ApiOperation({ summary: 'Registrar interação do usuário com o blog' })
-  criarInteracao(@Body() interacaoDto: RecomendacaoInteracaoRequestDto,): Promise<RecomendacaoInteracaoResponseDto> {
+  criarInteracao(
+    @Body() interacaoDto: RecomendacaoInteracaoRequestDto,
+  ): Promise<RecomendacaoInteracaoResponseDto> {
     const { usuarioId } = interacaoDto;
     return this.recomendacaoService.criarInteracao(usuarioId, interacaoDto);
   }
