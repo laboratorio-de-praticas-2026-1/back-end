@@ -16,6 +16,7 @@ describe('SolicitacaoController', () => {
     reabrirSolicitacao: jest.fn(),
     listarSolicitacoes: jest.fn(),
     enviarDocumento: jest.fn(),
+    substituirDocumento: jest.fn(),
   };
 
   const mockGuard = {
@@ -145,6 +146,31 @@ describe('SolicitacaoController', () => {
     );
     expect(mockSolicitacaoService.listarSolicitacoes).toHaveBeenCalledWith(
       query,
+    );
+  });
+  it('deve substituir documento via PATCH com sucesso', async () => {
+    const mockArquivo = {
+      originalname: 'documento.pdf',
+      mimetype: 'application/pdf',
+      buffer: Buffer.from('fake-content'),
+      size: 1024,
+    } as Express.Multer.File;
+
+    const resposta = {
+      id: 10,
+      mensagem: 'Documento substituído com sucesso',
+    };
+
+    mockSolicitacaoService.substituirDocumento.mockResolvedValue(resposta);
+
+    await expect(
+      controller.substituirDocumento(1, 10, mockArquivo),
+    ).resolves.toEqual(resposta);
+
+    expect(mockSolicitacaoService.substituirDocumento).toHaveBeenCalledWith(
+      1,
+      10,
+      mockArquivo,
     );
   });
 });

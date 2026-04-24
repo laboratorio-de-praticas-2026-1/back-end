@@ -319,4 +319,52 @@ export class SolicitacaoController {
       documento,
     );
   }
+
+  @Patch(':id/documentos/:docId')
+  @ApiOperation({
+    summary: 'Substituir arquivo de um documento vinculado a uma solicitação',
+    description:
+      'Substitui o arquivo de um documento já vinculado a uma solicitação, mantendo o mesmo vínculo e identificação do documento.',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiOkResponse({
+    description: 'Documento substituído com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'number', example: 1 },
+        mensagem: {
+          type: 'string',
+          example: 'Documento substituído com sucesso',
+        },
+      },
+    },
+  })
+  @ApiNotFoundResponse({
+    description: 'Solicitação ou documento não encontrado',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        documento: { type: 'string', format: 'binary' },
+      },
+      required: ['documento'],
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('documento', {
+      limits: {
+        fileSize: 10 * 1024 * 1024,
+      },
+    }),
+  )
+  substituirDocumento(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('docId', ParseIntPipe) docId: number,
+    @UploadedFile(DocumentoFilePipe)
+    documento: Express.Multer.File,
+  ): Promise<{ id: number; mensagem: string }> {
+    return this.solicitacaoService.substituirDocumento(id, docId, documento);
+  }
 }
