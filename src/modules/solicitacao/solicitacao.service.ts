@@ -1,7 +1,5 @@
 import {
   BadRequestException,
-  HttpException,
-  HttpStatus,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -11,6 +9,7 @@ import {
   OnModuleDestroy,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
+import { Op } from 'sequelize';
 import { StatusSolicitacaoEnum } from 'src/commons/enums/status-solicitacao.enum';
 import { StatusValidacaoEnum } from 'src/commons/enums/status-validacao.enum';
 import { CryptoUtil } from 'src/commons/utils/crypto';
@@ -471,35 +470,102 @@ export class SolicitacaoService implements OnModuleDestroy {
   }
 
   async listarSolicitacoes(
-  query: ListSolicitacoesQueryDto = new ListSolicitacoesQueryDto(),
-): Promise<ListSolicitacoesResponseDto> {
-  const page = query.page ?? 1;
-  const limit = query.limit ?? 10;
-  const orderBy = query.orderBy ?? 'dataSolicitacao';
-  const order = query.order ?? 'desc';
-  const offset = (page - 1) * limit;
+    filtros: ListSolicitacoesQueryDto = new ListSolicitacoesQueryDto(),
+  ): Promise<ListSolicitacoesResponseDto> {
+    const page = filtros.page ?? 1;
+    const limit = filtros.limit ?? 10;
+    const orderBy = filtros.orderBy ?? 'dataSolicitacao';
+    const order = filtros.order ?? 'desc';
+    const offset = (page - 1) * limit;
 
-  const { rows: solicitacoes, count: total } =
-    await this.solicitacaoModel.findAndCountAll({
-      include: [
-        {
-          model: Usuario,
-          attributes: ['id', 'nome', 'email'],
-        },
-        {
-          model: Servico,
-          attributes: ['id', 'nome', 'valorBase'],
-        },
-      ],
-      limit,
-      offset,
-      order: [
-        [
-          SOLICITACAO_ORDER_BY_COLUMN[orderBy],
-          order.toUpperCase() as 'ASC' | 'DESC',
+    const whereSolicitacao: Record<string, unknown> = {};
+    const whereUsuario: Record<string, unknown> = {};
+
+    if (filtros.usuario_id) {
+      whereSolicitacao.usuarioId = filtros.usuario_id;
+    }
+
+    if (filtros.servico_id) {
+      whereSolicitacao.servicoId = filtros.servico_id;
+    }
+
+    if (filtros.veiculo_id) {
+      whereSolicitacao.veiculoId = filtros.veiculo_id;
+    }
+
+    if (filtros.status) {
+      whereSolicitacao.status = filtros.status;
+    }
+
+    if (filtros.status_in && filtros.status_in.length > 0) {
+      whereSolicitacao.status = { [Op.in]: filtros.status_in };
+    }
+
+    const dataSolicitacaoFiltro: Record<symbol, Date> = {};
+    if (filtros.data_solicitacao_inicio) {
+      dataSolicitacaoFiltro[Op.gte] = new Date(filtros.data_solicitacao_inicio);
+    }
+    if (filtros.data_solicitacao_fim) {
+      dataSolicitacaoFiltro[Op.lte] = this.normalizarDataFim(
+        filtros.data_solicitacao_fim,
+      );
+    }
+    if (Reflect.ownKeys(dataSolicitacaoFiltro).length > 0) {
+      whereSolicitacao.dataSolicitacao = dataSolicitacaoFiltro;
+    }
+
+    const dataConclusaoFiltro: Record<symbol, Date | null> = {};
+    if (filtros.data_conclusao_inicio) {
+      dataConclusaoFiltro[Op.gte] = new Date(filtros.data_conclusao_inicio);
+    }
+    if (filtros.data_conclusao_fim) {
+      dataConclusaoFiltro[Op.lte] = this.normalizarDataFim(
+        filtros.data_conclusao_fim,
+      );
+    }
+    if (filtros.concluida === true) {
+      dataConclusaoFiltro[Op.not] = null;
+    }
+
+    if (filtros.concluida === false) {
+      whereSolicitacao.dataConclusao = { [Op.is]: null };
+    } else if (Reflect.ownKeys(dataConclusaoFiltro).length > 0) {
+      whereSolicitacao.dataConclusao = dataConclusaoFiltro;
+    }
+
+    if (filtros.nome) {
+      whereUsuario.nome = { [Op.like]: `%${filtros.nome}%` };
+    }
+
+    if (filtros.cpf_cnpj) {
+      whereUsuario.cpfCnpj = { [Op.like]: `%${filtros.cpf_cnpj}%` };
+    }
+
+    const { rows: solicitacoes, count: total } =
+      await this.solicitacaoModel.findAndCountAll({
+        where: whereSolicitacao,
+        limit,
+        offset,
+        order: [
+          [
+            SOLICITACAO_ORDER_BY_COLUMN[orderBy],
+            order.toUpperCase() as 'ASC' | 'DESC',
+          ],
         ],
-      ],
-    });
+        include: [
+          {
+            model: Usuario,
+            attributes: ['id', 'nome', 'email'],
+            where:
+              Object.keys(whereUsuario).length > 0 ? whereUsuario : undefined,
+            required: Object.keys(whereUsuario).length > 0,
+          },
+          {
+            model: Servico,
+            attributes: ['id', 'nome', 'valorBase'],
+          },
+        ],
+      });
 
     const solicitacoesFormatadas = solicitacoes.map((solicitacao) => ({
       cliente: {
@@ -523,82 +589,6 @@ export class SolicitacaoService implements OnModuleDestroy {
       },
     }));
 
-  const totalPages = total > 0 ? Math.ceil(total / limit) : 1;
-
-  return {
-    total,
-    page,
-    limit,
-    totalPages,
-    hasNext: page < totalPages,
-    hasPrevious: page > 1,
-    solicitacoes: solicitacoesFormatadas,
-  };
-}
-
-  async getAllSolicitacoes(query: ListSolicitacoesQueryDto): Promise<any> {
-    const { page = 1, limit = 10, orderBy, order } = query;
-
-    const offset = (page - 1) * limit;
-
-    const { rows: solicitacoes, count: total } =
-      await this.solicitacaoModel.findAndCountAll({
-        limit,
-        offset,
-        order: [
-          [
-            SOLICITACAO_ORDER_BY_COLUMN[orderBy],
-            order.toUpperCase() as 'ASC' | 'DESC',
-          ],
-        ],
-        include: [
-          {
-            model: this.usuarioModel,
-            as: 'usuario',
-          },
-          {
-            model: this.servicoModel,
-            as: 'servico',
-          },
-        ],
-      });
-
-    const solicitacoesFormatadas = solicitacoes.map((solicitacao) => ({
-      cliente: {
-        id: solicitacao.usuario.id,
-        nome: solicitacao.usuario.nome,
-        email: solicitacao.usuario.email,
-      },
-      servico: {
-        id: solicitacao.servico.id,
-        tipo: solicitacao.servico.nome,
-        valorBase: solicitacao.servico.valorBase || 0,
-      },
-      solicitacao: {
-        id: solicitacao.id,
-        status:
-          solicitacao.status.charAt(0).toUpperCase() +
-          solicitacao.status.slice(1),
-        observacaoCliente: solicitacao.observacaoCliente || '',
-        observacaoAdmin: solicitacao.observacaoAdmin || '',
-        dataSolicitacao: solicitacao.dataSolicitacao,
-        dataConclusao: solicitacao.dataConclusao,
-      },
-    }));
-
-    // Agrupar por status
-    const kanban = solicitacoesFormatadas.reduce((acc, item) => {
-      const status = item.solicitacao.status;
-
-      if (!acc[status]) {
-        acc[status] = [];
-      }
-
-      acc[status].push(item);
-
-      return acc;
-    }, {} as Record<string, typeof solicitacoesFormatadas>);
-
     const totalPages = total > 0 ? Math.ceil(total / limit) : 1;
 
     return {
@@ -608,10 +598,22 @@ export class SolicitacaoService implements OnModuleDestroy {
       totalPages,
       hasNext: page < totalPages,
       hasPrevious: page > 1,
-      solicitacoes: kanban,
+      solicitacoes: solicitacoesFormatadas,
     };
   }
 
+  async getAllSolicitacoes(query: ListSolicitacoesQueryDto): Promise<any> {
+    return this.listarSolicitacoes(query);
+  }
+
+
+  private normalizarDataFim(data: string): Date {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(data)) {
+      return new Date(`${data}T23:59:59.999Z`);
+    }
+
+    return new Date(data);
+  }
 
   async enviarDocumento(
     solicitacaoId: number,
