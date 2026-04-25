@@ -197,4 +197,11 @@ export class SolicitacaoController {
   ): Promise<{ message: string }> {
     return this.solicitacaoService.enviarDocumento(id, data, documento);
   }
+  @Get(':id/documentos')
+  listarDocumentos(
+    @Param('id', ParseIntPipe) id: number,
+) {
+  return this.solicitacaoService.listarDocumentos(id);
 }
+}
+
