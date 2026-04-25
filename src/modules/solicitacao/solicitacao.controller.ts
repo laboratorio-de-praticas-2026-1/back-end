@@ -386,4 +386,11 @@ export class SolicitacaoController {
   ): Promise<{ id: number; mensagem: string }> {
     return this.solicitacaoService.substituirDocumento(id, docId, documento);
   }
+  @Get(':id/documentos')
+  listarDocumentos(
+    @Param('id', ParseIntPipe) id: number,
+) {
+  return this.solicitacaoService.listarDocumentos(id);
 }
+}
+
