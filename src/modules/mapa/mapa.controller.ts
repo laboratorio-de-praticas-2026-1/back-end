@@ -34,6 +34,7 @@ export class MapaController {
   }
 
   @Get('tipo')
+  @ApiOperation({ summary: 'Listar empresas por tipo' })
   @ApiQuery({ name: 'tipo', enum: ['clinica', 'vistoria', 'detran'] })
   @ApiResponse({ status: 200, type: [EmpresaResponseDto] })
   async findByTipo(
@@ -43,6 +44,7 @@ export class MapaController {
   }
 
   @Get('cidade')
+  @ApiOperation({ summary: 'Listar empresas por cidade' })
   @ApiQuery({ name: 'cidade', type: String })
   @ApiResponse({ status: 200, type: [EmpresaResponseDto] })
   async findByCidade(
@@ -52,6 +54,7 @@ export class MapaController {
   }
 
   @Get('filtro')
+  @ApiOperation({ summary: 'Listar empresas por tipo e/ou cidade' })
   @ApiQuery({
     name: 'tipo',
     required: false,
