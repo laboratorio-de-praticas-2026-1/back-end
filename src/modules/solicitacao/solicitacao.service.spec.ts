@@ -1,3 +1,4 @@
+import { ConflictException } from '@nestjs/common';
 import { getModelToken } from '@nestjs/sequelize';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
@@ -723,6 +724,112 @@ describe('SolicitacaoService', () => {
           status: 'em_andamento',
           observacaoAdmin: 'Verificado pelo admin',
         }),
+      );
+    });
+
+    it('deve falhar quando o envio do email de status falhar', async () => {
+      const solicitacao = mockSolicitacaoComRelacoes('em_andamento', 10);
+      mockSolicitacaoModel.findByPk.mockResolvedValue(solicitacao);
+      mockEmailService.enviarEmail.mockRejectedValue(
+        new Error('Falha no envio de email'),
+      );
+
+      await expect(
+        service.updateSolicitacaoStatusById(10, {
+          status: StatusSolicitacaoEnum.CANCELADO,
+        }),
+      ).rejects.toThrow('Falha no envio de email');
+
+      expect(solicitacao.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: StatusSolicitacaoEnum.CANCELADO,
+        }),
+      );
+    });
+  });
+
+  describe('rotas diretas de status', () => {
+    it('deve cancelar solicitacao usando a atualizacao central', async () => {
+      const solicitacao = {
+        id: 10,
+        status: StatusSolicitacaoEnum.EM_ANDAMENTO,
+        usuario: { id: 1, nome: 'Amanda', email: 'amanda@email.com' },
+        servico: { id: 3, nome: 'Transferencia' },
+        update: jest.fn().mockResolvedValue(undefined),
+      };
+
+      mockSolicitacaoModel.findByPk.mockResolvedValue(solicitacao);
+
+      await expect(service.cancelarSolicitacao(10)).resolves.toEqual({
+        id: 10,
+        status: StatusSolicitacaoEnum.CANCELADO,
+      });
+
+      expect(solicitacao.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: StatusSolicitacaoEnum.CANCELADO,
+        }),
+      );
+      expect(mockEmailService.enviarEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'amanda@email.com',
+          template: 'status-update',
+        }),
+      );
+    });
+
+    it('deve retornar conflito ao cancelar solicitacao concluida', async () => {
+      mockSolicitacaoModel.findByPk.mockResolvedValue({
+        id: 11,
+        status: StatusSolicitacaoEnum.CONCLUIDO,
+        usuario: { id: 1, nome: 'Amanda', email: 'amanda@email.com' },
+        servico: { id: 3, nome: 'Transferencia' },
+      });
+
+      await expect(service.cancelarSolicitacao(11)).rejects.toBeInstanceOf(
+        ConflictException,
+      );
+    });
+
+    it('deve reabrir solicitacao cancelada usando a atualizacao central', async () => {
+      const solicitacao = {
+        id: 12,
+        status: StatusSolicitacaoEnum.CANCELADO,
+        usuario: { id: 1, nome: 'Amanda', email: 'amanda@email.com' },
+        servico: { id: 3, nome: 'Transferencia' },
+        update: jest.fn().mockResolvedValue(undefined),
+      };
+
+      mockSolicitacaoModel.findByPk.mockResolvedValue(solicitacao);
+
+      await expect(service.reabrirSolicitacao(12)).resolves.toEqual({
+        id: 12,
+        status: StatusSolicitacaoEnum.EM_ANDAMENTO,
+      });
+
+      expect(solicitacao.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: StatusSolicitacaoEnum.EM_ANDAMENTO,
+        }),
+      );
+      expect(mockEmailService.enviarEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'amanda@email.com',
+          template: 'status-update',
+        }),
+      );
+    });
+
+    it('deve retornar conflito ao reabrir solicitacao nao cancelada', async () => {
+      mockSolicitacaoModel.findByPk.mockResolvedValue({
+        id: 13,
+        status: StatusSolicitacaoEnum.RECEBIDO,
+        usuario: { id: 1, nome: 'Amanda', email: 'amanda@email.com' },
+        servico: { id: 3, nome: 'Transferencia' },
+      });
+
+      await expect(service.reabrirSolicitacao(13)).rejects.toBeInstanceOf(
+        ConflictException,
       );
     });
   });

@@ -1,13 +1,13 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Logger,
   Param,
   ParseIntPipe,
   Post,
-  Put,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -19,7 +19,6 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
-  ApiProperty,
   ApiTags,
 } from '@nestjs/swagger';
 import { DocumentoFilePipe } from 'src/commons/pipes/file.pipe';
@@ -145,6 +144,58 @@ export class SolicitacaoController {
       id,
       updateSolicitacaoStatusDto,
     );
+  }
+
+  @Post(':id/cancelar')
+  @ApiOperation({
+    summary: 'Cancelar solicitação',
+    description:
+      'Cancela uma solicitação utilizando a função central de atualização de status.',
+  })
+  @ApiOkResponse({
+    description: 'Cancelamento realizado com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'number', example: 123 },
+        status: { type: 'string', example: 'cancelado' },
+      },
+    },
+  })
+  @ApiNotFoundResponse({
+    description: 'Solicitação não encontrada',
+  })
+  @HttpCode(HttpStatus.OK)
+  cancelarSolicitacao(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ id: number; status: 'cancelado' }> {
+    return this.solicitacaoService.cancelarSolicitacao(id);
+  }
+
+  @Post(':id/reabrir')
+  @ApiOperation({
+    summary: 'Reabrir solicitação',
+    description:
+      'Reabre uma solicitação cancelada utilizando a função central de atualização de status.',
+  })
+  @ApiOkResponse({
+    description: 'Reabertura realizada com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'number', example: 123 },
+        status: { type: 'string', example: 'em_andamento' },
+      },
+    },
+  })
+  @ApiNotFoundResponse({
+    description: 'Solicitação não encontrada',
+  })
+  @HttpCode(HttpStatus.OK)
+  reabrirSolicitacao(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ id: number; status: 'em_andamento' }> {
+    return this.solicitacaoService.reabrirSolicitacao(id);
   }
 
   @Post(':id/documentos')
