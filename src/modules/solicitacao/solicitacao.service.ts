@@ -318,7 +318,7 @@ export class SolicitacaoService implements OnModuleDestroy {
       statusAtual === StatusSolicitacaoEnum.CONCLUIDO
     ) {
       throw new ConflictException(
-        'SolicitaÃ§Ã£o jÃ¡ estÃ¡ cancelada ou nÃ£o pode ser cancelada',
+        'Solicitação já está cancelada ou não pode ser cancelada',
       );
     }
 
@@ -339,7 +339,7 @@ export class SolicitacaoService implements OnModuleDestroy {
     const statusAtual = solicitacao.status as StatusSolicitacaoEnum;
 
     if (statusAtual !== StatusSolicitacaoEnum.CANCELADO) {
-      throw new ConflictException('SolicitaÃ§Ã£o nÃ£o estÃ¡ cancelada');
+      throw new ConflictException('Solicitação não está cancelada');
     }
 
     await this.updateSolicitacaoStatusById(id, {

@@ -168,9 +168,9 @@ export class SolicitacaoController {
 
   @Post(':id/cancelar')
   @ApiOperation({
-    summary: 'Cancelar solicitaÃ§Ã£o',
+    summary: 'Cancelar solicitação',
     description:
-      'Cancela uma solicitaÃ§Ã£o utilizando a funÃ§Ã£o central de atualizaÃ§Ã£o de status.',
+      'Cancela uma solicitação utilizando a função central de atualização de status.',
   })
   @ApiOkResponse({
     description: 'Cancelamento realizado com sucesso',
@@ -183,7 +183,7 @@ export class SolicitacaoController {
     },
   })
   @ApiNotFoundResponse({
-    description: 'SolicitaÃ§Ã£o nÃ£o encontrada',
+    description: 'Solicitação não encontrada',
   })
   @HttpCode(HttpStatus.OK)
   cancelarSolicitacao(
@@ -194,9 +194,9 @@ export class SolicitacaoController {
 
   @Post(':id/reabrir')
   @ApiOperation({
-    summary: 'Reabrir solicitaÃ§Ã£o',
+    summary: 'Reabrir solicitação',
     description:
-      'Reabre uma solicitaÃ§Ã£o cancelada utilizando a funÃ§Ã£o central de atualizaÃ§Ã£o de status.',
+      'Reabre uma solicitação cancelada utilizando a função central de atualização de status.',
   })
   @ApiOkResponse({
     description: 'Reabertura realizada com sucesso',
@@ -209,7 +209,7 @@ export class SolicitacaoController {
     },
   })
   @ApiNotFoundResponse({
-    description: 'SolicitaÃ§Ã£o nÃ£o encontrada',
+    description: 'Solicitação não encontrada',
   })
   @HttpCode(HttpStatus.OK)
   reabrirSolicitacao(
