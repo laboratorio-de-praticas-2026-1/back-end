@@ -14,6 +14,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBody,
+  ApiBadRequestResponse,
   ApiConsumes,
   ApiCreatedResponse,
   ApiNotFoundResponse,
@@ -21,7 +22,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { DocumentoFilePipe } from '../../commons/pipes/file.pipe';
+import { DocumentoFilePipe } from 'src/commons/pipes/file.pipe';
 import { CreateDocumentoDto } from './dto/create-documento.dto';
 import { CreateSolicitacaoResponseDto } from './dto/create-solicitacao-response.dto';
 import { CreateSolicitacaoDto } from './dto/create-solicitacao.dto';
@@ -271,6 +272,24 @@ export class SolicitacaoController {
   })
   @ApiNotFoundResponse({
     description: 'Solicitação ou documento não encontrado',
+  })
+  @ApiBadRequestResponse({
+    description:
+      'Requisição inválida. Possíveis causas: (1) arquivo ausente ou em formato/tamanho inválido; (2) o documento informado não pertence à solicitação.',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 400 },
+        error: { type: 'string', example: 'Bad Request' },
+        message: {
+          type: 'string',
+          examples: [
+            'Arquivo obrigatório não enviado ou formato inválido',
+            'Documento não pertence à solicitação informada',
+          ],
+        },
+      },
+    },
   })
   @ApiBody({
     schema: {
