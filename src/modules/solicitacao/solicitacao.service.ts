@@ -1,10 +1,10 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   Logger,
   NotFoundException,
-  OnModuleDestroy,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { StatusSolicitacaoEnum } from 'src/commons/enums/status-solicitacao.enum';
@@ -286,26 +286,65 @@ export class SolicitacaoService implements OnModuleDestroy {
         const textos = obterTextosEmailPorStatus(novoStatus, isReabertura);
 
         if (textos) {
-          void this.dispararEmailStatus(
+          await this.dispararEmailStatus(
             solicitacao,
             textos.assunto,
             textos.titulo,
             textos.mensagem,
             textos.cor,
             observacao,
-          ).catch((error: unknown) => {
-            const mensagemErro =
-              error instanceof Error ? error.message : 'Erro desconhecido';
-            this.logger.warn(
-              `Falha ao enviar email de status para solicitacao ${id}: ${mensagemErro}`,
-            );
-          });
+          );
         }
       }
     }
 
     return {
       message: 'Status da solicitação atualizado com sucesso.',
+    };
+  }
+
+  async cancelarSolicitacao(
+    id: number,
+  ): Promise<{ id: number; status: StatusSolicitacaoEnum.CANCELADO }> {
+    const solicitacao = await this.findSolicitacaoById(id);
+    const statusAtual = solicitacao.status as StatusSolicitacaoEnum;
+
+    if (
+      statusAtual === StatusSolicitacaoEnum.CANCELADO ||
+      statusAtual === StatusSolicitacaoEnum.CONCLUIDO
+    ) {
+      throw new ConflictException(
+        'Solicitação já está cancelada ou não pode ser cancelada',
+      );
+    }
+
+    await this.updateSolicitacaoStatusById(id, {
+      status: StatusSolicitacaoEnum.CANCELADO,
+    });
+
+    return {
+      id,
+      status: StatusSolicitacaoEnum.CANCELADO,
+    };
+  }
+
+  async reabrirSolicitacao(
+    id: number,
+  ): Promise<{ id: number; status: StatusSolicitacaoEnum.EM_ANDAMENTO }> {
+    const solicitacao = await this.findSolicitacaoById(id);
+    const statusAtual = solicitacao.status as StatusSolicitacaoEnum;
+
+    if (statusAtual !== StatusSolicitacaoEnum.CANCELADO) {
+      throw new ConflictException('Solicitação não está cancelada');
+    }
+
+    await this.updateSolicitacaoStatusById(id, {
+      status: StatusSolicitacaoEnum.EM_ANDAMENTO,
+    });
+
+    return {
+      id,
+      status: StatusSolicitacaoEnum.EM_ANDAMENTO,
     };
   }
 
