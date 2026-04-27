@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Recibo de Pagamento - BRTN Despachante</title>
+</head>
+<body style="margin: 0; padding: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; background-color: #f4f4f4;">
+
+    <div style="max-width: 800px; margin: 0 auto; background-color: #fff; border: 1px solid #ddd; box-shadow: 0 0 10px rgba(0,0,0,0.1); padding: 40px; position: relative;">
+
+        <table style="width: 100%; border-bottom: 2px solid #002749; padding-bottom: 20px; margin-bottom: 20px;">
+            <tr>
+                <td style="width: 50%;">
+                    <img
+                        src="<%= logoGrupoSrc %>"
+                        alt="Logo Grupo Bortone"
+                        style="width: 180px; height: 60px; object-fit: contain; display: block;"
+                    />
+                </td>
+                <td style="width: 50%; text-align: right;">
+                    <img
+                        src="<%= logoBrtnSrc %>"
+                        alt="Logo BRTN Despachante"
+                        style="width: 180px; height: 60px; object-fit: contain; display: inline-block;"
+                    />
+                </td>
+            </tr>
+        </table>
+
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #002749; margin: 0; text-transform: uppercase; font-size: 24px;">Recibo de Pagamento</h1>
+            <p style="margin: 5px 0; color: #1E84CF; font-weight: bold;">Tipo de Documento: <%= tipoDocumento %></p>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+            <div style="background-color: #002749; color: #fff; padding: 5px 15px; font-weight: bold; margin-bottom: 10px;">DADOS DO CLIENTE</div>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="padding: 5px 0; width: 60%;"><strong>Nome:</strong> <%= nomeCliente %></td>
+                    <td style="padding: 5px 0;"><strong>CPF:</strong> <%= cpfCliente %></td>
+                </tr>
+                <tr>
+                    <td style="padding: 5px 0;"><strong>E-mail:</strong> <%= emailCliente %></td>
+                    <td style="padding: 5px 0;"><strong>Celular:</strong> <%= celularCliente %></td>
+                </tr>
+            </table>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+            <div style="background-color: #002749; color: #fff; padding: 5px 15px; font-weight: bold; margin-bottom: 10px;">INFORMAÇÕES DO VEÍCULO</div>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="padding: 5px 0; width: 33%;"><strong>Placa:</strong> <%= placa %></td>
+                    <td style="padding: 5px 0; width: 33%;"><strong>Renavam:</strong> <%= renavam %></td>
+                    <td style="padding: 5px 0;"><strong>Marca:</strong> <%= marca %></td>
+                </tr>
+                <tr>
+                    <td style="padding: 5px 0;"><strong>Modelo:</strong> <%= modelo %></td>
+                    <td style="padding: 5px 0;"><strong>Ano Fab.:</strong> <%= anoFab %></td>
+                    <td style="padding: 5px 0;"><strong>Ano Mod.:</strong> <%= anoMod %></td>
+                </tr>
+            </table>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+            <div style="background-color: #002749; color: #fff; padding: 5px 15px; font-weight: bold; margin-bottom: 10px;">DETALHES DO SERVIÇO</div>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td colspan="2" style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Serviço:</strong> <%= nomeServico %></td>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Data de Início:</strong> <%= dataInicio %></td>
+                </tr>
+                <tr>
+                    <td colspan="2" style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Tipo de Pagamento:</strong> <%= tipoPagamento %></td>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Parcelas:</strong> <%= numeroParcelas %></td>
+                    <!-- <td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Data do Pagamento:</strong> <%= dataPagamento %></td> -->
+                </tr>
+                <tr>
+                </tr>
+            </table>
+        </div>
+
+        <% if (temDebito) { %>
+            <div style="margin-top: 30px; border: 2px solid #1E84CF; padding: 15px; background-color: #f9f9f9;">
+                <table style="width: 100%; font-size: 16px;">
+                    <tr>
+                        <td style="text-align: right; padding: 5px;">Juros/Taxas:</td>
+                        <td style="text-align: right; width: 120px; padding: 5px;">R$ <%= valorTaxas %></td>
+                    </tr>
+                    <tr style="font-size: 20px; color: #002749; font-weight: bold;">
+                        <td style="text-align: right; padding: 10px 5px 5px 5px;">VALOR TOTAL PAGO:</td>
+                        <td style="text-align: right; padding: 10px 5px 5px 5px;">R$ <%= valorPago %></td>
+                    </tr>
+                </table>
+            </div>
+        <% } else { %>
+            <div style="margin-top: 30px; border: 2px solid #FF6B35; padding: 20px; background-color: #FFF4F1; text-align: center;">
+                <p style="font-size: 18px; color: #C73E1D; font-weight: bold; margin: 0;">
+                    Débito Não Registrado.
+                </p>
+                <p style="font-size: 14px; color: #666; margin: 10px 0 0 0;">
+                    Nenhum débito ou pagamento associado a esta solicitação até o momento.
+                </p>
+            </div>
+        <% } %>
+
+        <div style="margin-top: 60px;">
+            <table style="width: 100%;">
+                <tr>
+                    <td style="width: 45%; border-top: 1px solid #333; text-align: center; padding-top: 10px; font-size: 12px;">
+                        BRTN DESPACHANTE<br>Grupo Bortone
+                    </td>
+                    <td style="width: 10%;"></td>
+                    <td style="width: 45%; border-top: 1px solid #333; text-align: center; padding-top: 10px; font-size: 12px;">
+                        ASSINATURA DO CLIENTE<br><%= nomeCliente %>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div style="margin-top: 40px; text-align: center; font-size: 10px; color: #999;">
+            Documento gerado em <%= dataAtual %> às <%= horaAtual %> - Sistema de Gestão BRTN
+        </div>
+
+    </div>
+
+</body>
+</html>

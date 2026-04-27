@@ -1,0 +1,41 @@
+<% const exibirResumoGrafico = showResumoGrafico !== false; %>
+<% const exibirTabela = showTabela !== false; %>
+<% const tituloTabela = typeof tabelaTitle === 'string' && tabelaTitle ? tabelaTitle : 'Solicitações Não Convertidas'; %>
+
+<% if (exibirResumoGrafico) { %>
+  <div class="section-label">Funil de Conversão (Solicitação → Conclusão)</div>
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-label">Solicitações Concluídas</div>
+      <div class="kpi-value"><%= totalConcluidas %></div>
+    </div>
+  </div>
+  <div class="section-label">Distribuição de Conclusões por Serviço</div>
+  <div class="chart-wrap">
+    <img src="<%= pieBase64 %>" style="width:380px;" />
+  </div>
+<% } %>
+
+<% if (exibirTabela) { %>
+<div class="section-label"><%= tituloTabela %></div>
+<table>
+  <thead><tr>
+    <th>ID</th><th>Serviço</th><th>Cliente</th><th>Status</th><th>Data Solic.</th>
+  </tr></thead>
+  <tbody>
+    <% if (naoConvertidas.length) { %>
+      <% naoConvertidas.forEach((s) => { %>
+        <tr>
+          <td><%= s.id %></td>
+          <td><%= s.servico?.nome ?? '—' %></td>
+          <td><%= s.usuario?.nome ?? '—' %></td>
+          <td><%- badge(s.status) %></td>
+          <td><%= fmtDate(s.dataSolicitacao) %></td>
+        </tr>
+      <% }) %>
+    <% } else { %>
+      <tr><td colspan="5" style="text-align:center;color:#999;">Nenhuma solicitação pendente</td></tr>
+    <% } %>
+  </tbody>
+</table>
+<% } %>

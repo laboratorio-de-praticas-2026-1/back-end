@@ -1,0 +1,71 @@
+<% const exibirResumo = showResumo !== false; %>
+<% const exibirCadastrados = showCadastrados !== false; %>
+<% const exibirAtrasadas = showAtrasadas !== false; %>
+<% const totalNovos = typeof novosNoPeriodo === 'number' ? novosNoPeriodo : clientes.length; %>
+<% const tituloCadastrados = typeof cadastradosTitle === 'string' && cadastradosTitle ? cadastradosTitle : 'Cadastrados no Período'; %>
+<% const tituloAtrasadas = typeof atrasadasTitle === 'string' && atrasadasTitle ? atrasadasTitle : 'Clientes com Parcelas em Atraso'; %>
+
+<% if (exibirResumo) { %>
+  <div class="section-label">Clientes</div>
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-label">Total de Clientes (sistema)</div>
+      <div class="kpi-value"><%= total %></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Novos no Período</div>
+      <div class="kpi-value"><%= totalNovos %></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Taxa de Conversão</div>
+      <div class="kpi-value"><%= taxaConversao %>%</div>
+    </div>
+  </div>
+<% } %>
+
+<% if (exibirCadastrados) { %>
+<div class="section-label"><%= tituloCadastrados %></div>
+<table>
+  <thead><tr>
+    <th>Nome</th><th>Veículos</th><th>Data Cadastro</th><th>Solicitações</th>
+  </tr></thead>
+  <tbody>
+    <% if (clientes.length) { %>
+      <% clientes.forEach((c) => { %>
+        <tr>
+          <td><%= c.nome %></td>
+          <td><%= c.veiculos?.length ?? 0 %></td>
+          <td><%= fmtDate(c.dataCadastro) %></td>
+          <td><%= c.solicitacoes?.length ?? 0 %></td>
+        </tr>
+      <% }) %>
+    <% } else { %>
+      <tr><td colspan="4" style="text-align:center;color:#999;">Nenhum cliente no período</td></tr>
+    <% } %>
+  </tbody>
+</table>
+<% } %>
+
+<% if (exibirAtrasadas) { %>
+<div class="section-label"><%= tituloAtrasadas %></div>
+<table>
+  <thead><tr>
+    <th>Cliente</th><th>Num. Parcelas</th><th>Valor Parcelas</th><th>Data Início</th><th>Vencimento</th>
+  </tr></thead>
+  <tbody>
+    <% if (parcelasAtrasadas.length) { %>
+      <% parcelasAtrasadas.forEach((p) => { %>
+        <tr>
+          <td><%= p.nome %></td>
+          <td><%= p.numParcelas %></td>
+          <td><%= fmtBRL(Number(p.valorParcelas)) %></td>
+          <td><%= fmtDate(p.dataInicio) %></td>
+          <td><%= fmtDate(p.dataVenc) %></td>
+        </tr>
+      <% }) %>
+    <% } else { %>
+      <tr><td colspan="5" style="text-align:center;color:#999;">Nenhuma parcela em atraso</td></tr>
+    <% } %>
+  </tbody>
+</table>
+<% } %>
