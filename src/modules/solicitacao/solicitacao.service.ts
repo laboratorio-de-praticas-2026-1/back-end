@@ -695,6 +695,21 @@ export class SolicitacaoService implements OnModuleDestroy {
       );
     }
 
+    if (documento.nomeHash) {
+      void (async () => {
+        try {
+          const decryptedHash = this.cryptoUtil.decrypt(documento.nomeHash!);
+          await this.cloudinaryService.deleteDocument(decryptedHash);
+        } catch (err) {
+          this.logger.error(
+            `Falha ao remover asset antigo do Cloudinary para doc ${docId}: ${
+              err instanceof Error ? err.message : 'Erro desconhecido'
+            }`,
+          );
+        }
+      })();
+    }
+
     let urlDocRestricted: CloudinaryResponse;
 
     try {
@@ -724,6 +739,7 @@ export class SolicitacaoService implements OnModuleDestroy {
     await documento.update({
       nomeHash: nomeHash,
       dataUpload: new Date(),
+      statusValidacao: 'pendente',
     });
 
     return {
