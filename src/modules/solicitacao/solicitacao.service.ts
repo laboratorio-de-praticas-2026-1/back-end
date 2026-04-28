@@ -2,6 +2,7 @@ import {
   BadRequestException,
   HttpException,
   HttpStatus,
+  ConflictException,
   ForbiddenException,
   Injectable,
   InternalServerErrorException,
@@ -695,11 +696,9 @@ export class SolicitacaoService implements OnModuleDestroy {
       });
     }
 
-
     const documentos = await this.documentoModel.findAll({
-      where: { solicitacaoId: solicitacaoId },
+      where: { solicitacaoId },
     });
-
 
     if (!documentos.length) {
       return {
@@ -709,16 +708,13 @@ export class SolicitacaoService implements OnModuleDestroy {
       };
     }
 
-    const data = documentos
-      .map((doc) => {
-        try {
-          const decrypted = this.cryptoUtil.decrypt(doc.nomeHash ?? '');
-          const [resourceType, publicId] = decrypted.split('|');
-
     const data = (
       await Promise.all(
         documentos.map(async (doc) => {
           try {
+            if (!doc.nomeHash) {
+              throw new Error('Documento sem nomeHash');
+            }
 
             const decrypted = this.cryptoUtil.decrypt(doc.nomeHash);
             const [resourceType, publicId] = decrypted.split('|');
@@ -732,7 +728,7 @@ export class SolicitacaoService implements OnModuleDestroy {
             return {
               id: doc.id,
               tipo_documento: doc.tipoDocumento,
-              nome_arquivo: doc.nomeOriginal || publicId,
+              nome_arquivo: doc.nomeOriginal ?? publicId,
               url,
               data_upload: doc.dataUpload,
             };
@@ -742,39 +738,22 @@ export class SolicitacaoService implements OnModuleDestroy {
                 error instanceof Error ? error.message : 'Erro desconhecido'
               }`,
             );
-          return {
-            id: doc.id,
-            tipo_documento: doc.tipoDocumento,
-            nome_arquivo: publicId,
-            url,
-            data_upload: doc.dataUpload,
-          };
-        } catch (error: unknown) {
-          this.logger.warn(
-            `Erro ao processar documento ID ${doc.id}: ${
-              error instanceof Error ? error.message : 'Erro desconhecido'
-            }`,
-          );
 
             return null;
           }
         }),
       )
-    ).filter(Boolean);
-          return null;
-        }
-      })
-      .filter(
-        (
-          item,
-        ): item is {
-          id: number;
-          tipo_documento: string | null;
-          nome_arquivo: string;
-          url: string;
-          data_upload: Date | null;
-        } => item !== null,
-      );
+    ).filter(
+      (
+        item,
+      ): item is {
+        id: number;
+        tipo_documento: string | null;
+        nome_arquivo: string;
+        url: string;
+        data_upload: Date | null;
+      } => item !== null,
+    );
 
     return {
       data,
@@ -855,4 +834,5 @@ export class SolicitacaoService implements OnModuleDestroy {
       mensagem: 'Documento substituído com sucesso',
     };
   }
+
 }
