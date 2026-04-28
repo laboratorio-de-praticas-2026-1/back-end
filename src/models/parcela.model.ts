@@ -1,4 +1,10 @@
-import { Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
+import {
+  Column,
+  DataType,
+  ForeignKey,
+  Model,
+  Table,
+} from 'sequelize-typescript';
 import { Pagamento } from './pagamento.model';
 
 export enum StatusParcela {
@@ -27,6 +33,4 @@ export class Parcela extends Model {
     allowNull: false,
   })
   declare status: StatusParcela;
-
- 
 }
