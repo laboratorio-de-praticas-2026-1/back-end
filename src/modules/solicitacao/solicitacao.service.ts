@@ -508,7 +508,6 @@ export class SolicitacaoService implements OnModuleDestroy {
       solicitacaoId: solicitacaoId,
       nomeHash: nomeHash,
       tipoDocumento: data.tipo_documento,
-
       dataUpload: new Date(),
       statusValidacao: 'pendente',
     });

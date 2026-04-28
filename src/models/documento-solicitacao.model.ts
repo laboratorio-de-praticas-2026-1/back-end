@@ -40,11 +40,4 @@ export class DocumentoSolicitacao extends Model {
 
   @Column({ field: 'data_upload', type: DataType.DATE, allowNull: true })
   declare dataUpload: Date | null;
-
-  @Column({
-  field: 'nome_original',
-  type: DataType.STRING(255),
-  allowNull: true,
-})
-declare nomeOriginal: string | null;
 }
