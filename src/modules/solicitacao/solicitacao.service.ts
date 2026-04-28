@@ -546,7 +546,10 @@ export class SolicitacaoService implements OnModuleDestroy {
   await Promise.all(
     documentos.map(async (doc) => {
       try {
-        
+        if (!doc.nomeHash) {
+          throw new Error('nomeHash ausente');
+        }
+
         const decrypted = this.cryptoUtil.decrypt(doc.nomeHash);
         const [resourceType, publicId] = decrypted.split('|');
 
@@ -555,30 +558,30 @@ export class SolicitacaoService implements OnModuleDestroy {
         }
 
         const url = this.cloudinaryService.generateTemporaryUrl(decrypted);
-
-        return {
-          id: doc.id,
-          tipo_documento: doc.tipoDocumento,
-          nome_arquivo: doc.nomeOriginal || publicId,
-          url,
-          data_upload: doc.dataUpload,
-        };
-      } catch (error) {
+        
+return {
+  id: doc.id,
+  tipo_documento: doc.tipoDocumento,
+  nome_arquivo: doc.nomeOriginal || publicId,
+  url,
+  data_upload: doc.dataUpload?.toISOString() || null,
+};
+      } catch (error: unknown) {
         this.logger.warn(
           `Erro ao processar documento ID ${doc.id}: ${
             error instanceof Error ? error.message : 'Erro desconhecido'
           }`,
         );
 
-        return null; 
+        return null;
       }
     }),
   )
-).filter(Boolean); 
+).filter(Boolean);
 
-  return {
-    data,
-    total: data.length,
-  };
+return {
+  data,
+  total: data.length,
+};
 }
 }
