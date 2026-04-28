@@ -9,6 +9,8 @@ describe('SolicitacaoController', () => {
   const mockSolicitacaoService = {
     criarSolicitacao: jest.fn(),
     updateSolicitacaoStatusById: jest.fn(),
+    cancelarSolicitacao: jest.fn(),
+    reabrirSolicitacao: jest.fn(),
     listarSolicitacoes: jest.fn(),
     enviarDocumento: jest.fn(),
   };
@@ -109,5 +111,24 @@ describe('SolicitacaoController', () => {
     expect(mockSolicitacaoService.listarSolicitacoes).toHaveBeenCalledWith(
       filtros,
     );
+  });
+  it('deve cancelar solicitacao com sucesso', async () => {
+    const resposta = { id: 123, status: 'cancelado' };
+    mockSolicitacaoService.cancelarSolicitacao.mockResolvedValue(resposta);
+
+    await expect(controller.cancelarSolicitacao(123)).resolves.toEqual(
+      resposta,
+    );
+    expect(mockSolicitacaoService.cancelarSolicitacao).toHaveBeenCalledWith(
+      123,
+    );
+  });
+
+  it('deve reabrir solicitacao com sucesso', async () => {
+    const resposta = { id: 123, status: 'em_andamento' };
+    mockSolicitacaoService.reabrirSolicitacao.mockResolvedValue(resposta);
+
+    await expect(controller.reabrirSolicitacao(123)).resolves.toEqual(resposta);
+    expect(mockSolicitacaoService.reabrirSolicitacao).toHaveBeenCalledWith(123);
   });
 });
