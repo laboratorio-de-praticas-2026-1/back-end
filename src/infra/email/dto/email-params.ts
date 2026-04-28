@@ -1,4 +1,24 @@
-import { IsString, IsOptional, IsObject } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+
+class EmailDados {
+  @IsString()
+  nome: string;
+
+  @IsString()
+  email: string;
+
+  @IsOptional()
+  @IsString()
+  telefone?: string;
+
+  @IsString()
+  mensagem: string;
+}
 
 export class EmailParams {
   @IsString()
@@ -13,6 +33,7 @@ export class EmailParams {
   @IsOptional()
   withHeader?: boolean;
 
-  @IsObject()
-  dados: Record<string, any>;
+  @ValidateNested()
+  @Type(() => EmailDados)
+  dados: EmailDados;
 }
