@@ -67,7 +67,7 @@ export class ContatoController {
     this.logger.log(`Atualizando contato ID: ${id}`);
     return this.contatoService.atualizarContato(id, data);
   }
-  
+
   @Post('enviar')
   @ApiOperation({ summary: 'Envia email de contato' })
   @ApiCreatedResponse({ description: 'E-mail enviado com sucesso' })

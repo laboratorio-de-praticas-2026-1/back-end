@@ -6,10 +6,7 @@ import { ContatoService } from './contato.service';
 import { EmailModule } from 'src/infra/email/email.module';
 
 @Module({
-  imports: [
-    SequelizeModule.forFeature([Empresa]),
-    EmailModule,
-  ],
+  imports: [SequelizeModule.forFeature([Empresa]), EmailModule],
   controllers: [ContatoController],
   providers: [ContatoService],
   exports: [ContatoService],
