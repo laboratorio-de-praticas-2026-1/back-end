@@ -505,80 +505,93 @@ export class SolicitacaoService implements OnModuleDestroy {
     const nomeHash = this.cryptoUtil.encrypt(`${resourceType}|${publicId}`);
 
     await this.documentoModel.create({
-  solicitacaoId: solicitacaoId,
-  nomeHash: nomeHash,
-  tipoDocumento: data.tipo_documento,
-  nomeOriginal: documento.originalname, 
-  dataUpload: new Date(),
-  statusValidacao: 'pendente',
-});
+      solicitacaoId: solicitacaoId,
+      nomeHash: nomeHash,
+      tipoDocumento: data.tipo_documento,
+
+      dataUpload: new Date(),
+      statusValidacao: 'pendente',
+    });
     return {
       message: 'Documento enviado com sucesso e aguardando validação.',
     };
   }
-  async listarDocumentos(solicitacaoId: number) {
-  
-  const solicitacao = await this.solicitacaoModel.findByPk(solicitacaoId);
+  async listarDocumentos(solicitacaoId: number): Promise<{
+    data: {
+      id: number;
+      tipo_documento: string | null;
+      nome_arquivo: string;
+      url: string;
+      data_upload: Date | null;
+    }[];
+    total: number;
+    message?: string;
+  }> {
+    const solicitacao = await this.solicitacaoModel.findByPk(solicitacaoId);
 
-  if (!solicitacao) {
-    throw new NotFoundException({
-      error: 'SOLICITACAO_NAO_ENCONTRADA',
-      message: 'A solicitação não foi encontrada',
+    if (!solicitacao) {
+      throw new NotFoundException({
+        error: 'SOLICITACAO_NAO_ENCONTRADA',
+        message: 'A solicitação não foi encontrada',
+      });
+    }
+
+    const documentos = await this.documentoModel.findAll({
+      where: { solicitacaoId },
     });
-  }
 
-  
-  const documentos = await this.documentoModel.findAll({
-    where: { solicitacaoId: solicitacaoId },
-  });
+    if (!documentos.length) {
+      return {
+        data: [],
+        total: 0,
+        message: 'Nenhum documento encontrado para esta solicitação',
+      };
+    }
 
- 
-  if (!documentos.length) {
+    const data = documentos
+      .map((doc) => {
+        try {
+          const decrypted = this.cryptoUtil.decrypt(doc.nomeHash ?? '');
+          const [resourceType, publicId] = decrypted.split('|');
+
+          if (!resourceType || !publicId) {
+            throw new Error('Formato inválido do nome_hash');
+          }
+
+          const url = this.cloudinaryService.generateTemporaryUrl(decrypted);
+
+          return {
+            id: doc.id,
+            tipo_documento: doc.tipoDocumento,
+            nome_arquivo: publicId,
+            url,
+            data_upload: doc.dataUpload,
+          };
+        } catch (error: unknown) {
+          this.logger.warn(
+            `Erro ao processar documento ID ${doc.id}: ${
+              error instanceof Error ? error.message : 'Erro desconhecido'
+            }`,
+          );
+
+          return null;
+        }
+      })
+      .filter(
+        (
+          item,
+        ): item is {
+          id: number;
+          tipo_documento: string | null;
+          nome_arquivo: string;
+          url: string;
+          data_upload: Date | null;
+        } => item !== null,
+      );
+
     return {
-      data: [],
-      total: 0,
-      message: 'Nenhum documento encontrado para esta solicitação',
+      data,
+      total: data.length,
     };
   }
-
-  
- const data = (
-  await Promise.all(
-    documentos.map(async (doc) => {
-      try {
-        
-        const decrypted = this.cryptoUtil.decrypt(doc.nomeHash);
-        const [resourceType, publicId] = decrypted.split('|');
-
-        if (!resourceType || !publicId) {
-          throw new Error('Formato inválido');
-        }
-
-        const url = this.cloudinaryService.generateTemporaryUrl(decrypted);
-
-        return {
-          id: doc.id,
-          tipo_documento: doc.tipoDocumento,
-          nome_arquivo: doc.nomeOriginal || publicId,
-          url,
-          data_upload: doc.dataUpload,
-        };
-      } catch (error) {
-        this.logger.warn(
-          `Erro ao processar documento ID ${doc.id}: ${
-            error instanceof Error ? error.message : 'Erro desconhecido'
-          }`,
-        );
-
-        return null; 
-      }
-    }),
-  )
-).filter(Boolean); 
-
-  return {
-    data,
-    total: data.length,
-  };
-}
 }
