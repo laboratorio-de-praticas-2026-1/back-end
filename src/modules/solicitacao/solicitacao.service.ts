@@ -755,6 +755,14 @@ export class SolicitacaoService implements OnModuleDestroy {
       } => item !== null,
     );
 
+    if (!data.length) {
+      return {
+        data: [],
+        total: 0,
+        message: 'Nenhum documento encontrado para esta solicitação',
+      };
+    }
+
     return {
       data,
       total: data.length,
