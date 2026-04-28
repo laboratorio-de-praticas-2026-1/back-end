@@ -32,6 +32,10 @@ import {
 } from './dto/create-solicitacao-response.dto';
 import { CreateSolicitacaoDto } from './dto/create-solicitacao.dto';
 import { GetSolicitacaoResponseDto } from './dto/get-solicitacao-response.dto';
+import {
+  ListSolicitacoesQueryDto,
+  SOLICITACAO_ORDER_BY_COLUMN,
+} from './dto/list-solicitacoes-query.dto';
 import { ListSolicitacoesResponseDto } from './dto/list-solicitacoes-response.dto';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 
@@ -461,19 +465,36 @@ export class SolicitacaoService implements OnModuleDestroy {
     return data.toISOString().slice(0, 10);
   }
 
-  async listarSolicitacoes(): Promise<ListSolicitacoesResponseDto> {
-    const solicitacoes = await this.solicitacaoModel.findAll({
-      include: [
-        {
-          model: Usuario,
-          attributes: ['id', 'nome', 'email'],
-        },
-        {
-          model: Servico,
-          attributes: ['id', 'nome', 'valorBase'],
-        },
-      ],
-    });
+  async listarSolicitacoes(
+    query: ListSolicitacoesQueryDto = new ListSolicitacoesQueryDto(),
+  ): Promise<ListSolicitacoesResponseDto> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const orderBy = query.orderBy ?? 'dataSolicitacao';
+    const order = query.order ?? 'desc';
+    const offset = (page - 1) * limit;
+
+    const { rows: solicitacoes, count: total } =
+      await this.solicitacaoModel.findAndCountAll({
+        include: [
+          {
+            model: Usuario,
+            attributes: ['id', 'nome', 'email'],
+          },
+          {
+            model: Servico,
+            attributes: ['id', 'nome', 'valorBase'],
+          },
+        ],
+        limit,
+        offset,
+        order: [
+          [
+            SOLICITACAO_ORDER_BY_COLUMN[orderBy],
+            order.toUpperCase() as 'ASC' | 'DESC',
+          ],
+        ],
+      });
 
     const solicitacoesFormatadas = solicitacoes.map((solicitacao) => ({
       cliente: {
@@ -498,7 +519,9 @@ export class SolicitacaoService implements OnModuleDestroy {
     }));
 
     return {
-      total: solicitacoes.length,
+      total,
+      page,
+      limit,
       solicitacoes: solicitacoesFormatadas,
     };
   }

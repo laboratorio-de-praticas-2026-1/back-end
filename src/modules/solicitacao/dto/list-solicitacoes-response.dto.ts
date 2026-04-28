@@ -101,6 +101,18 @@ export class ListSolicitacoesResponseDto {
   total: number;
 
   @ApiProperty({
+    description: 'Pagina atual',
+    example: 1,
+  })
+  page: number;
+
+  @ApiProperty({
+    description: 'Quantidade de registros por pagina',
+    example: 10,
+  })
+  limit: number;
+
+  @ApiProperty({
     description: 'Lista de solicitações',
     type: [SolicitacaoCompletaDto],
   })

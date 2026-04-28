@@ -12,11 +12,13 @@ import { NotificacaoService } from '../notificacao/notificacao.service';
 import { EmailService } from 'src/infra/email/email.service';
 import { SolicitacaoService } from './solicitacao.service';
 import { StatusSolicitacaoEnum } from 'src/commons/enums/status-solicitacao.enum';
+import { ListSolicitacoesQueryDto } from './dto/list-solicitacoes-query.dto';
 
 interface MockModel {
   create: jest.Mock;
   findByPk: jest.Mock;
   findAll?: jest.Mock;
+  findAndCountAll?: jest.Mock;
 }
 
 interface MockNotificacao {
@@ -52,6 +54,7 @@ describe('SolicitacaoService', () => {
       create: jest.fn(),
       findByPk: jest.fn(),
       findAll: jest.fn(),
+      findAndCountAll: jest.fn(),
     };
 
     mockDocumentoModel = {
@@ -831,6 +834,111 @@ describe('SolicitacaoService', () => {
       await expect(service.reabrirSolicitacao(13)).rejects.toBeInstanceOf(
         ConflictException,
       );
+    });
+  });
+
+  describe('listarSolicitacoes', () => {
+    const solicitacaoComRelacoes = {
+      status: 'recebido',
+      observacaoCliente: 'Cliente pediu urgencia',
+      observacaoAdmin: null,
+      dataSolicitacao: new Date('2026-03-10T12:00:00.000Z'),
+      dataConclusao: null,
+      usuario: {
+        id: 1,
+        nome: 'Amanda',
+        email: 'amanda@email.com',
+      },
+      servico: {
+        id: 3,
+        nome: 'Transferencia',
+        valorBase: 200,
+      },
+    };
+
+    it('deve listar solicitacoes com paginacao e ordenacao padrao', async () => {
+      mockSolicitacaoModel.findAndCountAll?.mockResolvedValue({
+        rows: [solicitacaoComRelacoes],
+        count: 1,
+      });
+
+      await expect(service.listarSolicitacoes()).resolves.toEqual({
+        total: 1,
+        page: 1,
+        limit: 10,
+        solicitacoes: [
+          {
+            cliente: {
+              id: 1,
+              nome: 'Amanda',
+              email: 'amanda@email.com',
+            },
+            servico: {
+              id: 3,
+              tipo: 'Transferencia',
+              valorBase: 200,
+            },
+            solicitacao: {
+              status: 'Recebido',
+              observacaoCliente: 'Cliente pediu urgencia',
+              observacaoAdmin: '',
+              dataSolicitacao: new Date('2026-03-10T12:00:00.000Z'),
+              dataConclusao: null,
+            },
+          },
+        ],
+      });
+
+      expect(mockSolicitacaoModel.findAndCountAll).toHaveBeenCalledWith(
+        expect.objectContaining({
+          limit: 10,
+          offset: 0,
+          order: [['dataSolicitacao', 'DESC']],
+        }),
+      );
+    });
+
+    it('deve aplicar page, limit, orderBy e order informados', async () => {
+      const query: ListSolicitacoesQueryDto = {
+        page: 3,
+        limit: 5,
+        orderBy: 'status',
+        order: 'asc',
+      };
+
+      mockSolicitacaoModel.findAndCountAll?.mockResolvedValue({
+        rows: [],
+        count: 0,
+      });
+
+      await expect(service.listarSolicitacoes(query)).resolves.toEqual({
+        total: 0,
+        page: 3,
+        limit: 5,
+        solicitacoes: [],
+      });
+
+      expect(mockSolicitacaoModel.findAndCountAll).toHaveBeenCalledWith(
+        expect.objectContaining({
+          limit: 5,
+          offset: 10,
+          order: [['status', 'ASC']],
+        }),
+      );
+    });
+
+    it('deve retornar lista vazia quando nao houver resultados', async () => {
+      mockSolicitacaoModel.findAndCountAll?.mockResolvedValue({
+        rows: [],
+        count: 0,
+      });
+
+      await expect(service.listarSolicitacoes()).resolves.toEqual({
+        total: 0,
+        page: 1,
+        limit: 10,
+        solicitacoes: [],
+      });
     });
   });
 });

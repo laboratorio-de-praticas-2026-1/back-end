@@ -8,6 +8,7 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Query,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -19,6 +20,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { DocumentoFilePipe } from 'src/commons/pipes/file.pipe';
@@ -26,6 +28,10 @@ import { CreateDocumentoDto } from './dto/create-documento.dto';
 import { CreateSolicitacaoResponseDto } from './dto/create-solicitacao-response.dto';
 import { CreateSolicitacaoDto } from './dto/create-solicitacao.dto';
 import { GetSolicitacaoResponseDto } from './dto/get-solicitacao-response.dto';
+import {
+  ListSolicitacoesQueryDto,
+  SOLICITACAO_ORDER_BY_FIELDS,
+} from './dto/list-solicitacoes-query.dto';
 import { ListSolicitacoesResponseDto } from './dto/list-solicitacoes-response.dto';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 import { SolicitacaoService } from './solicitacao.service';
@@ -65,9 +71,39 @@ export class SolicitacaoController {
     description: 'Lista de solicitações retornada com sucesso',
     type: ListSolicitacoesResponseDto,
   })
-  async listarSolicitacoes(): Promise<ListSolicitacoesResponseDto> {
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    example: 1,
+    description: 'Pagina solicitada. Padrao: 1.',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    example: 10,
+    description: 'Quantidade de registros por pagina. Padrao: 10.',
+  })
+  @ApiQuery({
+    name: 'orderBy',
+    required: false,
+    enum: SOLICITACAO_ORDER_BY_FIELDS,
+    example: 'dataSolicitacao',
+    description: 'Campo utilizado para ordenar a lista.',
+  })
+  @ApiQuery({
+    name: 'order',
+    required: false,
+    enum: ['asc', 'desc'],
+    example: 'desc',
+    description: 'Direcao da ordenacao. Padrao: desc.',
+  })
+  async listarSolicitacoes(
+    @Query() query: ListSolicitacoesQueryDto,
+  ): Promise<ListSolicitacoesResponseDto> {
     this.logger.log('Buscando lista de solicitações...');
-    return this.solicitacaoService.listarSolicitacoes();
+    return this.solicitacaoService.listarSolicitacoes(query);
   }
 
   @Get(':id')
