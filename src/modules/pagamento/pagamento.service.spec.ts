@@ -76,6 +76,6 @@ describe('PagamentoService', () => {
     expect(result.valor_total).toBe(0);
     expect(result.valor_com_juros).toBe(0);
     expect(result.valor_parcela).toBe(0);
-    expect(result.saldo_restante).toBe(0);
+    expect(result.saldo_restante).toBe(0) ; 
   });
 });
