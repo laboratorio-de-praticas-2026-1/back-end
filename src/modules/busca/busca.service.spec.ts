@@ -104,17 +104,13 @@ describe('BuscaService', () => {
   });
 
   it('deve falhar quando nenhuma data é informada', async () => {
-    await expect(
-      service.buscarBlogsPorIntervaloDeData(
-        {} as unknown as BuscaBlogIntervaloDto,
-      ),
-    ).rejects.toThrow(BadRequestException);
+    await expect(service.buscarBlogsPorIntervaloDeData({})).rejects.toThrow(
+      BadRequestException,
+    );
 
-    await expect(
-      service.buscarBlogsPorIntervaloDeData(
-        {} as unknown as BuscaBlogIntervaloDto,
-      ),
-    ).rejects.toThrow('Informe ao menos uma data: "de" ou "ate"');
+    await expect(service.buscarBlogsPorIntervaloDeData({})).rejects.toThrow(
+      'Informe ao menos uma data: "de" ou "ate"',
+    );
     expect(blogFindAllMock).not.toHaveBeenCalled();
   });
 
