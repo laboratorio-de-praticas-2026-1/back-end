@@ -1,8 +1,10 @@
+/// <reference types="jest" />
 /* eslint-disable prettier/prettier */
 import { Test, TestingModule } from '@nestjs/testing';
 import { FaqController } from './faq.controller';
 import { FaqService } from './faq.service';
 import { NotFoundException } from '@nestjs/common';
+import { CategoriaFaqEnum } from 'src/models/faq.model';
 
 describe('FaqController', () => {
   let controller: FaqController;
@@ -11,8 +13,9 @@ describe('FaqController', () => {
     getFaqs: jest.fn(),
     getFaqById: jest.fn(),
     getAllFaqsAdmin: jest.fn(),
+    getCategorias: jest.fn(),
     createFaq: jest.fn(),
-    updateFaq:jest.fn(),
+    updateFaq: jest.fn(),
     deleteFaq: jest.fn(),
   };
 
@@ -41,8 +44,20 @@ describe('FaqController', () => {
   // GET /faq
   it('deve retornar todas as FAQs', async () => {
     const mockFaqs = [
-      { id: 1, pergunta: 'P1', resposta: 'R1' },
-      { id: 2, pergunta: 'P2', resposta: 'R2' },
+      {
+        id: 1,
+        pergunta: 'P1',
+        resposta: 'R1',
+        categoria: CategoriaFaqEnum.DOCUMENTACAO,
+        status: true,
+      },
+      {
+        id: 2,
+        pergunta: 'P2',
+        resposta: 'R2',
+        categoria: CategoriaFaqEnum.MANUTENCAO,
+        status: true,
+      },
     ];
 
     faqServiceMock.getFaqs.mockResolvedValue(mockFaqs);
@@ -56,8 +71,14 @@ describe('FaqController', () => {
   // GET /faq/admin
   it('deve retornar todas as FAQs (admin)', async () => {
     const mockFaqs = [
-      { id: 1 },
-      { id: 2 },
+      {
+        id: 1,
+        categoria: CategoriaFaqEnum.DOCUMENTACAO,
+      },
+      {
+        id: 2,
+        categoria: CategoriaFaqEnum.MANUTENCAO,
+      },
     ];
 
     faqServiceMock.getAllFaqsAdmin.mockResolvedValue(mockFaqs);
@@ -68,9 +89,32 @@ describe('FaqController', () => {
     expect(faqServiceMock.getAllFaqsAdmin).toHaveBeenCalled();
   });
 
+  // GET /faq/categorias
+  it('deve retornar categorias', async () => {
+    const categorias = [
+      'documentacao',
+      'regularizacao',
+      'manutencao',
+      'outros',
+      'frequentes',
+    ];
+
+    faqServiceMock.getCategorias.mockReturnValue(categorias);
+
+    const result = await controller.getCategorias();
+
+    expect(result).toEqual(categorias);
+    expect(faqServiceMock.getCategorias).toHaveBeenCalled();
+  });
+
   // GET /faq/:id
   it('deve retornar uma FAQ por ID', async () => {
-    const faq = { id: 1, pergunta: 'P1', resposta: 'R1' };
+    const faq = {
+      id: 1,
+      pergunta: 'P1',
+      resposta: 'R1',
+      categoria: CategoriaFaqEnum.DOCUMENTACAO,
+    };
 
     faqServiceMock.getFaqById.mockResolvedValue(faq);
 
@@ -80,7 +124,6 @@ describe('FaqController', () => {
     expect(faqServiceMock.getFaqById).toHaveBeenCalledWith(1);
   });
 
-  // GET erro
   it('deve lançar erro se FAQ não existir', async () => {
     faqServiceMock.getFaqById.mockRejectedValue(
       new NotFoundException('FAQ não encontrada'),
@@ -93,7 +136,12 @@ describe('FaqController', () => {
 
   // POST /faq/admin
   it('deve criar uma FAQ', async () => {
-    const dto = { pergunta: 'P1', resposta: 'R1'};
+    const dto = {
+      pergunta: 'P1',
+      resposta: 'R1',
+      categoria: CategoriaFaqEnum.DOCUMENTACAO,
+    };
+
     const createdFaq = { id: 1, ...dto };
 
     faqServiceMock.createFaq.mockResolvedValue(createdFaq);
@@ -104,19 +152,30 @@ describe('FaqController', () => {
     expect(faqServiceMock.createFaq).toHaveBeenCalledWith(dto);
   });
 
-  // POST erro
   it('deve lançar erro ao criar uma FAQ', async () => {
-    const dto = { pergunta: 'Teste', resposta: 'Resposta' };
+    const dto = {
+      pergunta: 'Teste',
+      resposta: 'Resposta',
+      categoria: CategoriaFaqEnum.DOCUMENTACAO,
+    };
 
     faqServiceMock.createFaq.mockRejectedValue(new NotFoundException());
 
-    await expect(controller.createFaq(dto)).rejects.toThrow(NotFoundException);
+    await expect(controller.createFaq(dto)).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   // PATCH /faq/admin/:id
   it('deve atualizar uma FAQ', async () => {
     const dto = { resposta: 'Resposta atualizada' };
-    const updatedFaq = { id: 1, pergunta: 'P1', resposta: 'Resposta atualizada' };
+
+    const updatedFaq = {
+      id: 1,
+      pergunta: 'P1',
+      resposta: 'Resposta atualizada',
+      categoria: CategoriaFaqEnum.DOCUMENTACAO,
+    };
 
     faqServiceMock.updateFaq.mockResolvedValue(updatedFaq);
 
@@ -126,13 +185,14 @@ describe('FaqController', () => {
     expect(faqServiceMock.updateFaq).toHaveBeenCalledWith(1, dto);
   });
 
-  // PATCH erro
   it('deve lançar erro ao atualizar uma FAQ inexistente', async () => {
     const dto = { resposta: 'Nova resposta' };
 
     faqServiceMock.updateFaq.mockRejectedValue(new NotFoundException());
 
-    await expect(controller.updateFaq(999, dto)).rejects.toThrow(NotFoundException);
+    await expect(
+      controller.updateFaq(999, dto),
+    ).rejects.toThrow(NotFoundException);
   });
 
   // DELETE
@@ -148,11 +208,8 @@ describe('FaqController', () => {
     expect(faqServiceMock.deleteFaq).toHaveBeenCalledWith(1);
   });
 
-  // DELETE erro
   it('deve lançar erro ao deletar FAQ inexistente', async () => {
-    faqServiceMock.deleteFaq.mockRejectedValue(
-      new NotFoundException(),
-    );
+    faqServiceMock.deleteFaq.mockRejectedValue(new NotFoundException());
 
     await expect(controller.deleteFaq(999)).rejects.toThrow(
       NotFoundException,

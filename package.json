@@ -44,15 +44,10 @@
     "puppeteer": "^22.15.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-<<<<<<< HEAD
-    "sequelize": "^6.37.8",
-    "sequelize-typescript": "^2.1.6"
-=======
     "sequelize": "^6.37.7",
     "sequelize-typescript": "^2.1.6",
     "sharp": "^0.34.5",
     "streamifier": "^0.1.1"
->>>>>>> origin/release/entrega-04-05
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

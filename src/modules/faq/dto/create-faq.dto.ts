@@ -1,22 +1,34 @@
 /* eslint-disable prettier/prettier */
-import { Type } from 'class-transformer';
-import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsEnum,
+} from 'class-validator';
+import { CategoriaFaqEnum } from '../../../models/faq.model';
 
 export class CreateFaqDto {
+  @Transform(({ value }) => value?.trim())
   @IsString({ message: 'A pergunta deve ser um texto.' })
   @IsNotEmpty({ message: 'A pergunta é obrigatória.' })
   pergunta!: string;
 
+  @Transform(({ value }) => value?.trim())
   @IsString({ message: 'A resposta deve ser um texto.' })
   @IsNotEmpty({ message: 'A resposta é obrigatória.' })
   resposta!: string;
 
-  @Type(() => Number)
-  @IsNumber({}, { message: 'O campo categoriaId deve ser um número.' })
-  @IsNotEmpty({ message: 'A categoria é obrigatória.' })
-  categoriaId!: number;
+  @Transform(({ value }) => value?.toLowerCase().trim())
+  @IsEnum(CategoriaFaqEnum, {
+    message:
+      'Categoria inválida. Valores permitidos: documentacao, regularizacao, manutencao, outros, frequentes',
+  })
+  categoria!: CategoriaFaqEnum;
 
   @IsOptional()
+  @Type(() => Boolean)
   @IsBoolean({ message: 'O status deve ser verdadeiro ou falso.' })
   status?: boolean;
 }
