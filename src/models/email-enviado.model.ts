@@ -11,10 +11,7 @@ interface EmailEnviadoAttributes {
 }
 
 // atributos para criação (sem id)
-type EmailEnviadoCreationAttributes = Omit<
-  EmailEnviadoAttributes,
-  'id'
->;
+type EmailEnviadoCreationAttributes = Omit<EmailEnviadoAttributes, 'id'>;
 
 @Table({
   tableName: 'emails_enviados',
