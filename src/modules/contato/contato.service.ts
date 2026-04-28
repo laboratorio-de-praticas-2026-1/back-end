@@ -2,10 +2,19 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Empresa } from 'src/models/empresa.model';
 import { EmpresaDto } from './dto/empresa-response.dto';
+import { EmailService } from 'src/infra/email/email.service';
+import { EmailParams } from 'src/infra/email/dto/email-params';
 
 @Injectable()
 export class ContatoService {
-  constructor(@InjectModel(Empresa) private empresaModel: typeof Empresa) {}
+  constructor(
+    @InjectModel(Empresa) private empresaModel: typeof Empresa,
+    private readonly emailService: EmailService,
+  ) {}
+
+  async enviarEmail(data: EmailParams): Promise<void> {
+    await this.emailService.enviarEmail(data);
+  }
 
   async buscarContatoById(id: number): Promise<EmpresaDto> {
     const empresa: Empresa | null = await this.empresaModel.findOne({
