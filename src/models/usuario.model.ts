@@ -1,6 +1,12 @@
-import { Column, DataType, Model, Table } from 'sequelize-typescript';
+import { Column, DataType, HasMany, Model, Table } from 'sequelize-typescript';
+import { Solicitacao } from './solicitacao.model';
+import { Veiculo } from './veiculo.model';
 
-@Table({ tableName: 'usuario' })
+@Table({
+  tableName: 'usuario',
+  createdAt: false,
+  updatedAt: false,
+})
 export class Usuario extends Model {
   @Column({ primaryKey: true, autoIncrement: true, allowNull: false })
   declare id: number;
@@ -32,4 +38,10 @@ export class Usuario extends Model {
     defaultValue: DataType.NOW,
   })
   declare dataCadastro: Date;
+
+  @HasMany(() => Veiculo)
+  declare veiculos: Veiculo[];
+
+  @HasMany(() => Solicitacao)
+  declare solicitacoes: Solicitacao[];
 }

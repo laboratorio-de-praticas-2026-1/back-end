@@ -4,14 +4,9 @@ import { Global, Module } from '@nestjs/common';
 import { join } from 'path';
 import { EmailService } from './email.service';
 
-import { SequelizeModule } from '@nestjs/sequelize';
-import { EmailEnviado } from 'src/models/email-enviado.model';
-
 @Global()
 @Module({
   imports: [
-    SequelizeModule.forFeature([EmailEnviado]),
-
     MailerModule.forRootAsync({
       useFactory: () => ({
         transport: {
@@ -34,7 +29,7 @@ import { EmailEnviado } from 'src/models/email-enviado.model';
           },
         },
       }),
-    ),
+    }),
   ],
   providers: [EmailService],
   exports: [EmailService],

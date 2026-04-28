@@ -5,23 +5,40 @@ import { BuscaService } from './busca.service';
 import { BadRequestException } from '@nestjs/common';
 import { Blog } from 'src/models/blog.model';
 import { Banner } from 'src/models/banner.model';
+import { Servico } from 'src/models/servico.model';
+import { Publicidade } from 'src/models/publicidade.model';
+import { Usuario } from 'src/models/usuario.model';
+import { Empresa } from 'src/models/empresa.model';
 import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
+import { BuscaServicoFiltroDto } from './dto/busca-servico-filtro.dto';
+import { BuscaUsuarioFiltroDto } from './dto/busca-usuario-filtro.dto';
 
 describe('BuscaService', () => {
   let service: BuscaService;
   const blogFindAllMock = jest.fn();
   const bannerFindAllMock = jest.fn();
-
+  const servicoFindAllMock = jest.fn();
+  const usuarioFindAllMock = jest.fn();
+  const publicidadeFindAllMock = jest.fn();
+  const empresaFindAllMock = jest.fn();
   type WhereClause = Partial<Record<symbol, unknown>>;
 
   interface FindAllOptions {
     where?: unknown;
     order?: unknown;
+    attributes?: unknown;
+    group?: unknown;
+    raw?: unknown;
+    [key: string]: unknown;
   }
 
   beforeEach(async () => {
     blogFindAllMock.mockReset();
     bannerFindAllMock.mockReset();
+    servicoFindAllMock.mockReset();
+    publicidadeFindAllMock.mockReset();
+    usuarioFindAllMock.mockReset();
+    empresaFindAllMock.mockReset();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -38,6 +55,30 @@ describe('BuscaService', () => {
             findAll: bannerFindAllMock,
           },
         },
+        {
+          provide: getModelToken(Servico),
+          useValue: {
+            findAll: servicoFindAllMock,
+          },
+        },
+        {
+          provide: getModelToken(Publicidade),
+          useValue: {
+            findAll: publicidadeFindAllMock,
+          },
+        },
+        {
+          provide: getModelToken(Usuario),
+          useValue: {
+            findAll: usuarioFindAllMock,
+          },
+        },
+        {
+          provide: getModelToken(Empresa),
+          useValue: {
+            findAll: empresaFindAllMock,
+          },
+        },
       ],
     }).compile();
 
@@ -46,6 +87,177 @@ describe('BuscaService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  describe('buscarEmpresasPorFiltros', () => {
+    it('deve listar empresas sem filtros ordenando por id crescente', async () => {
+      const retorno = [{ id: 1 }];
+      empresaFindAllMock.mockResolvedValue(retorno);
+
+      await expect(service.buscarEmpresasPorFiltros({})).resolves.toEqual(
+        retorno,
+      );
+
+      expect(empresaFindAllMock).toHaveBeenCalledTimes(1);
+      expect(empresaFindAllMock).toHaveBeenCalledWith({
+        order: [['id', 'ASC']],
+      });
+    });
+
+    it('deve filtrar por tipo quando informado', async () => {
+      const retorno = [{ id: 1 }];
+      empresaFindAllMock.mockResolvedValue(retorno);
+
+      await expect(
+        service.buscarEmpresasPorFiltros({ tipo: 'detran' }),
+      ).resolves.toEqual(retorno);
+
+      expect(empresaFindAllMock).toHaveBeenCalledTimes(1);
+      const calls = empresaFindAllMock.mock.calls as Array<
+        Array<FindAllOptions>
+      >;
+      const args = calls[0]?.[0];
+      const whereClause = (args.where as WhereClause) ?? {};
+      expect(whereClause[Op.and]).toHaveLength(1);
+      expect(args.order).toEqual([['id', 'ASC']]);
+    });
+
+    it('deve combinar filtros quando mais de um campo é informado', async () => {
+      const retorno = [{ id: 1 }];
+      empresaFindAllMock.mockResolvedValue(retorno);
+
+      await expect(
+        service.buscarEmpresasPorFiltros({
+          tipo: 'clinica',
+          estado: 'PR',
+          cidade: 'Curitiba',
+        }),
+      ).resolves.toEqual(retorno);
+
+      expect(empresaFindAllMock).toHaveBeenCalledTimes(1);
+      const calls = empresaFindAllMock.mock.calls as Array<
+        Array<FindAllOptions>
+      >;
+      const args = calls[0]?.[0];
+      const whereClause = (args.where as WhereClause) ?? {};
+      expect(whereClause[Op.and]).toHaveLength(3);
+      expect(args.order).toEqual([['id', 'ASC']]);
+    });
+  });
+
+  describe('listarEstadosEmpresas', () => {
+    it('deve retornar apenas UFs únicas, sem nulos/vazios', async () => {
+      empresaFindAllMock.mockResolvedValue([
+        { estado: 'PR' },
+        { estado: 'SP' },
+        { estado: 'PR' },
+        { estado: null },
+        { estado: '  ' },
+      ]);
+
+      await expect(service.listarEstadosEmpresas()).resolves.toEqual([
+        'PR',
+        'SP',
+      ]);
+
+      expect(empresaFindAllMock).toHaveBeenCalledTimes(1);
+      expect(empresaFindAllMock).toHaveBeenCalledWith({
+        attributes: ['estado'],
+        group: ['estado'],
+        order: [['estado', 'ASC']],
+        raw: true,
+      });
+    });
+  });
+
+  describe('listarCidadesEmpresas', () => {
+    it('sem estado deve retornar todas as cidades únicas', async () => {
+      empresaFindAllMock.mockResolvedValue([
+        { cidade: 'Curitiba' },
+        { cidade: 'Maringá' },
+        { cidade: 'Curitiba' },
+        { cidade: null },
+        { cidade: '   ' },
+      ]);
+
+      await expect(service.listarCidadesEmpresas()).resolves.toEqual([
+        'Curitiba',
+        'Maringá',
+      ]);
+
+      expect(empresaFindAllMock).toHaveBeenCalledTimes(1);
+      expect(empresaFindAllMock).toHaveBeenCalledWith({
+        attributes: ['cidade'],
+        group: ['cidade'],
+        order: [['cidade', 'ASC']],
+        raw: true,
+      });
+    });
+
+    it('com estado deve filtrar cidades do estado informado (UF normalizada)', async () => {
+      empresaFindAllMock.mockResolvedValue([
+        { cidade: 'Curitiba' },
+        { cidade: 'Londrina' },
+      ]);
+
+      await expect(service.listarCidadesEmpresas(' pr ')).resolves.toEqual([
+        'Curitiba',
+        'Londrina',
+      ]);
+
+      expect(empresaFindAllMock).toHaveBeenCalledTimes(1);
+      expect(empresaFindAllMock).toHaveBeenCalledWith({
+        attributes: ['cidade'],
+        where: { estado: 'PR' },
+        group: ['cidade'],
+        order: [['cidade', 'ASC']],
+        raw: true,
+      });
+    });
+  });
+
+  describe('listarEmpresasByTermo', () => {
+    it('deve retornar mensagem quando nao encontrar itens sem filtro', async () => {
+      empresaFindAllMock.mockResolvedValue([]);
+
+      const resultado = await service.listarEmpresasByTermo();
+
+      expect(empresaFindAllMock).toHaveBeenCalledWith({
+        order: [['id', 'DESC']],
+      });
+      expect(resultado).toEqual({
+        itens: [],
+        mensagem: 'Nenhum item foi encontrado.',
+      });
+    });
+
+    it('deve montar filtro por nome fantasia, cnpj, telefone, cidade e site quando termo textual for informado', async () => {
+      empresaFindAllMock.mockResolvedValue([]);
+
+      await service.listarEmpresasByTermo('  curitiba  ');
+
+      expect(empresaFindAllMock).toHaveBeenCalledWith({
+        where: {
+          [Op.or]: [
+            { nomeFantasia: { [Op.like]: '%curitiba%' } },
+            { cnpj: { [Op.like]: '%curitiba%' } },
+            { telefone: { [Op.like]: '%curitiba%' } },
+            { cidade: { [Op.like]: '%curitiba%' } },
+            { site: { [Op.like]: '%curitiba%' } },
+          ],
+        },
+        order: [['id', 'DESC']],
+      });
+    });
+
+    it('deve retornar itens quando houver correspondencia no filtro', async () => {
+      const retorno = [{ id: 10, nomeFantasia: 'Auto Curitiba' }];
+      empresaFindAllMock.mockResolvedValue(retorno);
+
+      const resultado = await service.listarEmpresasByTermo('curitiba');
+
+      expect(resultado).toEqual({ itens: retorno, mensagem: undefined });
+    });
   });
 
   it('deve buscar blogs entre datas (incluindo limites)', async () => {
@@ -180,6 +392,38 @@ describe('BuscaService', () => {
     });
   });
 
+  it('deve buscar publicidades ativas quando status=ativo', async () => {
+    const retorno = [{ id: 1 }];
+    publicidadeFindAllMock.mockResolvedValue(retorno);
+
+    await expect(
+      service.buscarPublicidadePorStatus({ status: 'ativo' }),
+    ).resolves.toEqual(retorno);
+
+    expect(publicidadeFindAllMock).toHaveBeenCalledTimes(1);
+    expect(publicidadeFindAllMock).toHaveBeenCalledWith({
+      where: {
+        ativo: true,
+      },
+    });
+  });
+
+  it('deve buscar publicidades inativas quando status=inativo', async () => {
+    const retorno = [{ id: 1 }];
+    publicidadeFindAllMock.mockResolvedValue(retorno);
+
+    await expect(
+      service.buscarPublicidadePorStatus({ status: 'inativo' }),
+    ).resolves.toEqual(retorno);
+
+    expect(publicidadeFindAllMock).toHaveBeenCalledTimes(1);
+    expect(publicidadeFindAllMock).toHaveBeenCalledWith({
+      where: {
+        ativo: false,
+      },
+    });
+  });
+
   it('deve listar blog sem filtro ordenando por id decrescente', async () => {
     blogFindAllMock.mockResolvedValue([]);
 
@@ -268,6 +512,69 @@ describe('BuscaService', () => {
     });
   });
 
+  describe('buscarUsuariosPorFiltros', () => {
+    it('deve listar usuarios sem filtros ordenando por id crescente', async () => {
+      usuarioFindAllMock.mockResolvedValue([]);
+      await service.buscarUsuariosPorFiltros({});
+
+      expect(usuarioFindAllMock).toHaveBeenCalledWith({
+        attributes: { exclude: ['senha'] },
+        order: [['id', 'ASC']],
+      });
+    });
+
+    it('deve filtrar por nivel_usuario quando informado', async () => {
+      usuarioFindAllMock.mockResolvedValue([]);
+
+      await service.buscarUsuariosPorFiltros({
+        nivel_usuario: 'cliente',
+      } as unknown as BuscaUsuarioFiltroDto);
+
+      expect(usuarioFindAllMock).toHaveBeenCalledTimes(1);
+      const calls = usuarioFindAllMock.mock.calls as Array<
+        Array<FindAllOptions>
+      >;
+      const args = calls[0]?.[0];
+      expect(args.where).toBeDefined();
+      const whereClause = args.where as WhereClause;
+      expect(whereClause[Op.and]).toHaveLength(1);
+      expect(args.order).toEqual([['id', 'ASC']]);
+    });
+
+    it('deve filtrar por data_cadastro quando informado', async () => {
+      usuarioFindAllMock.mockResolvedValue([]);
+
+      await service.buscarUsuariosPorFiltros({
+        data_cadastro: '2026-03-03',
+      } as unknown as BuscaUsuarioFiltroDto);
+
+      expect(usuarioFindAllMock).toHaveBeenCalledTimes(1);
+      const calls = usuarioFindAllMock.mock.calls as Array<
+        Array<FindAllOptions>
+      >;
+      const args = calls[0]?.[0];
+      const whereClause = args.where as WhereClause;
+      expect(whereClause[Op.and]).toHaveLength(1);
+    });
+
+    it('deve combinar filtros quando mais de um campo é informado', async () => {
+      usuarioFindAllMock.mockResolvedValue([]);
+
+      await service.buscarUsuariosPorFiltros({
+        nivel_usuario: 'administrador',
+        data_cadastro: '2026-04-11',
+      } as unknown as BuscaUsuarioFiltroDto);
+
+      expect(usuarioFindAllMock).toHaveBeenCalledTimes(1);
+      const calls = usuarioFindAllMock.mock.calls as Array<
+        Array<FindAllOptions>
+      >;
+      const args = calls[0]?.[0];
+      const whereClause = args.where as WhereClause;
+      expect(whereClause[Op.and]).toHaveLength(2);
+    });
+  });
+
   describe('listarBannersByTermo', () => {
     it('deve retornar mensagem quando nao encontrar itens sem filtro', async () => {
       bannerFindAllMock.mockResolvedValue([]);
@@ -307,6 +614,239 @@ describe('BuscaService', () => {
         },
         order: [['id', 'DESC']],
       });
+    });
+  });
+
+  describe('listarPublicidadeByTermo', () => {
+    it('deve retornar mensagem quando nao encontrar itens sem filtro', async () => {
+      publicidadeFindAllMock.mockResolvedValue([]);
+
+      const resultado = await service.listarPublicidadeByTermo();
+
+      expect(publicidadeFindAllMock).toHaveBeenCalledWith({
+        order: [['id', 'DESC']],
+      });
+      expect(resultado).toEqual({
+        itens: [],
+        mensagem: 'Nenhum item foi encontrado.',
+      });
+    });
+
+    it('deve montar filtro por imagem e conteudo quando termo textual for informado', async () => {
+      publicidadeFindAllMock.mockResolvedValue([]);
+
+      await service.listarPublicidadeByTermo('  campanha  ');
+
+      expect(publicidadeFindAllMock).toHaveBeenCalledWith({
+        where: {
+          [Op.or]: [
+            { urlImagem: { [Op.like]: '%campanha%' } },
+            { conteudo: { [Op.like]: '%campanha%' } },
+          ],
+        },
+        order: [['id', 'DESC']],
+      });
+    });
+
+    it('deve buscar apenas por id quando termo numerico encontrar registro com id exato', async () => {
+      publicidadeFindAllMock.mockResolvedValue([{ id: 12 }]);
+
+      await service.listarPublicidadeByTermo('12');
+
+      expect(publicidadeFindAllMock).toHaveBeenCalledWith({
+        where: { id: 12 },
+        order: [['id', 'DESC']],
+      });
+      expect(publicidadeFindAllMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('deve aplicar fallback para filtro textual quando termo numerico nao encontrar id exato', async () => {
+      publicidadeFindAllMock
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]);
+
+      await service.listarPublicidadeByTermo('12');
+
+      expect(publicidadeFindAllMock).toHaveBeenNthCalledWith(1, {
+        where: { id: 12 },
+        order: [['id', 'DESC']],
+      });
+      expect(publicidadeFindAllMock).toHaveBeenNthCalledWith(2, {
+        where: {
+          [Op.or]: [
+            { urlImagem: { [Op.like]: '%12%' } },
+            { conteudo: { [Op.like]: '%12%' } },
+          ],
+        },
+        order: [['id', 'DESC']],
+      });
+    });
+
+    it('deve buscar apenas por id quando termo estiver no formato id N', async () => {
+      publicidadeFindAllMock.mockResolvedValue([]);
+
+      await service.listarPublicidadeByTermo('id 9');
+
+      expect(publicidadeFindAllMock).toHaveBeenCalledWith({
+        where: { id: 9 },
+        order: [['id', 'DESC']],
+      });
+    });
+  });
+
+  describe('buscarServicosPorFiltros', () => {
+    it('deve listar servicos sem filtros ordenando por id crescente', async () => {
+      servicoFindAllMock.mockResolvedValue([]);
+
+      await service.buscarServicosPorFiltros({});
+
+      expect(servicoFindAllMock).toHaveBeenCalledWith({
+        order: [['id', 'ASC']],
+      });
+    });
+
+    it('deve filtrar por intervalo de valor_base quando informado', async () => {
+      servicoFindAllMock.mockResolvedValue([]);
+
+      await service.buscarServicosPorFiltros({
+        valor_base_de: 50,
+        valor_base_ate: 150,
+      } as unknown as BuscaServicoFiltroDto);
+
+      expect(servicoFindAllMock).toHaveBeenCalledTimes(1);
+      const calls = servicoFindAllMock.mock.calls as Array<
+        Array<FindAllOptions>
+      >;
+      const args = calls[0]?.[0];
+      expect(args.where).toBeDefined();
+      const whereClause = args.where as WhereClause;
+      expect(whereClause[Op.and]).toHaveLength(1);
+      expect(args.order).toEqual([['id', 'ASC']]);
+    });
+
+    it('deve filtrar por intervalo de prazo_estimado quando informado', async () => {
+      servicoFindAllMock.mockResolvedValue([]);
+
+      await service.buscarServicosPorFiltros({
+        prazo_estimado_de: 10,
+        prazo_estimado_ate: 30,
+      } as unknown as BuscaServicoFiltroDto);
+
+      expect(servicoFindAllMock).toHaveBeenCalledTimes(1);
+      const calls = servicoFindAllMock.mock.calls as Array<
+        Array<FindAllOptions>
+      >;
+      const args = calls[0]?.[0];
+      const whereClause = args.where as WhereClause;
+      expect(whereClause[Op.and]).toHaveLength(1);
+    });
+
+    it('deve filtrar por status quando informado', async () => {
+      servicoFindAllMock.mockResolvedValue([]);
+
+      await service.buscarServicosPorFiltros({
+        status: 'inativo',
+      } as unknown as BuscaServicoFiltroDto);
+
+      expect(servicoFindAllMock).toHaveBeenCalledTimes(1);
+      const calls = servicoFindAllMock.mock.calls as Array<
+        Array<FindAllOptions>
+      >;
+      const args = calls[0]?.[0];
+      const whereClause = args.where as WhereClause;
+      expect(whereClause[Op.and]).toHaveLength(1);
+    });
+
+    it('deve combinar filtros quando mais de um campo é informado', async () => {
+      servicoFindAllMock.mockResolvedValue([]);
+
+      await service.buscarServicosPorFiltros({
+        valor_base_de: 350,
+        valor_base_ate: 500,
+        prazo_estimado_de: 5,
+        prazo_estimado_ate: 15,
+        status: 'ativo',
+      } as unknown as BuscaServicoFiltroDto);
+
+      expect(servicoFindAllMock).toHaveBeenCalledTimes(1);
+      const calls = servicoFindAllMock.mock.calls as Array<
+        Array<FindAllOptions>
+      >;
+      const args = calls[0]?.[0];
+      const whereClause = args.where as WhereClause;
+      expect(whereClause[Op.and]).toHaveLength(3);
+    });
+  });
+
+  describe('listarUsuariosByTermo', () => {
+    it('deve retornar mensagem quando nao encontrar itens sem filtro', async () => {
+      usuarioFindAllMock.mockResolvedValue([]);
+
+      const resultado = await service.listarUsuariosByTermo();
+
+      expect(usuarioFindAllMock).toHaveBeenCalledWith({
+        attributes: { exclude: ['senha'] },
+        order: [['id', 'DESC']],
+      });
+      expect(resultado).toEqual({
+        itens: [],
+        mensagem: 'Nenhum item foi encontrado.',
+      });
+    });
+
+    it('deve montar filtro por nome, email, cpf/cnpj e celular quando termo textual for informado', async () => {
+      usuarioFindAllMock.mockResolvedValue([]);
+
+      await service.listarUsuariosByTermo('  joao  ');
+
+      expect(usuarioFindAllMock).toHaveBeenCalledWith({
+        attributes: { exclude: ['senha'] },
+        where: {
+          [Op.or]: [
+            { nome: { [Op.like]: '%joao%' } },
+            { email: { [Op.like]: '%joao%' } },
+            { cpfCnpj: { [Op.like]: '%joao%' } },
+            { celular: { [Op.like]: '%joao%' } },
+          ],
+        },
+        order: [['id', 'DESC']],
+      });
+    });
+
+    it('deve incluir filtro de data de cadastro quando termo estiver no formato YYYY-MM-DD', async () => {
+      usuarioFindAllMock.mockResolvedValue([]);
+
+      await service.listarUsuariosByTermo('2026-04-15');
+
+      expect(usuarioFindAllMock).toHaveBeenCalledTimes(1);
+      const calls = usuarioFindAllMock.mock.calls as Array<
+        Array<FindAllOptions>
+      >;
+      const args = calls[0]?.[0];
+      expect(args.attributes).toEqual({ exclude: ['senha'] });
+      expect(args.where).toBeDefined();
+      const whereClause = args.where as WhereClause;
+      const filtros = whereClause[Op.or] as unknown[];
+      expect(Array.isArray(filtros)).toBe(true);
+      expect(filtros).toHaveLength(5);
+    });
+
+    it('deve incluir filtro de data de cadastro quando termo estiver no formato DD/MM/YYYY', async () => {
+      usuarioFindAllMock.mockResolvedValue([]);
+
+      await service.listarUsuariosByTermo('15/04/2026');
+
+      expect(usuarioFindAllMock).toHaveBeenCalledTimes(1);
+      const calls = usuarioFindAllMock.mock.calls as Array<
+        Array<FindAllOptions>
+      >;
+      const args = calls[0]?.[0];
+      expect(args.attributes).toEqual({ exclude: ['senha'] });
+      expect(args.where).toBeDefined();
+      const whereClause = args.where as WhereClause;
+      const filtros = whereClause[Op.or] as unknown[];
+      expect(Array.isArray(filtros)).toBe(true);
+      expect(filtros).toHaveLength(5);
     });
   });
 });

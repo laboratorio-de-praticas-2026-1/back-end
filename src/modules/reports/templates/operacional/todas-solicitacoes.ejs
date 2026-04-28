@@ -1,0 +1,28 @@
+<% const tituloTabela = typeof titulo === 'string' && titulo ? titulo : 'Todas as Solicitações do Período'; %>
+<% const initialIndex = typeof startIndex === 'number' ? startIndex : 0; %>
+
+<div class="section-label"><%= tituloTabela %></div>
+<table>
+  <thead><tr>
+    <th>#</th><th>Serviço</th><th>Status</th>
+    <th>Obs. Cliente</th><th>Obs. Admin</th>
+    <th>Data Solic.</th><th>Data Conclusão</th>
+  </tr></thead>
+  <tbody>
+    <% if (solicitacoes.length) { %>
+      <% solicitacoes.forEach((s, i) => { %>
+        <tr>
+          <td><%= String(initialIndex + i + 1).padStart(2, '0') %></td>
+          <td><%= s.servico.nome %></td>
+          <td><%- badge(s.status) %></td>
+          <td style="font-size:10px;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><%= s.observacaoCliente ?? '—' %></td>
+          <td style="font-size:10px;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><%= s.observacaoAdmin ?? '—' %></td>
+          <td><%= fmtDate(s.dataSolicitacao) %></td>
+          <td><%= fmtDate(s.dataConclusao) %></td>
+        </tr>
+      <% }) %>
+    <% } else { %>
+      <tr><td colspan="7" style="text-align:center;color:#999;">Nenhuma solicitação</td></tr>
+    <% } %>
+  </tbody>
+</table>

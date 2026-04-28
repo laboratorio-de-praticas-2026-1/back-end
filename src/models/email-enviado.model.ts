@@ -1,68 +1,43 @@
-import {
-Column,
-Model,
-Table,
-DataType,
-} from 'sequelize-typescript';
+import { Column, DataType, Model, Table } from 'sequelize-typescript';
 
-// atributos do banco
-interface EmailEnviadoAttributes {
-id: number;
-nome_usuario: string;
-email_usuario: string;
-texto_digitado: string;
-assunto: string;
-data_envio: Date;
-}
+@Table({ tableName: 'emails_enviados', timestamps: false })
+export class EmailEnviado extends Model {
+  @Column({ primaryKey: true, autoIncrement: true, allowNull: false })
+  declare id: number;
 
-// atributos para criação (sem id)
-interface EmailEnviadoCreationAttributes
-extends Omit<EmailEnviadoAttributes, 'id'> {}
+  @Column({
+    field: 'nome_usuario',
+    type: DataType.STRING(255),
+    allowNull: false,
+  })
+  declare nomeUsuario: string;
 
-@Table({
-tableName: 'emails_enviados',
-timestamps: false,
-})
-export class EmailEnviado extends Model<
-EmailEnviadoAttributes,
-EmailEnviadoCreationAttributes
+  @Column({
+    field: 'email_usuario',
+    type: DataType.STRING(255),
+    allowNull: false,
+  })
+  declare emailUsuario: string;
 
-> {
+  @Column({
+    field: 'texto_digitado',
+    type: DataType.TEXT,
+    allowNull: false,
+  })
+  declare textoDigitado: string;
 
-@Column({
-type: DataType.INTEGER,
-primaryKey: true,
-autoIncrement: true,
-})
-declare id: number;
+  @Column({
+    field: 'assunto',
+    type: DataType.STRING(255),
+    allowNull: false,
+  })
+  declare assunto: string;
 
-@Column({
-type: DataType.STRING,
-allowNull: false,
-})
-declare nome_usuario: string;
-
-@Column({
-type: DataType.STRING,
-allowNull: false,
-})
-declare email_usuario: string;
-
-@Column({
-type: DataType.TEXT,
-allowNull: false,
-})
-declare texto_digitado: string;
-
-@Column({
-type: DataType.STRING,
-allowNull: false,
-})
-declare assunto: string;
-
-@Column({
-type: DataType.DATE,
-allowNull: false,
-})
-declare data_envio: Date;
+  @Column({
+    field: 'data_envio',
+    type: DataType.DATE(3),
+    allowNull: false,
+    defaultValue: DataType.NOW,
+  })
+  declare dataEnvio: Date;
 }

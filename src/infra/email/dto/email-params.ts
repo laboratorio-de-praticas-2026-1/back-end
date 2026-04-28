@@ -1,18 +1,21 @@
-import { IsString, IsOptional, IsObject } from 'class-validator';
-
 export class EmailParams {
-  @IsString()
   to: string;
-
-  @IsString()
   template: string;
-
-  @IsString()
   assunto: string;
-
-  @IsOptional()
   withHeader?: boolean;
+  dados: Record<string, object>;
 
-  @IsObject()
-  dados: Record<string, any>;
+  constructor(
+    to: string,
+    template: string,
+    assunto: string,
+    dados: Record<string, any>,
+    withHeader?: boolean,
+  ) {
+    this.to = to;
+    this.template = template;
+    this.assunto = assunto;
+    this.dados = dados;
+    this.withHeader = withHeader ?? true;
+  }
 }

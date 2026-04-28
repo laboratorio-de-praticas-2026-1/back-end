@@ -1,26 +1,27 @@
 import {
-  Controller,
-  Get,
-  Put,
-  Post,
   Body,
+  Controller,
+  ForbiddenException,
+  Get,
   Logger,
   Param,
   ParseIntPipe,
-  ForbiddenException,
-  HttpException,
-  HttpStatus,
+  Post,
+  Put,
+  ValidationPipe,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
+  ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiCreatedResponse,
 } from '@nestjs/swagger';
 import { ContatoService } from './contato.service';
-import { EmpresaDto } from './dto/empresa-response.dto';
 import { ContatoUpdateDto } from './dto/contato-update.dto';
-import { EmailParams } from 'src/infra/email/dto/email-params';
+import { EmpresaDto } from './dto/empresa-response.dto';
+import { EnviarEmailDto } from './dto/enviar-email-dto';
 
 @Controller('contato')
 export class ContatoController {
@@ -67,28 +68,16 @@ export class ContatoController {
     this.logger.log(`Atualizando contato ID: ${id}`);
     return this.contatoService.atualizarContato(id, data);
   }
-  
-  @Post('enviar')
-  @ApiOperation({ summary: 'Envia email de contato' })
-  @ApiCreatedResponse({ description: 'E-mail enviado com sucesso' })
-  async enviarEmail(@Body() data: EmailParams) {
-    try {
-      this.logger.log(`Email recebido de: ${data.dados?.email}`);
 
-      await this.contatoService.enviarEmail(data);
-
-      return {
-        message: 'E-mail enviado com sucesso',
-      };
-    } catch (error) {
-      this.logger.error('Erro ao enviar email', error);
-
-      throw new HttpException(
-        {
-          message: 'Erro ao enviar e-mail',
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+  @Post('enviar-email')
+  @ApiCreatedResponse({ description: 'Mensagem enviada com sucesso' })
+  @ApiBadRequestResponse({ description: 'Dados inválidos' })
+  async enviarMensagemContato(
+    @Body(ValidationPipe) dados: EnviarEmailDto,
+  ): Promise<{ message: string }> {
+    this.logger.log(
+      `Recebendo mensagem de contato de: ${dados.nome} (${dados.email})`,
+    );
+    return this.contatoService.enviarMensagemContato(dados);
   }
 }

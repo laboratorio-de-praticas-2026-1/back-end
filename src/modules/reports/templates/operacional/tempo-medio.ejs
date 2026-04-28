@@ -1,0 +1,71 @@
+<% const exibirResumo = showResumo !== false; %>
+<% const exibirComparativo = showComparativo !== false; %>
+<% const exibirVencimento = showVencimento !== false; %>
+<% const tituloComparativo = typeof comparativoTitle === 'string' && comparativoTitle ? comparativoTitle : 'Tempo Médio × Prazo Estimado'; %>
+<% const tituloVencimento = typeof vencimentoTitle === 'string' && vencimentoTitle ? vencimentoTitle : 'Casos em Vencimento'; %>
+
+<% if (exibirResumo) { %>
+  <div class="section-label">Tempo Médio de Conclusão</div>
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-label">Tempo Médio Geral</div>
+      <div class="kpi-value"><%= tempoMedio %> dias</div>
+    </div>
+  </div>
+<% } %>
+
+<% if (exibirComparativo) { %>
+<div class="section-label"><%= tituloComparativo %></div>
+<table>
+  <thead><tr>
+    <th>ID</th><th>Serviço</th><th>Tempo Utilizado</th><th>Prazo Estimado</th><th>Dentro do Prazo?</th>
+  </tr></thead>
+  <tbody>
+    <% if (comparativo.length) { %>
+      <% comparativo.forEach((c) => { %>
+        <tr>
+          <td><%= c.id %></td>
+          <td><%= c.servico %></td>
+          <td><%= c.tempoUtilizado %> dias</td>
+          <td><%= c.prazoEstimado %> dias</td>
+          <td>
+            <% if (c.dentroPrazo) { %>
+              <span class="ok-icon">✓ Sim</span>
+            <% } else { %>
+              <span class="nok-icon">✗ Não</span>
+            <% } %>
+          </td>
+        </tr>
+      <% }) %>
+    <% } else { %>
+      <tr><td colspan="5" style="text-align:center;color:#999;">Nenhuma solicitação concluída</td></tr>
+    <% } %>
+  </tbody>
+</table>
+<% } %>
+
+<% if (exibirVencimento) { %>
+<div class="section-label"><%= tituloVencimento %></div>
+<table>
+  <thead><tr>
+    <th>ID Usuário</th><th>Usuário</th><th>Serviço</th>
+    <th>Data Início</th><th>Tempo Est.</th><th>Data Venc.</th>
+  </tr></thead>
+  <tbody>
+    <% if (casosVencimento.length) { %>
+      <% casosVencimento.forEach((c) => { %>
+        <tr>
+          <td><%= c.idUsuario %></td>
+          <td><%= c.usuario %></td>
+          <td><%= c.servico %></td>
+          <td><%= fmtDate(c.dataInicio) %></td>
+          <td><%= c.tempoEstimado %> dias</td>
+          <td><%= fmtDate(c.dataVencimento) %></td>
+        </tr>
+      <% }) %>
+    <% } else { %>
+      <tr><td colspan="6" style="text-align:center;color:#999;">Nenhum caso em vencimento</td></tr>
+    <% } %>
+  </tbody>
+</table>
+<% } %>

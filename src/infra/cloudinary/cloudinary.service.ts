@@ -153,7 +153,7 @@ export class CloudinaryService {
           error instanceof Error ? error.message : 'Erro desconhecido'
         }`,
       );
-      throw new InternalServerErrorException('Erro ao gerar URL temporária');
+      return '';
     }
   }
 }

@@ -6,10 +6,11 @@
     "deleteOutDir": true,
     "plugins": ["@nestjs/swagger"],
     "assets": [
-      {
-        "include": "infra/email/templates/**/*",
-        "outDir": "dist"
-      }
+      "infra/email/templates/**/*",
+      "modules/reports/templates/**/*.ejs",
+      "modules/recibo/template/**/*.ejs",
+      "modules/recibo/assets/**/*",
+      "static/**/*"
     ],
     "watchAssets": true
   }

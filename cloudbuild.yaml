@@ -17,19 +17,23 @@ steps:
           SAFE_BRANCH=$(printf '%s' "$BRANCH_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')
           docker push "southamerica-east1-docker.pkg.dev/$PROJECT_ID/backend-repo/backend-$${SAFE_BRANCH}:$COMMIT_SHA"
 
-  # Deploy no Cloud Run (serviço nomeado pela branch)
+  # Deploy no Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: sh
     args:
       - -c
       - |
           SAFE_BRANCH=$(printf '%s' "$BRANCH_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')
+
           gcloud run deploy "backend-$${SAFE_BRANCH}" \
             --image="southamerica-east1-docker.pkg.dev/$PROJECT_ID/backend-repo/backend-$${SAFE_BRANCH}:$COMMIT_SHA" \
             --region="southamerica-east1" \
             --platform="managed" \
-            --allow-unauthenticated
+            --allow-unauthenticated \
+            --port=8080 \
+            --memory=1Gi \
+            --cpu=1 \
+            --timeout=300
 
-# Solução Service Account:
 options:
   logging: CLOUD_LOGGING_ONLY
