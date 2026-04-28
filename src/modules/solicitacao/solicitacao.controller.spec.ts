@@ -4,6 +4,7 @@ import { SolicitacaoService } from './solicitacao.service';
 import { StatusSolicitacaoEnum } from 'src/commons/enums/status-solicitacao.enum';
 import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
 import { RolesGuard } from '../usuario/guards/roles.guard';
+import { ListSolicitacoesQueryDto } from './dto/list-solicitacoes-query.dto';
 
 describe('SolicitacaoController', () => {
   let controller: SolicitacaoController;
@@ -121,5 +122,29 @@ describe('SolicitacaoController', () => {
 
     await expect(controller.reabrirSolicitacao(123)).resolves.toEqual(resposta);
     expect(mockSolicitacaoService.reabrirSolicitacao).toHaveBeenCalledWith(123);
+  });
+
+  it('deve listar solicitacoes com parametros de paginacao e ordenacao', async () => {
+    const query: ListSolicitacoesQueryDto = {
+      page: 2,
+      limit: 5,
+      orderBy: 'status',
+      order: 'asc',
+    };
+    const resposta = {
+      total: 0,
+      page: 2,
+      limit: 5,
+      solicitacoes: [],
+    };
+
+    mockSolicitacaoService.listarSolicitacoes.mockResolvedValue(resposta);
+
+    await expect(controller.listarSolicitacoes(query)).resolves.toEqual(
+      resposta,
+    );
+    expect(mockSolicitacaoService.listarSolicitacoes).toHaveBeenCalledWith(
+      query,
+    );
   });
 });
