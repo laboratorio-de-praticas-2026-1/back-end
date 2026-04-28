@@ -674,8 +674,18 @@ export class SolicitacaoService implements OnModuleDestroy {
     };
   }
 
-  async listarDocumentos(solicitacaoId: number) {
 
+  async listarDocumentos(solicitacaoId: number): Promise<{
+    data: {
+      id: number;
+      tipo_documento: string | null;
+      nome_arquivo: string;
+      url: string;
+      data_upload: Date | null;
+    }[];
+    total: number;
+    message?: string;
+  }> {
     const solicitacao = await this.solicitacaoModel.findByPk(solicitacaoId);
 
     if (!solicitacao) {
@@ -699,6 +709,11 @@ export class SolicitacaoService implements OnModuleDestroy {
       };
     }
 
+    const data = documentos
+      .map((doc) => {
+        try {
+          const decrypted = this.cryptoUtil.decrypt(doc.nomeHash ?? '');
+          const [resourceType, publicId] = decrypted.split('|');
 
     const data = (
       await Promise.all(
@@ -727,12 +742,39 @@ export class SolicitacaoService implements OnModuleDestroy {
                 error instanceof Error ? error.message : 'Erro desconhecido'
               }`,
             );
+          return {
+            id: doc.id,
+            tipo_documento: doc.tipoDocumento,
+            nome_arquivo: publicId,
+            url,
+            data_upload: doc.dataUpload,
+          };
+        } catch (error: unknown) {
+          this.logger.warn(
+            `Erro ao processar documento ID ${doc.id}: ${
+              error instanceof Error ? error.message : 'Erro desconhecido'
+            }`,
+          );
 
             return null;
           }
         }),
       )
     ).filter(Boolean);
+          return null;
+        }
+      })
+      .filter(
+        (
+          item,
+        ): item is {
+          id: number;
+          tipo_documento: string | null;
+          nome_arquivo: string;
+          url: string;
+          data_upload: Date | null;
+        } => item !== null,
+      );
 
     return {
       data,

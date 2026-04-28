@@ -386,11 +386,57 @@ export class SolicitacaoController {
   ): Promise<{ id: number; mensagem: string }> {
     return this.solicitacaoService.substituirDocumento(id, docId, documento);
   }
-  @Get(':id/documentos')
-  listarDocumentos(
-    @Param('id', ParseIntPipe) id: number,
-) {
-  return this.solicitacaoService.listarDocumentos(id);
-}
-}
 
+  @Get(':id/documentos')
+  @ApiOperation({
+    summary: 'Listar documentos de uma solicitação',
+    description:
+      'Retorna todos os documentos vinculados a uma solicitação específica, com nome descriptografado e URL temporária do Cloudinary.',
+  })
+  @ApiOkResponse({
+    description: 'Lista de documentos retornada com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'number', example: 1 },
+              tipo_documento: { type: 'string', example: 'RG' },
+              nome_arquivo: { type: 'string', example: 'rg_frente.pdf' },
+              url: {
+                type: 'string',
+                example: 'https://res.cloudinary.com/.../rg_frente.pdf',
+              },
+              data_upload: {
+                type: 'string',
+                format: 'date-time',
+                example: '2026-04-15T14:30:00Z',
+              },
+            },
+          },
+        },
+        total: { type: 'number', example: 2 },
+      },
+    },
+  })
+  @ApiNotFoundResponse({
+    description: 'Solicitação não encontrada',
+    schema: {
+      type: 'object',
+      properties: {
+        error: { type: 'string', example: 'SOLICITACAO_NAO_ENCONTRADA' },
+        message: {
+          type: 'string',
+          example: 'A solicitação não foi encontrada',
+        },
+      },
+    },
+  })
+  listarDocumentos(@Param('id', ParseIntPipe) id: number) {
+    this.logger.log(`Buscando documentos da solicitação com id=${id}...`);
+    return this.solicitacaoService.listarDocumentos(id);
+  }
+}
