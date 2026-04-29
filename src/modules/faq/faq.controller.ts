@@ -16,46 +16,39 @@ import { UpdateFaqDto } from './dto/update-faq.dto';
 export class FaqController {
   constructor(private readonly faqService: FaqService) {}
 
-  // GET /faq
   @Get()
-  async getFaqs() {
+  getFaqs() {
     return this.faqService.getFaqs();
   }
 
-  // GET /faq/admin
   @Get('admin')
-  async getAllFaqsAdmin() {
+  getAllFaqsAdmin() {
     return this.faqService.getAllFaqsAdmin();
   }
 
-  // GET /faq/categorias
   @Get('categorias')
-  async getCategorias() {
+  getCategorias() {
     return this.faqService.getCategorias();
   }
 
-  // GET /faq/:id
   @Get(':id')
-  async getFaqById(@Param('id', ParseIntPipe) id: number) {
+  getFaqById(@Param('id', ParseIntPipe) id: number) {
     return this.faqService.getFaqById(id);
   }
 
-  // POST /faq/admin
   @Post('admin')
-  async createFaq(@Body() dto: CreateFaqDto) {
+  createFaq(@Body() dto: CreateFaqDto) {
     return this.faqService.createFaq(dto);
   }
 
-  // PATCH /faq/admin/:id
   @Patch('admin/:id')
-  async updateFaq(
+  updateFaq(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateFaqDto,
   ) {
     return this.faqService.updateFaq(id, dto);
   }
 
-  // DELETE /faq/admin/:id
   @Delete('admin/:id')
   async deleteFaq(@Param('id', ParseIntPipe) id: number) {
     await this.faqService.deleteFaq(id);
