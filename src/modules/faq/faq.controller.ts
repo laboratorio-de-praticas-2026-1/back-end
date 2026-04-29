@@ -26,7 +26,8 @@ export class FaqController {
 
   @ApiOperation({
     summary: 'Listar FAQs públicas',
-    description: 'Retorna todas as FAQs com status ativo visíveis aos usuários.',
+    description:
+      'Retorna todas as FAQs com status ativo visíveis aos usuários.',
   })
   @ApiResponse({
     status: 200,
@@ -39,7 +40,8 @@ export class FaqController {
 
   @ApiOperation({
     summary: 'Listar todas as FAQs (admin)',
-    description: 'Retorna todas as FAQs incluindo as inativas. Restrito a administradores.',
+    description:
+      'Retorna todas as FAQs incluindo as inativas. Restrito a administradores.',
   })
   @ApiResponse({
     status: 200,
@@ -87,7 +89,8 @@ export class FaqController {
 
   @ApiOperation({
     summary: 'Criar nova FAQ',
-    description: 'Cria uma nova FAQ com pergunta, resposta e categoria. Restrito a administradores.',
+    description:
+      'Cria uma nova FAQ com pergunta, resposta e categoria. Restrito a administradores.',
   })
   @ApiBody({
     type: CreateFaqDto,
