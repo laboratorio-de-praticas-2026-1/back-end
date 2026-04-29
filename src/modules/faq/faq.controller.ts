@@ -42,10 +42,7 @@ export class FaqController {
   }
 
   @Patch('admin/:id')
-  updateFaq(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateFaqDto,
-  ) {
+  updateFaq(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateFaqDto) {
     return this.faqService.updateFaq(id, dto);
   }
 

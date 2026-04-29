@@ -62,7 +62,7 @@ describe('FaqController', () => {
 
     faqServiceMock.getFaqs.mockResolvedValue(mockFaqs);
 
-    const result = await controller.getFaqs();
+    const result = controller.getCategorias();
 
     expect(result).toEqual(mockFaqs);
     expect(faqServiceMock.getFaqs).toHaveBeenCalled();
