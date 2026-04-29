@@ -15,6 +15,7 @@ import { FaqModule } from './modules/faq/faq.module';
 import { HeaderModule } from './modules/header/header.module';
 import { MapaModule } from './modules/mapa/mapa.module';
 import { NotificacaoModule } from './modules/notificacao/notificacao.module';
+import { PagamentoModule } from './modules/pagamento/pagamento.module';
 import { PublicidadeModule } from './modules/publicidade/publicidade.module';
 import { RecomendacaoModule } from './modules/recomendacao/recomendacao.module';
 import { ReportsModule } from './modules/reports/reports.module';
@@ -54,6 +55,7 @@ import { UsuarioModule } from './modules/usuario/usuario.module';
     ServicosModule,
     PublicidadeModule,
     EmailModule,
+    PagamentoModule,
     CloudinaryModule,
     SolicitacaoModule,
     UtilsModule,
