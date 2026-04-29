@@ -62,7 +62,7 @@ describe('FaqController', () => {
 
     faqServiceMock.getFaqs.mockResolvedValue(mockFaqs);
 
-    const result = controller.getCategorias();
+    const result = await controller.getFaqs();
 
     expect(result).toEqual(mockFaqs);
     expect(faqServiceMock.getFaqs).toHaveBeenCalled();
@@ -71,14 +71,8 @@ describe('FaqController', () => {
   // GET /faq/admin
   it('deve retornar todas as FAQs (admin)', async () => {
     const mockFaqs = [
-      {
-        id: 1,
-        categoria: CategoriaFaqEnum.DOCUMENTACAO,
-      },
-      {
-        id: 2,
-        categoria: CategoriaFaqEnum.MANUTENCAO,
-      },
+      { id: 1, categoria: CategoriaFaqEnum.DOCUMENTACAO },
+      { id: 2, categoria: CategoriaFaqEnum.MANUTENCAO },
     ];
 
     faqServiceMock.getAllFaqsAdmin.mockResolvedValue(mockFaqs);
@@ -99,7 +93,7 @@ describe('FaqController', () => {
       'frequentes',
     ];
 
-    faqServiceMock.getCategorias.mockReturnValue(categorias);
+    faqServiceMock.getCategorias.mockResolvedValue(categorias);
 
     const result = await controller.getCategorias();
 
