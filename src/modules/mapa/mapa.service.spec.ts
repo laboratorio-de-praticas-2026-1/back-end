@@ -29,7 +29,9 @@ describe('MapaService', () => {
     findAll: jest.fn(),
   };
 
-  const coordenadasValidas = { [Op.notIn]: [null, ''] };
+  const coordenadasValidas = {
+    [Op.and]: [{ [Op.ne]: null }, { [Op.ne]: '' }],
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({

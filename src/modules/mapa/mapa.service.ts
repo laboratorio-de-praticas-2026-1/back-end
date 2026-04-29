@@ -19,10 +19,7 @@ export class MapaService {
   }
 
   private coordenadasValidas = {
-    [Op.and]: [
-      { [Op.ne]: null },
-      { [Op.ne]: '' }
-    ],
+    [Op.and]: [{ [Op.ne]: null }, { [Op.ne]: '' }],
   };
 
   async findAll(): Promise<Empresa[]> {
