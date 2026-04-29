@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { StatusSolicitacaoEnum } from 'src/commons/enums/status-solicitacao.enum';
+import { StatusValidacaoEnum } from 'src/commons/enums/status-validacao.enum';
 import { CryptoUtil } from 'src/commons/utils/crypto';
 import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
 import { CloudinaryResponse } from 'src/infra/cloudinary/dto/cloudinary-response';
@@ -668,7 +669,7 @@ export class SolicitacaoService implements OnModuleDestroy {
       nomeHash: nomeHash,
       tipoDocumento: data.tipo_documento,
       dataUpload: new Date(),
-      statusValidacao: 'pendente',
+      statusValidacao: StatusValidacaoEnum.PENDENTE,
     });
     return {
       message: 'Documento enviado com sucesso e aguardando validação.',
@@ -681,6 +682,7 @@ export class SolicitacaoService implements OnModuleDestroy {
       id: number;
       tipo_documento: string | null;
       nome_arquivo: string;
+      status_validacao: StatusValidacaoEnum;
       url: string;
       data_upload: Date | null;
     }[];
@@ -729,6 +731,7 @@ export class SolicitacaoService implements OnModuleDestroy {
               id: doc.id,
               tipo_documento: doc.tipoDocumento,
               nome_arquivo: doc.nomeOriginal ?? publicId,
+              status_validacao: doc.statusValidacao,
               url,
               data_upload: doc.dataUpload,
             };
@@ -750,6 +753,7 @@ export class SolicitacaoService implements OnModuleDestroy {
         id: number;
         tipo_documento: string | null;
         nome_arquivo: string;
+        status_validacao: StatusValidacaoEnum;
         url: string;
         data_upload: Date | null;
       } => item !== null,
