@@ -1,4 +1,13 @@
-import { Controller, Get, Delete, Param, ParseIntPipe, Post, Body, Patch } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Delete,
+  Param,
+  ParseIntPipe,
+  Post,
+  Body,
+  Patch,
+} from '@nestjs/common';
 import { FaqService } from './faq.service';
 import { CreateFaqDto } from './dto/create-faq.dto';
 import { UpdateFaqDto } from './dto/update-faq.dto';

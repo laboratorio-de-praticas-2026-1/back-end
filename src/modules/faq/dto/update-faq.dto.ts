@@ -10,22 +10,24 @@ import { CategoriaFaqEnum } from '../../../models/faq.model';
 
 export class UpdateFaqDto {
   @IsOptional()
-  @Transform(({ value }) =>
+  @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )
   @IsString({ message: 'A pergunta deve ser um texto.' })
   pergunta?: string;
 
   @IsOptional()
-  @Transform(({ value }) =>
+  @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )
   @IsString({ message: 'A resposta deve ser um texto.' })
   resposta?: string;
 
   @IsOptional()
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.toLowerCase().trim() : value,
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string'
+      ? value.toLowerCase().trim()
+      : value,
   )
   @IsEnum(CategoriaFaqEnum, {
     message:
