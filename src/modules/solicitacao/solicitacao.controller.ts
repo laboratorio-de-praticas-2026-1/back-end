@@ -26,6 +26,7 @@ import { CreateSolicitacaoDto } from './dto/create-solicitacao.dto';
 import { GetSolicitacaoResponseDto } from './dto/get-solicitacao-response.dto';
 import { ListSolicitacoesResponseDto } from './dto/list-solicitacoes-response.dto';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
+import { StatusValidacaoEnum } from 'src/commons/enums/status-validacao.enum';
 import { SolicitacaoService } from './solicitacao.service';
 import { Patch } from '@nestjs/common';
 
@@ -214,6 +215,11 @@ export class SolicitacaoController {
               id: { type: 'number', example: 1 },
               tipo_documento: { type: 'string', example: 'RG' },
               nome_arquivo: { type: 'string', example: 'rg_frente.pdf' },
+              status_validacao: {
+                type: 'string',
+                enum: Object.values(StatusValidacaoEnum),
+                example: StatusValidacaoEnum.PENDENTE,
+              },
               url: {
                 type: 'string',
                 example: 'https://res.cloudinary.com/.../rg_frente.pdf',
