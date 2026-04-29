@@ -84,7 +84,7 @@ describe('FaqController', () => {
   });
 
   // GET /faq/categorias
-  it('deve retornar categorias', async () => {
+  it('deve retornar categorias', () => {
     const categorias = [
       'documentacao',
       'regularizacao',
@@ -93,9 +93,9 @@ describe('FaqController', () => {
       'frequentes',
     ];
 
-    faqServiceMock.getCategorias.mockResolvedValue(categorias);
+    faqServiceMock.getCategorias.mockReturnValue(categorias);
 
-    const result = await controller.getCategorias();
+    const result = controller.getCategorias();
 
     expect(result).toEqual(categorias);
     expect(faqServiceMock.getCategorias).toHaveBeenCalled();
