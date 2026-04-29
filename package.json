@@ -20,7 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
-    "@nestjs-modules/mailer": "^2.3.4",
+    "@nestjs-modules/mailer": "^2.0.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.3",
     "@nestjs/core": "^11.0.1",
@@ -32,16 +32,16 @@
     "@nestjs/websockets": "^11.1.16",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.4",
+    "cloudinary": "^2.9.0",
     "ejs": "^5.0.1",
     "jsonwebtoken": "^9.0.3",
-    "cloudinary": "^2.9.0",
     "multer": "^2.1.1",
     "mysql2": "^3.19.0",
     "nodemailer": "^8.0.4",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "sequelize": "^6.37.8",
-    "sequelize-typescript": "^2.1.6",
+    "sequelize-typescript": "^0.6.11",
     "sharp": "^0.34.5",
     "streamifier": "^0.1.1"
   },
