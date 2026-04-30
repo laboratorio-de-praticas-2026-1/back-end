@@ -103,30 +103,30 @@ export class NotificacaoService {
     }
   }
 
- async getUserNotifications(userId: number) {
-  const resultados = await this.sequelize.query<DebitoRow>(
-    `SELECT u.email, u.nome, d.descricao, d.valor, v.placa, d.created_at
+  async getUserNotifications(userId: number) {
+    const resultados = await this.sequelize.query<DebitoRow>(
+      `SELECT u.email, u.nome, d.descricao, d.valor, v.placa, d.created_at
      FROM usuario u
      JOIN veiculo v ON v.usuario_id = u.id
      JOIN debito_veiculo dv ON dv.id_veiculo = v.id
      JOIN debito d ON d.id = dv.id_debito
      WHERE d.status = 'pendente'
      AND u.id = :userId`,
-    {
-      replacements: { userId },
-      type: QueryTypes.SELECT,
-    },
-  );
+      {
+        replacements: { userId },
+        type: QueryTypes.SELECT,
+      },
+    );
 
-  //Parte em retornar json
+    //Parte em retornar json
 
-  return resultados.map((debito) => ({
-    titulo: 'Débito pendente',
-    mensagem: `Você possui um débito pendente para o veículo ${debito.placa}. ${debito.descricao}`,
-    valor: Number(debito.valor),
-    data: debito.created_at,
-  }));
-}
+    return resultados.map((debito) => ({
+      titulo: 'Débito pendente',
+      mensagem: `Você possui um débito pendente para o veículo ${debito.placa}. ${debito.descricao}`,
+      valor: Number(debito.valor),
+      data: debito.created_at,
+    }));
+  }
 
   async enviarConfirmacaoSolicitacao(_data: unknown): Promise<void> {
     await Promise.resolve();
