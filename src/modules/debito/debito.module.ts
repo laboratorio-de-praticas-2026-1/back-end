@@ -10,5 +10,6 @@ import { DebitoService } from './debito.service';
   imports: [SequelizeModule.forFeature([Veiculo, Debito, DebitoVeiculo])],
   controllers: [DebitoController],
   providers: [DebitoService],
+  exports: [DebitoService],
 })
 export class DebitoModule {}
