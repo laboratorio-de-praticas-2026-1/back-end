@@ -1,75 +1,72 @@
-name: CI
+name: Backend CI/CD
+
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  push:
     branches:
       - main
       - develop
-      - release/**
-permissions:
-  contents: read
-  checks: write
-  pull-requests: read
-  actions: read
-  security-events: write
+      - 'release/**'   # ex: release/1.0.0
+
+env:
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+
 jobs:
-  lint:
-    name: Lint
+  build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
-      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af  # v4.1.0
+      # ---- Determina o ambiente baseado na branch ----
+      - name: Set environment name
+        id: env
+        run: |
+          BRANCH="${GITHUB_REF_NAME}"
+          if [[ "$BRANCH" == "main" ]]; then
+            echo "ENV_NAME=main" >> $GITHUB_OUTPUT
+            echo "NAMESPACE=backend-main" >> $GITHUB_OUTPUT
+          elif [[ "$BRANCH" == "develop" ]]; then
+            echo "ENV_NAME=develop" >> $GITHUB_OUTPUT
+            echo "NAMESPACE=backend-develop" >> $GITHUB_OUTPUT
+          elif [[ "$BRANCH" == release/* ]]; then
+            echo "ENV_NAME=release" >> $GITHUB_OUTPUT
+            echo "NAMESPACE=backend-release" >> $GITHUB_OUTPUT
+          else
+            echo "Branch não mapeada para deploy: $BRANCH"
+            exit 0
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ---- Build e push da imagem Docker Hub ----
+      - name: Login Docker Hub
+        uses: docker/login-action@v3
         with:
-          node-version: '20'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run lint -- --no-fix
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
-      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af  # v4.1.0
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build e Push
+        uses: docker/build-push-action@v5
         with:
-          node-version: '20'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm test  
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    needs: [lint, test]
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
-      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af  # v4.1.0
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/backend-${{ steps.env.outputs.ENV_NAME }}:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/backend-${{ steps.env.outputs.ENV_NAME }}:latest
+
+      # ---- Deploy no k3s via SSH ----
+      - name: Deploy no servidor
+        uses: appleboy/ssh-action@v1
         with:
-          node-version: '20'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run build
-  security:
-    name: Security
-    runs-on: ubuntu-latest
-    if: ${{ (github.base_ref == 'main' || github.base_ref == 'develop') && !startsWith(github.head_ref, 'chore/') }}
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
-      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af  # v4.1.0
-        with:
-          node-version: '20'
-          cache: 'npm'
-      - run: npm ci
-      - name: Run npm audit (fail on high)
-        run: npm audit --audit-level=high || (echo "High severity vulnerabilities found" && exit 1)
-  codeql:
-    name: CodeQL
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@ce28f5bb42b7a9f2c824e633a3f6ee835bab6858  # v2.22.0
-        with:
-          languages: javascript
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@ce28f5bb42b7a9f2c824e633a3f6ee835bab6858  # v2.22.0
-      - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@ce28f5bb42b7a9f2c824e633a3f6ee835bab6858  # v2.22.0
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            # Atualiza a imagem do deployment no k8s
+            kubectl set image deployment/backend \
+              backend=${{ secrets.DOCKERHUB_USERNAME }}/backend-${{ steps.env.outputs.ENV_NAME }}:${{ github.sha }} \
+              -n ${{ steps.env.outputs.NAMESPACE }}
+
+            # Aguarda rollout
+            kubectl rollout status deployment/backend \
+              -n ${{ steps.env.outputs.NAMESPACE }} \
+              --timeout=120s
