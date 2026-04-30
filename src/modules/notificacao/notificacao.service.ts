@@ -24,8 +24,8 @@ export class NotificacaoService {
     private readonly emailService: EmailService,
   ) {}
 
-  @Cron('*/2 * * * *') //Rodar a cada 2 minutos para testes
-  //@Cron('0 9 * * 1') //Rodar toda segunda às 09:00
+  //@Cron('*/2 * * * *') //Rodar a cada 2 minutos para testes
+  @Cron('0 9 * * 1') //Rodar toda segunda às 09:00
   async handleCron() {
     this.logger.log('Executando envio semanal de débitos...');
     await this.processarEnvioDeDebitos();
