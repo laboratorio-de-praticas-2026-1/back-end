@@ -1,0 +1,72 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'release/**'   # ex: release/1.0.0
+
+env:
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ---- Determina o ambiente baseado na branch ----
+      - name: Set environment name
+        id: env
+        run: |
+          BRANCH="${GITHUB_REF_NAME}"
+          if [[ "$BRANCH" == "main" ]]; then
+            echo "ENV_NAME=main" >> $GITHUB_OUTPUT
+            echo "NAMESPACE=backend-main" >> $GITHUB_OUTPUT
+          elif [[ "$BRANCH" == "develop" ]]; then
+            echo "ENV_NAME=develop" >> $GITHUB_OUTPUT
+            echo "NAMESPACE=backend-develop" >> $GITHUB_OUTPUT
+          elif [[ "$BRANCH" == release/* ]]; then
+            echo "ENV_NAME=release" >> $GITHUB_OUTPUT
+            echo "NAMESPACE=backend-release" >> $GITHUB_OUTPUT
+          else
+            echo "Branch não mapeada para deploy: $BRANCH"
+            exit 0
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ---- Build e push da imagem Docker Hub ----
+      - name: Login Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build e Push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/backend-${{ steps.env.outputs.ENV_NAME }}:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/backend-${{ steps.env.outputs.ENV_NAME }}:latest
+
+      # ---- Deploy no k3s via SSH ----
+      - name: Deploy no servidor
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            # Atualiza a imagem do deployment no k8s
+            kubectl set image deployment/backend \
+              backend=${{ secrets.DOCKERHUB_USERNAME }}/backend-${{ steps.env.outputs.ENV_NAME }}:${{ github.sha }} \
+              -n ${{ steps.env.outputs.NAMESPACE }}
+
+            # Aguarda rollout
+            kubectl rollout status deployment/backend \
+              -n ${{ steps.env.outputs.NAMESPACE }} \
+              --timeout=120s
