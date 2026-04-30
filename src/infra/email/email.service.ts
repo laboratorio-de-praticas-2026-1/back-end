@@ -34,7 +34,11 @@ export class EmailService {
         throw new BadRequestException('Dados do e-mail não informados');
       }
 
-      const { nome, email, mensagem } = params.dados;
+      const { nome, email, mensagem } = params.dados as {
+        nome: string;
+        email: string;
+        mensagem: string;
+      };
 
       await this.mailerService.sendMail({
         to: params.to,
@@ -42,7 +46,7 @@ export class EmailService {
         template: params.template,
         context: {
           dados: params.dados,
-          assunto: assunto,
+          assunto,
         },
         attachments: [
           {
@@ -59,20 +63,24 @@ export class EmailService {
         nome_usuario: nome,
         email_usuario: email,
         texto_digitado: mensagem,
-        assunto: assunto,
+        assunto,
         data_envio: new Date(),
       });
 
       this.logger.log(`E-mail enviado com sucesso para ${params.to}`);
     } catch (error) {
       try {
-        const { nome, email, mensagem } = params?.dados || {};
+        const { nome, email, mensagem } = (params?.dados || {}) as {
+          nome?: string;
+          email?: string;
+          mensagem?: string;
+        };
 
         await this.emailModel.create({
           nome_usuario: nome,
           email_usuario: email,
           texto_digitado: mensagem,
-          assunto: assunto,
+          assunto,
           data_envio: new Date(),
         });
       } catch (dbError) {
