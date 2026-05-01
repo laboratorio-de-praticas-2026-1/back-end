@@ -1,10 +1,5 @@
 import { Controller, Get, Logger, Param, ParseIntPipe } from '@nestjs/common';
-import {
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags, ApiParam } from '@nestjs/swagger';
 import { Veiculo } from 'src/models/veiculo.model';
 import { VeiculoService } from './veiculo.service';
 
