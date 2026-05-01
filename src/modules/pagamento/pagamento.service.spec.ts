@@ -6,6 +6,7 @@ import { SimulacaoPagamentoRequestDto } from './dto/simulacao-pagamento-request-
 
 describe('PagamentoService', () => {
   let service: PagamentoService;
+
   let debitoService: Partial<DebitoService>;
 
   beforeEach(async () => {

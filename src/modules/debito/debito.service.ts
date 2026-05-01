@@ -23,7 +23,7 @@ export class DebitoService {
           include: [Debito],
         },
       ],
-    }) as Veiculo | null;
+    });
 
     if (!veiculo) {
       throw new NotFoundException(`Veículo com placa ${placa} não encontrado`);
