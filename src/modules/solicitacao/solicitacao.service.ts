@@ -481,10 +481,6 @@ export class SolicitacaoService implements OnModuleDestroy {
       whereSolicitacao.veiculoId = filtros.veiculo_id;
     }
 
-    if (filtros.status) {
-      whereSolicitacao.status = filtros.status;
-    }
-
     if (filtros.status_in && filtros.status_in.length > 0) {
       whereSolicitacao.status = { [Op.in]: filtros.status_in };
     }

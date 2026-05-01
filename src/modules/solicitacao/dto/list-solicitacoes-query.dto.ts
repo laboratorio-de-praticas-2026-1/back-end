@@ -35,20 +35,6 @@ export class ListSolicitacoesQueryDto {
   declare veiculo_id?: number;
 
   @ApiPropertyOptional({
-    description: 'Filtrar por status único',
-    enum: StatusSolicitacaoEnum,
-    example: StatusSolicitacaoEnum.EM_ANDAMENTO,
-  })
-  @IsOptional()
-  @Transform(({ value }: { value: unknown }): string | undefined =>
-    typeof value === 'string' ? value.trim().toLowerCase() : undefined,
-  )
-  @IsEnum(StatusSolicitacaoEnum, {
-    message: `Status inválido. Valores permitidos: ${Object.values(StatusSolicitacaoEnum).join(', ')}`,
-  })
-  declare status?: StatusSolicitacaoEnum;
-
-  @ApiPropertyOptional({
     description: 'Filtrar por lista de status (CSV ou array)',
     enum: StatusSolicitacaoEnum,
     isArray: true,
@@ -68,7 +54,7 @@ export class ListSolicitacoesQueryDto {
       .map((item) => item.trim().toLowerCase())
       .filter((item) => item.length > 0);
 
-    return normalizados.length > 0 ? normalizados : undefined;
+    return normalizados.length > 0 ? normalizados : value;
   })
   @IsArray()
   @IsEnum(StatusSolicitacaoEnum, {
@@ -123,10 +109,10 @@ export class ListSolicitacoesQueryDto {
     example: false,
   })
   @IsOptional()
-  @Transform(({ value }: { value: unknown }): boolean | undefined => {
+  @Transform(({ value }: { value: unknown }): unknown => {
     if (value === true || value === 'true') return true;
     if (value === false || value === 'false') return false;
-    return undefined;
+    return value;
   })
   @IsBoolean({ message: 'concluida deve ser true ou false' })
   declare concluida?: boolean;
