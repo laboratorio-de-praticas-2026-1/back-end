@@ -583,23 +583,23 @@ describe('SolicitacaoService', () => {
     });
 
     it('deve combinar filtros por status, concluida e nome do cliente', async () => {
-  mockSolicitacaoModel.findAll?.mockResolvedValue([]);
+      mockSolicitacaoModel.findAll?.mockResolvedValue([]);
 
-  await service.listarSolicitacoes({
-    status_in: [StatusSolicitacaoEnum.EM_ANDAMENTO],
-    concluida: false,
-    nome: 'Amanda',
-  });
+      await service.listarSolicitacoes({
+        status_in: [StatusSolicitacaoEnum.EM_ANDAMENTO],
+        concluida: false,
+        nome: 'Amanda',
+      });
 
-  const query = getFindAllQuery();
+      const query = getFindAllQuery();
 
-  expect(query.where.status).toEqual({
-    [Op.in]: [StatusSolicitacaoEnum.EM_ANDAMENTO],
-  });
-  expect(query.where.dataConclusao).toEqual({ [Op.is]: null });
-  expect(query.include[0].where.nome).toEqual({ [Op.like]: '%Amanda%' });
-  expect(query.include[0].required).toBe(true);
-});
+      expect(query.where.status).toEqual({
+        [Op.in]: [StatusSolicitacaoEnum.EM_ANDAMENTO],
+      });
+      expect(query.where.dataConclusao).toEqual({ [Op.is]: null });
+      expect(query.include[0].where.nome).toEqual({ [Op.like]: '%Amanda%' });
+      expect(query.include[0].required).toBe(true);
+    });
 
     it('deve aplicar status_in, ids e intervalos de data quando enviados', async () => {
       mockSolicitacaoModel.findAll?.mockResolvedValue([]);

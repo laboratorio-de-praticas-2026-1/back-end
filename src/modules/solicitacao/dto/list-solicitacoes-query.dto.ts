@@ -50,9 +50,7 @@ export class ListSolicitacoesQueryDto {
     }
 
     if (Array.isArray(value)) {
-      const valores = value.flatMap((item: unknown) =>
-        String(item).split(','),
-      );
+      const valores = value.flatMap((item: unknown) => String(item).split(','));
 
       return valores
         .map((item: string) => item.trim().toLowerCase())
@@ -73,7 +71,10 @@ export class ListSolicitacoesQueryDto {
     example: '2026-04-01',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'data_solicitacao_inicio deve ser uma data válida' })
+  @IsDateString(
+    {},
+    { message: 'data_solicitacao_inicio deve ser uma data válida' },
+  )
   declare data_solicitacao_inicio?: string;
 
   @ApiPropertyOptional({
@@ -81,7 +82,10 @@ export class ListSolicitacoesQueryDto {
     example: '2026-04-30',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'data_solicitacao_fim deve ser uma data válida' })
+  @IsDateString(
+    {},
+    { message: 'data_solicitacao_fim deve ser uma data válida' },
+  )
   declare data_solicitacao_fim?: string;
 
   @ApiPropertyOptional({
@@ -89,7 +93,10 @@ export class ListSolicitacoesQueryDto {
     example: '2026-05-01',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'data_conclusao_inicio deve ser uma data válida' })
+  @IsDateString(
+    {},
+    { message: 'data_conclusao_inicio deve ser uma data válida' },
+  )
   declare data_conclusao_inicio?: string;
 
   @ApiPropertyOptional({
