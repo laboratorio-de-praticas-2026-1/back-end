@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { StatusSolicitacaoEnum } from 'src/commons/enums/status-solicitacao.enum';
+import { StatusValidacaoEnum } from 'src/commons/enums/status-validacao.enum';
 import { CryptoUtil } from 'src/commons/utils/crypto';
 import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
 import { CloudinaryResponse } from 'src/infra/cloudinary/dto/cloudinary-response';
@@ -547,10 +548,99 @@ export class SolicitacaoService implements OnModuleDestroy {
       nomeHash: nomeHash,
       tipoDocumento: data.tipo_documento,
       dataUpload: new Date(),
-      statusValidacao: 'pendente',
+      statusValidacao: StatusValidacaoEnum.PENDENTE,
     });
     return {
       message: 'Documento enviado com sucesso e aguardando validação.',
+    };
+  }
+  async listarDocumentos(solicitacaoId: number): Promise<{
+    data: {
+      id: number;
+      tipo_documento: string | null;
+      nome_arquivo: string;
+      status_validacao: StatusValidacaoEnum;
+      url: string;
+      data_upload: Date | null;
+    }[];
+    total: number;
+    message?: string;
+  }> {
+    const solicitacao = await this.solicitacaoModel.findByPk(solicitacaoId);
+
+    if (!solicitacao) {
+      throw new NotFoundException({
+        error: 'SOLICITACAO_NAO_ENCONTRADA',
+        message: 'A solicitação não foi encontrada',
+      });
+    }
+
+    const documentos = await this.documentoModel.findAll({
+      where: { solicitacaoId },
+    });
+
+    if (!documentos.length) {
+      return {
+        data: [],
+        total: 0,
+        message: 'Nenhum documento encontrado para esta solicitação',
+      };
+    }
+
+    const data = documentos
+      .map((doc) => {
+        try {
+          const decrypted = this.cryptoUtil.decrypt(doc.nomeHash ?? '');
+          const [resourceType, publicId] = decrypted.split('|');
+
+          if (!resourceType || !publicId) {
+            throw new Error('Formato inválido do nome_hash');
+          }
+
+          const url = this.cloudinaryService.generateTemporaryUrl(decrypted);
+
+          return {
+            id: doc.id,
+            tipo_documento: doc.tipoDocumento,
+            nome_arquivo: publicId,
+            status_validacao: doc.statusValidacao,
+            url,
+            data_upload: doc.dataUpload,
+          };
+        } catch (error: unknown) {
+          this.logger.warn(
+            `Erro ao processar documento ID ${doc.id}: ${
+              error instanceof Error ? error.message : 'Erro desconhecido'
+            }`,
+          );
+
+          return null;
+        }
+      })
+      .filter(
+        (
+          item,
+        ): item is {
+          id: number;
+          tipo_documento: string | null;
+          nome_arquivo: string;
+          status_validacao: StatusValidacaoEnum;
+          url: string;
+          data_upload: Date | null;
+        } => item !== null,
+      );
+
+    if (!data.length) {
+      return {
+        data: [],
+        total: 0,
+        message: 'Nenhum documento encontrado para esta solicitação',
+      };
+    }
+
+    return {
+      data,
+      total: data.length,
     };
   }
 
