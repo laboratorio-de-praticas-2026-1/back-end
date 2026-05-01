@@ -1,18 +1,18 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { InternalServerErrorException } from '@nestjs/common';
 import { getModelToken } from '@nestjs/sequelize';
-import { RecomendacaoService } from './recomendacao.service';
+import { Test, TestingModule } from '@nestjs/testing';
+import { Debito } from 'src/models/debito.model';
 import { InteracaoUsuario } from 'src/models/interacao-usuario.model';
 import { Servico } from 'src/models/servico.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
-import { InternalServerErrorException } from '@nestjs/common';
-import { jest, describe, it, expect, beforeEach } from '@jest/globals';
+import { Veiculo } from 'src/models/veiculo.model';
 import { RecomendacaoInteracaoRequestDto } from './dto/recomendacao-interacao-request.dto';
 import { RecomendacaoInteracaoResponseDto } from './dto/recomendacao-interacao-response.dto';
-import { RecomendacaoCategoriaBlogEnum } from './enums/recomendacao-categoria-blog.enum';
-import { SolicitacaoComServicoDto } from './dto/solicitacao-com-servico.dto';
-import { Debito } from 'src/models/debito.model';
-import { Veiculo } from 'src/models/veiculo.model';
 import { RecomendacaoRespostaDto } from './dto/recomendacao-resposta.dto';
+import { SolicitacaoComServicoDto } from './dto/solicitacao-com-servico.dto';
+import { RecomendacaoCategoriaBlogEnum } from './enums/recomendacao-categoria-blog.enum';
+import { RecomendacaoService } from './recomendacao.service';
 
 describe('RecomendacaoService', () => {
   let service: RecomendacaoService;
@@ -231,6 +231,124 @@ describe('RecomendacaoService', () => {
     });
   });
 
+  describe('buscarLicenciamentoAnual', () => {
+    it('deve retornar recomendação de licenciamento se o veículo estiver no período e não houver solicitação ativa', async () => {
+      const mesAtual = new Date().getMonth() + 1;
+
+      // Encontrar um dígito cujo gatilho seja <= mesAtual
+      const gatilhoPorDigito: Record<string, number> = {
+        '1': 3,
+        '2': 4,
+        '3': 5,
+        '4': 6,
+        '5': 7,
+        '6': 7,
+        '7': 8,
+        '8': 9,
+        '9': 10,
+        '0': 11,
+      };
+      const digitoElegivel =
+        Object.entries(gatilhoPorDigito).find(
+          ([, gatilho]) => mesAtual >= gatilho,
+        )?.[0] ?? '1';
+
+      mockVeiculoModel.findAll.mockResolvedValue([
+        { id: 5, placa: `ABC123${digitoElegivel}` } as unknown as Veiculo,
+      ]);
+      mockSolicitacaoModel.findOne.mockResolvedValue(null);
+
+      const resultado = await service.buscarLicenciamentoAnual(1);
+
+      expect(resultado).not.toBeNull();
+      expect(resultado?.id).toBe(1);
+      expect(resultado?.nome).toBe('Licenciamento Anual');
+    });
+
+    it('deve retornar null se o veículo não atingiu o mês de gatilho', async () => {
+      mockVeiculoModel.findAll.mockResolvedValue([
+        { id: 5, placa: 'ABC1230' } as unknown as Veiculo,
+      ]);
+
+      jest.spyOn(Date.prototype, 'getMonth').mockReturnValue(0); // Janeiro
+
+      const resultado = await service.buscarLicenciamentoAnual(1);
+
+      expect(resultado).toBeNull();
+
+      jest.restoreAllMocks();
+    });
+
+    it('deve retornar null se já existe solicitação ativa no ano corrente', async () => {
+      const mesAtual = new Date().getMonth() + 1;
+      const gatilhoPorDigito: Record<string, number> = {
+        '1': 3,
+        '2': 4,
+        '3': 5,
+        '4': 6,
+        '5': 7,
+        '6': 7,
+        '7': 8,
+        '8': 9,
+        '9': 10,
+        '0': 11,
+      };
+      const digitoElegivel =
+        Object.entries(gatilhoPorDigito).find(
+          ([, gatilho]) => mesAtual >= gatilho,
+        )?.[0] ?? '1';
+
+      mockVeiculoModel.findAll.mockResolvedValue([
+        {
+          id: 5,
+          placa: `ABC123${digitoElegivel}`,
+          ativo: true,
+        } as unknown as Veiculo,
+      ]);
+      mockSolicitacaoModel.findOne.mockResolvedValue({
+        id: 99,
+        status: 'pendente',
+      } as unknown as Solicitacao);
+
+      const resultado = await service.buscarLicenciamentoAnual(1);
+      expect(resultado).toBeNull();
+    });
+  });
+
+  describe('buscarRenovacaoCNH', () => {
+    it('deve retornar recomendação (ID 4) se não houver solicitação nos últimos 10 anos', async () => {
+      mockSolicitacaoModel.findOne.mockResolvedValue(null);
+
+      const resultado = await service.buscarRenovacaoCNH(1);
+
+      expect(resultado).not.toBeNull();
+      expect(resultado?.id).toBe(4);
+      expect(resultado?.nome).toBe('Renovação de CNH');
+    });
+
+    it('deve retornar null se já existe solicitação ativa nos últimos 10 anos', async () => {
+      mockSolicitacaoModel.findOne.mockResolvedValue({
+        id: 50,
+        servicoId: 4,
+        status: 'concluido',
+      } as unknown as Solicitacao);
+
+      const resultado = await service.buscarRenovacaoCNH(1);
+
+      expect(resultado).toBeNull();
+    });
+
+    it('deve retornar null em caso de erro técnico para não travar o fluxo', async () => {
+      mockSolicitacaoModel.findOne.mockRejectedValue(
+        new Error('Erro de banco'),
+      );
+
+      const resultado = await service.buscarRenovacaoCNH(1);
+
+      expect(resultado).toBeNull();
+    });
+  });
+
   describe('buscarComunicacaoVenda', () => {
     it('deve retornar recomendação (ID 9) quando houver interesse no blog (Documentação)', async () => {
       mockInteracaoUsuarioModel.findOne.mockResolvedValue({
@@ -300,6 +418,49 @@ describe('RecomendacaoService', () => {
     });
   });
 
+  describe('buscarTransferenciaPropriedade', () => {
+    it('deve retornar recomendação (ID 2) se veículo não tiver transferência ativa', async () => {
+      mockVeiculoModel.findAll.mockResolvedValue([
+        { id: 3 } as unknown as Veiculo,
+      ]);
+      mockSolicitacaoModel.findOne.mockResolvedValue(null);
+
+      const resultado = await service.buscarTransferenciaPropriedade(1);
+
+      expect(resultado).not.toBeNull();
+      expect(resultado?.id).toBe(2);
+      expect(resultado?.nome).toBe('Transferência de Propriedade');
+    });
+
+    it('deve retornar null se já existe solicitação ativa para o veículo', async () => {
+      mockVeiculoModel.findAll.mockResolvedValue([
+        { id: 3 } as unknown as Veiculo,
+      ]);
+      mockSolicitacaoModel.findOne.mockResolvedValue({
+        id: 20,
+        servicoId: 2,
+        status: 'pendente',
+      } as unknown as Solicitacao);
+
+      const resultado = await service.buscarTransferenciaPropriedade(1);
+      expect(resultado).toBeNull();
+    });
+
+    it('deve retornar null se o usuário não tiver veículos', async () => {
+      mockVeiculoModel.findAll.mockResolvedValue([]);
+
+      const resultado = await service.buscarTransferenciaPropriedade(1);
+      expect(resultado).toBeNull();
+    });
+
+    it('deve retornar null em caso de erro técnico', async () => {
+      mockVeiculoModel.findAll.mockRejectedValue(new Error('Erro de banco'));
+
+      const resultado = await service.buscarTransferenciaPropriedade(1);
+      expect(resultado).toBeNull();
+    });
+  });
+
   describe('obterRecomendacoes', () => {
     it('deve priorizar serviços de CNH e encerrar fluxo se o usuário não tiver veículos', async () => {
       const mockCNH = [
@@ -332,6 +493,11 @@ describe('RecomendacaoService', () => {
 
     it('deve retornar uma lista com múltiplos serviços se o usuário tiver multa e venda', async () => {
       jest.spyOn(service, 'buscarUsuarioSemVeiculo').mockResolvedValue(null);
+      jest.spyOn(service, 'buscarLicenciamentoAnual').mockResolvedValue(null);
+      jest.spyOn(service, 'buscarRenovacaoCNH').mockResolvedValue(null);
+      jest
+        .spyOn(service, 'buscarTransferenciaPropriedade')
+        .mockResolvedValue(null);
       jest.spyOn(service, 'buscarRecursoMulta').mockResolvedValue({
         id: 6,
         nome: 'Recurso de Multa',
@@ -358,6 +524,11 @@ describe('RecomendacaoService', () => {
 
     it('deve retornar serviços populares se a lista de prioridades estiver vazia', async () => {
       jest.spyOn(service, 'buscarUsuarioSemVeiculo').mockResolvedValue(null);
+      jest.spyOn(service, 'buscarLicenciamentoAnual').mockResolvedValue(null);
+      jest.spyOn(service, 'buscarRenovacaoCNH').mockResolvedValue(null);
+      jest
+        .spyOn(service, 'buscarTransferenciaPropriedade')
+        .mockResolvedValue(null);
       jest.spyOn(service, 'buscarRecursoMulta').mockResolvedValue(null);
       jest.spyOn(service, 'buscarParcelamentoDebitos').mockResolvedValue(null);
       jest.spyOn(service, 'buscarComunicacaoVenda').mockResolvedValue(null);

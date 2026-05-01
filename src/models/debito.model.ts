@@ -1,12 +1,11 @@
 import {
   BelongsTo,
-  BelongsToMany,
   Column,
   DataType,
   ForeignKey,
   HasOne,
   Model,
-  Table,
+  Table
 } from 'sequelize-typescript';
 import { DebitoServico } from './debito-servico.model';
 import { DebitoVeiculo } from './debito-veiculo.model';
@@ -61,5 +60,5 @@ export class Debito extends Model {
   declare debitoServico: DebitoServico | null;
 
   @HasOne(() => DebitoVeiculo)
-  declare debitoVeiculo: DebitoVeiculo | null;  
+  declare debitoVeiculo: DebitoVeiculo | null;
 }

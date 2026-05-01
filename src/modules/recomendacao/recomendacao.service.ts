@@ -4,17 +4,18 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
+import { Op, col, fn, literal } from 'sequelize';
+import { DebitoVeiculo } from 'src/models/debito-veiculo.model';
+import { Debito } from 'src/models/debito.model';
 import { InteracaoUsuario } from 'src/models/interacao-usuario.model';
 import { Servico } from 'src/models/servico.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
+import { Veiculo } from 'src/models/veiculo.model';
 import { RecomendacaoInteracaoRequestDto } from './dto/recomendacao-interacao-request.dto';
 import { RecomendacaoInteracaoResponseDto } from './dto/recomendacao-interacao-response.dto';
 import { PerfilUsuarioDto } from './dto/recomendacao-perfil-usuario.dto';
-import { SolicitacaoComServicoDto } from './dto/solicitacao-com-servico.dto';
-import { Op, fn, col, literal } from 'sequelize';
-import { Debito } from 'src/models/debito.model';
-import { Veiculo } from 'src/models/veiculo.model';
 import { RecomendacaoRespostaDto } from './dto/recomendacao-resposta.dto';
+import { SolicitacaoComServicoDto } from './dto/solicitacao-com-servico.dto';
 import { RecomendacaoCategoriaBlogEnum } from './enums/recomendacao-categoria-blog.enum';
 
 @Injectable()
@@ -47,6 +48,16 @@ export class RecomendacaoService {
           descricao,
         }));
       }
+
+      const licenciamento = await this.buscarLicenciamentoAnual(usuarioId);
+      if (licenciamento) listaRecomendacoes.push(licenciamento);
+
+      const cnh = await this.buscarRenovacaoCNH(usuarioId);
+      if (cnh) listaRecomendacoes.push(cnh);
+
+      const transferencia =
+        await this.buscarTransferenciaPropriedade(usuarioId);
+      if (transferencia) listaRecomendacoes.push(transferencia);
 
       const infracao = await this.buscarRecursoMulta(usuarioId);
       if (infracao) {
@@ -119,7 +130,7 @@ export class RecomendacaoService {
             descricao:
               'Deseja dirigir outros tipos de veículo? Veja como mudar sua categoria de CNH.',
           },
-        ] as unknown as RecomendacaoRespostaDto[];
+        ];
       }
 
       return null;
@@ -193,20 +204,25 @@ export class RecomendacaoService {
         },
         include: [
           {
-            model: Veiculo,
-            where: { usuarioId },
-            through: { attributes: [] },
+            model: DebitoVeiculo,
             required: true,
+            include: [
+              {
+                model: Veiculo,
+                where: { usuarioId },
+                required: true,
+              },
+            ]
           },
         ],
       });
 
       for (const debito of debitos) {
-        for (const veiculo of debito.veiculos || []) {
+        if (debito.debitoVeiculo) {
           const jaExiste = await this.solicitacaoModel.findOne({
             where: {
               servicoId: 6,
-              veiculoId: veiculo.id,
+              veiculoId: debito.debitoVeiculo.idVeiculo,
               status: {
                 [Op.notIn]: ['cancelado', 'rejeitado'],
               },
@@ -221,7 +237,7 @@ export class RecomendacaoService {
                 'Identificamos uma multa pendente. Você tem o direito de recorrer e evitar pontos na sua CNH.',
             };
           }
-        }
+        }       
       }
 
       return null;
@@ -251,9 +267,8 @@ export class RecomendacaoService {
           },
           include: [
             {
-              model: Veiculo,
-              where: { id: veiculo.id },
-              through: { attributes: [] },
+              model: DebitoVeiculo,
+              where: { idVeiculo: veiculo.id },
               required: true,
             },
           ],
