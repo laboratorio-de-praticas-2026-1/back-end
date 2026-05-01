@@ -88,18 +88,18 @@ describe('ContatoController', () => {
   });
 
   it('deve enviar email com sucesso', async () => {
-    const payload: EmailParams = new EmailParams(
-      'destinatario@teste.com',
-      'contato',
-      'Teste de Email',
-      {
+    const payload: EmailParams = {
+      to: 'destinatario@teste.com',
+      template: 'contato',
+      subject: 'Teste de Email',
+      context: {
         nome: 'Victor',
         email: 'victor@email.com',
         telefone: '99999-9999',
         mensagem: 'Olá mundo',
       },
-      true,
-    );
+      isContato: true,
+    };
 
     mockContatoService.enviarEmail.mockResolvedValue(undefined);
 
