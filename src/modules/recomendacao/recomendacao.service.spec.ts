@@ -199,7 +199,7 @@ describe('RecomendacaoService', () => {
       mockDebitoModel.findAll.mockResolvedValue([
         {
           descricao: 'MULTA X',
-          veiculos: [{ id: 10 }] as unknown as Debito['veiculos'],
+          debitoVeiculo: [{ idVeiculo: 10 }] as unknown as Debito['debitoVeiculo'],
         },
       ]);
 
