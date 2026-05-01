@@ -27,6 +27,11 @@ interface MockEmailService {
   enviarEmail: jest.Mock;
 }
 
+interface MockCloudinaryService {
+  uploadDocument: jest.Mock;
+  generateTemporaryUrl: jest.Mock;
+}
+
 describe('SolicitacaoService', () => {
   let service: SolicitacaoService;
 
@@ -46,6 +51,7 @@ describe('SolicitacaoService', () => {
   let mockServicoModel: MockModel;
   let mockNotificacaoService: MockNotificacao;
   let mockEmailService: MockEmailService;
+  let mockCloudinaryService: MockCloudinaryService;
 
   beforeEach(async () => {
     mockSolicitacaoModel = {
@@ -120,7 +126,7 @@ describe('SolicitacaoService', () => {
             generateTemporaryUrl: jest.fn(
               (publicId) => `https://temp-url/${publicId}`,
             ),
-          },
+          } satisfies MockCloudinaryService,
         },
         {
           provide: CryptoUtil,
@@ -139,6 +145,9 @@ describe('SolicitacaoService', () => {
     }).compile();
 
     service = module.get<SolicitacaoService>(SolicitacaoService);
+    mockCloudinaryService = module.get<CloudinaryService>(
+      CloudinaryService,
+    ) as unknown as MockCloudinaryService;
   });
 
   afterEach(() => {
@@ -831,6 +840,93 @@ describe('SolicitacaoService', () => {
       await expect(service.reabrirSolicitacao(13)).rejects.toBeInstanceOf(
         ConflictException,
       );
+    });
+  });
+
+  describe('substituirDocumento', () => {
+    const mockArquivo = {
+      originalname: 'documento.pdf',
+      mimetype: 'application/pdf',
+      buffer: Buffer.from('fake-file-content'),
+      size: 1024,
+    } as Express.Multer.File;
+
+    it('deve substituir documento com sucesso', async () => {
+      mockSolicitacaoModel.findByPk.mockResolvedValue({ id: 1 });
+
+      const mockDocumento = {
+        id: 10,
+        solicitacaoId: 1,
+        nomeHash: 'old-hash',
+        update: jest.fn().mockResolvedValue(undefined),
+      };
+      mockDocumentoModel.findByPk.mockResolvedValue(mockDocumento);
+
+      mockCloudinaryService.uploadDocument.mockResolvedValue({
+        public_id: 'docs/new-doc-id',
+        resource_type: 'raw',
+      });
+
+      const result = await service.substituirDocumento(1, 10, mockArquivo);
+
+      expect(result).toEqual({
+        id: 10,
+        mensagem: 'Documento substituído com sucesso',
+      });
+      expect(mockDocumento.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          nomeHash: expect.any(String) as string,
+          dataUpload: expect.any(Date) as Date,
+        }),
+      );
+      expect(mockCloudinaryService.uploadDocument).toHaveBeenCalledWith(
+        mockArquivo,
+      );
+    });
+
+    it('deve retornar 404 quando solicitacao nao encontrada', async () => {
+      mockSolicitacaoModel.findByPk.mockResolvedValue(null);
+
+      await expect(
+        service.substituirDocumento(999, 10, mockArquivo),
+      ).rejects.toThrow('Solicitação não encontrada');
+    });
+
+    it('deve retornar 404 quando documento nao encontrado', async () => {
+      mockSolicitacaoModel.findByPk.mockResolvedValue({ id: 1 });
+      mockDocumentoModel.findByPk.mockResolvedValue(null);
+
+      await expect(
+        service.substituirDocumento(1, 999, mockArquivo),
+      ).rejects.toThrow('Documento não encontrado');
+    });
+
+    it('deve retornar 400 quando documento nao pertence a solicitacao', async () => {
+      mockSolicitacaoModel.findByPk.mockResolvedValue({ id: 1 });
+      mockDocumentoModel.findByPk.mockResolvedValue({
+        id: 10,
+        solicitacaoId: 2,
+      });
+
+      await expect(
+        service.substituirDocumento(1, 10, mockArquivo),
+      ).rejects.toThrow('Documento não pertence à solicitação informada');
+    });
+
+    it('deve retornar erro quando upload no cloudinary falhar', async () => {
+      mockSolicitacaoModel.findByPk.mockResolvedValue({ id: 1 });
+      mockDocumentoModel.findByPk.mockResolvedValue({
+        id: 10,
+        solicitacaoId: 1,
+      });
+
+      mockCloudinaryService.uploadDocument.mockRejectedValue(
+        new Error('Cloudinary error'),
+      );
+
+      await expect(
+        service.substituirDocumento(1, 10, mockArquivo),
+      ).rejects.toThrow('Erro ao enviar documento: Cloudinary error');
     });
   });
 });
