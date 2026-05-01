@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aviso de Débitos Pendentes - Grupo Bortone</title>
+    <style>
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f5f7; margin: 0; padding: 0; }
+        
+        .email-container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e0e0e0; }
+        .header { background-color: #283e7b; padding: 25px; text-align: center; }
+        .header img { max-width: 180px; height: auto; }
+        
+        .content { padding: 40px 35px; color: #333333; line-height: 1.6; }
+        .content h2 { color: #d9534f; margin-top: 0; font-size: 20px; text-align: center; }
+        .intro-text { text-align: center; color: #666; margin-bottom: 30px; }
+        
+        .details-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; background-color: #fcfcfc; border: 1px solid #eeeeee; }
+        .details-table th { background-color: #f2f2f2; padding: 12px 15px; text-align: left; font-weight: bold; border-bottom: 1px solid #ddd; }
+        .details-table td { padding: 12px 15px; border-bottom: 1px solid #eeeeee; font-size: 14px; }
+        .label { font-weight: bold; color: #555; width: 40%; }
+        .value { color: #333; text-align: right; }
+        
+        .button-container { text-align: center; margin-top: 20px; }
+        .btn { background-color: #283e7b; color: #ffffff !important; padding: 14px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; transition: background-color 0.3s; }
+        
+        .footer { background-color: #f9f9f9; padding: 20px; text-align: center; font-size: 12px; color: #999; border-top: 1px solid #eeeeee; }
+        .footer a { color: #283e7b; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <img src="cid:logo_img" alt="Grupo Bortone">
+        </div>
+
+        <div class="content">
+            <h2>⚠️ Débitos Pendentes</h2>
+            <p class="intro-text">
+                Olá, <strong><%= nome %></strong>.<br>
+                Identificamos <strong><%= quantidade %></strong> débito(s) pendente(s) em seu nome. 
+                Regularize sua situação para evitar multas e restrições.
+            </p>
+            
+            <table class="details-table">
+                <thead>
+                    <tr>
+                        <th>Descrição</th>
+                        <th>Placa</th>
+                        <th>Valor (R$)</th>
+                        <th>Data de Registro</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% for (let debito of debitos) { %>
+                    <tr>
+                        <td><%= debito.descricao %></td>
+                        <td><%= debito.placa %></td>
+                        <td><%= Number(debito.valor).toFixed(2) %></td>
+                        <td><%= new Date(debito.created_at).toLocaleDateString('pt-BR') %></td>
+                    </tr>
+                    <% } %>
+                    <tr style="background-color: #f9f2f2; font-weight: bold;">
+                        <td colspan="2" style="text-align: right;">Total Geral:</td>
+                        <td colspan="2">R$ <%= totalValor %></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p style="font-size: 14px; color: #666; text-align: center;">
+                Para emitir boletos ou obter mais informações, acesse sua área do cliente.
+            </p>
+
+            <div class="button-container">
+                <a href="#" class="btn">Acessar Área do Cliente</a>
+            </div>
+        </div>
+
+        <div class="footer">
+            © 2025 Grupo Bortone. Todos os direitos reservados.<br>
+            <a href="#">Central de Atendimento</a> | <a href="#">Política de Privacidade</a>
+        </div>
+    </div>
+</body>
+</html>
