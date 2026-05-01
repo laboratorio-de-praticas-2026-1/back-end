@@ -5,7 +5,7 @@ import {
   ForeignKey,
   HasOne,
   Model,
-  Table
+  Table,
 } from 'sequelize-typescript';
 import { DebitoServico } from './debito-servico.model';
 import { DebitoVeiculo } from './debito-veiculo.model';

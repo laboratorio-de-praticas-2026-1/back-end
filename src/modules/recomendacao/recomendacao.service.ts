@@ -212,7 +212,7 @@ export class RecomendacaoService {
                 where: { usuarioId },
                 required: true,
               },
-            ]
+            ],
           },
         ],
       });
@@ -237,7 +237,7 @@ export class RecomendacaoService {
                 'Identificamos uma multa pendente. Você tem o direito de recorrer e evitar pontos na sua CNH.',
             };
           }
-        }       
+        }
       }
 
       return null;
