@@ -124,7 +124,7 @@ export class ListSolicitacoesQueryDto {
   @IsOptional()
   @IsString()
   @Transform(({ value }: { value: unknown }): string | undefined =>
-    typeof value === 'string' ? value.trim() : undefined,
+    typeof value === 'string' ? value.trim() : value,
   )
   declare nome?: string;
 
@@ -135,7 +135,7 @@ export class ListSolicitacoesQueryDto {
   @IsOptional()
   @IsString()
   @Transform(({ value }: { value: unknown }): string | undefined =>
-    typeof value === 'string' ? value.trim() : undefined,
+    typeof value === 'string' ? value.trim() : value,
   )
   declare cpf_cnpj?: string;
 }
