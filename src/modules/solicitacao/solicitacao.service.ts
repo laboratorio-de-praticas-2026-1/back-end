@@ -463,112 +463,135 @@ export class SolicitacaoService implements OnModuleDestroy {
     return data.toISOString().slice(0, 10);
   }
 
-  async listarSolicitacoes(
-    filtros: ListSolicitacoesQueryDto = {},
-  ): Promise<ListSolicitacoesResponseDto> {
-    const whereSolicitacao: Record<string, unknown> = {};
-    const whereUsuario: Record<string, unknown> = {};
+ async listarSolicitacoes(
+  filtros: ListSolicitacoesQueryDto = {},
+): Promise<ListSolicitacoesResponseDto> {
 
-    if (filtros.usuario_id) {
-      whereSolicitacao.usuarioId = filtros.usuario_id;
-    }
+  this.validarConflitoConclusao(filtros);
 
-    if (filtros.servico_id) {
-      whereSolicitacao.servicoId = filtros.servico_id;
-    }
+  const whereSolicitacao: Record<string, unknown> = {};
+  const whereUsuario: Record<string, unknown> = {};
 
-    if (filtros.veiculo_id) {
-      whereSolicitacao.veiculoId = filtros.veiculo_id;
-    }
-
-    if (filtros.status_in && filtros.status_in.length > 0) {
-      whereSolicitacao.status = { [Op.in]: filtros.status_in };
-    }
-
-    const dataSolicitacaoFiltro: Record<symbol, Date> = {};
-    if (filtros.data_solicitacao_inicio) {
-      dataSolicitacaoFiltro[Op.gte] = new Date(filtros.data_solicitacao_inicio);
-    }
-    if (filtros.data_solicitacao_fim) {
-      dataSolicitacaoFiltro[Op.lte] = this.normalizarDataFim(
-        filtros.data_solicitacao_fim,
-      );
-    }
-    if (Reflect.ownKeys(dataSolicitacaoFiltro).length > 0) {
-      whereSolicitacao.dataSolicitacao = dataSolicitacaoFiltro;
-    }
-
-    const dataConclusaoFiltro: Record<symbol, Date | null> = {};
-    if (filtros.data_conclusao_inicio) {
-      dataConclusaoFiltro[Op.gte] = new Date(filtros.data_conclusao_inicio);
-    }
-    if (filtros.data_conclusao_fim) {
-      dataConclusaoFiltro[Op.lte] = this.normalizarDataFim(
-        filtros.data_conclusao_fim,
-      );
-    }
-    if (filtros.concluida === true) {
-      dataConclusaoFiltro[Op.not] = null;
-    }
-
-    if (filtros.concluida === false) {
-      whereSolicitacao.dataConclusao = { [Op.is]: null };
-    } else if (Reflect.ownKeys(dataConclusaoFiltro).length > 0) {
-      whereSolicitacao.dataConclusao = dataConclusaoFiltro;
-    }
-
-    if (filtros.nome) {
-      whereUsuario.nome = { [Op.like]: `%${filtros.nome}%` };
-    }
-
-    if (filtros.cpf_cnpj) {
-      whereUsuario.cpfCnpj = { [Op.like]: `%${filtros.cpf_cnpj}%` };
-    }
-
-    const solicitacoes = await this.solicitacaoModel.findAll({
-      where: whereSolicitacao,
-      include: [
-        {
-          model: Usuario,
-          attributes: ['id', 'nome', 'email'],
-          where:
-            Object.keys(whereUsuario).length > 0 ? whereUsuario : undefined,
-          required: Object.keys(whereUsuario).length > 0,
-        },
-        {
-          model: Servico,
-          attributes: ['id', 'nome', 'valorBase'],
-        },
-      ],
-    });
-
-    const solicitacoesFormatadas = solicitacoes.map((solicitacao) => ({
-      cliente: {
-        id: solicitacao.usuario.id,
-        nome: solicitacao.usuario.nome,
-        email: solicitacao.usuario.email,
-      },
-      servico: {
-        id: solicitacao.servico.id,
-        tipo: solicitacao.servico.nome,
-        valorBase: solicitacao.servico.valorBase || 0,
-      },
-      solicitacao: {
-        status:
-          solicitacao.status.charAt(0).toUpperCase() +
-          solicitacao.status.slice(1),
-        observacaoCliente: solicitacao.observacaoCliente || '',
-        observacaoAdmin: solicitacao.observacaoAdmin || '',
-        dataSolicitacao: solicitacao.dataSolicitacao,
-        dataConclusao: solicitacao.dataConclusao,
-      },
-    }));
-
-    return {
-      total: solicitacoes.length,
-      solicitacoes: solicitacoesFormatadas,
-    };
+  if (filtros.usuario_id) {
+    whereSolicitacao.usuarioId = filtros.usuario_id;
   }
+
+  if (filtros.servico_id) {
+    whereSolicitacao.servicoId = filtros.servico_id;
+  }
+
+  if (filtros.veiculo_id) {
+    whereSolicitacao.veiculoId = filtros.veiculo_id;
+  }
+
+  if (filtros.status_in && filtros.status_in.length > 0) {
+    whereSolicitacao.status = { [Op.in]: filtros.status_in };
+  }
+
+  const dataSolicitacaoFiltro: Record<symbol, Date> = {};
+
+  if (filtros.data_solicitacao_inicio) {
+    dataSolicitacaoFiltro[Op.gte] = new Date(filtros.data_solicitacao_inicio);
+  }
+
+  if (filtros.data_solicitacao_fim) {
+    dataSolicitacaoFiltro[Op.lte] = this.normalizarDataFim(
+      filtros.data_solicitacao_fim,
+    );
+  }
+
+  if (Reflect.ownKeys(dataSolicitacaoFiltro).length > 0) {
+    whereSolicitacao.dataSolicitacao = dataSolicitacaoFiltro;
+  }
+
+  const dataConclusaoFiltro: Record<symbol, Date | null> = {};
+
+  if (filtros.data_conclusao_inicio) {
+    dataConclusaoFiltro[Op.gte] = new Date(filtros.data_conclusao_inicio);
+  }
+
+  if (filtros.data_conclusao_fim) {
+    dataConclusaoFiltro[Op.lte] = this.normalizarDataFim(
+      filtros.data_conclusao_fim,
+    );
+  }
+
+  if (filtros.concluida === true) {
+    dataConclusaoFiltro[Op.not] = null;
+  }
+
+  if (filtros.concluida === false) {
+    whereSolicitacao.dataConclusao = { [Op.is]: null };
+  } else if (Reflect.ownKeys(dataConclusaoFiltro).length > 0) {
+    whereSolicitacao.dataConclusao = dataConclusaoFiltro;
+  }
+
+  if (filtros.nome) {
+    whereUsuario.nome = { [Op.like]: `%${filtros.nome}%` };
+  }
+
+  if (filtros.cpf_cnpj) {
+    whereUsuario.cpfCnpj = { [Op.like]: `%${filtros.cpf_cnpj}%` };
+  }
+
+  const solicitacoes = await this.solicitacaoModel.findAll({
+    where: whereSolicitacao,
+    include: [
+      {
+        model: Usuario,
+        attributes: ['id', 'nome', 'email'],
+        where:
+          Object.keys(whereUsuario).length > 0 ? whereUsuario : undefined,
+        required: Object.keys(whereUsuario).length > 0,
+      },
+      {
+        model: Servico,
+        attributes: ['id', 'nome', 'valorBase'],
+      },
+    ],
+  });
+
+  const solicitacoesFormatadas = solicitacoes.map((solicitacao) => ({
+    cliente: {
+      id: solicitacao.usuario.id,
+      nome: solicitacao.usuario.nome,
+      email: solicitacao.usuario.email,
+    },
+    servico: {
+      id: solicitacao.servico.id,
+      tipo: solicitacao.servico.nome,
+      valorBase: solicitacao.servico.valorBase || 0,
+    },
+    solicitacao: {
+      status:
+        solicitacao.status.charAt(0).toUpperCase() +
+        solicitacao.status.slice(1),
+      observacaoCliente: solicitacao.observacaoCliente || '',
+      observacaoAdmin: solicitacao.observacaoAdmin || '',
+      dataSolicitacao: solicitacao.dataSolicitacao,
+      dataConclusao: solicitacao.dataConclusao,
+    },
+  }));
+
+  return {
+    total: solicitacoes.length,
+    solicitacoes: solicitacoesFormatadas,
+  };
+  }
+
+  private validarConflitoConclusao(
+  filtros: ListSolicitacoesQueryDto,
+): void {
+  const temDatasConclusao =
+    filtros.data_conclusao_inicio != null ||
+    filtros.data_conclusao_fim != null;
+
+  if (filtros.concluida === false && temDatasConclusao) {
+    throw new BadRequestException(
+      'Filtros inválidos: não combine concluida=false com data_conclusao_inicio ou data_conclusao_fim',
+    );
+  }
+}
 
   private normalizarDataFim(data: string): Date {
     if (/^\d{4}-\d{2}-\d{2}$/.test(data)) {

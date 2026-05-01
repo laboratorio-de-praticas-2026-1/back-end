@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform, Type, type TransformFnParams } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
@@ -41,22 +41,27 @@ export class ListSolicitacoesQueryDto {
     example: [StatusSolicitacaoEnum.RECEBIDO, StatusSolicitacaoEnum.CANCELADO],
   })
   @IsOptional()
-  @Transform(({ value }: TransformFnParams): string[] | undefined => {
-    if (value === undefined || value === null || value === '') {
-      return undefined;
+  @Transform(({ value }: { value: unknown }): unknown => {
+    if (typeof value === 'string') {
+      const valores = value.split(',');
+      return valores
+        .map((item) => item.trim().toLowerCase())
+        .filter((item) => item.length > 0);
     }
 
-    const valores = Array.isArray(value)
-      ? value.flatMap((item) => String(item).split(','))
-      : String(value).split(',');
+    if (Array.isArray(value)) {
+      const valores = value.flatMap((item: unknown) =>
+        String(item).split(','),
+      );
 
-    const normalizados = valores
-      .map((item) => item.trim().toLowerCase())
-      .filter((item) => item.length > 0);
+      return valores
+        .map((item: string) => item.trim().toLowerCase())
+        .filter((item: string) => item.length > 0);
+    }
 
-    return normalizados.length > 0 ? normalizados : value;
+    return value;
   })
-  @IsArray()
+  @IsArray({ message: 'status_in deve ser um array ou CSV válido' })
   @IsEnum(StatusSolicitacaoEnum, {
     each: true,
     message: `Status inválido em status_in. Valores permitidos: ${Object.values(StatusSolicitacaoEnum).join(', ')}`,
@@ -68,10 +73,7 @@ export class ListSolicitacoesQueryDto {
     example: '2026-04-01',
   })
   @IsOptional()
-  @IsDateString(
-    {},
-    { message: 'data_solicitacao_inicio deve ser uma data válida' },
-  )
+  @IsDateString({}, { message: 'data_solicitacao_inicio deve ser uma data válida' })
   declare data_solicitacao_inicio?: string;
 
   @ApiPropertyOptional({
@@ -79,10 +81,7 @@ export class ListSolicitacoesQueryDto {
     example: '2026-04-30',
   })
   @IsOptional()
-  @IsDateString(
-    {},
-    { message: 'data_solicitacao_fim deve ser uma data válida' },
-  )
+  @IsDateString({}, { message: 'data_solicitacao_fim deve ser uma data válida' })
   declare data_solicitacao_fim?: string;
 
   @ApiPropertyOptional({
@@ -90,10 +89,7 @@ export class ListSolicitacoesQueryDto {
     example: '2026-05-01',
   })
   @IsOptional()
-  @IsDateString(
-    {},
-    { message: 'data_conclusao_inicio deve ser uma data válida' },
-  )
+  @IsDateString({}, { message: 'data_conclusao_inicio deve ser uma data válida' })
   declare data_conclusao_inicio?: string;
 
   @ApiPropertyOptional({
@@ -123,7 +119,7 @@ export class ListSolicitacoesQueryDto {
   })
   @IsOptional()
   @IsString()
-  @Transform(({ value }: { value: unknown }): string | undefined =>
+  @Transform(({ value }: { value: unknown }): unknown =>
     typeof value === 'string' ? value.trim() : value,
   )
   declare nome?: string;
@@ -134,7 +130,7 @@ export class ListSolicitacoesQueryDto {
   })
   @IsOptional()
   @IsString()
-  @Transform(({ value }: { value: unknown }): string | undefined =>
+  @Transform(({ value }: { value: unknown }): unknown =>
     typeof value === 'string' ? value.trim() : value,
   )
   declare cpf_cnpj?: string;
