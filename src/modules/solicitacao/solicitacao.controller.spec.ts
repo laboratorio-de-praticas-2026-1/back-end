@@ -155,6 +155,8 @@ describe('SolicitacaoController', () => {
     );
     expect(mockSolicitacaoService.listarSolicitacoes).toHaveBeenCalledWith(
       query,
+    );
+  });
   it('deve substituir documento via PATCH com sucesso', async () => {
     const mockArquivo = {
       originalname: 'documento.pdf',

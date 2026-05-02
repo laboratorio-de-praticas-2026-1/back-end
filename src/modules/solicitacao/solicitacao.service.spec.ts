@@ -1083,6 +1083,8 @@ describe('SolicitacaoService', () => {
         limit: 10,
         solicitacoes: [],
       });
+    });
+  });
   describe('substituirDocumento', () => {
     const mockArquivo = {
       originalname: 'documento.pdf',

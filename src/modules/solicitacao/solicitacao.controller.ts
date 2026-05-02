@@ -16,7 +16,6 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBody,
-  ApiBadRequestResponse,
   ApiConsumes,
   ApiCreatedResponse,
   ApiNotFoundResponse,
@@ -25,7 +24,6 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
-import { StatusValidacaoEnum } from 'src/commons/enums/status-validacao.enum';
 import { DocumentoFilePipe } from 'src/commons/pipes/file.pipe';
 import { CreateDocumentoDto } from './dto/create-documento.dto';
 import { CreateSolicitacaoResponseDto } from './dto/create-solicitacao-response.dto';
@@ -49,57 +47,35 @@ export class SolicitacaoController {
   @Post()
   @ApiOperation({
     summary: 'Criar uma solicitação',
-    description:
-      'Criar uma nova solicitação com dados básicos iniciais. Id de usuário, Id do Veículo (Opcional), Id do serviço, Observação do Cliente (Opcional).',
   })
   @ApiCreatedResponse({
-    description: 'Solicitação criada com sucesso com retorno de protocolo',
     type: CreateSolicitacaoResponseDto,
   })
   criarSolicitacao(
     @Body() solicitacaoDto: CreateSolicitacaoDto,
   ): Promise<CreateSolicitacaoResponseDto> {
-    this.logger.log('Iniciando criacao de solicitacao de servico...');
+    this.logger.log('Iniciando criacao de solicitacao...');
     return this.solicitacaoService.criarSolicitacao(solicitacaoDto);
   }
 
   @Get()
   @ApiOperation({
     summary: 'Listar todas as solicitações',
-    description:
-      'Retorna uma lista com todas as solicitações do sistema com dados do cliente e serviço.',
   })
   @ApiOkResponse({
-    description: 'Lista de solicitações retornada com sucesso',
     type: ListSolicitacoesResponseDto,
   })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    example: 1,
-    description: 'Pagina solicitada. Padrao: 1.',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    example: 10,
-    description: 'Quantidade de registros por pagina. Padrao: 10.',
-  })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
   @ApiQuery({
     name: 'orderBy',
     required: false,
     enum: SOLICITACAO_ORDER_BY_FIELDS,
-    example: 'dataSolicitacao',
-    description: 'Campo utilizado para ordenar a lista.',
   })
   @ApiQuery({
     name: 'order',
     required: false,
     enum: ['asc', 'desc'],
-    example: 'desc',
-    description: 'Direcao da ordenacao. Padrao: desc.',
   })
   async listarSolicitacoes(
     @Query() query: ListSolicitacoesQueryDto,
@@ -109,87 +85,31 @@ export class SolicitacaoController {
   }
 
   @Get('kanban')
-async listarSolicitacoesKanban(
-  @Query() query: ListSolicitacoesQueryDto,
-): Promise<ListSolicitacoesResponseDto> {
-  this.logger.log('Buscando solicitações agrupadas por status...');
-  return this.solicitacaoService.getAllSolicitacoes(query);
-}
+  listarSolicitacoesKanban(
+    @Query() query: ListSolicitacoesQueryDto,
+  ): Promise<ListSolicitacoesResponseDto> {
+    this.logger.log('Buscando kanban...');
+    return this.solicitacaoService.getAllSolicitacoes(query);
+  }
 
   @Get(':id')
-  @ApiOperation({
-    summary: 'Retornar os dados completos de uma solicitação',
-    description:
-      'Retorna os dados completos de uma solicitação pelo seu identificador. Rota destinada ao uso administrativo (CMS).',
-  })
-  @ApiOkResponse({
-    description: 'Solicitação encontrada com sucesso',
-    type: GetSolicitacaoResponseDto,
-  })
+  @ApiOkResponse({ type: GetSolicitacaoResponseDto })
   @ApiNotFoundResponse({
     description: 'Solicitação não encontrada',
-    schema: {
-      type: 'object',
-      properties: {
-        error: { type: 'string', example: 'SOLICITACAO_NAO_ENCONTRADA' },
-        message: {
-          type: 'string',
-          example: 'A solicitação não foi encontrada',
-        },
-      },
-    },
   })
   getSolicitacaoById(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<GetSolicitacaoResponseDto> {
-    this.logger.log(`Buscando solicitação com id=${id}...`);
     return this.solicitacaoService.getSolicitacaoById(id);
   }
 
   @Patch(':id/status')
-  @ApiOperation({
-    summary: 'Atualizar status de solicitação',
-    description:
-      'Atualização parcial do status de uma solicitação com envio controlado de e-mails e proteção anti-spam.',
-  })
-  @ApiBody({
-    type: UpdateSolicitacaoStatusDto,
-    description: 'Dados para atualização do status da solicitação',
-  })
-  @ApiOkResponse({
-    description: 'Status da solicitação atualizado com sucesso',
-    schema: {
-      type: 'object',
-      properties: {
-        message: {
-          type: 'string',
-          example: 'Status da solicitação atualizado com sucesso.',
-        },
-      },
-    },
-  })
-  @ApiNotFoundResponse({
-    description: 'Solicitação não encontrada',
-    schema: {
-      type: 'object',
-      properties: {
-        message: {
-          type: 'string',
-          example: 'Solicitação com ID 999 não encontrada',
-        },
-        error: { type: 'string', example: 'Not Found' },
-        statusCode: { type: 'number', example: 404 },
-      },
-    },
-  })
+  @ApiBody({ type: UpdateSolicitacaoStatusDto })
   updateSolicitacaoStatus(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateSolicitacaoStatusDto: UpdateSolicitacaoStatusDto,
+    @Body() dto: UpdateSolicitacaoStatusDto,
   ): Promise<{ message: string }> {
-    return this.solicitacaoService.updateSolicitacaoStatusById(
-      id,
-      updateSolicitacaoStatusDto,
-    );
+    return this.solicitacaoService.updateSolicitacaoStatusById(id, dto);
   }
 
   @Post(':id/cancelar')
@@ -210,43 +130,28 @@ async listarSolicitacoesKanban(
 
   @Post(':id/documentos')
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(
-    FileInterceptor('documento', {
-      limits: {
-        fileSize: 10 * 1024 * 1024,
-      },
-    }),
-  )
+  @UseInterceptors(FileInterceptor('documento'))
   enviarDocumento(
     @Param('id', ParseIntPipe) id: number,
     @Body() data: CreateDocumentoDto,
-    @UploadedFile(DocumentoFilePipe)
-    documento: Express.Multer.File,
+    @UploadedFile(DocumentoFilePipe) file: Express.Multer.File,
   ): Promise<{ message: string }> {
-    return this.solicitacaoService.enviarDocumento(id, data, documento);
+    return this.solicitacaoService.enviarDocumento(id, data, file);
   }
 
   @Get(':id/documentos')
-  listarDocumentos(@Param('id', ParseIntPipe) id: number) {
-    this.logger.log(`Buscando documentos da solicitação com id=${id}...`);
+  listarDocumentos(@Param('id', ParseIntPipe) id: number): Promise<unknown> {
     return this.solicitacaoService.listarDocumentos(id);
   }
 
   @Patch(':id/documentos/:docId')
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(
-    FileInterceptor('documento', {
-      limits: {
-        fileSize: 10 * 1024 * 1024,
-      },
-    }),
-  )
+  @UseInterceptors(FileInterceptor('documento'))
   substituirDocumento(
     @Param('id', ParseIntPipe) id: number,
     @Param('docId', ParseIntPipe) docId: number,
-    @UploadedFile(DocumentoFilePipe)
-    documento: Express.Multer.File,
+    @UploadedFile(DocumentoFilePipe) file: Express.Multer.File,
   ): Promise<{ id: number; mensagem: string }> {
-    return this.solicitacaoService.substituirDocumento(id, docId, documento);
+    return this.solicitacaoService.substituirDocumento(id, docId, file);
   }
 }

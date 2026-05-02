@@ -28,15 +28,11 @@ export const SOLICITACAO_ORDER_BY_FIELDS = [
   'data_conclusao',
 ] as const;
 
-export type SolicitacaoOrderBy =
-  (typeof SOLICITACAO_ORDER_BY_FIELDS)[number];
+export type SolicitacaoOrderBy = (typeof SOLICITACAO_ORDER_BY_FIELDS)[number];
 
 export type SolicitacaoOrder = 'asc' | 'desc';
 
-export const SOLICITACAO_ORDER_BY_COLUMN: Record<
-  SolicitacaoOrderBy,
-  string
-> = {
+export const SOLICITACAO_ORDER_BY_COLUMN: Record<SolicitacaoOrderBy, string> = {
   id: 'id',
   status: 'status',
   usuarioId: 'usuarioId',
@@ -51,12 +47,13 @@ export const SOLICITACAO_ORDER_BY_COLUMN: Record<
   data_conclusao: 'dataConclusao',
 };
 
-const parseNumberOrDefault = (value: unknown, defaultValue: number) => {
+const parseNumberOrDefault = (value: unknown, defaultValue: number): number => {
   if (value === undefined || value === null || value === '') {
     return defaultValue;
   }
 
-  return Number(value);
+  const parsed = Number(value);
+  return isNaN(parsed) ? defaultValue : parsed;
 };
 
 export class ListSolicitacoesQueryDto {
@@ -66,7 +63,7 @@ export class ListSolicitacoesQueryDto {
     default: 1,
     minimum: 1,
   })
-  @Transform(({ value }: TransformFnParams) =>
+  @Transform(({ value }: TransformFnParams): number =>
     parseNumberOrDefault(value, 1),
   )
   @IsInt()
@@ -79,7 +76,7 @@ export class ListSolicitacoesQueryDto {
     default: 10,
     minimum: 1,
   })
-  @Transform(({ value }: TransformFnParams) =>
+  @Transform(({ value }: TransformFnParams): number =>
     parseNumberOrDefault(value, 10),
   )
   @IsInt()
@@ -102,9 +99,12 @@ export class ListSolicitacoesQueryDto {
     example: 'desc',
     default: 'desc',
   })
-  @Transform(({ value }: TransformFnParams) =>
-    typeof value === 'string' ? value.toLowerCase() : value,
-  )
+  @Transform(({ value }: TransformFnParams): SolicitacaoOrder => {
+    if (typeof value === 'string') {
+      return value.toLowerCase() as SolicitacaoOrder;
+    }
+    return 'desc';
+  })
   @IsOptional()
   @IsIn(['asc', 'desc'])
   order: SolicitacaoOrder = 'desc';
@@ -144,22 +144,22 @@ export class ListSolicitacoesQueryDto {
     isArray: true,
   })
   @IsOptional()
-  @Transform(({ value }) => {
+  @Transform(({ value }: TransformFnParams): StatusSolicitacaoEnum[] => {
     if (typeof value === 'string') {
       return value
         .split(',')
-        .map((item) => item.trim().toLowerCase())
+        .map((item) => item.trim().toLowerCase() as StatusSolicitacaoEnum)
         .filter(Boolean);
     }
 
     if (Array.isArray(value)) {
       return value
         .flatMap((item) => String(item).split(','))
-        .map((item) => item.trim().toLowerCase())
+        .map((item) => item.trim().toLowerCase() as StatusSolicitacaoEnum)
         .filter(Boolean);
     }
 
-    return value;
+    return [];
   })
   @IsArray()
   @IsEnum(StatusSolicitacaoEnum, { each: true })
@@ -187,10 +187,10 @@ export class ListSolicitacoesQueryDto {
 
   @ApiPropertyOptional({ example: false })
   @IsOptional()
-  @Transform(({ value }) => {
+  @Transform(({ value }: TransformFnParams): boolean => {
     if (value === true || value === 'true') return true;
     if (value === false || value === 'false') return false;
-    return value;
+    return false;
   })
   @IsBoolean()
   concluida?: boolean;

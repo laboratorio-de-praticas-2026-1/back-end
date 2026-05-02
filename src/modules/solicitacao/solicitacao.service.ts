@@ -467,147 +467,150 @@ export class SolicitacaoService implements OnModuleDestroy {
   }
 
   async listarSolicitacoes(
-  query: ListSolicitacoesQueryDto = new ListSolicitacoesQueryDto(),
-): Promise<ListSolicitacoesResponseDto> {
-  const page = query.page ?? 1;
-  const limit = query.limit ?? 10;
-  const orderBy = query.orderBy ?? 'dataSolicitacao';
-  const order = query.order ?? 'desc';
-  const offset = (page - 1) * limit;
+    query: ListSolicitacoesQueryDto = new ListSolicitacoesQueryDto(),
+  ): Promise<ListSolicitacoesResponseDto> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const orderBy = query.orderBy ?? 'dataSolicitacao';
+    const order = query.order ?? 'desc';
+    const offset = (page - 1) * limit;
 
-  const { rows: solicitacoes, count: total } =
-    await this.solicitacaoModel.findAndCountAll({
-      include: [
-        {
-          model: Usuario,
-          attributes: ['id', 'nome', 'email'],
-        },
-        {
-          model: Servico,
-          attributes: ['id', 'nome', 'valorBase'],
-        },
-      ],
-      limit,
-      offset,
-      order: [
-        [
-          SOLICITACAO_ORDER_BY_COLUMN[orderBy],
-          order.toUpperCase() as 'ASC' | 'DESC',
+    const { rows: solicitacoes, count: total } =
+      await this.solicitacaoModel.findAndCountAll({
+        include: [
+          {
+            model: Usuario,
+            attributes: ['id', 'nome', 'email'],
+          },
+          {
+            model: Servico,
+            attributes: ['id', 'nome', 'valorBase'],
+          },
         ],
-      ],
-    });
-
-  const solicitacoesFormatadas = solicitacoes.map((solicitacao) => ({
-    cliente: {
-      id: solicitacao.usuario.id,
-      nome: solicitacao.usuario.nome,
-      email: solicitacao.usuario.email,
-    },
-    servico: {
-      id: solicitacao.servico.id,
-      tipo: solicitacao.servico.nome,
-      valorBase: solicitacao.servico.valorBase || 0,
-    },
-    solicitacao: {
-      id: solicitacao.id,
-      status:
-        solicitacao.status.charAt(0).toUpperCase() +
-        solicitacao.status.slice(1),
-      observacaoCliente: solicitacao.observacaoCliente || '',
-      observacaoAdmin: solicitacao.observacaoAdmin || '',
-      dataSolicitacao: solicitacao.dataSolicitacao,
-      dataConclusao: solicitacao.dataConclusao,
-    },
-  }));
-
-  const totalPages = total > 0 ? Math.ceil(total / limit) : 1;
-
-  return {
-    total,
-    page,
-    limit,
-    totalPages,
-    hasNext: page < totalPages,
-    hasPrevious: page > 1,
-    solicitacoes: solicitacoesFormatadas,
-  };
-}
-
-async getAllSolicitacoes(query: ListSolicitacoesQueryDto): Promise<any> {
-  const { page = 1, limit = 10, orderBy, order } = query;
-
-  const offset = (page - 1) * limit;
-
-  const { rows: solicitacoes, count: total } =
-    await this.solicitacaoModel.findAndCountAll({
-      limit,
-      offset,
-      order: [
-        [
-          SOLICITACAO_ORDER_BY_COLUMN[orderBy],
-          order.toUpperCase() as 'ASC' | 'DESC',
+        limit,
+        offset,
+        order: [
+          [
+            SOLICITACAO_ORDER_BY_COLUMN[orderBy],
+            order.toUpperCase() as 'ASC' | 'DESC',
+          ],
         ],
-      ],
-      include: [
-        {
-          model: this.usuarioModel,
-          as: 'usuario',
-        },
-        {
-          model: this.servicoModel,
-          as: 'servico',
-        },
-      ],
-    });
+      });
 
-  const solicitacoesFormatadas = solicitacoes.map((solicitacao) => ({
-    cliente: {
-      id: solicitacao.usuario.id,
-      nome: solicitacao.usuario.nome,
-      email: solicitacao.usuario.email,
-    },
-    servico: {
-      id: solicitacao.servico.id,
-      tipo: solicitacao.servico.nome,
-      valorBase: solicitacao.servico.valorBase || 0,
-    },
-    solicitacao: {
-      id: solicitacao.id,
-      status:
-        solicitacao.status.charAt(0).toUpperCase() +
-        solicitacao.status.slice(1),
-      observacaoCliente: solicitacao.observacaoCliente || '',
-      observacaoAdmin: solicitacao.observacaoAdmin || '',
-      dataSolicitacao: solicitacao.dataSolicitacao,
-      dataConclusao: solicitacao.dataConclusao,
-    },
-  }));
+    const solicitacoesFormatadas = solicitacoes.map((solicitacao) => ({
+      cliente: {
+        id: solicitacao.usuario.id,
+        nome: solicitacao.usuario.nome,
+        email: solicitacao.usuario.email,
+      },
+      servico: {
+        id: solicitacao.servico.id,
+        tipo: solicitacao.servico.nome,
+        valorBase: solicitacao.servico.valorBase || 0,
+      },
+      solicitacao: {
+        id: solicitacao.id,
+        status:
+          solicitacao.status.charAt(0).toUpperCase() +
+          solicitacao.status.slice(1),
+        observacaoCliente: solicitacao.observacaoCliente || '',
+        observacaoAdmin: solicitacao.observacaoAdmin || '',
+        dataSolicitacao: solicitacao.dataSolicitacao,
+        dataConclusao: solicitacao.dataConclusao,
+      },
+    }));
 
-  // Agrupar por status
-  const kanban = solicitacoesFormatadas.reduce((acc, item) => {
-    const status = item.solicitacao.status;
+    const totalPages = total > 0 ? Math.ceil(total / limit) : 1;
 
-    if (!acc[status]) {
-      acc[status] = [];
-    }
+    return {
+      total,
+      page,
+      limit,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrevious: page > 1,
+      solicitacoes: solicitacoesFormatadas,
+    };
+  }
 
-    acc[status].push(item);
+  async getAllSolicitacoes(query: ListSolicitacoesQueryDto): Promise<any> {
+    const { page = 1, limit = 10, orderBy, order } = query;
 
-    return acc;
-  }, {} as Record<string, typeof solicitacoesFormatadas>);
+    const offset = (page - 1) * limit;
 
-  const totalPages = total > 0 ? Math.ceil(total / limit) : 1;
+    const { rows: solicitacoes, count: total } =
+      await this.solicitacaoModel.findAndCountAll({
+        limit,
+        offset,
+        order: [
+          [
+            SOLICITACAO_ORDER_BY_COLUMN[orderBy],
+            order.toUpperCase() as 'ASC' | 'DESC',
+          ],
+        ],
+        include: [
+          {
+            model: this.usuarioModel,
+            as: 'usuario',
+          },
+          {
+            model: this.servicoModel,
+            as: 'servico',
+          },
+        ],
+      });
 
-  return {
-    total,
-    page,
-    limit,
-    totalPages,
-    hasNext: page < totalPages,
-    hasPrevious: page > 1,
-    solicitacoes: kanban,
-  };
-}
+    const solicitacoesFormatadas = solicitacoes.map((solicitacao) => ({
+      cliente: {
+        id: solicitacao.usuario.id,
+        nome: solicitacao.usuario.nome,
+        email: solicitacao.usuario.email,
+      },
+      servico: {
+        id: solicitacao.servico.id,
+        tipo: solicitacao.servico.nome,
+        valorBase: solicitacao.servico.valorBase || 0,
+      },
+      solicitacao: {
+        id: solicitacao.id,
+        status:
+          solicitacao.status.charAt(0).toUpperCase() +
+          solicitacao.status.slice(1),
+        observacaoCliente: solicitacao.observacaoCliente || '',
+        observacaoAdmin: solicitacao.observacaoAdmin || '',
+        dataSolicitacao: solicitacao.dataSolicitacao,
+        dataConclusao: solicitacao.dataConclusao,
+      },
+    }));
+
+    // Agrupar por status
+    const kanban = solicitacoesFormatadas.reduce(
+      (acc, item) => {
+        const status = item.solicitacao.status;
+
+        if (!acc[status]) {
+          acc[status] = [];
+        }
+
+        acc[status].push(item);
+
+        return acc;
+      },
+      {} as Record<string, typeof solicitacoesFormatadas>,
+    );
+
+    const totalPages = total > 0 ? Math.ceil(total / limit) : 1;
+
+    return {
+      total,
+      page,
+      limit,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrevious: page > 1,
+      solicitacoes: kanban,
+    };
+  }
   async enviarDocumento(
     solicitacaoId: number,
     data: CreateDocumentoDto,
