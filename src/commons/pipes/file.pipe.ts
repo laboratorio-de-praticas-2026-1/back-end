@@ -39,7 +39,11 @@ export class DocumentoFilePipe implements PipeTransform {
       throw new BadRequestException('Arquivo excede o tamanho máximo de 10MB');
     }
 
-    if (!DOCUMENTO_MIME_TYPES.includes(file.mimetype as any)) {
+    if (
+      !DOCUMENTO_MIME_TYPES.includes(
+        file.mimetype as (typeof DOCUMENTO_MIME_TYPES)[number],
+      )
+    ) {
       throw new BadRequestException(
         `Tipo de arquivo inválido. Tipos permitidos: ${DOCUMENTO_MIME_TYPES.join(', ')}`,
       );

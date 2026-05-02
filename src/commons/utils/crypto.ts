@@ -22,6 +22,17 @@ export class CryptoUtil {
   decrypt(encryptedText: string): string {
     const [ivHex, encrypted] = encryptedText.split(':');
 
+    if (
+      !ivHex ||
+      !encrypted ||
+      ivHex.length !== 32 ||
+      !/^[0-9a-f]+$/i.test(ivHex)
+    ) {
+      throw new Error(
+        `Formato de texto criptografado inválido (iv.length=${ivHex?.length ?? 0}, hasPayload=${!!encrypted})`,
+      );
+    }
+
     const iv = Buffer.from(ivHex, 'hex');
 
     const decipher = crypto.createDecipheriv(this.algorithm, this.key, iv);
