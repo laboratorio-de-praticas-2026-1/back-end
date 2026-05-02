@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
+  Patch,
   Param,
   ParseIntPipe,
   Post,
@@ -24,6 +25,7 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
+import { StatusValidacaoEnum } from 'src/commons/enums/status-validacao.enum';
 import { DocumentoFilePipe } from 'src/commons/pipes/file.pipe';
 import { CreateDocumentoDto } from './dto/create-documento.dto';
 import { CreateSolicitacaoResponseDto } from './dto/create-solicitacao-response.dto';
@@ -35,9 +37,7 @@ import {
 } from './dto/list-solicitacoes-query.dto';
 import { ListSolicitacoesResponseDto } from './dto/list-solicitacoes-response.dto';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
-import { StatusValidacaoEnum } from 'src/commons/enums/status-validacao.enum';
 import { SolicitacaoService } from './solicitacao.service';
-import { Patch } from '@nestjs/common';
 
 @ApiTags('solicitacao')
 @Controller('solicitacoes')
@@ -62,11 +62,6 @@ export class SolicitacaoController {
     this.logger.log('Iniciando criacao de solicitacao de servico...');
     return this.solicitacaoService.criarSolicitacao(solicitacaoDto);
   }
-
-  @Get()
-    async getAllSolicitacoes(@Query() query: ListSolicitacoesQueryDto) {
-    return this.solicitacaoService.getAllSolicitacoes(query);
-}
 
   @Get()
   @ApiOperation({
@@ -112,6 +107,14 @@ export class SolicitacaoController {
     this.logger.log('Buscando lista de solicitações...');
     return this.solicitacaoService.listarSolicitacoes(query);
   }
+
+  @Get('kanban')
+async listarSolicitacoesKanban(
+  @Query() query: ListSolicitacoesQueryDto,
+): Promise<ListSolicitacoesResponseDto> {
+  this.logger.log('Buscando solicitações agrupadas por status...');
+  return this.solicitacaoService.getAllSolicitacoes(query);
+}
 
   @Get(':id')
   @ApiOperation({
@@ -190,24 +193,6 @@ export class SolicitacaoController {
   }
 
   @Post(':id/cancelar')
-  @ApiOperation({
-    summary: 'Cancelar solicitação',
-    description:
-      'Cancela uma solicitação utilizando a função central de atualização de status.',
-  })
-  @ApiOkResponse({
-    description: 'Cancelamento realizado com sucesso',
-    schema: {
-      type: 'object',
-      properties: {
-        id: { type: 'number', example: 123 },
-        status: { type: 'string', example: 'cancelado' },
-      },
-    },
-  })
-  @ApiNotFoundResponse({
-    description: 'Solicitação não encontrada',
-  })
   @HttpCode(HttpStatus.OK)
   cancelarSolicitacao(
     @Param('id', ParseIntPipe) id: number,
@@ -216,24 +201,6 @@ export class SolicitacaoController {
   }
 
   @Post(':id/reabrir')
-  @ApiOperation({
-    summary: 'Reabrir solicitação',
-    description:
-      'Reabre uma solicitação cancelada utilizando a função central de atualização de status.',
-  })
-  @ApiOkResponse({
-    description: 'Reabertura realizada com sucesso',
-    schema: {
-      type: 'object',
-      properties: {
-        id: { type: 'number', example: 123 },
-        status: { type: 'string', example: 'em_andamento' },
-      },
-    },
-  })
-  @ApiNotFoundResponse({
-    description: 'Solicitação não encontrada',
-  })
   @HttpCode(HttpStatus.OK)
   reabrirSolicitacao(
     @Param('id', ParseIntPipe) id: number,
@@ -242,44 +209,11 @@ export class SolicitacaoController {
   }
 
   @Post(':id/documentos')
-  @ApiOperation({
-    summary: 'Adicionar um documento novo em uma solicitação existente.',
-    description:
-      'Adicionar um documento em uma solicitação com o status PENDENTE.',
-  })
   @ApiConsumes('multipart/form-data')
-  @ApiCreatedResponse({
-    description: 'Documento enviado com sucesso',
-    schema: {
-      type: 'object',
-      properties: {
-        message: {
-          type: 'string',
-          example: 'Documento enviado com sucesso e aguardando validação.',
-        },
-      },
-    },
-  })
-  @ApiNotFoundResponse({
-    description: 'Solicitação não encontrada',
-  })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        tipo_documento: {
-          type: 'string',
-          example: 'RG',
-        },
-        documento: { type: 'string', format: 'binary' },
-      },
-      required: ['tipo_documento', 'documento'],
-    },
-  })
   @UseInterceptors(
     FileInterceptor('documento', {
       limits: {
-        fileSize: 10 * 1024 * 1024, // Limite de 10MB
+        fileSize: 10 * 1024 * 1024,
       },
     }),
   )
@@ -293,113 +227,13 @@ export class SolicitacaoController {
   }
 
   @Get(':id/documentos')
-  @ApiOperation({
-    summary: 'Listar documentos de uma solicitação',
-    description:
-      'Retorna todos os documentos vinculados a uma solicitação específica, com nome descriptografado e URL temporária do Cloudinary.',
-  })
-  @ApiOkResponse({
-    description: 'Lista de documentos retornada com sucesso',
-    schema: {
-      type: 'object',
-      properties: {
-        data: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              id: { type: 'number', example: 1 },
-              tipo_documento: { type: 'string', example: 'RG' },
-              nome_arquivo: { type: 'string', example: 'rg_frente.pdf' },
-              status_validacao: {
-                type: 'string',
-                enum: Object.values(StatusValidacaoEnum),
-                example: StatusValidacaoEnum.PENDENTE,
-              },
-              url: {
-                type: 'string',
-                example: 'https://res.cloudinary.com/.../rg_frente.pdf',
-              },
-              data_upload: {
-                type: 'string',
-                format: 'date-time',
-                example: '2026-04-15T14:30:00Z',
-              },
-            },
-          },
-        },
-        total: { type: 'number', example: 2 },
-      },
-    },
-  })
-  @ApiNotFoundResponse({
-    description: 'Solicitação não encontrada',
-    schema: {
-      type: 'object',
-      properties: {
-        error: { type: 'string', example: 'SOLICITACAO_NAO_ENCONTRADA' },
-        message: {
-          type: 'string',
-          example: 'A solicitação não foi encontrada',
-        },
-      },
-    },
-  })
   listarDocumentos(@Param('id', ParseIntPipe) id: number) {
     this.logger.log(`Buscando documentos da solicitação com id=${id}...`);
     return this.solicitacaoService.listarDocumentos(id);
   }
 
   @Patch(':id/documentos/:docId')
-  @ApiOperation({
-    summary: 'Substituir arquivo de um documento vinculado a uma solicitação',
-    description:
-      'Substitui o arquivo de um documento já vinculado a uma solicitação, mantendo o mesmo vínculo e identificação do documento.',
-  })
   @ApiConsumes('multipart/form-data')
-  @ApiOkResponse({
-    description: 'Documento substituído com sucesso',
-    schema: {
-      type: 'object',
-      properties: {
-        id: { type: 'number', example: 1 },
-        mensagem: {
-          type: 'string',
-          example: 'Documento substituído com sucesso',
-        },
-      },
-    },
-  })
-  @ApiNotFoundResponse({
-    description: 'Solicitação ou documento não encontrado',
-  })
-  @ApiBadRequestResponse({
-    description:
-      'Requisição inválida. Possíveis causas: (1) arquivo ausente ou em formato/tamanho inválido; (2) o documento informado não pertence à solicitação.',
-    schema: {
-      type: 'object',
-      properties: {
-        statusCode: { type: 'number', example: 400 },
-        error: { type: 'string', example: 'Bad Request' },
-        message: {
-          type: 'string',
-          examples: [
-            'Arquivo obrigatório não enviado ou formato inválido',
-            'Documento não pertence à solicitação informada',
-          ],
-        },
-      },
-    },
-  })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        documento: { type: 'string', format: 'binary' },
-      },
-      required: ['documento'],
-    },
-  })
   @UseInterceptors(
     FileInterceptor('documento', {
       limits: {
