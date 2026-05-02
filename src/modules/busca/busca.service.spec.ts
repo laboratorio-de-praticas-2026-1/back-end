@@ -9,6 +9,7 @@ import { Servico } from 'src/models/servico.model';
 import { Publicidade } from 'src/models/publicidade.model';
 import { Usuario } from 'src/models/usuario.model';
 import { Empresa } from 'src/models/empresa.model';
+import { Faq } from 'src/models/faq.model';
 import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
 import { BuscaServicoFiltroDto } from './dto/busca-servico-filtro.dto';
 import { BuscaUsuarioFiltroDto } from './dto/busca-usuario-filtro.dto';
@@ -21,6 +22,7 @@ describe('BuscaService', () => {
   const usuarioFindAllMock = jest.fn();
   const publicidadeFindAllMock = jest.fn();
   const empresaFindAllMock = jest.fn();
+  const faqFindAllMock = jest.fn();
   type WhereClause = Partial<Record<symbol, unknown>>;
 
   interface FindAllOptions {
@@ -39,6 +41,7 @@ describe('BuscaService', () => {
     publicidadeFindAllMock.mockReset();
     usuarioFindAllMock.mockReset();
     empresaFindAllMock.mockReset();
+    faqFindAllMock.mockReset();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -77,6 +80,12 @@ describe('BuscaService', () => {
           provide: getModelToken(Empresa),
           useValue: {
             findAll: empresaFindAllMock,
+          },
+        },
+        {
+          provide: getModelToken(Faq),
+          useValue: {
+            findAll: faqFindAllMock,
           },
         },
       ],
@@ -689,6 +698,49 @@ describe('BuscaService', () => {
 
       expect(publicidadeFindAllMock).toHaveBeenCalledWith({
         where: { id: 9 },
+        order: [['id', 'DESC']],
+      });
+    });
+  });
+
+  describe('listarFaqByBusca', () => {
+    it('deve listar faq sem filtros quando nenhum parametro for informado', async () => {
+      faqFindAllMock.mockResolvedValue([]);
+
+      const resultado = await service.listarFaqByBusca({} as any);
+
+      expect(faqFindAllMock).toHaveBeenCalledWith({
+        order: [['id', 'DESC']],
+      });
+      expect(resultado).toEqual({
+        itens: [],
+        mensagem: 'Nenhum item foi encontrado.',
+      });
+    });
+
+    it('deve combinar termo, status e categoria em filtros de busca', async () => {
+      faqFindAllMock.mockResolvedValue([]);
+
+      await service.listarFaqByBusca({
+        termo: 'renovacao',
+        status: 'ativo',
+        categoria: 'CNH',
+      } as any);
+
+      expect(faqFindAllMock).toHaveBeenCalledWith({
+        where: {
+          [Op.and]: [
+            {
+              [Op.or]: [
+                { pergunta: { [Op.like]: '%renovacao%' } },
+                { resposta: { [Op.like]: '%renovacao%' } },
+                { categoria: { [Op.like]: '%renovacao%' } },
+              ],
+            },
+            { ativo: true },
+            { categoria: 'CNH' },
+          ],
+        },
         order: [['id', 'DESC']],
       });
     });

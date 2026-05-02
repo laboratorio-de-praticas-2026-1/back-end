@@ -10,6 +10,7 @@ describe('BuscaController', () => {
     listarPublicidadeByTermo: jest.fn(),
     listarUsuariosByTermo: jest.fn(),
     listarEmpresasByTermo: jest.fn(),
+    listarFaqByBusca: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -18,6 +19,7 @@ describe('BuscaController', () => {
     buscaServiceMock.listarPublicidadeByTermo.mockReset();
     buscaServiceMock.listarUsuariosByTermo.mockReset();
     buscaServiceMock.listarEmpresasByTermo.mockReset();
+    buscaServiceMock.listarFaqByBusca.mockReset();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [BuscaController],
@@ -78,5 +80,14 @@ describe('BuscaController', () => {
     expect(buscaServiceMock.listarEmpresasByTermo).toHaveBeenCalledWith(
       'curitiba',
     );
+  });
+
+  it('deve delegar a busca de faq com termo e filtros para o BuscaService', async () => {
+    buscaServiceMock.listarFaqByBusca.mockResolvedValue({ itens: [] });
+    const dto = { termo: 'renovacao', status: 'ativo', categoria: 'CNH' };
+
+    await controller.listarFaq(dto as any);
+
+    expect(buscaServiceMock.listarFaqByBusca).toHaveBeenCalledWith(dto);
   });
 });

@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/sequelize';
 import { cast, col, fn, Op, where } from 'sequelize';
 import { Banner } from 'src/models/banner.model';
 import { Blog } from 'src/models/blog.model';
+import { Faq } from 'src/models/faq.model';
 import { Empresa } from 'src/models/empresa.model';
 import { Publicidade } from 'src/models/publicidade.model';
 import { Servico } from 'src/models/servico.model';
@@ -13,6 +14,7 @@ import { BuscaEmpresaFiltroDto } from './dto/busca-empresa-filtro.dto';
 import { BuscaPublicidadeStatusDto } from './dto/busca-publicidade-status.dto';
 import { BuscaServicoFiltroDto } from './dto/busca-servico-filtro.dto';
 import { BuscaUsuarioFiltroDto } from './dto/busca-usuario-filtro.dto';
+import { BuscaFaqDto } from './dto/busca-faq.dto';
 
 @Injectable()
 export class BuscaService {
@@ -23,6 +25,7 @@ export class BuscaService {
     @InjectModel(Publicidade) private publicidadeModel: typeof Publicidade,
     @InjectModel(Usuario) private usuarioModel: typeof Usuario,
     @InjectModel(Empresa) private empresaModel: typeof Empresa,
+    @InjectModel(Faq) private faqModel: typeof Faq,
   ) {}
 
   async buscarBlogsPorIntervaloDeData(
@@ -416,6 +419,42 @@ export class BuscaService {
           { conteudo: { [Op.like]: `%${termoNormalizado}%` } },
         ],
       },
+      order: [['id', 'DESC']],
+    });
+
+    return {
+      itens,
+      mensagem: itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+    };
+  }
+
+  async listarFaqByBusca(dto: BuscaFaqDto): Promise<{
+    itens: Faq[];
+    mensagem?: string;
+  }> {
+    const termoNormalizado = dto.termo?.trim();
+    const filtrosAnd: Array<Record<string, unknown>> = [];
+
+    if (termoNormalizado) {
+      filtrosAnd.push({
+        [Op.or]: [
+          { pergunta: { [Op.like]: `%${termoNormalizado}%` } },
+          { resposta: { [Op.like]: `%${termoNormalizado}%` } },
+          { categoria: { [Op.like]: `%${termoNormalizado}%` } },
+        ],
+      });
+    }
+
+    if (dto.status) {
+      filtrosAnd.push({ ativo: dto.status === 'ativo' });
+    }
+
+    if (dto.categoria) {
+      filtrosAnd.push({ categoria: dto.categoria });
+    }
+
+    const itens = await this.faqModel.findAll({
+      ...(filtrosAnd.length > 0 ? { where: { [Op.and]: filtrosAnd } } : {}),
       order: [['id', 'DESC']],
     });
 
