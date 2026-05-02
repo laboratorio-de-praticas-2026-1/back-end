@@ -26,4 +26,16 @@ export class VeiculoService {
 
     return veiculo;
   }
+
+  async deleteById(id: number): Promise<void> {
+    this.logger.log(`Removendo veículo com ID: ${id}`);
+
+    const veiculo = await this.veiculoModel.findByPk(id);
+
+    if (!veiculo) {
+      throw new NotFoundException('Veículo não encontrado');
+    }
+
+    await veiculo.destroy();
+  }
 }

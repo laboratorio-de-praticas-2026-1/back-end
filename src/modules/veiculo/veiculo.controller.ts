@@ -1,4 +1,13 @@
-import { Controller, Get, Logger, Param, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  HttpCode,
+  HttpStatus,
+  Get,
+  Logger,
+  Param,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags, ApiParam } from '@nestjs/swagger';
 import { Veiculo } from 'src/models/veiculo.model';
 import { VeiculoService } from './veiculo.service';
@@ -26,5 +35,16 @@ export class VeiculoController {
   async getById(@Param('id', ParseIntPipe) id: number): Promise<Veiculo> {
     this.logger.log(`Iniciando busca de veículo por ID: ${id}`);
     return this.veiculoService.getById(id);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Remover um veículo pelo ID' })
+  @ApiParam({ name: 'id', type: 'number', description: 'ID do veículo' })
+  @ApiResponse({ status: 204, description: 'Veículo removido com sucesso' })
+  @ApiResponse({ status: 404, description: 'Veículo não encontrado' })
+  async deleteById(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    this.logger.log(`Removendo veículo com ID: ${id}`);
+    return this.veiculoService.deleteById(id);
   }
 }

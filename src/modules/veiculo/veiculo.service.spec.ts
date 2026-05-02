@@ -80,7 +80,38 @@ describe('VeiculoService', () => {
   it('deve lançar erro ao buscar veículo por ID inexistente', async () => {
     mockVeiculoModel.findByPk.mockResolvedValue(null);
 
-    await expect(service.getById(999)).rejects.toThrow('Veículo não encontrado');
+    await expect(service.getById(999)).rejects.toThrow(
+      'Veículo não encontrado',
+    );
     expect(mockVeiculoModel.findByPk).toHaveBeenCalledWith(999);
+  });
+
+  describe('deleteById', () => {
+    it('deve remover um veículo existente com sucesso', async () => {
+      const mockDestroy = jest.fn().mockResolvedValue(undefined);
+
+      const mockVeiculo = {
+        id: 1,
+        placa: 'ABC-1234',
+        destroy: mockDestroy,
+      } as unknown as Veiculo;
+
+      mockVeiculoModel.findByPk.mockResolvedValue(mockVeiculo);
+
+      await expect(service.deleteById(1)).resolves.toBeUndefined();
+
+      expect(mockVeiculoModel.findByPk).toHaveBeenCalledWith(1);
+      expect(mockDestroy).toHaveBeenCalledTimes(1);
+    });
+
+    it('deve lançar erro ao tentar remover um veículo inexistente', async () => {
+      mockVeiculoModel.findByPk.mockResolvedValue(null);
+
+      await expect(service.deleteById(999)).rejects.toThrow(
+        'Veículo não encontrado',
+      );
+
+      expect(mockVeiculoModel.findByPk).toHaveBeenCalledWith(999);
+    });
   });
 });
