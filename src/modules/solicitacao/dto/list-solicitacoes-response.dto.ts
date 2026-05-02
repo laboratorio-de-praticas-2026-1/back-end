@@ -42,6 +42,12 @@ export class ServicoDto {
 
 export class SolicitacaoInfoDto {
   @ApiProperty({
+    description: 'ID da solicitação',
+    example: 101,
+  })
+  id: number;
+
+  @ApiProperty({
     description: 'Status da solicitação',
     example: 'Recebido',
   })
@@ -96,21 +102,39 @@ export class SolicitacaoCompletaDto {
 export class ListSolicitacoesResponseDto {
   @ApiProperty({
     description: 'Quantidade total de solicitações',
-    example: 2,
+    example: 25,
   })
   total: number;
 
   @ApiProperty({
-    description: 'Pagina atual',
+    description: 'Página atual',
     example: 1,
   })
   page: number;
 
   @ApiProperty({
-    description: 'Quantidade de registros por pagina',
+    description: 'Quantidade de registros por página',
     example: 10,
   })
   limit: number;
+
+  @ApiProperty({
+    description: 'Total de páginas',
+    example: 3,
+  })
+  totalPages: number;
+
+  @ApiProperty({
+    description: 'Indica se existe próxima página',
+    example: true,
+  })
+  hasNext: boolean;
+
+  @ApiProperty({
+    description: 'Indica se existe página anterior',
+    example: false,
+  })
+  hasPrevious: boolean;
 
   @ApiProperty({
     description: 'Lista de solicitações',

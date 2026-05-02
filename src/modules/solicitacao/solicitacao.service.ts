@@ -466,114 +466,205 @@ export class SolicitacaoService implements OnModuleDestroy {
   }
 
   async listarSolicitacoes(
-    query: ListSolicitacoesQueryDto = new ListSolicitacoesQueryDto(),
-  ): Promise<ListSolicitacoesResponseDto> {
-    const page = query.page ?? 1;
-    const limit = query.limit ?? 10;
-    const orderBy = query.orderBy ?? 'dataSolicitacao';
-    const order = query.order ?? 'desc';
-    const offset = (page - 1) * limit;
+  query: ListSolicitacoesQueryDto = new ListSolicitacoesQueryDto(),
+): Promise<ListSolicitacoesResponseDto> {
+  const page = query.page ?? 1;
+  const limit = query.limit ?? 10;
+  const orderBy = query.orderBy ?? 'dataSolicitacao';
+  const order = query.order ?? 'desc';
+  const offset = (page - 1) * limit;
 
-    const { rows: solicitacoes, count: total } =
-      await this.solicitacaoModel.findAndCountAll({
-        include: [
-          {
-            model: Usuario,
-            attributes: ['id', 'nome', 'email'],
-          },
-          {
-            model: Servico,
-            attributes: ['id', 'nome', 'valorBase'],
-          },
-        ],
-        limit,
-        offset,
-        order: [
-          [
-            SOLICITACAO_ORDER_BY_COLUMN[orderBy],
-            order.toUpperCase() as 'ASC' | 'DESC',
-          ],
-        ],
-      });
-
-    const solicitacoesFormatadas = solicitacoes.map((solicitacao) => ({
-      cliente: {
-        id: solicitacao.usuario.id,
-        nome: solicitacao.usuario.nome,
-        email: solicitacao.usuario.email,
-      },
-      servico: {
-        id: solicitacao.servico.id,
-        tipo: solicitacao.servico.nome,
-        valorBase: solicitacao.servico.valorBase || 0,
-      },
-      solicitacao: {
-        status:
-          solicitacao.status.charAt(0).toUpperCase() +
-          solicitacao.status.slice(1),
-        observacaoCliente: solicitacao.observacaoCliente || '',
-        observacaoAdmin: solicitacao.observacaoAdmin || '',
-        dataSolicitacao: solicitacao.dataSolicitacao,
-        dataConclusao: solicitacao.dataConclusao,
-      },
-    }));
-
-    return {
-      total,
-      page,
+  const { rows: solicitacoes, count: total } =
+    await this.solicitacaoModel.findAndCountAll({
+      include: [
+        {
+          model: Usuario,
+          attributes: ['id', 'nome', 'email'],
+        },
+        {
+          model: Servico,
+          attributes: ['id', 'nome', 'valorBase'],
+        },
+      ],
       limit,
-      solicitacoes: solicitacoesFormatadas,
-    };
-  }
-
-  async enviarDocumento(
-    solicitacaoId: number,
-    data: CreateDocumentoDto,
-    documento: Express.Multer.File,
-  ): Promise<{ message: string }> {
-    if (!data.tipo_documento) {
-      throw new BadRequestException('Dados inválidos');
-    }
-    const solicitacao = await this.solicitacaoModel.findByPk(solicitacaoId);
-    if (!solicitacao) {
-      throw new NotFoundException('Solicitação não encontrada');
-    }
-
-    let urlDocRestricted: CloudinaryResponse;
-
-    try {
-      urlDocRestricted = await this.cloudinaryService.uploadDocument(documento);
-    } catch (error) {
-      const mensagemErro =
-        error instanceof Error ? error.message : 'Erro desconhecido';
-
-      this.logger.error(
-        `Falha ao enviar documento para a solicitacao ${solicitacaoId}: ${mensagemErro}`,
-      );
-
-      throw new BadRequestException(
-        `Erro ao enviar documento: ${mensagemErro}`,
-      );
-    }
-
-    const publicId = urlDocRestricted.public_id as string;
-    if (!publicId) {
-      throw new InternalServerErrorException(
-        'Resposta inválida do Cloudinary: public_id ausente',
-      );
-    }
-    const resourceType = urlDocRestricted.resource_type as 'raw' | 'image';
-    const nomeHash = this.cryptoUtil.encrypt(`${resourceType}|${publicId}`);
-
-    await this.documentoModel.create({
-      solicitacaoId: solicitacaoId,
-      nomeHash: nomeHash,
-      tipoDocumento: data.tipo_documento,
-      dataUpload: new Date(),
-      statusValidacao: 'pendente',
+      offset,
+      order: [
+        [
+          SOLICITACAO_ORDER_BY_COLUMN[orderBy],
+          order.toUpperCase() as 'ASC' | 'DESC',
+        ],
+      ],
     });
-    return {
-      message: 'Documento enviado com sucesso e aguardando validação.',
-    };
+
+  const solicitacoesFormatadas = solicitacoes.map((solicitacao) => ({
+    cliente: {
+      id: solicitacao.usuario.id,
+      nome: solicitacao.usuario.nome,
+      email: solicitacao.usuario.email,
+    },
+    servico: {
+      id: solicitacao.servico.id,
+      tipo: solicitacao.servico.nome,
+      valorBase: solicitacao.servico.valorBase || 0,
+    },
+    solicitacao: {
+      id: solicitacao.id,
+      status:
+        solicitacao.status.charAt(0).toUpperCase() +
+        solicitacao.status.slice(1),
+      observacaoCliente: solicitacao.observacaoCliente || '',
+      observacaoAdmin: solicitacao.observacaoAdmin || '',
+      dataSolicitacao: solicitacao.dataSolicitacao,
+      dataConclusao: solicitacao.dataConclusao,
+    },
+  }));
+
+  const totalPages = total > 0 ? Math.ceil(total / limit) : 1;
+
+  return {
+    total,
+    page,
+    limit,
+    totalPages,
+    hasNext: page < totalPages,
+    hasPrevious: page > 1,
+    solicitacoes: solicitacoesFormatadas,
+  };
+}
+
+async getAllSolicitacoes(query: ListSolicitacoesQueryDto): Promise<any> {
+  const { page = 1, limit = 10, orderBy, order } = query;
+
+  const offset = (page - 1) * limit;
+
+  const { rows: solicitacoes, count: total } =
+    await this.solicitacaoModel.findAndCountAll({
+      limit,
+      offset,
+      order: [
+        [
+          SOLICITACAO_ORDER_BY_COLUMN[orderBy],
+          order.toUpperCase() as 'ASC' | 'DESC',
+        ],
+      ],
+      include: [
+        {
+          model: this.usuarioModel,
+          as: 'usuario',
+        },
+        {
+          model: this.servicoModel,
+          as: 'servico',
+        },
+      ],
+    });
+
+  const solicitacoesFormatadas = solicitacoes.map((solicitacao) => ({
+    cliente: {
+      id: solicitacao.usuario.id,
+      nome: solicitacao.usuario.nome,
+      email: solicitacao.usuario.email,
+    },
+    servico: {
+      id: solicitacao.servico.id,
+      tipo: solicitacao.servico.nome,
+      valorBase: solicitacao.servico.valorBase || 0,
+    },
+    solicitacao: {
+      id: solicitacao.id,
+      status:
+        solicitacao.status.charAt(0).toUpperCase() +
+        solicitacao.status.slice(1),
+      observacaoCliente: solicitacao.observacaoCliente || '',
+      observacaoAdmin: solicitacao.observacaoAdmin || '',
+      dataSolicitacao: solicitacao.dataSolicitacao,
+      dataConclusao: solicitacao.dataConclusao,
+    },
+  }));
+
+  // Agrupar por status
+  const kanban = solicitacoesFormatadas.reduce((acc, item) => {
+    const status = item.solicitacao.status;
+
+    if (!acc[status]) {
+      acc[status] = [];
+    }
+
+    acc[status].push(item);
+
+    return acc;
+  }, {} as Record<string, typeof solicitacoesFormatadas>);
+
+  const totalPages = total > 0 ? Math.ceil(total / limit) : 1;
+
+  return {
+    total,
+    page,
+    limit,
+    totalPages,
+    hasNext: page < totalPages,
+    hasPrevious: page > 1,
+    solicitacoes: kanban,
+  };
+}
+
+async enviarDocumento(
+  solicitacaoId: number,
+  data: CreateDocumentoDto,
+  documento: Express.Multer.File,
+): Promise<{ message: string }> {
+  if (!data.tipo_documento) {
+    throw new BadRequestException('Dados inválidos');
   }
+
+  const solicitacao = await this.solicitacaoModel.findByPk(solicitacaoId);
+
+  if (!solicitacao) {
+    throw new NotFoundException('Solicitação não encontrada');
+  }
+
+  let urlDocRestricted: CloudinaryResponse;
+
+  try {
+    urlDocRestricted =
+      await this.cloudinaryService.uploadDocument(documento);
+  } catch (error) {
+    const mensagemErro =
+      error instanceof Error ? error.message : 'Erro desconhecido';
+
+    this.logger.error(
+      `Falha ao enviar documento para a solicitacao ${solicitacaoId}: ${mensagemErro}`,
+    );
+
+    throw new BadRequestException(
+      `Erro ao enviar documento: ${mensagemErro}`,
+    );
+  }
+
+  const publicId = urlDocRestricted.public_id as string;
+
+  if (!publicId) {
+    throw new InternalServerErrorException(
+      'Resposta inválida do Cloudinary: public_id ausente',
+    );
+  }
+
+  const resourceType = urlDocRestricted.resource_type as 'raw' | 'image';
+
+  const nomeHash = this.cryptoUtil.encrypt(
+    `${resourceType}|${publicId}`,
+  );
+
+  await this.documentoModel.create({
+    solicitacaoId,
+    nomeHash,
+    tipoDocumento: data.tipo_documento,
+    dataUpload: new Date(),
+    statusValidacao: 'pendente',
+  });
+
+  return {
+    message: 'Documento enviado com sucesso e aguardando validação.',
+  };
+}
 }

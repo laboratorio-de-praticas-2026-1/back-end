@@ -62,6 +62,11 @@ export class SolicitacaoController {
   }
 
   @Get()
+    async getAllSolicitacoes(@Query() query: ListSolicitacoesQueryDto) {
+    return this.solicitacaoService.getAllSolicitacoes(query);
+}
+
+  @Get()
   @ApiOperation({
     summary: 'Listar todas as solicitações',
     description:
