@@ -85,7 +85,9 @@ export class ContatoController {
   })
   @ApiBadRequestResponse({ description: 'Dados invalidos para envio' })
   @ApiInternalServerErrorResponse({ description: 'Erro ao enviar e-mail' })
-  async enviarEmail(@Body() data: ContatoEmailRequestDto): Promise<ContatoEmailResponseDto> {
+  async enviarEmail(
+    @Body() data: ContatoEmailRequestDto,
+  ): Promise<ContatoEmailResponseDto> {
     try {
       this.logger.log(`Email recebido de: ${data.email}`);
 

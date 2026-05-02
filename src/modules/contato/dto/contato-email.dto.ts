@@ -26,4 +26,3 @@ export class ContatoEmailResponseDto {
   @ApiProperty({ example: 'E-mail enviado com sucesso' })
   message: string;
 }
-
