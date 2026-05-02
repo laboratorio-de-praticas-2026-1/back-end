@@ -10,4 +10,17 @@ export class Faq extends Model {
 
   @Column({ type: DataType.TEXT, allowNull: true })
   declare resposta: string | null;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+    defaultValue: true,
+  })
+  declare ativo: boolean;
+
+  @Column({
+    type: DataType.STRING(50),
+    allowNull: true,
+  })
+  declare categoria: string | null;
 }
