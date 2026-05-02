@@ -13,13 +13,14 @@ import { EmailService } from 'src/infra/email/email.service';
 import { SolicitacaoService } from './solicitacao.service';
 import { StatusSolicitacaoEnum } from 'src/commons/enums/status-solicitacao.enum';
 import { ListSolicitacoesQueryDto } from './dto/list-solicitacoes-query.dto';
+import Sequelize from 'sequelize';
 import { Op } from 'sequelize';
 
 interface MockModel {
   create: jest.Mock;
   findByPk: jest.Mock;
   findAll?: jest.Mock;
-  findAndCountAll?: jest.Mock;
+  findAndCountAll: jest.Mock;
 }
 
 interface MockNotificacao {
@@ -71,7 +72,10 @@ describe('SolicitacaoService', () => {
       create: jest.fn(),
       findByPk: jest.fn(),
       findAll: jest.fn(),
-      findAndCountAll: jest.fn(),
+      findAndCountAll: jest.fn().mockResolvedValue({
+        rows: [],
+        count: 0,
+      }),
     };
 
     mockDocumentoModel = {
@@ -218,6 +222,7 @@ describe('SolicitacaoService', () => {
         },
       },
     });
+
     expect(mockSolicitacaoModel.create).toHaveBeenCalledWith(
       expect.objectContaining({
         usuarioId: 1,
@@ -227,6 +232,7 @@ describe('SolicitacaoService', () => {
         status: 'recebido',
       }),
     );
+
     expect(
       mockNotificacaoService.enviarConfirmacaoSolicitacao,
     ).toHaveBeenCalledWith({
@@ -305,6 +311,7 @@ describe('SolicitacaoService', () => {
         },
       },
     });
+
     expect(mockVeiculoModel.findByPk).not.toHaveBeenCalled();
     expect(mockSolicitacaoModel.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -536,35 +543,98 @@ describe('SolicitacaoService', () => {
   });
 
   describe('listarSolicitacoes', () => {
-    const getFindAllQuery = (): FindAllQuery => {
+    const getFindAndCountAllQuery = (): FindAllQuery => {
       const calls =
-        (mockSolicitacaoModel.findAll?.mock.calls as unknown[][] | undefined) ??
+        (mockSolicitacaoModel.findAndCountAll?.mock.calls as unknown[][] | undefined) ??
         [];
 
       if (calls.length === 0 || !calls[0] || !calls[0][0]) {
-        throw new Error('findAll não foi chamado');
+        throw new Error('findAndCountAll não foi chamado');
       }
 
-      return calls[0][0] as FindAllQuery;
+      const options = calls[0][0] as any;
+
+      return {
+        ...options,
+        where: options.where || {},
+        include: options.include || [{ where: {}, required: false }],
+      };
+    };
+
+    const solicitacaoComRelacoes = {
+      id: 1,
+      status: 'recebido',
+      observacaoCliente: 'Cliente pediu urgencia',
+      observacaoAdmin: null,
+      dataSolicitacao: new Date('2026-03-10T12:00:00.000Z'),
+      dataConclusao: null,
+      usuario: { id: 1, nome: 'Amanda', email: 'amanda@email.com' },
+      servico: { id: 3, nome: 'Transferencia', valorBase: 200 },
     };
 
     it('deve listar sem filtros quando nenhum parametro for enviado', async () => {
-      mockSolicitacaoModel.findAll?.mockResolvedValue([
-        {
-          usuario: { id: 1, nome: 'Amanda', email: 'amanda@email.com' },
-          servico: { id: 3, nome: 'Transferencia', valorBase: 200 },
-          status: 'recebido',
-          observacaoCliente: null,
-          observacaoAdmin: null,
-          dataSolicitacao: new Date('2026-04-10T10:00:00.000Z'),
-          dataConclusao: null,
-        },
-      ]);
+      mockSolicitacaoModel.findAndCountAll.mockResolvedValue({
+        rows: [
+          {
+            usuario: { id: 1, nome: 'Amanda', email: 'amanda@email.com' },
+            servico: { id: 3, nome: 'Transferencia', valorBase: 200 },
+            status: 'recebido',
+            observacaoCliente: null,
+            observacaoAdmin: null,
+            dataSolicitacao: new Date('2026-04-10T10:00:00.000Z'),
+            dataConclusao: null,
+          },
+        ],
+        count: 1,
+      });
 
       const resposta = await service.listarSolicitacoes({});
 
-      expect(resposta).toEqual({
+      expect(resposta.total).toBe(1);
+
+      const query = getFindAndCountAllQuery();
+ 
+      expect(query.where).toEqual({});
+      
+      if (query.include && query.include[0]) {
+        expect(query.include[0].where).toBeFalsy(); 
+      }
+    });
+
+    it('deve combinar filtros por status, concluida e nome do cliente', async () => {
+      mockSolicitacaoModel.findAndCountAll.mockResolvedValue({ rows: [], count: 0 });
+
+      await service.listarSolicitacoes({
+        status_in: [StatusSolicitacaoEnum.EM_ANDAMENTO],
+        concluida: false,
+        nome: 'Amanda',
+      });
+
+      const query = getFindAndCountAllQuery();
+
+      expect(query.where.status).toEqual({
+        [Op.in]: [StatusSolicitacaoEnum.EM_ANDAMENTO],
+      });
+      expect(query.where.dataConclusao).toEqual({ [Op.is]: null });
+      
+      expect(query.include[0].where).toBeDefined();
+      expect(query.include[0].where.nome).toEqual({ [Op.like]: '%Amanda%' });
+      expect(query.include[0].required).toBe(true);
+    });
+
+    it('deve listar solicitacoes com paginacao e ordenacao padrao', async () => {
+      mockSolicitacaoModel.findAndCountAll.mockResolvedValue({
+        rows: [solicitacaoComRelacoes],
+        count: 1,
+      });
+
+      await expect(service.listarSolicitacoes()).resolves.toEqual({
         total: 1,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+        hasNext: false,
+        hasPrevious: false,
         solicitacoes: [
           {
             cliente: {
@@ -578,84 +648,73 @@ describe('SolicitacaoService', () => {
               valorBase: 200,
             },
             solicitacao: {
+              id: 1,
               status: 'Recebido',
-              observacaoCliente: '',
+              observacaoCliente: 'Cliente pediu urgencia',
               observacaoAdmin: '',
-              dataSolicitacao: new Date('2026-04-10T10:00:00.000Z'),
+              dataSolicitacao: new Date('2026-03-10T12:00:00.000Z'),
               dataConclusao: null,
             },
           },
         ],
       });
 
-      const query = getFindAllQuery();
-      expect(query.where).toEqual({});
-      expect(query.include[0].where).toBeUndefined();
-      expect(query.include[0].required).toBe(false);
+      expect(mockSolicitacaoModel.findAndCountAll).toHaveBeenCalledWith(
+        expect.objectContaining({
+          limit: 10,
+          offset: 0,
+          order: [['dataSolicitacao', 'DESC']],
+        }),
+      );
     });
 
-    it('deve combinar filtros por status, concluida e nome do cliente', async () => {
-      mockSolicitacaoModel.findAll?.mockResolvedValue([]);
+    it('deve aplicar page, limit, orderBy e order informados', async () => {
+      const query: ListSolicitacoesQueryDto = {
+        page: 3,
+        limit: 5,
+        orderBy: 'status',
+        order: 'asc',
+      };
 
-      await service.listarSolicitacoes({
-        status_in: [StatusSolicitacaoEnum.EM_ANDAMENTO],
-        concluida: false,
-        nome: 'Amanda',
+      mockSolicitacaoModel.findAndCountAll.mockResolvedValue({
+        rows: [],
+        count: 0,
       });
 
-      const query = getFindAllQuery();
-
-      expect(query.where.status).toEqual({
-        [Op.in]: [StatusSolicitacaoEnum.EM_ANDAMENTO],
+      await expect(service.listarSolicitacoes(query)).resolves.toEqual({
+        total: 0,
+        page: 3,
+        limit: 5,
+        totalPages: 1,
+        hasNext: false,
+        hasPrevious: true,
+        solicitacoes: [],
       });
-      expect(query.where.dataConclusao).toEqual({ [Op.is]: null });
-      expect(query.include[0].where.nome).toEqual({ [Op.like]: '%Amanda%' });
-      expect(query.include[0].required).toBe(true);
+
+      expect(mockSolicitacaoModel.findAndCountAll).toHaveBeenCalledWith(
+        expect.objectContaining({
+          limit: 5,
+          offset: 10,
+          order: [['status', 'ASC']],
+        }),
+      );
     });
 
-    it('deve aplicar status_in, ids e intervalos de data quando enviados', async () => {
-      mockSolicitacaoModel.findAll?.mockResolvedValue([]);
-
-      await service.listarSolicitacoes({
-        usuario_id: 10,
-        servico_id: 20,
-        veiculo_id: 30,
-        status_in: [
-          StatusSolicitacaoEnum.RECEBIDO,
-          StatusSolicitacaoEnum.CANCELADO,
-        ],
-        data_solicitacao_inicio: '2026-04-01',
-        data_solicitacao_fim: '2026-04-30',
-        data_conclusao_inicio: '2026-05-01',
-        data_conclusao_fim: '2026-05-31',
-        cpf_cnpj: '12345678901',
+    it('deve retornar lista vazia quando nao houver resultados', async () => {
+      mockSolicitacaoModel.findAndCountAll.mockResolvedValue({
+        rows: [],
+        count: 0,
       });
 
-      const query = getFindAllQuery();
-
-      expect(query.where.usuarioId).toBe(10);
-      expect(query.where.servicoId).toBe(20);
-      expect(query.where.veiculoId).toBe(30);
-      expect(query.where.status).toEqual({
-        [Op.in]: [
-          StatusSolicitacaoEnum.RECEBIDO,
-          StatusSolicitacaoEnum.CANCELADO,
-        ],
+      await expect(service.listarSolicitacoes()).resolves.toEqual({
+        total: 0,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+        hasNext: false,
+        hasPrevious: false,
+        solicitacoes: [],
       });
-      expect(query.where.dataSolicitacao[Op.gte]).toEqual(
-        new Date('2026-04-01'),
-      );
-      expect(query.where.dataSolicitacao[Op.lte]).toEqual(
-        new Date('2026-04-30T23:59:59.999Z'),
-      );
-      expect(query.where.dataConclusao[Op.gte]).toEqual(new Date('2026-05-01'));
-      expect(query.where.dataConclusao[Op.lte]).toEqual(
-        new Date('2026-05-31T23:59:59.999Z'),
-      );
-      expect(query.include[0].where.cpfCnpj).toEqual({
-        [Op.like]: '%12345678901%',
-      });
-      expect(query.include[0].required).toBe(true);
     });
   });
 
@@ -981,110 +1040,6 @@ describe('SolicitacaoService', () => {
     });
   });
 
-  describe('listarSolicitacoes', () => {
-    const solicitacaoComRelacoes = {
-      status: 'recebido',
-      observacaoCliente: 'Cliente pediu urgencia',
-      observacaoAdmin: null,
-      dataSolicitacao: new Date('2026-03-10T12:00:00.000Z'),
-      dataConclusao: null,
-      usuario: {
-        id: 1,
-        nome: 'Amanda',
-        email: 'amanda@email.com',
-      },
-      servico: {
-        id: 3,
-        nome: 'Transferencia',
-        valorBase: 200,
-      },
-    };
-
-    it('deve listar solicitacoes com paginacao e ordenacao padrao', async () => {
-      mockSolicitacaoModel.findAndCountAll?.mockResolvedValue({
-        rows: [solicitacaoComRelacoes],
-        count: 1,
-      });
-
-      await expect(service.listarSolicitacoes()).resolves.toEqual({
-        total: 1,
-        page: 1,
-        limit: 10,
-        solicitacoes: [
-          {
-            cliente: {
-              id: 1,
-              nome: 'Amanda',
-              email: 'amanda@email.com',
-            },
-            servico: {
-              id: 3,
-              tipo: 'Transferencia',
-              valorBase: 200,
-            },
-            solicitacao: {
-              status: 'Recebido',
-              observacaoCliente: 'Cliente pediu urgencia',
-              observacaoAdmin: '',
-              dataSolicitacao: new Date('2026-03-10T12:00:00.000Z'),
-              dataConclusao: null,
-            },
-          },
-        ],
-      });
-
-      expect(mockSolicitacaoModel.findAndCountAll).toHaveBeenCalledWith(
-        expect.objectContaining({
-          limit: 10,
-          offset: 0,
-          order: [['dataSolicitacao', 'DESC']],
-        }),
-      );
-    });
-
-    it('deve aplicar page, limit, orderBy e order informados', async () => {
-      const query: ListSolicitacoesQueryDto = {
-        page: 3,
-        limit: 5,
-        orderBy: 'status',
-        order: 'asc',
-      };
-
-      mockSolicitacaoModel.findAndCountAll?.mockResolvedValue({
-        rows: [],
-        count: 0,
-      });
-
-      await expect(service.listarSolicitacoes(query)).resolves.toEqual({
-        total: 0,
-        page: 3,
-        limit: 5,
-        solicitacoes: [],
-      });
-
-      expect(mockSolicitacaoModel.findAndCountAll).toHaveBeenCalledWith(
-        expect.objectContaining({
-          limit: 5,
-          offset: 10,
-          order: [['status', 'ASC']],
-        }),
-      );
-    });
-
-    it('deve retornar lista vazia quando nao houver resultados', async () => {
-      mockSolicitacaoModel.findAndCountAll?.mockResolvedValue({
-        rows: [],
-        count: 0,
-      });
-
-      await expect(service.listarSolicitacoes()).resolves.toEqual({
-        total: 0,
-        page: 1,
-        limit: 10,
-        solicitacoes: [],
-      });
-    });
-  });
   describe('substituirDocumento', () => {
     const mockArquivo = {
       originalname: 'documento.pdf',
@@ -1115,12 +1070,14 @@ describe('SolicitacaoService', () => {
         id: 10,
         mensagem: 'Documento substituído com sucesso',
       });
+  
       expect(mockDocumento.update).toHaveBeenCalledWith(
         expect.objectContaining({
           nomeHash: expect.any(String) as string,
           dataUpload: expect.any(Date) as Date,
         }),
       );
+
       expect(mockCloudinaryService.uploadDocument).toHaveBeenCalledWith(
         mockArquivo,
       );

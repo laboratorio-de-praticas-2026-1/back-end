@@ -39,6 +39,9 @@ import {
 } from './dto/list-solicitacoes-query.dto';
 import { ListSolicitacoesResponseDto } from './dto/list-solicitacoes-response.dto';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
+import { Sequelize } from 'sequelize';
+import { Op } from 'sequelize';
+
 
 @Injectable()
 export class SolicitacaoService implements OnModuleDestroy {
@@ -466,72 +469,108 @@ export class SolicitacaoService implements OnModuleDestroy {
     return data.toISOString().slice(0, 10);
   }
 
-  async listarSolicitacoes(
-    query: ListSolicitacoesQueryDto = new ListSolicitacoesQueryDto(),
-  ): Promise<ListSolicitacoesResponseDto> {
-    const page = query.page ?? 1;
-    const limit = query.limit ?? 10;
-    const orderBy = query.orderBy ?? 'dataSolicitacao';
-    const order = query.order ?? 'desc';
-    const offset = (page - 1) * limit;
+ async listarSolicitacoes(
+  query: ListSolicitacoesQueryDto = new ListSolicitacoesQueryDto(),
+): Promise<ListSolicitacoesResponseDto> {
+  const page = query.page ?? 1;
+  const limit = query.limit ?? 10;
+  const orderBy = query.orderBy ?? 'dataSolicitacao';
+  const order = query.order ?? 'desc';
+  
+  const offset = (page - 1) * limit;
 
-    const { rows: solicitacoes, count: total } =
-      await this.solicitacaoModel.findAndCountAll({
-        include: [
-          {
-            model: Usuario,
-            attributes: ['id', 'nome', 'email'],
-          },
-          {
-            model: Servico,
-            attributes: ['id', 'nome', 'valorBase'],
-          },
-        ],
-        limit,
-        offset,
-        order: [
-          [
-            SOLICITACAO_ORDER_BY_COLUMN[orderBy],
-            order.toUpperCase() as 'ASC' | 'DESC',
-          ],
-        ],
-      });
+  const where: any = {};
 
-    const solicitacoesFormatadas = solicitacoes.map((solicitacao) => ({
-      cliente: {
-        id: solicitacao.usuario.id,
-        nome: solicitacao.usuario.nome,
-        email: solicitacao.usuario.email,
-      },
-      servico: {
-        id: solicitacao.servico.id,
-        tipo: solicitacao.servico.nome,
-        valorBase: solicitacao.servico.valorBase || 0,
-      },
-      solicitacao: {
-        id: solicitacao.id,
-        status:
-          solicitacao.status.charAt(0).toUpperCase() +
-          solicitacao.status.slice(1),
-        observacaoCliente: solicitacao.observacaoCliente || '',
-        observacaoAdmin: solicitacao.observacaoAdmin || '',
-        dataSolicitacao: solicitacao.dataSolicitacao,
-        dataConclusao: solicitacao.dataConclusao,
-      },
-    }));
-
-    const totalPages = total > 0 ? Math.ceil(total / limit) : 1;
-
-    return {
-      total,
-      page,
-      limit,
-      totalPages,
-      hasNext: page < totalPages,
-      hasPrevious: page > 1,
-      solicitacoes: solicitacoesFormatadas,
-    };
+  if (query.status_in && query.status_in.length > 0) {
+    where.status = { [Op.in]: query.status_in };
   }
+
+  if (query.usuario_id) where.usuarioId = query.usuario_id;
+  if (query.servico_id) where.servicoId = query.servico_id;
+  if (query.veiculo_id) where.veiculoId = query.veiculo_id;
+
+  if (query.concluida !== undefined) {
+    where.dataConclusao = query.concluida 
+      ? { [Op.ne]: null } 
+      : { [Op.is]: null };
+  }
+
+  if (query.data_solicitacao_inicio || query.data_solicitacao_fim) {
+    where.dataSolicitacao = {};
+    if (query.data_solicitacao_inicio) {
+      where.dataSolicitacao[Op.gte] = new Date(query.data_solicitacao_inicio);
+    }
+    if (query.data_solicitacao_fim) {
+      where.dataSolicitacao[Op.lte] = new Date(`${query.data_solicitacao_fim}T23:59:59.999Z`);
+    }
+  }
+
+  const usuarioWhere: any = {};
+  if (query.nome) usuarioWhere.nome = { [Op.like]: `%${query.nome}%` };
+  if (query.cpf_cnpj) usuarioWhere.cpfCnpj = { [Op.like]: `%${query.cpf_cnpj}%` };
+
+  const hasUsuarioFilter = Object.keys(usuarioWhere).length > 0;
+
+  const { rows: solicitacoes, count: total } =
+    await this.solicitacaoModel.findAndCountAll({
+      where,
+      include: [
+        {
+          model: Usuario,
+          attributes: ['id', 'nome', 'email'],
+          where: hasUsuarioFilter ? usuarioWhere : undefined,
+          required: hasUsuarioFilter,
+        },
+        {
+          model: Servico,
+          attributes: ['id', 'nome', 'valorBase'],
+        },
+      ],
+      limit,
+      offset,
+      order: [
+        [
+          SOLICITACAO_ORDER_BY_COLUMN[orderBy] || 'dataSolicitacao',
+          order.toUpperCase() as 'ASC' | 'DESC',
+        ],
+      ],
+    });
+
+  const solicitacoesFormatadas = solicitacoes.map((solicitacao) => ({
+    cliente: {
+      id: solicitacao.usuario.id,
+      nome: solicitacao.usuario.nome,
+      email: solicitacao.usuario.email,
+    },
+    servico: {
+      id: solicitacao.servico.id,
+      tipo: solicitacao.servico.nome,
+      valorBase: solicitacao.servico.valorBase || 0,
+    },
+    solicitacao: {
+      id: solicitacao.id,
+      status:
+        solicitacao.status.charAt(0).toUpperCase() +
+        solicitacao.status.slice(1),
+      observacaoCliente: solicitacao.observacaoCliente || '',
+      observacaoAdmin: solicitacao.observacaoAdmin || '',
+      dataSolicitacao: solicitacao.dataSolicitacao,
+      dataConclusao: solicitacao.dataConclusao,
+    },
+  }));
+
+  const totalPages = total > 0 ? Math.ceil(total / limit) : 1;
+
+  return {
+    total,
+    page,
+    limit,
+    totalPages,
+    hasNext: page < totalPages,
+    hasPrevious: page > 1,
+    solicitacoes: solicitacoesFormatadas,
+  };
+}
 
   async getAllSolicitacoes(query: ListSolicitacoesQueryDto): Promise<any> {
     const { page = 1, limit = 10, orderBy, order } = query;
