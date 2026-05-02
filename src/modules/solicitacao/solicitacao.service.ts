@@ -37,9 +37,19 @@ import {
   ListSolicitacoesQueryDto,
   SOLICITACAO_ORDER_BY_COLUMN,
 } from './dto/list-solicitacoes-query.dto';
-import { ListSolicitacoesResponseDto } from './dto/list-solicitacoes-response.dto';
+import { ListSolicitacoesKanbanQueryDto } from './dto/list-solicitacoes-kanban-query.dto';
+import {
+  ListSolicitacoesResponseDto,
+  ListSolicitacoesKanbanResponseDto,
+} from './dto/list-solicitacoes-response.dto';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
-import { Op, WhereOptions } from 'sequelize';
+import { Op, WhereOptions, type Order } from 'sequelize';
+
+type ListSolicitacoesInputDto = ListSolicitacoesKanbanQueryDto & {
+  page?: number;
+  limit?: number;
+  kanban?: boolean;
+};
 
 @Injectable()
 export class SolicitacaoService implements OnModuleDestroy {
@@ -467,6 +477,45 @@ export class SolicitacaoService implements OnModuleDestroy {
     return data.toISOString().slice(0, 10);
   }
 
+  // Helper to format solicitacoes returned by Sequelize into the shape
+  // used by both kanban and paginated responses. This avoids code
+  // duplication and makes the handling consistent.
+  private formatarSolicitacoes(solicitacoes: Solicitacao[]): {
+    cliente: { id: number; nome: string; email: string };
+    servico: { id: number; tipo: string; valorBase: number };
+    solicitacao: {
+      id: number;
+      status: string;
+      observacaoCliente: string;
+      observacaoAdmin: string;
+      dataSolicitacao: Date;
+      dataConclusao: Date | null;
+    };
+  }[] {
+    return solicitacoes.map((solicitacao) => ({
+      cliente: {
+        id: solicitacao.usuario.id,
+        nome: solicitacao.usuario.nome,
+        email: solicitacao.usuario.email,
+      },
+      servico: {
+        id: solicitacao.servico.id,
+        tipo: solicitacao.servico.nome,
+        valorBase: solicitacao.servico.valorBase || 0,
+      },
+      solicitacao: {
+        id: solicitacao.id,
+        status:
+          solicitacao.status.charAt(0).toUpperCase() +
+          solicitacao.status.slice(1),
+        observacaoCliente: solicitacao.observacaoCliente || '',
+        observacaoAdmin: solicitacao.observacaoAdmin || '',
+        dataSolicitacao: solicitacao.dataSolicitacao,
+        dataConclusao: solicitacao.dataConclusao,
+      },
+    }));
+  }
+
   async listarSolicitacoes(
     query: ListSolicitacoesQueryDto = new ListSolicitacoesQueryDto(),
   ): Promise<ListSolicitacoesResponseDto> {
@@ -584,8 +633,47 @@ export class SolicitacaoService implements OnModuleDestroy {
     };
   }
 
-  async getAllSolicitacoes(query: ListSolicitacoesQueryDto): Promise<any> {
-    const { page = 1, limit = 10, orderBy, order } = query;
+  async getAllSolicitacoes(
+    query: ListSolicitacoesInputDto,
+  ): Promise<ListSolicitacoesResponseDto | ListSolicitacoesKanbanResponseDto> {
+    const { page = 1, limit = 10, orderBy, order, kanban } = query;
+
+    const orderClause: Order | undefined = orderBy
+      ? [
+          [
+            SOLICITACAO_ORDER_BY_COLUMN[orderBy],
+            order.toUpperCase() as 'ASC' | 'DESC',
+          ],
+        ]
+      : undefined;
+
+    if (kanban) {
+      // remove as paginacoes quando na rota de kanban
+      const solicitacoes = await this.solicitacaoModel.findAll({
+        order: orderClause,
+        include: [
+          { model: this.usuarioModel, as: 'usuario' },
+          { model: this.servicoModel, as: 'servico' },
+        ],
+      });
+
+      const solicitacoesFormatadas = this.formatarSolicitacoes(solicitacoes);
+
+      const kanbanColumns = solicitacoesFormatadas.reduce(
+        (acc, item) => {
+          const status = item.solicitacao.status;
+          if (!acc[status]) acc[status] = [];
+          acc[status].push(item);
+          return acc;
+        },
+        {} as Record<string, typeof solicitacoesFormatadas>,
+      );
+
+      return {
+        total: solicitacoesFormatadas.length,
+        solicitacoes: kanbanColumns,
+      };
+    }
 
     const offset = (page - 1) * limit;
 
@@ -593,51 +681,20 @@ export class SolicitacaoService implements OnModuleDestroy {
       await this.solicitacaoModel.findAndCountAll({
         limit,
         offset,
-        order: [
-          [
-            SOLICITACAO_ORDER_BY_COLUMN[orderBy],
-            order.toUpperCase() as 'ASC' | 'DESC',
-          ],
-        ],
+        order: orderClause,
         include: [
           { model: this.usuarioModel, as: 'usuario' },
           { model: this.servicoModel, as: 'servico' },
         ],
       });
 
-    const solicitacoesFormatadas = solicitacoes.map((solicitacao) => ({
-      cliente: {
-        id: solicitacao.usuario.id,
-        nome: solicitacao.usuario.nome,
-        email: solicitacao.usuario.email,
-      },
-      servico: {
-        id: solicitacao.servico.id,
-        tipo: solicitacao.servico.nome,
-        valorBase: solicitacao.servico.valorBase || 0,
-      },
-      solicitacao: {
-        id: solicitacao.id,
-        status:
-          solicitacao.status.charAt(0).toUpperCase() +
-          solicitacao.status.slice(1),
-        observacaoCliente: solicitacao.observacaoCliente || '',
-        observacaoAdmin: solicitacao.observacaoAdmin || '',
-        dataSolicitacao: solicitacao.dataSolicitacao,
-        dataConclusao: solicitacao.dataConclusao,
-      },
-    }));
+    const solicitacoesFormatadas = this.formatarSolicitacoes(solicitacoes);
 
-    const kanban = solicitacoesFormatadas.reduce(
+    const kanbanColumns = solicitacoesFormatadas.reduce(
       (acc, item) => {
         const status = item.solicitacao.status;
-
-        if (!acc[status]) {
-          acc[status] = [];
-        }
-
+        if (!acc[status]) acc[status] = [];
         acc[status].push(item);
-
         return acc;
       },
       {} as Record<string, typeof solicitacoesFormatadas>,
@@ -652,7 +709,7 @@ export class SolicitacaoService implements OnModuleDestroy {
       totalPages,
       hasNext: page < totalPages,
       hasPrevious: page > 1,
-      solicitacoes: kanban,
+      solicitacoes: kanbanColumns,
     };
   }
   async enviarDocumento(

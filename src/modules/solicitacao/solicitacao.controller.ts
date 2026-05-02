@@ -33,7 +33,11 @@ import {
   ListSolicitacoesQueryDto,
   SOLICITACAO_ORDER_BY_FIELDS,
 } from './dto/list-solicitacoes-query.dto';
-import { ListSolicitacoesResponseDto } from './dto/list-solicitacoes-response.dto';
+import { ListSolicitacoesKanbanQueryDto } from './dto/list-solicitacoes-kanban-query.dto';
+import {
+  ListSolicitacoesResponseDto,
+  ListSolicitacoesKanbanResponseDto,
+} from './dto/list-solicitacoes-response.dto';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 import { SolicitacaoService } from './solicitacao.service';
 
@@ -85,9 +89,38 @@ export class SolicitacaoController {
   }
 
   @Get('kanban')
-  listarSolicitacoesKanban(@Query() query: ListSolicitacoesQueryDto) {
+  @ApiOperation({
+    summary: 'Listar solicitações no formato Kanban',
+    description:
+      'Retorna todas as solicitações agrupadas por status (sem paginação).',
+  })
+  @ApiOkResponse({ type: ListSolicitacoesKanbanResponseDto })
+  @ApiQuery({
+    name: 'orderBy',
+    required: false,
+    enum: SOLICITACAO_ORDER_BY_FIELDS,
+  })
+  @ApiQuery({
+    name: 'order',
+    required: false,
+    enum: ['asc', 'desc'],
+  })
+  @ApiQuery({ name: 'status_in', required: false, isArray: true })
+  @ApiQuery({ name: 'usuario_id', required: false })
+  @ApiQuery({ name: 'servico_id', required: false })
+  @ApiQuery({ name: 'veiculo_id', required: false })
+  @ApiQuery({ name: 'nome', required: false })
+  @ApiQuery({ name: 'cpf_cnpj', required: false })
+  @ApiQuery({ name: 'data_solicitacao_inicio', required: false })
+  @ApiQuery({ name: 'data_solicitacao_fim', required: false })
+  @ApiQuery({ name: 'data_conclusao_inicio', required: false })
+  @ApiQuery({ name: 'data_conclusao_fim', required: false })
+  @ApiQuery({ name: 'concluida', required: false })
+  listarSolicitacoesKanban(@Query() query: ListSolicitacoesKanbanQueryDto) {
     return this.solicitacaoService.getAllSolicitacoes({
       ...query,
+      page: 1,
+      limit: 10,
       kanban: true,
     });
   }
