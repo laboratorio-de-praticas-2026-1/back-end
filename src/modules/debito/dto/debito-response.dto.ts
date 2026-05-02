@@ -24,4 +24,7 @@ export class DebitoResponseDto {
 
   @ApiProperty({ example: 1800.0 })
   total: number;
+
+  @ApiProperty({ example: 'Nenhum débito encontrado', required: false })
+  mensagem?: string;
 }
