@@ -36,6 +36,8 @@ interface FindAllIncludeQuery {
 interface FindAllQuery {
   where: Record<string, unknown>;
   include: FindAllIncludeQuery[];
+}
+
 interface MockCloudinaryService {
   uploadDocument: jest.Mock;
   generateTemporaryUrl: jest.Mock;
