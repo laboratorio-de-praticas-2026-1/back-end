@@ -9,6 +9,7 @@ describe('VeiculoController', () => {
   const mockVeiculoService = {
     getAll: jest.fn(),
     getById: jest.fn(),
+    deleteById: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -75,5 +76,15 @@ describe('VeiculoController', () => {
 
     await expect(controller.getById(1)).resolves.toEqual(mockVeiculo);
     expect(mockVeiculoService.getById).toHaveBeenCalledWith(1);
+  });
+
+  describe('deleteById', () => {
+    it('deve chamar veiculoService.deleteById com sucesso', async () => {
+      mockVeiculoService.deleteById.mockResolvedValue(undefined);
+
+      await expect(controller.deleteById(1)).resolves.toBeUndefined();
+
+      expect(mockVeiculoService.deleteById).toHaveBeenCalledWith(1);
+    });
   });
 });

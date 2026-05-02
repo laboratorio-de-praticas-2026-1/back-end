@@ -22,7 +22,7 @@
   "dependencies": {
     "@nestjs-modules/mailer": "^2.3.4",
     "@nestjs/common": "^11.0.1",
-    "@nestjs/config": "^4.0.3",
+    "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/mapped-types": "*",
@@ -47,6 +47,7 @@
     "sequelize": "^6.37.7",
     "sequelize-typescript": "^2.1.6",
     "sharp": "^0.34.5",
+    "sqlite3": "^6.0.1",
     "streamifier": "^0.1.1"
   },
   "devDependencies": {
