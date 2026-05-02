@@ -5,9 +5,11 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
+  Patch,
   Param,
   ParseIntPipe,
   Post,
+  Query,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -27,11 +29,11 @@ import { CreateDocumentoDto } from './dto/create-documento.dto';
 import { CreateSolicitacaoResponseDto } from './dto/create-solicitacao-response.dto';
 import { CreateSolicitacaoDto } from './dto/create-solicitacao.dto';
 import { GetSolicitacaoResponseDto } from './dto/get-solicitacao-response.dto';
+import { ListSolicitacoesQueryDto } from './dto/list-solicitacoes-query.dto';
 import { ListSolicitacoesResponseDto } from './dto/list-solicitacoes-response.dto';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 import { StatusValidacaoEnum } from 'src/commons/enums/status-validacao.enum';
 import { SolicitacaoService } from './solicitacao.service';
-import { Patch } from '@nestjs/common';
 
 @ApiTags('solicitacao')
 @Controller('solicitacoes')
@@ -67,9 +69,11 @@ export class SolicitacaoController {
     description: 'Lista de solicitações retornada com sucesso',
     type: ListSolicitacoesResponseDto,
   })
-  async listarSolicitacoes(): Promise<ListSolicitacoesResponseDto> {
+  async listarSolicitacoes(
+    @Query() filtros: ListSolicitacoesQueryDto,
+  ): Promise<ListSolicitacoesResponseDto> {
     this.logger.log('Buscando lista de solicitações...');
-    return this.solicitacaoService.listarSolicitacoes();
+    return this.solicitacaoService.listarSolicitacoes(filtros);
   }
 
   @Get(':id')

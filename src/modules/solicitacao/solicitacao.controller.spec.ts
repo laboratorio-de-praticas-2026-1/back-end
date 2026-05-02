@@ -91,6 +91,28 @@ describe('SolicitacaoController', () => {
       mockSolicitacaoService.updateSolicitacaoStatusById,
     ).toHaveBeenCalledWith(1, updateDto);
   });
+
+  it('deve listar solicitacoes com filtros', async () => {
+    const filtros = {
+      status: StatusSolicitacaoEnum.EM_ANDAMENTO,
+      concluida: false,
+      nome: 'Amanda',
+    };
+
+    const resposta = {
+      total: 0,
+      solicitacoes: [],
+    };
+
+    mockSolicitacaoService.listarSolicitacoes.mockResolvedValue(resposta);
+
+    await expect(controller.listarSolicitacoes(filtros)).resolves.toEqual(
+      resposta,
+    );
+    expect(mockSolicitacaoService.listarSolicitacoes).toHaveBeenCalledWith(
+      filtros,
+    );
+  });
   it('deve cancelar solicitacao com sucesso', async () => {
     const resposta = { id: 123, status: 'cancelado' };
     mockSolicitacaoService.cancelarSolicitacao.mockResolvedValue(resposta);
