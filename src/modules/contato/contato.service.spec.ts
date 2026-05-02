@@ -5,7 +5,7 @@ import { ContatoService } from './contato.service';
 import { Empresa } from 'src/models/empresa.model';
 import { EmpresaDto } from './dto/empresa-response.dto';
 import { EmailService } from 'src/infra/email/email.service';
-import { EmailParams } from 'src/infra/email/dto/email-params';
+import { ContatoEmailRequestDto } from './dto/contato-email.dto';
 
 type MockEmpresaModel = {
   findOne: jest.Mock;
@@ -20,6 +20,7 @@ describe('ContatoService', () => {
   let service: ContatoService;
   let mockEmpresaModel: MockEmpresaModel;
   let mockEmailService: MockEmailService;
+  let originalContactEmail: string | undefined;
 
   const mockEmpresa = {
     id: 1,
@@ -46,6 +47,9 @@ describe('ContatoService', () => {
       enviarEmail: jest.fn(),
     };
 
+    originalContactEmail = process.env.CONTACT_EMAIL;
+    process.env.CONTACT_EMAIL = 'destino@teste.com';
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ContatoService,
@@ -65,44 +69,43 @@ describe('ContatoService', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    process.env.CONTACT_EMAIL = originalContactEmail;
   });
 
   describe('enviarEmail', () => {
     it('deve chamar EmailService.enviarEmail corretamente', async () => {
-      const payload: EmailParams = new EmailParams(
-        'destino@teste.com',
-        'contato',
-        'Teste',
-        {
-          nome: 'Victor',
-          email: 'victor@email.com',
-          mensagem: 'Olá mundo',
-        },
-        true,
-      );
+      const payload: ContatoEmailRequestDto = {
+        nome: 'Victor',
+        email: 'victor@email.com',
+        mensagem: 'Olá mundo',
+      };
 
       mockEmailService.enviarEmail.mockResolvedValue(undefined);
 
       await service.enviarEmail(payload);
 
-      expect(mockEmailService.enviarEmail).toHaveBeenCalledWith(payload);
+      expect(mockEmailService.enviarEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'destino@teste.com',
+          template: 'contato',
+          dados: expect.objectContaining({
+            nome: payload.nome,
+            email: payload.email,
+            mensagem: payload.mensagem,
+          }),
+        }),
+      );
       expect(mockEmailService.enviarEmail).toHaveBeenCalledTimes(1);
     });
 
     it('deve propagar erro do EmailService', async () => {
       mockEmailService.enviarEmail.mockRejectedValue(new Error('Erro email'));
 
-      const payload: EmailParams = new EmailParams(
-        'destino@teste.com',
-        'contato',
-        'Erro',
-        {
-          nome: 'Victor',
-          email: 'victor@email.com',
-          mensagem: 'teste',
-        },
-        true,
-      );
+      const payload: ContatoEmailRequestDto = {
+        nome: 'Victor',
+        email: 'victor@email.com',
+        mensagem: 'teste',
+      };
 
       await expect(service.enviarEmail(payload)).rejects.toThrow('Erro email');
     });

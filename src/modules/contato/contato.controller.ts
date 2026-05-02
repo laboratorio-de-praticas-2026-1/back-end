@@ -16,12 +16,20 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiCreatedResponse,
+  ApiBadRequestResponse,
+  ApiInternalServerErrorResponse,
+  ApiTags,
+  ApiBody,
 } from '@nestjs/swagger';
 import { ContatoService } from './contato.service';
 import { EmpresaDto } from './dto/empresa-response.dto';
 import { ContatoUpdateDto } from './dto/contato-update.dto';
-import { EmailParams } from 'src/infra/email/dto/email-params';
+import {
+  ContatoEmailRequestDto,
+  ContatoEmailResponseDto,
+} from './dto/contato-email.dto';
 
+@ApiTags('Contato')
 @Controller('contato')
 export class ContatoController {
   private readonly logger = new Logger(ContatoController.name);
@@ -70,10 +78,16 @@ export class ContatoController {
 
   @Post('enviar')
   @ApiOperation({ summary: 'Envia email de contato' })
-  @ApiCreatedResponse({ description: 'E-mail enviado com sucesso' })
-  async enviarEmail(@Body() data: EmailParams) {
+  @ApiBody({ type: ContatoEmailRequestDto })
+  @ApiCreatedResponse({
+    description: 'E-mail enviado com sucesso',
+    type: ContatoEmailResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Dados invalidos para envio' })
+  @ApiInternalServerErrorResponse({ description: 'Erro ao enviar e-mail' })
+  async enviarEmail(@Body() data: ContatoEmailRequestDto): Promise<ContatoEmailResponseDto> {
     try {
-      this.logger.log(`Email recebido de: ${data.dados?.email}`);
+      this.logger.log(`Email recebido de: ${data.email}`);
 
       await this.contatoService.enviarEmail(data);
 
