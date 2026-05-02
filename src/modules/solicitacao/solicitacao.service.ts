@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { StatusSolicitacaoEnum } from 'src/commons/enums/status-solicitacao.enum';
+import { StatusValidacaoEnum } from 'src/commons/enums/status-validacao.enum';
 import { CryptoUtil } from 'src/commons/utils/crypto';
 import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
 import { CloudinaryResponse } from 'src/infra/cloudinary/dto/cloudinary-response';
@@ -607,64 +608,217 @@ async getAllSolicitacoes(query: ListSolicitacoesQueryDto): Promise<any> {
     solicitacoes: kanban,
   };
 }
+  async enviarDocumento(
+    solicitacaoId: number,
+    data: CreateDocumentoDto,
+    documento: Express.Multer.File,
+  ): Promise<{ message: string }> {
+    if (!data.tipo_documento) {
+      throw new BadRequestException('Dados inválidos');
+    }
+    const solicitacao = await this.solicitacaoModel.findByPk(solicitacaoId);
+    if (!solicitacao) {
+      throw new NotFoundException('Solicitação não encontrada');
+    }
 
-async enviarDocumento(
-  solicitacaoId: number,
-  data: CreateDocumentoDto,
-  documento: Express.Multer.File,
-): Promise<{ message: string }> {
-  if (!data.tipo_documento) {
-    throw new BadRequestException('Dados inválidos');
+    let urlDocRestricted: CloudinaryResponse;
+
+    try {
+      urlDocRestricted = await this.cloudinaryService.uploadDocument(documento);
+    } catch (error) {
+      const mensagemErro =
+        error instanceof Error ? error.message : 'Erro desconhecido';
+
+      this.logger.error(
+        `Falha ao enviar documento para a solicitacao ${solicitacaoId}: ${mensagemErro}`,
+      );
+
+      throw new BadRequestException(
+        `Erro ao enviar documento: ${mensagemErro}`,
+      );
+    }
+
+    const publicId = urlDocRestricted.public_id as string;
+    if (!publicId) {
+      throw new InternalServerErrorException(
+        'Resposta inválida do Cloudinary: public_id ausente',
+      );
+    }
+    const resourceType = urlDocRestricted.resource_type as 'raw' | 'image';
+    const nomeHash = this.cryptoUtil.encrypt(`${resourceType}|${publicId}`);
+
+    await this.documentoModel.create({
+      solicitacaoId: solicitacaoId,
+      nomeHash: nomeHash,
+      tipoDocumento: data.tipo_documento,
+      dataUpload: new Date(),
+      statusValidacao: StatusValidacaoEnum.PENDENTE,
+    });
+    return {
+      message: 'Documento enviado com sucesso e aguardando validação.',
+    };
+  }
+  async listarDocumentos(solicitacaoId: number): Promise<{
+    data: {
+      id: number;
+      tipo_documento: string | null;
+      nome_arquivo: string;
+      status_validacao: StatusValidacaoEnum;
+      url: string;
+      data_upload: Date | null;
+    }[];
+    total: number;
+    message?: string;
+  }> {
+    const solicitacao = await this.solicitacaoModel.findByPk(solicitacaoId);
+
+    if (!solicitacao) {
+      throw new NotFoundException({
+        error: 'SOLICITACAO_NAO_ENCONTRADA',
+        message: 'A solicitação não foi encontrada',
+      });
+    }
+
+    const documentos = await this.documentoModel.findAll({
+      where: { solicitacaoId },
+    });
+
+    if (!documentos.length) {
+      return {
+        data: [],
+        total: 0,
+        message: 'Nenhum documento encontrado para esta solicitação',
+      };
+    }
+
+    const data = documentos
+      .map((doc) => {
+        try {
+          const decrypted = this.cryptoUtil.decrypt(doc.nomeHash ?? '');
+          const [resourceType, publicId] = decrypted.split('|');
+
+          if (!resourceType || !publicId) {
+            throw new Error('Formato inválido do nome_hash');
+          }
+
+          const url = this.cloudinaryService.generateTemporaryUrl(decrypted);
+
+          return {
+            id: doc.id,
+            tipo_documento: doc.tipoDocumento,
+            nome_arquivo: publicId,
+            status_validacao: doc.statusValidacao,
+            url,
+            data_upload: doc.dataUpload,
+          };
+        } catch (error: unknown) {
+          this.logger.warn(
+            `Erro ao processar documento ID ${doc.id}: ${
+              error instanceof Error ? error.message : 'Erro desconhecido'
+            }`,
+          );
+
+          return null;
+        }
+      })
+      .filter(
+        (
+          item,
+        ): item is {
+          id: number;
+          tipo_documento: string | null;
+          nome_arquivo: string;
+          status_validacao: StatusValidacaoEnum;
+          url: string;
+          data_upload: Date | null;
+        } => item !== null,
+      );
+
+    if (!data.length) {
+      return {
+        data: [],
+        total: 0,
+        message: 'Nenhum documento encontrado para esta solicitação',
+      };
+    }
+
+    return {
+      data,
+      total: data.length,
+    };
   }
 
-  const solicitacao = await this.solicitacaoModel.findByPk(solicitacaoId);
+  async substituirDocumento(
+    solicitacaoId: number,
+    docId: number,
+    arquivo: Express.Multer.File,
+  ): Promise<{ id: number; mensagem: string }> {
+    const solicitacao = await this.solicitacaoModel.findByPk(solicitacaoId);
+    if (!solicitacao) {
+      throw new NotFoundException('Solicitação não encontrada');
+    }
 
-  if (!solicitacao) {
-    throw new NotFoundException('Solicitação não encontrada');
+    const documento = await this.documentoModel.findByPk(docId);
+    if (!documento) {
+      throw new NotFoundException('Documento não encontrado');
+    }
+
+    if (documento.solicitacaoId !== solicitacaoId) {
+      throw new BadRequestException(
+        'Documento não pertence à solicitação informada',
+      );
+    }
+
+    if (documento.nomeHash) {
+      void (async () => {
+        try {
+          const decryptedHash = this.cryptoUtil.decrypt(documento.nomeHash!);
+          await this.cloudinaryService.deleteDocument(decryptedHash);
+        } catch (err) {
+          this.logger.error(
+            `Falha ao remover asset antigo do Cloudinary para doc ${docId}: ${
+              err instanceof Error ? err.message : 'Erro desconhecido'
+            }`,
+          );
+        }
+      })();
+    }
+
+    let urlDocRestricted: CloudinaryResponse;
+
+    try {
+      urlDocRestricted = await this.cloudinaryService.uploadDocument(arquivo);
+    } catch (error) {
+      const mensagemErro =
+        error instanceof Error ? error.message : 'Erro desconhecido';
+
+      this.logger.error(
+        `Falha ao enviar documento substituto para a solicitacao ${solicitacaoId}: ${mensagemErro}`,
+      );
+
+      throw new BadRequestException(
+        `Erro ao enviar documento: ${mensagemErro}`,
+      );
+    }
+
+    const publicId = urlDocRestricted.public_id as string;
+    if (!publicId) {
+      throw new InternalServerErrorException(
+        'Resposta inválida do Cloudinary: public_id ausente',
+      );
+    }
+    const resourceType = urlDocRestricted.resource_type as 'raw' | 'image';
+    const nomeHash = this.cryptoUtil.encrypt(`${resourceType}|${publicId}`);
+
+    await documento.update({
+      nomeHash: nomeHash,
+      dataUpload: new Date(),
+      statusValidacao: 'pendente',
+    });
+
+    return {
+      id: documento.id,
+      mensagem: 'Documento substituído com sucesso',
+    };
   }
-
-  let urlDocRestricted: CloudinaryResponse;
-
-  try {
-    urlDocRestricted =
-      await this.cloudinaryService.uploadDocument(documento);
-  } catch (error) {
-    const mensagemErro =
-      error instanceof Error ? error.message : 'Erro desconhecido';
-
-    this.logger.error(
-      `Falha ao enviar documento para a solicitacao ${solicitacaoId}: ${mensagemErro}`,
-    );
-
-    throw new BadRequestException(
-      `Erro ao enviar documento: ${mensagemErro}`,
-    );
-  }
-
-  const publicId = urlDocRestricted.public_id as string;
-
-  if (!publicId) {
-    throw new InternalServerErrorException(
-      'Resposta inválida do Cloudinary: public_id ausente',
-    );
-  }
-
-  const resourceType = urlDocRestricted.resource_type as 'raw' | 'image';
-
-  const nomeHash = this.cryptoUtil.encrypt(
-    `${resourceType}|${publicId}`,
-  );
-
-  await this.documentoModel.create({
-    solicitacaoId,
-    nomeHash,
-    tipoDocumento: data.tipo_documento,
-    dataUpload: new Date(),
-    statusValidacao: 'pendente',
-  });
-
-  return {
-    message: 'Documento enviado com sucesso e aguardando validação.',
-  };
-}
 }

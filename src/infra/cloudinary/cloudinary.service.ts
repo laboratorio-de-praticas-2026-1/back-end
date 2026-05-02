@@ -131,6 +131,47 @@ export class CloudinaryService {
     });
   }
 
+  async deleteDocument(decryptedHash: string): Promise<void> {
+    try {
+      const separador = decryptedHash.indexOf('|');
+      if (separador === -1) {
+        this.logger.warn(
+          `deleteDocument: formato inválido de hash (separador '|' não encontrado) — asset não removido`,
+        );
+        return;
+      }
+
+      const resourceType = decryptedHash.slice(0, separador) as 'raw' | 'image';
+      const publicId = decryptedHash.slice(separador + 1);
+
+      interface CloudinaryDestroyResult {
+        result?: string;
+      }
+
+      const resultado = (await this.cloudinary.uploader.destroy(publicId, {
+        resource_type: resourceType,
+        type: 'authenticated',
+        invalidate: true,
+      })) as CloudinaryDestroyResult;
+
+      if (resultado.result === 'ok') {
+        this.logger.log(
+          `Asset removido do Cloudinary: ${publicId} (type=${resourceType})`,
+        );
+      } else {
+        this.logger.warn(
+          `Cloudinary não confirmou remoção do asset ${publicId}: result=${resultado.result ?? 'desconhecido'}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Falha ao remover asset do Cloudinary: ${
+          error instanceof Error ? error.message : 'Erro desconhecido'
+        }`,
+      );
+    }
+  }
+
   generateTemporaryUrl(publicIdWithResourceType: string): string {
     try {
       const separador = publicIdWithResourceType.indexOf('|');
