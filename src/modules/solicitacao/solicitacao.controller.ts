@@ -79,6 +79,13 @@ export class SolicitacaoController {
   @Get()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+    async getAllSolicitacoes(@Query() query: ListSolicitacoesQueryDto) {
+    return this.solicitacaoService.getAllSolicitacoes(query);
+}
+
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Listar todas as solicitações',
     description:

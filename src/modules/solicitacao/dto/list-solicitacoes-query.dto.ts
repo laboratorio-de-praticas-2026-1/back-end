@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, type TransformFnParams } from 'class-transformer';
-import { IsIn, IsInt, IsOptional, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Min } from 'class-validator';
 
 export const SOLICITACAO_ORDER_BY_FIELDS = [
   'id',
@@ -17,10 +17,15 @@ export const SOLICITACAO_ORDER_BY_FIELDS = [
   'data_conclusao',
 ] as const;
 
-export type SolicitacaoOrderBy = (typeof SOLICITACAO_ORDER_BY_FIELDS)[number];
+export type SolicitacaoOrderBy =
+  (typeof SOLICITACAO_ORDER_BY_FIELDS)[number];
+
 export type SolicitacaoOrder = 'asc' | 'desc';
 
-export const SOLICITACAO_ORDER_BY_COLUMN: Record<SolicitacaoOrderBy, string> = {
+export const SOLICITACAO_ORDER_BY_COLUMN: Record<
+  SolicitacaoOrderBy,
+  string
+> = {
   id: 'id',
   status: 'status',
   usuarioId: 'usuarioId',
@@ -50,7 +55,9 @@ export class ListSolicitacoesQueryDto {
     default: 1,
     minimum: 1,
   })
-  @Transform(({ value }: TransformFnParams) => parseNumberOrDefault(value, 1))
+  @Transform(({ value }: TransformFnParams) =>
+    parseNumberOrDefault(value, 1),
+  )
   @IsInt()
   @Min(1)
   page: number = 1;
@@ -61,7 +68,9 @@ export class ListSolicitacoesQueryDto {
     default: 10,
     minimum: 1,
   })
-  @Transform(({ value }: TransformFnParams) => parseNumberOrDefault(value, 10))
+  @Transform(({ value }: TransformFnParams) =>
+    parseNumberOrDefault(value, 10),
+  )
   @IsInt()
   @Min(1)
   limit: number = 10;
@@ -83,9 +92,19 @@ export class ListSolicitacoesQueryDto {
     default: 'desc',
   })
   @Transform(({ value }: TransformFnParams) =>
-    typeof value === 'string' ? value.toLowerCase() : (value as unknown),
+    typeof value === 'string'
+      ? value.toLowerCase()
+      : (value as unknown),
   )
   @IsOptional()
   @IsIn(['asc', 'desc'])
   order: SolicitacaoOrder = 'desc';
+
+  @ApiPropertyOptional({
+  description: 'Filtrar por status da solicitação',
+  example: 'Recebido',
+  })
+  @IsOptional()
+  @IsString()
+  status?: string;
 }
