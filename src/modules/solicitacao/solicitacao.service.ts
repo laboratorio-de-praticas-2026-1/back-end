@@ -600,14 +600,8 @@ export class SolicitacaoService implements OnModuleDestroy {
           ],
         ],
         include: [
-          {
-            model: this.usuarioModel,
-            as: 'usuario',
-          },
-          {
-            model: this.servicoModel,
-            as: 'servico',
-          },
+          { model: this.usuarioModel, as: 'usuario' },
+          { model: this.servicoModel, as: 'servico' },
         ],
       });
 
@@ -634,7 +628,6 @@ export class SolicitacaoService implements OnModuleDestroy {
       },
     }));
 
-    // Agrupar por status
     const kanban = solicitacoesFormatadas.reduce(
       (acc, item) => {
         const status = item.solicitacao.status;

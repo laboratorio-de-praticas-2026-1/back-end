@@ -204,4 +204,17 @@ export class ListSolicitacoesQueryDto {
   @IsOptional()
   @IsString()
   cpf_cnpj?: string;
+
+  @ApiPropertyOptional({
+    description: 'Indica se a resposta deve ser no formato Kanban',
+    example: true,
+    default: false,
+  })
+  @IsOptional()
+  @Transform(({ value }: TransformFnParams): boolean => {
+    if (value === true || value === 'true') return true;
+    return false;
+  })
+  @IsBoolean()
+  kanban?: boolean;
 }

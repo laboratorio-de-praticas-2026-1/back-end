@@ -85,11 +85,11 @@ export class SolicitacaoController {
   }
 
   @Get('kanban')
-  listarSolicitacoesKanban(
-    @Query() query: ListSolicitacoesQueryDto,
-  ): Promise<ListSolicitacoesResponseDto> {
-    this.logger.log('Buscando kanban...');
-    return this.solicitacaoService.getAllSolicitacoes(query);
+  listarSolicitacoesKanban(@Query() query: ListSolicitacoesQueryDto) {
+    return this.solicitacaoService.getAllSolicitacoes({
+      ...query,
+      kanban: true,
+    });
   }
 
   @Get(':id')
