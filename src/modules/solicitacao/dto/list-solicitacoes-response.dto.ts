@@ -142,3 +142,20 @@ export class ListSolicitacoesResponseDto {
   })
   solicitacoes: SolicitacaoCompletaDto[];
 }
+
+export class ListSolicitacoesKanbanResponseDto {
+  @ApiProperty({
+    description: 'Quantidade total de solicitações',
+    example: 25,
+  })
+  total: number;
+
+  @ApiProperty({
+    description: 'Solicitacoes agrupadas por status para o Kanban',
+    additionalProperties: {
+      type: 'array',
+      items: { $ref: '#/components/schemas/SolicitacaoCompletaDto' },
+    },
+  })
+  solicitacoes: Record<string, SolicitacaoCompletaDto[]>;
+}
