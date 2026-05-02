@@ -1,31 +1,38 @@
 import {
-  Body,
   Controller,
-  ForbiddenException,
   Get,
+  Put,
+  Post,
+  Body,
   Logger,
   Param,
   ParseIntPipe,
-  Post,
-  Put,
-  ValidationPipe,
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import {
-  ApiBadRequestResponse,
-  ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiCreatedResponse,
+  ApiBadRequestResponse,
+  ApiInternalServerErrorResponse,
+  ApiTags,
+  ApiBody,
 } from '@nestjs/swagger';
 import { ContatoService } from './contato.service';
-import { ContatoUpdateDto } from './dto/contato-update.dto';
 import { EmpresaDto } from './dto/empresa-response.dto';
-import { EnviarEmailDto } from './dto/enviar-email-dto';
+import { ContatoUpdateDto } from './dto/contato-update.dto';
+import {
+  ContatoEmailRequestDto,
+  ContatoEmailResponseDto,
+} from './dto/contato-email.dto';
 
+@ApiTags('Contato')
 @Controller('contato')
 export class ContatoController {
   private readonly logger = new Logger(ContatoController.name);
-
   private readonly EMPRESA_ID = 1;
 
   constructor(private readonly contatoService: ContatoService) {}
@@ -69,15 +76,35 @@ export class ContatoController {
     return this.contatoService.atualizarContato(id, data);
   }
 
-  @Post('enviar-email')
-  @ApiCreatedResponse({ description: 'Mensagem enviada com sucesso' })
-  @ApiBadRequestResponse({ description: 'Dados inválidos' })
-  async enviarMensagemContato(
-    @Body(ValidationPipe) dados: EnviarEmailDto,
-  ): Promise<{ message: string }> {
-    this.logger.log(
-      `Recebendo mensagem de contato de: ${dados.nome} (${dados.email})`,
-    );
-    return this.contatoService.enviarMensagemContato(dados);
+  @Post('enviar')
+  @ApiOperation({ summary: 'Envia email de contato' })
+  @ApiBody({ type: ContatoEmailRequestDto })
+  @ApiCreatedResponse({
+    description: 'E-mail enviado com sucesso',
+    type: ContatoEmailResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Dados invalidos para envio' })
+  @ApiInternalServerErrorResponse({ description: 'Erro ao enviar e-mail' })
+  async enviarEmail(
+    @Body() data: ContatoEmailRequestDto,
+  ): Promise<ContatoEmailResponseDto> {
+    try {
+      this.logger.log(`Email recebido de: ${data.email}`);
+
+      await this.contatoService.enviarEmail(data);
+
+      return {
+        message: 'E-mail enviado com sucesso',
+      };
+    } catch (error) {
+      this.logger.error('Erro ao enviar email', error);
+
+      throw new HttpException(
+        {
+          message: 'Erro ao enviar e-mail',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }
