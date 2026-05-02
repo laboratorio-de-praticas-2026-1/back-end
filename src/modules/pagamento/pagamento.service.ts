@@ -34,6 +34,7 @@ export class PagamentoService {
 
     if (!debitoResponse || debitoResponse.debitos.length === 0) {
       return {
+        mensagem: 'Nenhum debito encontrado para o veiculo informado.',
         valor_total: 0,
         valor_com_juros: 0,
         qtdParcelas:

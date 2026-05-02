@@ -1,29 +1,42 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import { TipoPagamento } from 'src/models/pagamento.model';
 
 export class SimulacaoPagamentoRequestDto {
   @ApiProperty({ example: 'ABC1234', description: 'Placa do veículo' })
+  @IsString()
+  @IsNotEmpty()
   placa!: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 6,
     description: 'Quantidade de parcelas (se parcelado)',
-    required: false,
   })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
   qtdParcelas?: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 0.05,
     description: 'Taxa aplicada sobre o valor total',
-    required: false,
   })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
   taxa?: number;
 
   @ApiProperty({ enum: TipoPagamento, example: TipoPagamento.PARCELADO })
+  @IsEnum(TipoPagamento)
   tipoPagamento!: TipoPagamento;
 }
 
 export class SimulacaoPagamentoResponseDto {
+  @ApiPropertyOptional({
+    example: 'Nenhum debito encontrado para o veiculo informado.',
+  })
+  mensagem?: string;
+
   @ApiProperty({ example: 1500.0, description: 'Valor total dos débitos' })
   valor_total!: number;
 
