@@ -34,7 +34,7 @@ export class DebitoService {
     );
 
     if (
-      (veiculo.debitoVeiculos ?? []).length > 0 &&zz
+      (veiculo.debitoVeiculos ?? []).length > 0 &&
       debitosVeiculo.length === 0
     ) {
       this.logger.warn(

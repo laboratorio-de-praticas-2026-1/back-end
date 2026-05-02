@@ -41,7 +41,7 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "sequelize": "^6.37.8",
-    "sequelize-typescript": "^0.6.11",
+    "sequelize-typescript": "^2.0.0",
     "sharp": "^0.34.5",
     "streamifier": "^0.1.1"
   },
