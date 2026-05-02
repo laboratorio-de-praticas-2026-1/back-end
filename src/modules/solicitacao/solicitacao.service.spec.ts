@@ -13,7 +13,6 @@ import { EmailService } from 'src/infra/email/email.service';
 import { SolicitacaoService } from './solicitacao.service';
 import { StatusSolicitacaoEnum } from 'src/commons/enums/status-solicitacao.enum';
 import { ListSolicitacoesQueryDto } from './dto/list-solicitacoes-query.dto';
-import Sequelize from 'sequelize';
 import { Op } from 'sequelize';
 
 interface MockModel {
@@ -543,21 +542,33 @@ describe('SolicitacaoService', () => {
   });
 
   describe('listarSolicitacoes', () => {
-    const getFindAndCountAllQuery = (): FindAllQuery => {
-      const calls =
-        (mockSolicitacaoModel.findAndCountAll?.mock.calls as unknown[][] | undefined) ??
-        [];
+    type FindAndCountAllArgs = {
+      where?: Record<string, unknown>;
+      include?: Array<{
+        where?: Record<string, unknown>;
+        required?: boolean;
+      }>;
+      limit?: number;
+      offset?: number;
+      order?: unknown;
+    };
 
-      if (calls.length === 0 || !calls[0] || !calls[0][0]) {
+    const getFindAndCountAllQuery = (): FindAndCountAllArgs => {
+      const calls =
+        (mockSolicitacaoModel.findAndCountAll?.mock.calls as unknown[][]) ?? [];
+
+      if (!calls.length || !calls[0]?.[0]) {
         throw new Error('findAndCountAll não foi chamado');
       }
 
-      const options = calls[0][0] as any;
+      const options = calls[0][0] as FindAndCountAllArgs;
 
       return {
-        ...options,
-        where: options.where || {},
-        include: options.include || [{ where: {}, required: false }],
+        where: options.where ?? {},
+        include: options.include ?? [{ where: {}, required: false }],
+        limit: options.limit,
+        offset: options.offset,
+        order: options.order,
       };
     };
 
@@ -593,16 +604,19 @@ describe('SolicitacaoService', () => {
       expect(resposta.total).toBe(1);
 
       const query = getFindAndCountAllQuery();
- 
+
       expect(query.where).toEqual({});
-      
+
       if (query.include && query.include[0]) {
-        expect(query.include[0].where).toBeFalsy(); 
+        expect(query.include[0].where).toBeFalsy();
       }
     });
 
     it('deve combinar filtros por status, concluida e nome do cliente', async () => {
-      mockSolicitacaoModel.findAndCountAll.mockResolvedValue({ rows: [], count: 0 });
+      mockSolicitacaoModel.findAndCountAll.mockResolvedValue({
+        rows: [],
+        count: 0,
+      });
 
       await service.listarSolicitacoes({
         status_in: [StatusSolicitacaoEnum.EM_ANDAMENTO],
@@ -616,7 +630,7 @@ describe('SolicitacaoService', () => {
         [Op.in]: [StatusSolicitacaoEnum.EM_ANDAMENTO],
       });
       expect(query.where.dataConclusao).toEqual({ [Op.is]: null });
-      
+
       expect(query.include[0].where).toBeDefined();
       expect(query.include[0].where.nome).toEqual({ [Op.like]: '%Amanda%' });
       expect(query.include[0].required).toBe(true);
@@ -1070,7 +1084,7 @@ describe('SolicitacaoService', () => {
         id: 10,
         mensagem: 'Documento substituído com sucesso',
       });
-  
+
       expect(mockDocumento.update).toHaveBeenCalledWith(
         expect.objectContaining({
           nomeHash: expect.any(String) as string,
