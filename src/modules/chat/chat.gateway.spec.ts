@@ -151,6 +151,7 @@ describe('ChatGateway', () => {
     chatService.users['user-1'] = {
       socket: socket as any,
       nome: 'Usuário de Teste',
+      authUserId: 1,
       lastActivity: Date.now(),
     };
 
@@ -253,6 +254,7 @@ describe('ChatGateway', () => {
     chatService.users['user-1'] = {
       socket: {} as any,
       nome: 'Usuário de Teste',
+      authUserId: 1,
       lastActivity: Date.now(),
     };
 
