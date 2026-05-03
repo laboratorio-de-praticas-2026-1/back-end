@@ -71,6 +71,7 @@ describe('DebitoService', () => {
         },
       ],
       total: 1800,
+      mensagem: undefined,
     });
   });
 

@@ -18,6 +18,7 @@ import { NotificacaoModule } from './modules/notificacao/notificacao.module';
 import { PublicidadeModule } from './modules/publicidade/publicidade.module';
 import { RecomendacaoModule } from './modules/recomendacao/recomendacao.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { PagamentoModule } from './modules/pagamento/pagamento.module';
 import { ServicosModule } from './modules/servicos/servicos.module';
 import { SimuladorModule } from './modules/simulador/simulador.module';
 import { SolicitacaoModule } from './modules/solicitacao/solicitacao.module';
@@ -52,6 +53,7 @@ import { UsuarioModule } from './modules/usuario/usuario.module';
     HeaderModule,
     BuscaModule,
     ServicosModule,
+    PagamentoModule,
     PublicidadeModule,
     EmailModule,
     CloudinaryModule,
