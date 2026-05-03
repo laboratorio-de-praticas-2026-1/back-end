@@ -603,8 +603,9 @@ export class SolicitacaoService implements OnModuleDestroy {
   ): Order {
     return [
       [
-        SOLICITACAO_ORDER_BY_COLUMN[orderBy as keyof typeof SOLICITACAO_ORDER_BY_COLUMN] ||
-          'dataSolicitacao',
+        SOLICITACAO_ORDER_BY_COLUMN[
+          orderBy as keyof typeof SOLICITACAO_ORDER_BY_COLUMN
+        ] || 'dataSolicitacao',
         order.toUpperCase() as 'ASC' | 'DESC',
       ],
     ];
@@ -660,8 +661,13 @@ export class SolicitacaoService implements OnModuleDestroy {
     query: ListSolicitacoesKanbanQueryDto,
   ): Promise<ListSolicitacoesKanbanResponseDto> {
     // ListSolicitacoesKanbanQueryDto herda de ListSolicitacoesQueryDto, então é seguro fazer cast
-    const where = this.buildWhereClause(query as ListSolicitacoesQueryDto, true); // Exclui filtro de status
-    const usuarioWhere = this.buildUsuarioWhereClause(query as ListSolicitacoesQueryDto);
+    const where = this.buildWhereClause(
+      query as ListSolicitacoesQueryDto,
+      true,
+    ); // Exclui filtro de status
+    const usuarioWhere = this.buildUsuarioWhereClause(
+      query as ListSolicitacoesQueryDto,
+    );
     const hasUsuarioFilter = Object.keys(usuarioWhere).length > 0;
     const orderClause = this.buildOrderClause(query.orderBy, query.order);
 
