@@ -1,6 +1,8 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Veiculo } from 'src/models/veiculo.model';
+import { VeiculoCreateDto } from './dto/veiculo-create.dto';
+import { VeiculoUpdateDto } from './dto/veiculo-update.dto';
 
 @Injectable()
 export class VeiculoService {
@@ -23,6 +25,43 @@ export class VeiculoService {
     if (!veiculo) {
       throw new NotFoundException('Veículo não encontrado');
     }
+
+    return veiculo;
+  }
+
+  async criarVeiculo(veiculoDto: VeiculoCreateDto): Promise<Veiculo> {
+    this.logger.log(`Criando veículo com placa: ${veiculoDto.placa}`);
+    return await this.veiculoModel.create({
+      usuarioId: veiculoDto.usuarioId,
+      placa: veiculoDto.placa,
+      renavam: veiculoDto.renavam,
+      marca: veiculoDto.marca,
+      modelo: veiculoDto.modelo,
+      anoFabricacao: veiculoDto.anoFabricacao,
+      anoModelo: veiculoDto.anoModelo,
+    });
+  }
+
+  async atualizarVeiculo(
+    id: number,
+    veiculoDto: VeiculoUpdateDto,
+  ): Promise<Veiculo> {
+    this.logger.log(`Atualizando veículo com ID: ${id}`);
+    const veiculo = await this.veiculoModel.findByPk(id);
+
+    if (!veiculo) {
+      throw new NotFoundException('Veículo não encontrado');
+    }
+
+    await veiculo.update({
+      usuarioId: veiculoDto.usuarioId,
+      placa: veiculoDto.placa,
+      renavam: veiculoDto.renavam,
+      marca: veiculoDto.marca,
+      modelo: veiculoDto.modelo,
+      anoFabricacao: veiculoDto.anoFabricacao,
+      anoModelo: veiculoDto.anoModelo,
+    });
 
     return veiculo;
   }

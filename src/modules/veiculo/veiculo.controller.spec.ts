@@ -10,6 +10,8 @@ describe('VeiculoController', () => {
     getAll: jest.fn(),
     getById: jest.fn(),
     deleteById: jest.fn(),
+    criarVeiculo: jest.fn(),
+    atualizarVeiculo: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -72,6 +74,8 @@ describe('VeiculoController', () => {
       anoModelo: 2021,
     } as Veiculo;
 
+
+
     mockVeiculoService.getById.mockResolvedValue(mockVeiculo);
 
     await expect(controller.getById(1)).resolves.toEqual(mockVeiculo);
@@ -86,5 +90,50 @@ describe('VeiculoController', () => {
 
       expect(mockVeiculoService.deleteById).toHaveBeenCalledWith(1);
     });
+  });
+
+  it('deve criar veículo com sucesso!', async () => {
+    const veiculoData = {
+      usuarioId: 1,
+      marca: 'Toyota',
+      modelo: 'Corolla',
+      ano: 2023,
+      cor: 'Prata',
+      placa: 'ABC-1234',
+      preco: 120000,
+    };
+
+    const mockVeiculo = {
+      id: 1,
+      ...veiculoData,
+    };
+
+    mockVeiculoService.criarVeiculo.mockResolvedValue(mockVeiculo);
+
+    await expect(controller.criarVeiculo(veiculoData)).resolves.toEqual(mockVeiculo);
+    expect(mockVeiculoService.criarVeiculo).toHaveBeenCalledWith(veiculoData);
+  });
+
+  it('deve atualizar veículo com sucesso!', async () => {
+    const veiculoData = {
+      marca: 'Honda',
+      modelo: 'Civic',
+      ano: 2023,
+      cor: 'Preto',
+      placa: 'XYZ-5678',
+      preco: 130000,
+    };
+
+    const mockVeiculoAtualizado = {
+      id: 1,
+      ...veiculoData,
+    };
+
+    mockVeiculoService.atualizarVeiculo.mockResolvedValue(mockVeiculoAtualizado);
+
+    await expect(controller.atualizarVeiculo(1, veiculoData)).resolves.toEqual(
+      mockVeiculoAtualizado,
+    );
+    expect(mockVeiculoService.atualizarVeiculo).toHaveBeenCalledWith(1, veiculoData);
   });
 });

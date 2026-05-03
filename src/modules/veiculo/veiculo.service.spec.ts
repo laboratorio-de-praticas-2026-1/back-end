@@ -9,6 +9,8 @@ describe('VeiculoService', () => {
   const mockVeiculoModel = {
     findAll: jest.fn(),
     findByPk: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -83,6 +85,81 @@ describe('VeiculoService', () => {
     await expect(service.getById(999)).rejects.toThrow(
       'Veículo não encontrado',
     );
+    expect(mockVeiculoModel.findByPk).toHaveBeenCalledWith(999);
+  });
+
+  it('deve criar veículo com sucesso!', async () => {
+    const veiculoData = {
+      usuarioId: 1,
+      placa: 'ABC-1234',
+      renavam: '12345678901',
+      marca: 'Toyota',
+      modelo: 'Corolla',
+      anoFabricacao: 2020,
+      anoModelo: 2021,
+
+    };
+
+    const mockVeiculo = {
+      id: 1,
+      ...veiculoData,
+    };
+
+    mockVeiculoModel.create.mockResolvedValue(mockVeiculo);
+
+    await expect(service.criarVeiculo(veiculoData)).resolves.toEqual(mockVeiculo);
+    expect(mockVeiculoModel.create).toHaveBeenCalledWith(veiculoData);
+  });
+
+  it('deve atualizar um veículo com sucesso!', async () => {
+    const veiculoData = {
+      usuarioId: 1,
+      placa: 'XYZ-5678',
+      renavam: '98765432109',
+      marca: 'Honda',
+      modelo: 'Civic',
+      anoFabricacao: 2022,
+      anoModelo: 2023,
+    };
+
+    const mockVeiculo = {
+      id: 1,
+      update: jest.fn(),
+      usuarioId: 2,
+      placa: 'ABC-1234',
+      renavam: '12345678901',
+      marca: 'Toyota',
+      modelo: 'Corolla',
+      anoFabricacao: 2020,
+      anoModelo: 2021,
+    };
+
+    mockVeiculo.update.mockResolvedValue({ ...mockVeiculo, ...veiculoData });
+    mockVeiculoModel.findByPk.mockResolvedValue(mockVeiculo);
+
+    await expect(service.atualizarVeiculo(1, veiculoData)).resolves.toEqual(mockVeiculo);
+
+    expect(mockVeiculoModel.findByPk).toHaveBeenCalledWith(1);
+    expect(mockVeiculo.update).toHaveBeenCalledWith(veiculoData);
+  });
+
+  it('deve lançar erro ao atualizar veículo inexistente', async () => {
+    const veiculoData = {
+      usuarioId: 1,
+      placa: 'XYZ-5678',
+      renavam: '98765432109',
+      marca: 'Honda',
+      modelo: 'Civic',
+      anoFabricacao: 2022,
+      anoModelo: 2023,
+    };
+
+    mockVeiculoModel.findByPk.mockResolvedValue(null);
+
+    await expect(service.atualizarVeiculo(999, veiculoData)).rejects.toThrow(
+      'Veículo não encontrado',
+    );
+
     expect(mockVeiculoModel.findByPk).toHaveBeenCalledWith(999);
   });
 
