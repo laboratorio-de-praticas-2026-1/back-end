@@ -4,6 +4,8 @@ import { cast, col, fn, Op, where } from 'sequelize';
 import { Banner } from 'src/models/banner.model';
 import { Blog } from 'src/models/blog.model';
 import { Faq } from 'src/models/faq.model';
+import { Solicitacao } from 'src/models/solicitacao.model';
+import { DocumentoSolicitacao } from 'src/models/documento-solicitacao.model';
 import { Empresa } from 'src/models/empresa.model';
 import { Publicidade } from 'src/models/publicidade.model';
 import { Servico } from 'src/models/servico.model';
@@ -15,6 +17,7 @@ import { BuscaPublicidadeStatusDto } from './dto/busca-publicidade-status.dto';
 import { BuscaServicoFiltroDto } from './dto/busca-servico-filtro.dto';
 import { BuscaUsuarioFiltroDto } from './dto/busca-usuario-filtro.dto';
 import { BuscaFaqDto } from './dto/busca-faq.dto';
+import { BuscaSolicitacaoDto } from './dto/busca-solicitacao.dto';
 
 @Injectable()
 export class BuscaService {
@@ -26,6 +29,7 @@ export class BuscaService {
     @InjectModel(Usuario) private usuarioModel: typeof Usuario,
     @InjectModel(Empresa) private empresaModel: typeof Empresa,
     @InjectModel(Faq) private faqModel: typeof Faq,
+    @InjectModel(Solicitacao) private solicitacaoModel: typeof Solicitacao,
   ) {}
 
   async buscarBlogsPorIntervaloDeData(
@@ -455,6 +459,82 @@ export class BuscaService {
 
     const itens = await this.faqModel.findAll({
       ...(filtrosAnd.length > 0 ? { where: { [Op.and]: filtrosAnd } } : {}),
+      order: [['id', 'DESC']],
+    });
+
+    return {
+      itens,
+      mensagem: itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+    };
+  }
+
+  async listarSolicitacoesByBusca(dto: BuscaSolicitacaoDto): Promise<{
+    itens: Solicitacao[];
+    mensagem?: string;
+  }> {
+    const termoNormalizado = dto.termo?.trim();
+    const filtros: Array<Record<string, unknown> | ReturnType<typeof where>> = [];
+    const includes: Array<any> = [];
+
+    if (dto.de) {
+      const de = this.parseYmdDate(dto.de, 'de');
+      filtros.push(where(col('data_solicitacao'), Op.gte, de.ymd));
+    }
+
+    if (dto.ate) {
+      const ate = this.parseYmdDate(dto.ate, 'ate');
+      filtros.push(where(col('data_solicitacao'), Op.lte, ate.ymd));
+    }
+
+    if (dto.servico_id !== undefined && dto.servico_id !== null) {
+      filtros.push(where(col('servico_id'), Op.eq, dto.servico_id));
+    }
+
+    if (dto.status_documentacao) {
+      // incluir somente solicitações que possuam documento com status informado
+      includes.push({
+        model: DocumentoSolicitacao,
+        where: { statusValidacao: dto.status_documentacao },
+        required: true,
+      });
+    }
+
+    if (termoNormalizado || dto.de || dto.ate || dto.servico_id !== undefined) {
+      includes.push(
+        {
+          model: Usuario,
+          attributes: ['id', 'nome', 'email'],
+          ...(termoNormalizado
+            ? { where: { nome: { [Op.like]: `%${termoNormalizado}%` } } }
+            : {}),
+        },
+        {
+          model: Servico,
+          attributes: ['id', 'nome', 'valorBase'],
+        },
+      );
+    }
+
+    if (
+      !termoNormalizado &&
+      !dto.de &&
+      !dto.ate &&
+      dto.servico_id === undefined &&
+      !dto.status_documentacao
+    ) {
+      const itens = await this.solicitacaoModel.findAll({
+        order: [['id', 'DESC']],
+      });
+
+      return {
+        itens,
+        mensagem: itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+      };
+    }
+
+    const itens = await this.solicitacaoModel.findAll({
+      ...(filtros.length > 0 ? { where: { [Op.and]: filtros } } : {}),
+      ...(includes.length > 0 ? { include: includes } : {}),
       order: [['id', 'DESC']],
     });
 
