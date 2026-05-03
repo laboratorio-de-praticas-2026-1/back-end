@@ -10,6 +10,8 @@ import { Publicidade } from 'src/models/publicidade.model';
 import { Usuario } from 'src/models/usuario.model';
 import { Empresa } from 'src/models/empresa.model';
 import { Faq } from 'src/models/faq.model';
+import { Solicitacao } from 'src/models/solicitacao.model';
+import { DocumentoSolicitacao } from 'src/models/documento-solicitacao.model';
 import { BuscaBlogIntervaloDto } from './dto/busca-blog-intervalo.dto';
 import { BuscaServicoFiltroDto } from './dto/busca-servico-filtro.dto';
 import { BuscaUsuarioFiltroDto } from './dto/busca-usuario-filtro.dto';
@@ -23,6 +25,8 @@ describe('BuscaService', () => {
   const publicidadeFindAllMock = jest.fn();
   const empresaFindAllMock = jest.fn();
   const faqFindAllMock = jest.fn();
+  const solicitacaoFindAllMock = jest.fn();
+  const documentoFindAllMock = jest.fn();
   type WhereClause = Partial<Record<symbol, unknown>>;
 
   interface FindAllOptions {
@@ -42,6 +46,8 @@ describe('BuscaService', () => {
     usuarioFindAllMock.mockReset();
     empresaFindAllMock.mockReset();
     faqFindAllMock.mockReset();
+    solicitacaoFindAllMock.mockReset();
+    documentoFindAllMock.mockReset();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -86,6 +92,18 @@ describe('BuscaService', () => {
           provide: getModelToken(Faq),
           useValue: {
             findAll: faqFindAllMock,
+          },
+        },
+        {
+          provide: getModelToken(Solicitacao),
+          useValue: {
+            findAll: solicitacaoFindAllMock,
+          },
+        },
+        {
+          provide: getModelToken(DocumentoSolicitacao),
+          useValue: {
+            findAll: documentoFindAllMock,
           },
         },
       ],
@@ -743,6 +761,47 @@ describe('BuscaService', () => {
         },
         order: [['id', 'DESC']],
       });
+    });
+  });
+
+  describe('listarSolicitacoesByBusca', () => {
+    it('deve listar solicitacoes sem filtros quando nenhum parametro for informado', async () => {
+      solicitacaoFindAllMock.mockResolvedValue([]);
+
+      const resultado = await service.listarSolicitacoesByBusca({} as any);
+
+      expect(solicitacaoFindAllMock).toHaveBeenCalledWith({
+        order: [['id', 'DESC']],
+      });
+      expect(resultado).toEqual({
+        itens: [],
+        mensagem: 'Nenhum item foi encontrado.',
+      });
+    });
+
+    it('deve combinar termo, intervalo, servico_id e status_documentacao em filtros e includes', async () => {
+      solicitacaoFindAllMock.mockResolvedValue([]);
+
+      await service.listarSolicitacoesByBusca({
+        termo: 'joao',
+        de: '2026-01-01',
+        ate: '2026-01-31',
+        servico_id: 5,
+        status_documentacao: 'aprovado',
+      } as any);
+
+      expect(solicitacaoFindAllMock).toHaveBeenCalledTimes(1);
+      const calls = solicitacaoFindAllMock.mock.calls as Array<Array<Record<string, unknown>>>;
+      const args = calls[0]?.[0];
+      expect(args.where).toBeDefined();
+      // deve conter AND com filtros de datas e servico
+      const where = args.where as Record<string, unknown>;
+      expect((where[Op.and] as Array<unknown>).length).toBeGreaterThanOrEqual(3);
+      // includes deve conter DocumentoSolicitacao com where
+      const includes = args.include as Array<any>;
+      const docInclude = includes.find((i) => i.model && i.model.name?.toLowerCase?.().includes('documento')) || includes.find((i) => i.model && i.model.name === 'DocumentoSolicitacao');
+      expect(docInclude).toBeDefined();
+      expect(docInclude.where).toBeDefined();
     });
   });
 

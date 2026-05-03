@@ -13,6 +13,7 @@ import { BuscaPublicidadeStatusDto } from './dto/busca-publicidade-status.dto';
 import { BuscaServicoFiltroDto } from './dto/busca-servico-filtro.dto';
 import { BuscaUsuarioFiltroDto } from './dto/busca-usuario-filtro.dto';
 import { BuscaFaqDto } from './dto/busca-faq.dto';
+import { BuscaSolicitacaoDto } from './dto/busca-solicitacao.dto';
 
 @Controller('busca')
 export class BuscaController {
@@ -212,5 +213,17 @@ export class BuscaController {
       `Buscando FAQ com filtros: termo=${dto.termo ?? '-'} status=${dto.status ?? '-'} categoria=${dto.categoria ?? '-'}`,
     );
     return this.buscaService.listarFaqByBusca(dto);
+  }
+
+  @Get('solicitacao')
+  @ApiOperation({
+    summary:
+      'Buscar solicitações por nome do cliente (texto) e filtros avançados (data inicial, data final, servico_id, status_documentacao)',
+  })
+  listarSolicitacoes(@Query() dto: BuscaSolicitacaoDto) {
+    this.logger.log(
+      `Buscando solicitacoes com filtros: termo=${dto.termo ?? '-'} de=${dto.de ?? '-'} ate=${dto.ate ?? '-'} servico_id=${dto.servico_id ?? '-'} status_documentacao=${dto.status_documentacao ?? '-'}`,
+    );
+    return this.buscaService.listarSolicitacoesByBusca(dto);
   }
 }
