@@ -200,10 +200,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     if (data.type === 'resync') {
-      if (
-        socket.role === NivelUsuarioEnum.cliente &&
-        socket.userId
-      ) {
+      if (socket.role === NivelUsuarioEnum.cliente && socket.userId) {
         const msgs = this.chatService.history[socket.userId] ?? [];
         void this.chatService.send(socket, { type: 'history', messages: msgs });
       }

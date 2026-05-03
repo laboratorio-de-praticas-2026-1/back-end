@@ -31,7 +31,7 @@ export class CryptoUtil {
       decrypted += decipher.final('utf8');
 
       return decrypted;
-    } catch (error) {
+    } catch {
       return '';
     }
   }

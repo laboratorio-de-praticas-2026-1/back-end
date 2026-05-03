@@ -52,8 +52,6 @@ type ReciboTemplateContext = {
   temDebito: boolean;
 };
 
-type CompiledReciboTemplate = (context: ReciboTemplateContext) => string;
-
 @Injectable()
 export class ReciboService {
   private readonly logger: Logger = new Logger(ReciboService.name);

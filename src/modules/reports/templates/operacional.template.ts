@@ -8,12 +8,12 @@ function render(template: string, context: Record<string, unknown>): string {
   );
 }
 
-export function servicosPrestadosSection(servicos: any[]): string {
+export function servicosPrestadosSection(servicos: unknown[]): string {
   return render('servicos-prestados.ejs', { servicos, fmtBRL });
 }
 
 export function servicosPrestadosTabelaSection(
-  servicos: any[],
+  servicos: unknown[],
   options?: { titulo?: string },
 ): string {
   return render('servicos-prestados.ejs', {
@@ -55,7 +55,7 @@ export function solicitacoesGraficoSection(pieBase64: string): string {
 }
 
 export function todasSolicitacoesSection(
-  solicitacoes: any[],
+  solicitacoes: unknown[],
   options?: { titulo?: string; startIndex?: number },
 ): string {
   return render('todas-solicitacoes.ejs', {
@@ -75,20 +75,20 @@ export function documentosSection(
   return render('documentos-resumo.ejs', { total, porStatus, pieBase64 });
 }
 
-export function documentosListSection(docs: any[], titulo: string): string {
+export function documentosListSection(docs: unknown[], titulo: string): string {
   return render('documentos-list.ejs', { docs, titulo, badge, fmtDate });
 }
 
 export function veiculosSection(
   totalVeiculos: number,
-  debitosVeiculos: any[],
+  debitosVeiculos: unknown[],
 ): string {
   return render('veiculos.ejs', { totalVeiculos, debitosVeiculos, fmtBRL });
 }
 
 export function veiculosTabelaSection(
   totalVeiculos: number,
-  debitosVeiculos: any[],
+  debitosVeiculos: unknown[],
   options?: { showResumo?: boolean; tableTitle?: string },
 ): string {
   return render('veiculos.ejs', {
@@ -101,10 +101,10 @@ export function veiculosTabelaSection(
 }
 
 export function clientesSection(
-  clientes: any[],
+  clientes: unknown[],
   total: number,
   taxaConversao: number,
-  parcelasAtrasadas: any[],
+  parcelasAtrasadas: unknown[],
 ): string {
   return render('clientes.ejs', {
     clientes,
@@ -118,10 +118,10 @@ export function clientesSection(
 }
 
 export function clientesTabelaSection(
-  clientes: any[],
+  clientes: unknown[],
   total: number,
   taxaConversao: number,
-  parcelasAtrasadas: any[],
+  parcelasAtrasadas: unknown[],
   options?: {
     showResumo?: boolean;
     showCadastrados?: boolean;
@@ -149,8 +149,8 @@ export function clientesTabelaSection(
 
 export function tempoMedioSection(
   tempoMedio: number,
-  comparativo: any[],
-  casosVencimento: any[],
+  comparativo: unknown[],
+  casosVencimento: unknown[],
 ): string {
   return render('tempo-medio.ejs', {
     tempoMedio,
@@ -162,8 +162,8 @@ export function tempoMedioSection(
 
 export function tempoMedioTabelaSection(
   tempoMedio: number,
-  comparativo: any[],
-  casosVencimento: any[],
+  comparativo: unknown[],
+  casosVencimento: unknown[],
   options?: {
     showResumo?: boolean;
     showComparativo?: boolean;
@@ -187,8 +187,8 @@ export function tempoMedioTabelaSection(
 
 export function funilConversaoSection(
   totalConcluidas: number,
-  porServico: any[],
-  naoConvertidas: any[],
+  porServico: unknown[],
+  naoConvertidas: unknown[],
   pieBase64: string,
 ): string {
   return render('funil-conversao.ejs', {
@@ -203,8 +203,8 @@ export function funilConversaoSection(
 
 export function funilConversaoTabelaSection(
   totalConcluidas: number,
-  porServico: any[],
-  naoConvertidas: any[],
+  porServico: unknown[],
+  naoConvertidas: unknown[],
   pieBase64: string,
   options?: {
     showResumoGrafico?: boolean;
@@ -226,11 +226,11 @@ export function funilConversaoTabelaSection(
 }
 
 export function gargalosSection(gargalos: {
-  paradasComTempo: any[];
-  tempoAcima: any[];
+  paradasComTempo: unknown[];
+  tempoAcima: unknown[];
   acumuloStatus: Record<string, number>;
-  docsPendentes: any[];
-  clientesTravando: any[];
+  docsPendentes: unknown[];
+  clientesTravando: unknown[];
   acumuloPieBase64: string;
 }): string {
   return render('gargalos.ejs', { gargalos, badge, fmtDate });
@@ -238,11 +238,11 @@ export function gargalosSection(gargalos: {
 
 export function gargalosTabelaSection(
   gargalos: {
-    paradasComTempo: any[];
-    tempoAcima: any[];
+    paradasComTempo: unknown[];
+    tempoAcima: unknown[];
     acumuloStatus: Record<string, number>;
-    docsPendentes: any[];
-    clientesTravando: any[];
+    docsPendentes: unknown[];
+    clientesTravando: unknown[];
     acumuloPieBase64: string;
   },
   options?: {

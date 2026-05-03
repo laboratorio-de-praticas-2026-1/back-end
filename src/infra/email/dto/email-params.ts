@@ -3,13 +3,13 @@ export class EmailParams {
   template: string;
   assunto: string;
   withHeader?: boolean;
-  dados: Record<string, object>;
+  dados: Record<string, unknown>;
 
   constructor(
     to: string,
     template: string,
     assunto: string,
-    dados: Record<string, any>,
+    dados: Record<string, unknown>,
     withHeader?: boolean,
   ) {
     this.to = to;

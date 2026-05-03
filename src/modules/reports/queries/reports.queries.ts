@@ -53,18 +53,6 @@ function addDays(date: Date, days: number): Date {
   return d;
 }
 
-function startOfWeekMonday(date: Date): Date {
-  const d = startOfDay(date);
-  const day = d.getDay(); // 0 (Sun) .. 6 (Sat)
-  const diff = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + diff);
-  return d;
-}
-
-function formatDatePt(date: Date): string {
-  return new Intl.DateTimeFormat('pt-BR').format(date);
-}
-
 function normalizeMethod(method: string): string {
   const v = method.trim().toLowerCase();
   if (v.includes('pix')) return 'pix';
