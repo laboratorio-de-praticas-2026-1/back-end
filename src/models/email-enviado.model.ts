@@ -1,43 +1,60 @@
-import { Column, DataType, Model, Table } from 'sequelize-typescript';
+import { Column, Model, Table, DataType } from 'sequelize-typescript';
 
-@Table({ tableName: 'emails_enviados', timestamps: false })
-export class EmailEnviado extends Model {
-  @Column({ primaryKey: true, autoIncrement: true, allowNull: false })
+// atributos do banco
+interface EmailEnviadoAttributes {
+  id: number;
+  nome_usuario: string;
+  email_usuario: string;
+  texto_digitado: string;
+  assunto: string;
+  data_envio: Date;
+}
+
+// atributos para criação (sem id)
+type EmailEnviadoCreationAttributes = Omit<EmailEnviadoAttributes, 'id'>;
+
+@Table({
+  tableName: 'emails_enviados',
+  timestamps: false,
+})
+export class EmailEnviado extends Model<
+  EmailEnviadoAttributes,
+  EmailEnviadoCreationAttributes
+> {
+  @Column({
+    type: DataType.INTEGER,
+    primaryKey: true,
+    autoIncrement: true,
+  })
   declare id: number;
 
   @Column({
-    field: 'nome_usuario',
-    type: DataType.STRING(255),
+    type: DataType.STRING,
     allowNull: false,
   })
-  declare nomeUsuario: string;
+  declare nome_usuario: string;
 
   @Column({
-    field: 'email_usuario',
-    type: DataType.STRING(255),
+    type: DataType.STRING,
     allowNull: false,
   })
-  declare emailUsuario: string;
+  declare email_usuario: string;
 
   @Column({
-    field: 'texto_digitado',
     type: DataType.TEXT,
     allowNull: false,
   })
-  declare textoDigitado: string;
+  declare texto_digitado: string;
 
   @Column({
-    field: 'assunto',
-    type: DataType.STRING(255),
+    type: DataType.STRING,
     allowNull: false,
   })
   declare assunto: string;
 
   @Column({
-    field: 'data_envio',
-    type: DataType.DATE(3),
+    type: DataType.DATE,
     allowNull: false,
-    defaultValue: DataType.NOW,
   })
-  declare dataEnvio: Date;
+  declare data_envio: Date;
 }
