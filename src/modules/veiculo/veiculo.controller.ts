@@ -1,6 +1,22 @@
-import { Body, Controller, Get, Logger, Param, ParseIntPipe,  Delete,
-  HttpCode, Post, Put } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags, ApiParam, ApiBody } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Get,
+  Logger,
+  Param,
+  ParseIntPipe,
+  Delete,
+  HttpCode,
+  Post,
+  Put, HttpStatus,
+} from '@nestjs/common';
+import {
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+  ApiParam,
+  ApiBody,
+} from '@nestjs/swagger';
 import { Veiculo } from 'src/models/veiculo.model';
 import { VeiculoService } from './veiculo.service';
 import { VeiculoCreateDto } from './dto/veiculo-create.dto';
@@ -16,7 +32,11 @@ export class VeiculoController {
   @Post()
   @ApiOperation({ summary: 'Criar um novo veículo' })
   @ApiBody({ type: VeiculoCreateDto })
-  @ApiResponse({ status: 201, type: Veiculo, description: 'Veículo criado com sucesso' })
+  @ApiResponse({
+    status: 201,
+    type: Veiculo,
+    description: 'Veículo criado com sucesso',
+  })
   async criarVeiculo(@Body() veiculoDto: VeiculoCreateDto): Promise<Veiculo> {
     this.logger.log('Iniciando criação de veículo...');
     return this.veiculoService.criarVeiculo(veiculoDto);
@@ -26,7 +46,11 @@ export class VeiculoController {
   @ApiOperation({ summary: 'Atualizar um veículo existente' })
   @ApiParam({ name: 'id', type: 'number', description: 'ID do veículo' })
   @ApiBody({ type: VeiculoUpdateDto })
-  @ApiResponse({ status: 200, type: Veiculo, description: 'Veículo atualizado com sucesso' })
+  @ApiResponse({
+    status: 200,
+    type: Veiculo,
+    description: 'Veículo atualizado com sucesso',
+  })
   @ApiResponse({ status: 404, description: 'Veículo não encontrado' })
   async atualizarVeiculo(
     @Param('id', ParseIntPipe) id: number,

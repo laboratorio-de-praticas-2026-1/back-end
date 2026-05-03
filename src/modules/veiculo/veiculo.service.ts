@@ -42,7 +42,10 @@ export class VeiculoService {
     });
   }
 
-  async atualizarVeiculo(id: number, veiculoDto: VeiculoUpdateDto): Promise<Veiculo> {
+  async atualizarVeiculo(
+    id: number,
+    veiculoDto: VeiculoUpdateDto,
+  ): Promise<Veiculo> {
     this.logger.log(`Atualizando veículo com ID: ${id}`);
     const veiculo = await this.veiculoModel.findByPk(id);
 
