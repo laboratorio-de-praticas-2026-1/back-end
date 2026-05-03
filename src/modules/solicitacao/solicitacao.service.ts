@@ -564,7 +564,11 @@ export class SolicitacaoService implements OnModuleDestroy {
     }
 
     return where;
+  }
 
+  /**
+   * Constrói a cláusula WHERE para filtros de Usuario
+   */
   private buildUsuarioWhereClause(
     query: ListSolicitacoesQueryDto,
   ): WhereOptions {
