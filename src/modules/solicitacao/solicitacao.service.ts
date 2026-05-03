@@ -471,10 +471,6 @@ export class SolicitacaoService implements OnModuleDestroy {
     return data.toISOString().slice(0, 10);
   }
 
-  /**
-   * Formata solicitações retornadas pelo Sequelize para o formato usado nas respostas.
-   * Usado tanto para respostas paginadas quanto kanban.
-   */
   private formatarSolicitacoes(solicitacoes: Solicitacao[]): {
     cliente: { id: number; nome: string; email: string };
     servico: { id: number; tipo: string; valorBase: number };
@@ -511,11 +507,6 @@ export class SolicitacaoService implements OnModuleDestroy {
     }));
   }
 
-  /**
-   * Constrói a cláusula WHERE para filtros de Solicitacao
-   * @param query - Query params com filtros
-   * @param excludeStatus - Se true, não aplica filtro de status (usado no Kanban)
-   */
   private buildWhereClause(
     query: ListSolicitacoesQueryDto,
     excludeStatus = false,
@@ -573,11 +564,7 @@ export class SolicitacaoService implements OnModuleDestroy {
     }
 
     return where;
-  }
 
-  /**
-   * Constrói a cláusula WHERE para filtros de Usuario
-   */
   private buildUsuarioWhereClause(
     query: ListSolicitacoesQueryDto,
   ): WhereOptions {
@@ -594,9 +581,6 @@ export class SolicitacaoService implements OnModuleDestroy {
     return usuarioWhere;
   }
 
-  /**
-   * Constrói a cláusula ORDER para ordenação
-   */
   private buildOrderClause(
     orderBy: string = 'dataSolicitacao',
     order: string = 'desc',
