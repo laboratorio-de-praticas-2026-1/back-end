@@ -8,7 +8,6 @@ import {
   OnModuleDestroy,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { Op } from 'sequelize';
 import { StatusSolicitacaoEnum } from 'src/commons/enums/status-solicitacao.enum';
 import { StatusValidacaoEnum } from 'src/commons/enums/status-validacao.enum';
 import { CryptoUtil } from 'src/commons/utils/crypto';
@@ -34,9 +33,17 @@ import {
 } from './dto/create-solicitacao-response.dto';
 import { CreateSolicitacaoDto } from './dto/create-solicitacao.dto';
 import { GetSolicitacaoResponseDto } from './dto/get-solicitacao-response.dto';
-import { ListSolicitacoesQueryDto } from './dto/list-solicitacoes-query.dto';
-import { ListSolicitacoesResponseDto } from './dto/list-solicitacoes-response.dto';
+import {
+  ListSolicitacoesQueryDto,
+  SOLICITACAO_ORDER_BY_COLUMN,
+} from './dto/list-solicitacoes-query.dto';
+import { ListSolicitacoesKanbanQueryDto } from './dto/list-solicitacoes-kanban-query.dto';
+import {
+  ListSolicitacoesResponseDto,
+  ListSolicitacoesKanbanResponseDto,
+} from './dto/list-solicitacoes-response.dto';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
+import { Op, WhereOptions, type Order } from 'sequelize';
 
 @Injectable()
 export class SolicitacaoService implements OnModuleDestroy {
@@ -464,94 +471,19 @@ export class SolicitacaoService implements OnModuleDestroy {
     return data.toISOString().slice(0, 10);
   }
 
-  async listarSolicitacoes(
-    filtros: ListSolicitacoesQueryDto = {},
-  ): Promise<ListSolicitacoesResponseDto> {
-    this.validarConflitoConclusao(filtros);
-
-    const whereSolicitacao: Record<string, unknown> = {};
-    const whereUsuario: Record<string, unknown> = {};
-
-    if (filtros.usuario_id) {
-      whereSolicitacao.usuarioId = filtros.usuario_id;
-    }
-
-    if (filtros.servico_id) {
-      whereSolicitacao.servicoId = filtros.servico_id;
-    }
-
-    if (filtros.veiculo_id) {
-      whereSolicitacao.veiculoId = filtros.veiculo_id;
-    }
-
-    if (filtros.status_in && filtros.status_in.length > 0) {
-      whereSolicitacao.status = { [Op.in]: filtros.status_in };
-    }
-
-    const dataSolicitacaoFiltro: Record<symbol, Date> = {};
-
-    if (filtros.data_solicitacao_inicio) {
-      dataSolicitacaoFiltro[Op.gte] = new Date(filtros.data_solicitacao_inicio);
-    }
-
-    if (filtros.data_solicitacao_fim) {
-      dataSolicitacaoFiltro[Op.lte] = this.normalizarDataFim(
-        filtros.data_solicitacao_fim,
-      );
-    }
-
-    if (Reflect.ownKeys(dataSolicitacaoFiltro).length > 0) {
-      whereSolicitacao.dataSolicitacao = dataSolicitacaoFiltro;
-    }
-
-    const dataConclusaoFiltro: Record<symbol, Date | null> = {};
-
-    if (filtros.data_conclusao_inicio) {
-      dataConclusaoFiltro[Op.gte] = new Date(filtros.data_conclusao_inicio);
-    }
-
-    if (filtros.data_conclusao_fim) {
-      dataConclusaoFiltro[Op.lte] = this.normalizarDataFim(
-        filtros.data_conclusao_fim,
-      );
-    }
-
-    if (filtros.concluida === true) {
-      dataConclusaoFiltro[Op.not] = null;
-    }
-
-    if (filtros.concluida === false) {
-      whereSolicitacao.dataConclusao = { [Op.is]: null };
-    } else if (Reflect.ownKeys(dataConclusaoFiltro).length > 0) {
-      whereSolicitacao.dataConclusao = dataConclusaoFiltro;
-    }
-
-    if (filtros.nome) {
-      whereUsuario.nome = { [Op.like]: `%${filtros.nome}%` };
-    }
-
-    if (filtros.cpf_cnpj) {
-      whereUsuario.cpfCnpj = { [Op.like]: `%${filtros.cpf_cnpj}%` };
-    }
-
-    const solicitacoes = await this.solicitacaoModel.findAll({
-      where: whereSolicitacao,
-      include: [
-        {
-          model: Usuario,
-          attributes: ['id', 'nome', 'email'],
-          where:
-            Object.keys(whereUsuario).length > 0 ? whereUsuario : undefined,
-          required: Object.keys(whereUsuario).length > 0,
-        },
-        {
-          model: Servico,
-          attributes: ['id', 'nome', 'valorBase'],
-        },
-      ],
-    });
-
-    const solicitacoesFormatadas = solicitacoes.map((solicitacao) => ({
+  private formatarSolicitacoes(solicitacoes: Solicitacao[]): {
+    cliente: { id: number; nome: string; email: string };
+    servico: { id: number; tipo: string; valorBase: number };
+    solicitacao: {
+      id: number;
+      status: string;
+      observacaoCliente: string;
+      observacaoAdmin: string;
+      dataSolicitacao: Date;
+      dataConclusao: Date | null;
+    };
+  }[] {
+    return solicitacoes.map((solicitacao) => ({
       cliente: {
         id: solicitacao.usuario.id,
         nome: solicitacao.usuario.nome,
@@ -563,6 +495,7 @@ export class SolicitacaoService implements OnModuleDestroy {
         valorBase: solicitacao.servico.valorBase || 0,
       },
       solicitacao: {
+        id: solicitacao.id,
         status:
           solicitacao.status.charAt(0).toUpperCase() +
           solicitacao.status.slice(1),
@@ -572,33 +505,194 @@ export class SolicitacaoService implements OnModuleDestroy {
         dataConclusao: solicitacao.dataConclusao,
       },
     }));
+  }
+
+  private buildWhereClause(
+    query: ListSolicitacoesQueryDto,
+    excludeStatus = false,
+  ): WhereOptions {
+    const where: WhereOptions = {};
+
+    if (!excludeStatus && query.status_in && query.status_in.length > 0) {
+      where.status = { [Op.in]: query.status_in };
+    }
+
+    if (query.usuario_id) where.usuarioId = query.usuario_id;
+    if (query.servico_id) where.servicoId = query.servico_id;
+    if (query.veiculo_id) where.veiculoId = query.veiculo_id;
+
+    if (query.concluida !== undefined) {
+      where.dataConclusao = query.concluida
+        ? { [Op.ne]: null }
+        : { [Op.is]: null };
+    }
+
+    if (query.data_solicitacao_inicio || query.data_solicitacao_fim) {
+      const dataSolicitacaoWhere: Record<string, any> = {};
+
+      if (query.data_solicitacao_inicio) {
+        dataSolicitacaoWhere[Op.gte as unknown as string] = new Date(
+          query.data_solicitacao_inicio,
+        );
+      }
+
+      if (query.data_solicitacao_fim) {
+        dataSolicitacaoWhere[Op.lte as unknown as string] = new Date(
+          `${query.data_solicitacao_fim}T23:59:59.999Z`,
+        );
+      }
+
+      where.dataSolicitacao = dataSolicitacaoWhere;
+    }
+
+    if (query.data_conclusao_inicio || query.data_conclusao_fim) {
+      const dataConclusaoWhere: Record<string, any> = {};
+
+      if (query.data_conclusao_inicio) {
+        dataConclusaoWhere[Op.gte as unknown as string] = new Date(
+          query.data_conclusao_inicio,
+        );
+      }
+
+      if (query.data_conclusao_fim) {
+        dataConclusaoWhere[Op.lte as unknown as string] = new Date(
+          `${query.data_conclusao_fim}T23:59:59.999Z`,
+        );
+      }
+
+      where.dataConclusao = dataConclusaoWhere;
+    }
+
+    return where;
+  }
+
+  /**
+   * Constrói a cláusula WHERE para filtros de Usuario
+   */
+  private buildUsuarioWhereClause(
+    query: ListSolicitacoesQueryDto,
+  ): WhereOptions {
+    const usuarioWhere: WhereOptions = {};
+
+    if (query.nome) {
+      usuarioWhere.nome = { [Op.like]: `%${query.nome}%` };
+    }
+
+    if (query.cpf_cnpj) {
+      usuarioWhere.cpfCnpj = { [Op.like]: `%${query.cpf_cnpj}%` };
+    }
+
+    return usuarioWhere;
+  }
+
+  private buildOrderClause(
+    orderBy: string = 'dataSolicitacao',
+    order: string = 'desc',
+  ): Order {
+    return [
+      [
+        SOLICITACAO_ORDER_BY_COLUMN[
+          orderBy as keyof typeof SOLICITACAO_ORDER_BY_COLUMN
+        ] || 'dataSolicitacao',
+        order.toUpperCase() as 'ASC' | 'DESC',
+      ],
+    ];
+  }
+
+  async listarSolicitacoes(
+    query: ListSolicitacoesQueryDto = new ListSolicitacoesQueryDto(),
+  ): Promise<ListSolicitacoesResponseDto> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const offset = (page - 1) * limit;
+
+    const where = this.buildWhereClause(query, false);
+    const usuarioWhere = this.buildUsuarioWhereClause(query);
+    const hasUsuarioFilter = Object.keys(usuarioWhere).length > 0;
+    const orderClause = this.buildOrderClause(query.orderBy, query.order);
+
+    const { rows: solicitacoes, count: total } =
+      await this.solicitacaoModel.findAndCountAll({
+        where,
+        include: [
+          {
+            model: Usuario,
+            attributes: ['id', 'nome', 'email'],
+            where: hasUsuarioFilter ? usuarioWhere : undefined,
+            required: hasUsuarioFilter,
+          },
+          {
+            model: Servico,
+            attributes: ['id', 'nome', 'valorBase'],
+          },
+        ],
+        limit,
+        offset,
+        order: orderClause,
+      });
+
+    const solicitacoesFormatadas = this.formatarSolicitacoes(solicitacoes);
+    const totalPages = total > 0 ? Math.ceil(total / limit) : 1;
 
     return {
-      total: solicitacoes.length,
+      total,
+      page,
+      limit,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrevious: page > 1,
       solicitacoes: solicitacoesFormatadas,
     };
   }
 
-  private validarConflitoConclusao(filtros: ListSolicitacoesQueryDto): void {
-    const temDatasConclusao =
-      filtros.data_conclusao_inicio != null ||
-      filtros.data_conclusao_fim != null;
+  async listarSolicitacoesKanban(
+    query: ListSolicitacoesKanbanQueryDto,
+  ): Promise<ListSolicitacoesKanbanResponseDto> {
+    // ListSolicitacoesKanbanQueryDto herda de ListSolicitacoesQueryDto, então é seguro fazer cast
+    const where = this.buildWhereClause(
+      query as ListSolicitacoesQueryDto,
+      true,
+    ); // Exclui filtro de status
+    const usuarioWhere = this.buildUsuarioWhereClause(
+      query as ListSolicitacoesQueryDto,
+    );
+    const hasUsuarioFilter = Object.keys(usuarioWhere).length > 0;
+    const orderClause = this.buildOrderClause(query.orderBy, query.order);
 
-    if (filtros.concluida === false && temDatasConclusao) {
-      throw new BadRequestException(
-        'Filtros inválidos: não combine concluida=false com data_conclusao_inicio ou data_conclusao_fim',
-      );
-    }
+    const solicitacoes = await this.solicitacaoModel.findAll({
+      where,
+      include: [
+        {
+          model: Usuario,
+          attributes: ['id', 'nome', 'email'],
+          where: hasUsuarioFilter ? usuarioWhere : undefined,
+          required: hasUsuarioFilter,
+        },
+        {
+          model: Servico,
+          attributes: ['id', 'nome', 'valorBase'],
+        },
+      ],
+      order: orderClause,
+    });
+
+    const solicitacoesFormatadas = this.formatarSolicitacoes(solicitacoes);
+
+    const kanbanColumns = solicitacoesFormatadas.reduce(
+      (acc, item) => {
+        const status = item.solicitacao.status;
+        if (!acc[status]) acc[status] = [];
+        acc[status].push(item);
+        return acc;
+      },
+      {} as Record<string, typeof solicitacoesFormatadas>,
+    );
+
+    return {
+      total: solicitacoesFormatadas.length,
+      solicitacoes: kanbanColumns,
+    };
   }
-
-  private normalizarDataFim(data: string): Date {
-    if (/^\d{4}-\d{2}-\d{2}$/.test(data)) {
-      return new Date(`${data}T23:59:59.999Z`);
-    }
-
-    return new Date(data);
-  }
-
   async enviarDocumento(
     solicitacaoId: number,
     data: CreateDocumentoDto,
