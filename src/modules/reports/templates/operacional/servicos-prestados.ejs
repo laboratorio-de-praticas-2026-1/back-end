@@ -1,0 +1,26 @@
+<% const tituloTabela = typeof titulo === 'string' && titulo ? titulo : 'Serviços Prestados'; %>
+
+<div class="section-label"><%= tituloTabela %></div>
+<table>
+  <thead><tr>
+    <th>ID</th><th>Serviço</th><th>Descrição</th><th>Valor Base</th><th>Prazo</th><th>Ativo</th>
+  </tr></thead>
+  <tbody>
+    <% servicos.forEach((s) => { %>
+      <tr>
+        <td><%= s.id %></td>
+        <td><%= s.nome %></td>
+        <td style="font-size:10px;max-width:200px;"><%= s.descricao ?? '—' %></td>
+        <td><%= s.valorBase ? fmtBRL(Number(s.valorBase)) : '—' %></td>
+        <td><%= s.prazoEstimadoDias ?? '—' %> dias</td>
+        <td>
+          <% if (s.ativo) { %>
+            <span class="ok-icon">✓ Sim</span>
+          <% } else { %>
+            <span class="nok-icon">✗ Não</span>
+          <% } %>
+        </td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>

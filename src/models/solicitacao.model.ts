@@ -3,12 +3,15 @@ import {
   Column,
   DataType,
   ForeignKey,
+  HasMany,
   Model,
   Table,
 } from 'sequelize-typescript';
 import { Servico } from './servico.model';
 import { Usuario } from './usuario.model';
 import { Veiculo } from './veiculo.model';
+import { DocumentoSolicitacao } from './documento-solicitacao.model';
+import { Debito } from './debito.model';
 
 @Table({ tableName: 'solicitacao' })
 export class Solicitacao extends Model {
@@ -23,11 +26,11 @@ export class Solicitacao extends Model {
   declare usuario: Usuario;
 
   @ForeignKey(() => Veiculo)
-  @Column({ field: 'veiculo_id', allowNull: false })
-  declare veiculoId: number;
+  @Column({ field: 'veiculo_id', type: DataType.INTEGER, allowNull: true })
+  declare veiculoId: number | null;
 
   @BelongsTo(() => Veiculo)
-  declare veiculo: Veiculo;
+  declare veiculo: Veiculo | null;
 
   @ForeignKey(() => Servico)
   @Column({ field: 'servico_id', allowNull: false })
@@ -35,6 +38,12 @@ export class Solicitacao extends Model {
 
   @BelongsTo(() => Servico)
   declare servico: Servico;
+
+  @HasMany(() => DocumentoSolicitacao)
+  declare documentos: DocumentoSolicitacao[];
+
+  @HasMany(() => Debito)
+  declare debitos: Debito[];
 
   @Column({
     type: DataType.ENUM(

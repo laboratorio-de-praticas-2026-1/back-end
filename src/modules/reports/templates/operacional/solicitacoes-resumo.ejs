@@ -1,0 +1,17 @@
+<div class="section-label">Solicitações — Resumo</div>
+<div class="kpi-row">
+  <div class="kpi-card">
+    <div class="kpi-label">Total de Solicitações</div>
+    <div class="kpi-value"><%= total %></div>
+  </div>
+</div>
+
+<div class="section-label" style="margin-top:8px;">Solicitações por Categoria</div>
+<div class="kpi-row">
+  <% Object.entries(porStatus).forEach(([k, v]) => { %>
+    <div class="kpi-card">
+      <div class="kpi-label"><%= statusLabels[k] ?? k %></div>
+      <div class="kpi-value"><%= v %></div>
+    </div>
+  <% }) %>
+</div>
