@@ -92,7 +92,7 @@ export class SolicitacaoController {
   @ApiOperation({
     summary: 'Listar solicitações no formato Kanban',
     description:
-      'Retorna todas as solicitações agrupadas por status (sem paginação).',
+      'Retorna todas as solicitações agrupadas por status (sem paginação). Aplica todos os filtros exceto status.',
   })
   @ApiOkResponse({ type: ListSolicitacoesKanbanResponseDto })
   @ApiQuery({
@@ -105,7 +105,6 @@ export class SolicitacaoController {
     required: false,
     enum: ['asc', 'desc'],
   })
-  @ApiQuery({ name: 'status_in', required: false, isArray: true })
   @ApiQuery({ name: 'usuario_id', required: false })
   @ApiQuery({ name: 'servico_id', required: false })
   @ApiQuery({ name: 'veiculo_id', required: false })
@@ -116,13 +115,11 @@ export class SolicitacaoController {
   @ApiQuery({ name: 'data_conclusao_inicio', required: false })
   @ApiQuery({ name: 'data_conclusao_fim', required: false })
   @ApiQuery({ name: 'concluida', required: false })
-  listarSolicitacoesKanban(@Query() query: ListSolicitacoesKanbanQueryDto) {
-    return this.solicitacaoService.getAllSolicitacoes({
-      ...query,
-      page: 1,
-      limit: 10,
-      kanban: true,
-    });
+  listarSolicitacoesKanban(
+    @Query() query: ListSolicitacoesKanbanQueryDto,
+  ): Promise<ListSolicitacoesKanbanResponseDto> {
+    this.logger.log('Buscando solicitações no formato Kanban...');
+    return this.solicitacaoService.listarSolicitacoesKanban(query);
   }
 
   @Get(':id')

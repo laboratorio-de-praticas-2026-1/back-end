@@ -45,12 +45,6 @@ import {
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 import { Op, WhereOptions, type Order } from 'sequelize';
 
-type ListSolicitacoesInputDto = ListSolicitacoesKanbanQueryDto & {
-  page?: number;
-  limit?: number;
-  kanban?: boolean;
-};
-
 @Injectable()
 export class SolicitacaoService implements OnModuleDestroy {
   private readonly logger: Logger = new Logger(SolicitacaoService.name);
@@ -477,9 +471,10 @@ export class SolicitacaoService implements OnModuleDestroy {
     return data.toISOString().slice(0, 10);
   }
 
-  // Helper to format solicitacoes returned by Sequelize into the shape
-  // used by both kanban and paginated responses. This avoids code
-  // duplication and makes the handling consistent.
+  /**
+   * Formata solicitações retornadas pelo Sequelize para o formato usado nas respostas.
+   * Usado tanto para respostas paginadas quanto kanban.
+   */
   private formatarSolicitacoes(solicitacoes: Solicitacao[]): {
     cliente: { id: number; nome: string; email: string };
     servico: { id: number; tipo: string; valorBase: number };
@@ -516,19 +511,18 @@ export class SolicitacaoService implements OnModuleDestroy {
     }));
   }
 
-  async listarSolicitacoes(
-    query: ListSolicitacoesQueryDto = new ListSolicitacoesQueryDto(),
-  ): Promise<ListSolicitacoesResponseDto> {
-    const page = query.page ?? 1;
-    const limit = query.limit ?? 10;
-    const orderBy = query.orderBy ?? 'dataSolicitacao';
-    const order = query.order ?? 'desc';
-
-    const offset = (page - 1) * limit;
-
+  /**
+   * Constrói a cláusula WHERE para filtros de Solicitacao
+   * @param query - Query params com filtros
+   * @param excludeStatus - Se true, não aplica filtro de status (usado no Kanban)
+   */
+  private buildWhereClause(
+    query: ListSolicitacoesQueryDto,
+    excludeStatus = false,
+  ): WhereOptions {
     const where: WhereOptions = {};
 
-    if (query.status_in && query.status_in.length > 0) {
+    if (!excludeStatus && query.status_in && query.status_in.length > 0) {
       where.status = { [Op.in]: query.status_in };
     }
 
@@ -560,6 +554,33 @@ export class SolicitacaoService implements OnModuleDestroy {
       where.dataSolicitacao = dataSolicitacaoWhere;
     }
 
+    if (query.data_conclusao_inicio || query.data_conclusao_fim) {
+      const dataConclusaoWhere: Record<string, any> = {};
+
+      if (query.data_conclusao_inicio) {
+        dataConclusaoWhere[Op.gte as unknown as string] = new Date(
+          query.data_conclusao_inicio,
+        );
+      }
+
+      if (query.data_conclusao_fim) {
+        dataConclusaoWhere[Op.lte as unknown as string] = new Date(
+          `${query.data_conclusao_fim}T23:59:59.999Z`,
+        );
+      }
+
+      where.dataConclusao = dataConclusaoWhere;
+    }
+
+    return where;
+  }
+
+  /**
+   * Constrói a cláusula WHERE para filtros de Usuario
+   */
+  private buildUsuarioWhereClause(
+    query: ListSolicitacoesQueryDto,
+  ): WhereOptions {
     const usuarioWhere: WhereOptions = {};
 
     if (query.nome) {
@@ -570,7 +591,36 @@ export class SolicitacaoService implements OnModuleDestroy {
       usuarioWhere.cpfCnpj = { [Op.like]: `%${query.cpf_cnpj}%` };
     }
 
+    return usuarioWhere;
+  }
+
+  /**
+   * Constrói a cláusula ORDER para ordenação
+   */
+  private buildOrderClause(
+    orderBy: string = 'dataSolicitacao',
+    order: string = 'desc',
+  ): Order {
+    return [
+      [
+        SOLICITACAO_ORDER_BY_COLUMN[orderBy as keyof typeof SOLICITACAO_ORDER_BY_COLUMN] ||
+          'dataSolicitacao',
+        order.toUpperCase() as 'ASC' | 'DESC',
+      ],
+    ];
+  }
+
+  async listarSolicitacoes(
+    query: ListSolicitacoesQueryDto = new ListSolicitacoesQueryDto(),
+  ): Promise<ListSolicitacoesResponseDto> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const offset = (page - 1) * limit;
+
+    const where = this.buildWhereClause(query, false);
+    const usuarioWhere = this.buildUsuarioWhereClause(query);
     const hasUsuarioFilter = Object.keys(usuarioWhere).length > 0;
+    const orderClause = this.buildOrderClause(query.orderBy, query.order);
 
     const { rows: solicitacoes, count: total } =
       await this.solicitacaoModel.findAndCountAll({
@@ -589,37 +639,10 @@ export class SolicitacaoService implements OnModuleDestroy {
         ],
         limit,
         offset,
-        order: [
-          [
-            SOLICITACAO_ORDER_BY_COLUMN[orderBy] || 'dataSolicitacao',
-            order.toUpperCase() as 'ASC' | 'DESC',
-          ],
-        ],
+        order: orderClause,
       });
 
-    const solicitacoesFormatadas = solicitacoes.map((solicitacao) => ({
-      cliente: {
-        id: solicitacao.usuario.id,
-        nome: solicitacao.usuario.nome,
-        email: solicitacao.usuario.email,
-      },
-      servico: {
-        id: solicitacao.servico.id,
-        tipo: solicitacao.servico.nome,
-        valorBase: solicitacao.servico.valorBase || 0,
-      },
-      solicitacao: {
-        id: solicitacao.id,
-        status:
-          solicitacao.status.charAt(0).toUpperCase() +
-          solicitacao.status.slice(1),
-        observacaoCliente: solicitacao.observacaoCliente || '',
-        observacaoAdmin: solicitacao.observacaoAdmin || '',
-        dataSolicitacao: solicitacao.dataSolicitacao,
-        dataConclusao: solicitacao.dataConclusao,
-      },
-    }));
-
+    const solicitacoesFormatadas = this.formatarSolicitacoes(solicitacoes);
     const totalPages = total > 0 ? Math.ceil(total / limit) : 1;
 
     return {
@@ -633,60 +656,31 @@ export class SolicitacaoService implements OnModuleDestroy {
     };
   }
 
-  async getAllSolicitacoes(
-    query: ListSolicitacoesInputDto,
-  ): Promise<ListSolicitacoesResponseDto | ListSolicitacoesKanbanResponseDto> {
-    const { page = 1, limit = 10, orderBy, order, kanban } = query;
+  async listarSolicitacoesKanban(
+    query: ListSolicitacoesKanbanQueryDto,
+  ): Promise<ListSolicitacoesKanbanResponseDto> {
+    // ListSolicitacoesKanbanQueryDto herda de ListSolicitacoesQueryDto, então é seguro fazer cast
+    const where = this.buildWhereClause(query as ListSolicitacoesQueryDto, true); // Exclui filtro de status
+    const usuarioWhere = this.buildUsuarioWhereClause(query as ListSolicitacoesQueryDto);
+    const hasUsuarioFilter = Object.keys(usuarioWhere).length > 0;
+    const orderClause = this.buildOrderClause(query.orderBy, query.order);
 
-    const orderClause: Order | undefined = orderBy
-      ? [
-          [
-            SOLICITACAO_ORDER_BY_COLUMN[orderBy],
-            order.toUpperCase() as 'ASC' | 'DESC',
-          ],
-        ]
-      : undefined;
-
-    if (kanban) {
-      // remove as paginacoes quando na rota de kanban
-      const solicitacoes = await this.solicitacaoModel.findAll({
-        order: orderClause,
-        include: [
-          { model: this.usuarioModel, as: 'usuario' },
-          { model: this.servicoModel, as: 'servico' },
-        ],
-      });
-
-      const solicitacoesFormatadas = this.formatarSolicitacoes(solicitacoes);
-
-      const kanbanColumns = solicitacoesFormatadas.reduce(
-        (acc, item) => {
-          const status = item.solicitacao.status;
-          if (!acc[status]) acc[status] = [];
-          acc[status].push(item);
-          return acc;
+    const solicitacoes = await this.solicitacaoModel.findAll({
+      where,
+      include: [
+        {
+          model: Usuario,
+          attributes: ['id', 'nome', 'email'],
+          where: hasUsuarioFilter ? usuarioWhere : undefined,
+          required: hasUsuarioFilter,
         },
-        {} as Record<string, typeof solicitacoesFormatadas>,
-      );
-
-      return {
-        total: solicitacoesFormatadas.length,
-        solicitacoes: kanbanColumns,
-      };
-    }
-
-    const offset = (page - 1) * limit;
-
-    const { rows: solicitacoes, count: total } =
-      await this.solicitacaoModel.findAndCountAll({
-        limit,
-        offset,
-        order: orderClause,
-        include: [
-          { model: this.usuarioModel, as: 'usuario' },
-          { model: this.servicoModel, as: 'servico' },
-        ],
-      });
+        {
+          model: Servico,
+          attributes: ['id', 'nome', 'valorBase'],
+        },
+      ],
+      order: orderClause,
+    });
 
     const solicitacoesFormatadas = this.formatarSolicitacoes(solicitacoes);
 
@@ -700,15 +694,8 @@ export class SolicitacaoService implements OnModuleDestroy {
       {} as Record<string, typeof solicitacoesFormatadas>,
     );
 
-    const totalPages = total > 0 ? Math.ceil(total / limit) : 1;
-
     return {
-      total,
-      page,
-      limit,
-      totalPages,
-      hasNext: page < totalPages,
-      hasPrevious: page > 1,
+      total: solicitacoesFormatadas.length,
       solicitacoes: kanbanColumns,
     };
   }
