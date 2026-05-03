@@ -44,6 +44,7 @@ import {
 } from './dto/list-solicitacoes-response.dto';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 import { Op, WhereOptions, type Order } from 'sequelize';
+import { UpdateDocumentoStatusDto } from './dto/update-documento-status.dto';
 
 @Injectable()
 export class SolicitacaoService implements OnModuleDestroy {
@@ -904,6 +905,35 @@ export class SolicitacaoService implements OnModuleDestroy {
     return {
       id: documento.id,
       mensagem: 'Documento substituído com sucesso',
+    };
+  }
+
+  async validarDocumento(
+    solicitacaoId: number,
+    docId: number,
+    dto: UpdateDocumentoStatusDto,
+  ) {
+    // Busca o documento garantindo o vínculo com a solicitação
+    const documento = await this.documentoModel.findOne({
+      where: {
+        id: docId,
+        solicitacaoId: solicitacaoId,
+      },
+    });
+
+    if (!documento) {
+      throw new NotFoundException(
+        'Documento não encontrado para esta solicitação',
+      );
+    }
+
+    // Atualiza apenas o status
+    await documento.update({
+      statusValidacao: dto.status,
+    });
+
+    return {
+      message: `Documento ${dto.status === StatusValidacaoEnum.APROVADO ? 'aprovado' : 'rejeitado'} com sucesso.`,
     };
   }
 }

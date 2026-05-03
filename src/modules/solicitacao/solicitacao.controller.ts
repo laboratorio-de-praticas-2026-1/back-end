@@ -40,6 +40,7 @@ import {
 } from './dto/list-solicitacoes-response.dto';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 import { SolicitacaoService } from './solicitacao.service';
+import { UpdateDocumentoStatusDto } from './dto/update-documento-status.dto';
 
 @ApiTags('solicitacao')
 @Controller('solicitacoes')
@@ -183,5 +184,20 @@ export class SolicitacaoController {
     @UploadedFile(DocumentoFilePipe) file: Express.Multer.File,
   ): Promise<{ id: number; mensagem: string }> {
     return this.solicitacaoService.substituirDocumento(id, docId, file);
+  }
+
+  @Patch(':id/documentos/:docId/status')
+  @ApiOperation({
+    summary: 'Aprovar ou Rejeitar um documento da solicitação',
+    description:
+      'Permite ao administrador mudar o status de validação de um documento no Kanban.',
+  })
+  @ApiOkResponse({ description: 'Status atualizado com sucesso' })
+  validarDocumento(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('docId', ParseIntPipe) docId: number,
+    @Body() dto: UpdateDocumentoStatusDto,
+  ): Promise<{ message: string }> {
+    return this.solicitacaoService.validarDocumento(id, docId, dto);
   }
 }
