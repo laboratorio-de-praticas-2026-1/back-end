@@ -3,5 +3,5 @@ import { ListSolicitacoesQueryDto } from './list-solicitacoes-query.dto';
 
 export class ListSolicitacoesKanbanQueryDto extends OmitType(
   ListSolicitacoesQueryDto,
-  ['page', 'limit', 'kanban'] as const,
+  ['page', 'limit'] as const,
 ) {}
