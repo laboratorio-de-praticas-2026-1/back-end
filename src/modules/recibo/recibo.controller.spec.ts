@@ -2,6 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { StreamableFile } from '@nestjs/common';
 import { ReciboController } from './recibo.controller';
 import { ReciboService } from './recibo.service';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+
+const mockGuard = { canActivate: jest.fn().mockReturnValue(true) };
 
 describe('ReciboController', () => {
   let controller: ReciboController;
@@ -19,7 +22,10 @@ describe('ReciboController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ReciboController],
       providers: [{ provide: ReciboService, useValue: reciboService }],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue(mockGuard)
+      .compile();
 
     controller = module.get<ReciboController>(ReciboController);
   });

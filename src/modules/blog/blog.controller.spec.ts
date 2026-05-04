@@ -3,6 +3,9 @@ import { Readable } from 'stream';
 import { BlogController } from './blog.controller';
 import { BlogService } from './blog.service';
 import { CategoriaBlog } from 'src/models/blog.model';
+import { AdminGuard } from '../usuario/guards/admin.guard';
+
+const mockGuard = { canActivate: jest.fn().mockReturnValue(true) };
 
 describe('BlogController', () => {
   let controller: BlogController;
@@ -37,7 +40,10 @@ describe('BlogController', () => {
           useValue: mockBlogService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(AdminGuard)
+      .useValue(mockGuard)
+      .compile();
 
     controller = module.get<BlogController>(BlogController);
   });
