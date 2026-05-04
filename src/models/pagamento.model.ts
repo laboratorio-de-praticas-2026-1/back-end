@@ -1,4 +1,12 @@
-import { Column, DataType, HasMany, Model, Table, ForeignKey, BelongsTo, } from 'sequelize-typescript';
+import {
+  Column,
+  DataType,
+  HasMany,
+  Model,
+  Table,
+  ForeignKey,
+  BelongsTo,
+} from 'sequelize-typescript';
 import { Parcela } from './parcela.model';
 import { Debito } from './debito.model';
 
@@ -17,7 +25,6 @@ export class Pagamento extends Model {
   declare idDebito: number;
   @BelongsTo(() => Debito)
   declare debito: Debito;
-
 
   /* Valor total efetivamente cobrado (valor original + taxa)*/
   @Column({

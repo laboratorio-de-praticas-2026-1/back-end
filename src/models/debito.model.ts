@@ -23,7 +23,6 @@ export enum StatusDebito {
   PENDENTE = 'pendente',
 }
 
-
 @Table({ tableName: 'debito' })
 export class Debito extends Model {
   @Column({ primaryKey: true, autoIncrement: true, allowNull: false })
