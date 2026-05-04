@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { UtilsModule } from './commons/utils/utils.module';
 import { CloudinaryModule } from './infra/cloudinary/cloudinary.module';
@@ -16,6 +17,7 @@ import { HeaderModule } from './modules/header/header.module';
 import { MapaModule } from './modules/mapa/mapa.module';
 import { NotificacaoModule } from './modules/notificacao/notificacao.module';
 import { PublicidadeModule } from './modules/publicidade/publicidade.module';
+import { ReciboModule } from './modules/recibo/recibo.module';
 import { RecomendacaoModule } from './modules/recomendacao/recomendacao.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { PagamentoModule } from './modules/pagamento/pagamento.module';
@@ -25,20 +27,38 @@ import { SolicitacaoModule } from './modules/solicitacao/solicitacao.module';
 import { UsuarioModule } from './modules/usuario/usuario.module';
 @Module({
   imports: [
-    ConfigModule.forRoot({ envFilePath: '.env', isGlobal: true }),
-    SequelizeModule.forRoot({
-      dialect: 'mysql',
-      host: process.env.DATABASE_HOST,
-      port: parseInt(process.env.DATABASE_PORT ?? '3306', 10),
-      username: process.env.DATABASE_USERNAME,
-      password: process.env.DATABASE_PASSWORD,
-      database: process.env.DATABASE_DB,
-      autoLoadModels: true,
-      define: {
-        timestamps: false,
-      },
-      synchronize: false, // NÃO MODIFICAR PARA TRUE
+    ConfigModule.forRoot({
+      envFilePath: '.env',
+      isGlobal: true,
     }),
+
+    SequelizeModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const host = configService.get<string>('DATABASE_HOST');
+        const port = Number(configService.get<string>('DATABASE_PORT') ?? 3306);
+        const username = configService.get<string>('DATABASE_USERNAME');
+        const password = configService.get<string>('DATABASE_PASSWORD');
+        const database = configService.get<string>('DATABASE_DB');
+
+        return {
+          dialect: 'mysql',
+          host,
+          port,
+          username,
+          password,
+          database,
+          autoLoadModels: true,
+          define: {
+            timestamps: false,
+          },
+          synchronize: false,
+          logging: false,
+        };
+      },
+    }),
+    ScheduleModule.forRoot(),
     ContatoModule,
     FaqModule,
     ChatModule,
@@ -60,9 +80,9 @@ import { UsuarioModule } from './modules/usuario/usuario.module';
     SolicitacaoModule,
     UtilsModule,
     FileConversorModule,
+    ReciboModule,
     DebitoModule,
   ],
-
   controllers: [],
   providers: [],
 })

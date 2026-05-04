@@ -4,16 +4,12 @@ import { getModelToken } from '@nestjs/sequelize';
 import { ContatoService } from './contato.service';
 import { Empresa } from 'src/models/empresa.model';
 import { EmpresaDto } from './dto/empresa-response.dto';
-import { EmailEnviado } from 'src/models/email-enviado.model';
 import { EmailService } from 'src/infra/email/email.service';
+import { ContatoEmailRequestDto } from './dto/contato-email.dto';
 
 type MockEmpresaModel = {
   findOne: jest.Mock;
   update: jest.Mock;
-};
-
-type MockEmailEnviadoModel = {
-  create: jest.Mock;
 };
 
 type MockEmailService = {
@@ -23,8 +19,8 @@ type MockEmailService = {
 describe('ContatoService', () => {
   let service: ContatoService;
   let mockEmpresaModel: MockEmpresaModel;
-  let mockEmailEnviadoModel: MockEmailEnviadoModel;
   let mockEmailService: MockEmailService;
+  let originalContactEmail: string | undefined;
 
   const mockEmpresa = {
     id: 1,
@@ -36,6 +32,9 @@ describe('ContatoService', () => {
     cidade: 'São Paulo',
     estado: 'SP',
     site: 'www.empresa.com',
+    tipo: 'clinica',
+    latitude: '-23.5505',
+    longitude: '-46.6333',
   };
 
   beforeEach(async () => {
@@ -44,13 +43,12 @@ describe('ContatoService', () => {
       update: jest.fn(),
     };
 
-    mockEmailEnviadoModel = {
-      create: jest.fn(),
+    mockEmailService = {
+      enviarEmail: jest.fn(),
     };
 
-    mockEmailService = {
-      enviarEmail: jest.fn().mockResolvedValue(undefined),
-    };
+    originalContactEmail = process.env.CONTACT_EMAIL;
+    process.env.CONTACT_EMAIL = 'destino@teste.com';
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -58,10 +56,6 @@ describe('ContatoService', () => {
         {
           provide: getModelToken(Empresa),
           useValue: mockEmpresaModel,
-        },
-        {
-          provide: getModelToken(EmailEnviado),
-          useValue: mockEmailEnviadoModel,
         },
         {
           provide: EmailService,
@@ -75,89 +69,114 @@ describe('ContatoService', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    process.env.CONTACT_EMAIL = originalContactEmail;
   });
 
-  describe('buscarContato', () => {
-    it('deve retornar EmpresaDto quando encontrar contato por CNPJ', async () => {
+  describe('enviarEmail', () => {
+    it('deve chamar EmailService.enviarEmail corretamente', async () => {
+      const payload: ContatoEmailRequestDto = {
+        nome: 'Victor',
+        email: 'victor@email.com',
+        mensagem: 'Olá mundo',
+      };
+
+      mockEmailService.enviarEmail.mockResolvedValue(undefined);
+
+      await service.enviarEmail(payload);
+
+      expect(mockEmailService.enviarEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'destino@teste.com',
+          template: 'contato',
+          dados: expect.objectContaining({
+            nome: payload.nome,
+            email: payload.email,
+            mensagem: payload.mensagem,
+          }),
+        }),
+      );
+      expect(mockEmailService.enviarEmail).toHaveBeenCalledTimes(1);
+    });
+
+    it('deve propagar erro do EmailService', async () => {
+      mockEmailService.enviarEmail.mockRejectedValue(new Error('Erro email'));
+
+      const payload: ContatoEmailRequestDto = {
+        nome: 'Victor',
+        email: 'victor@email.com',
+        mensagem: 'teste',
+      };
+
+      await expect(service.enviarEmail(payload)).rejects.toThrow('Erro email');
+    });
+  });
+
+  describe('buscarContatoById', () => {
+    it('deve retornar EmpresaDto quando encontrar contato por ID', async () => {
       mockEmpresaModel.findOne.mockResolvedValue(mockEmpresa);
 
-      const result = await service.buscarContato('12.345.678/0001-90');
+      const result = await service.buscarContatoById(1);
 
       expect(result).toBeInstanceOf(EmpresaDto);
-      expect(result.cnpj).toBe(mockEmpresa.cnpj);
-      expect(result.nomeFantasia).toBe(mockEmpresa.nomeFantasia);
+      expect(result.id).toBe(1);
+      expect(result.tipo).toBe('clinica');
+      expect(result.latitude).toBe('-23.5505');
+
       expect(mockEmpresaModel.findOne).toHaveBeenCalledWith({
-        where: { cnpj: '12.345.678/0001-90' },
+        where: { id: 1 },
       });
     });
 
-    it('deve lançar NotFoundException quando contato não for encontrado', async () => {
+    it('deve lançar NotFoundException quando não encontrar contato', async () => {
       mockEmpresaModel.findOne.mockResolvedValue(null);
 
-      await expect(service.buscarContato('12.345.678/0001-99')).rejects.toThrow(
+      await expect(service.buscarContatoById(1)).rejects.toThrow(
         NotFoundException,
       );
     });
   });
 
-  describe('buscarContatoById', () => {
-    it('deve retornar EmpresaDto quando encontrar contato por ID e CNPJ', async () => {
-      mockEmpresaModel.findOne.mockResolvedValue(mockEmpresa);
-
-      const result = await service.buscarContatoById(1, '12.345.678/0001-90');
-
-      expect(result).toBeInstanceOf(EmpresaDto);
-      expect(result.id).toBe(1);
-      expect(mockEmpresaModel.findOne).toHaveBeenCalledWith({
-        where: { id: 1, cnpj: '12.345.678/0001-90' },
-      });
-    });
-
-    it('deve lançar NotFoundException quando não encontrar contato por ID e CNPJ', async () => {
-      mockEmpresaModel.findOne.mockResolvedValue(null);
-
-      await expect(
-        service.buscarContatoById(1, '12.345.678/0001-99'),
-      ).rejects.toThrow(NotFoundException);
-    });
-  });
-
   describe('atualizarContato', () => {
     it('deve atualizar contato com sucesso', async () => {
+      mockEmpresaModel.findOne.mockResolvedValue(mockEmpresa);
       mockEmpresaModel.update.mockResolvedValue([1]);
 
       const updateData = { telefone: '11999999999' };
 
-      await service.atualizarContato(1, '12.345.678/0001-90', updateData);
+      await service.atualizarContato(1, updateData);
 
       expect(mockEmpresaModel.update).toHaveBeenCalledWith(updateData, {
-        where: { id: 1, cnpj: '12.345.678/0001-90' },
+        where: { id: 1 },
       });
     });
 
-    it('deve lançar NotFoundException quando nenhum registro for atualizado', async () => {
-      mockEmpresaModel.update.mockResolvedValue([0]);
+    it('deve lançar NotFoundException quando contato não existir', async () => {
+      mockEmpresaModel.findOne.mockResolvedValue(null);
 
       const updateData = { telefone: '11999999999' };
 
-      await expect(
-        service.atualizarContato(1, '12.345.678/0001-99', updateData),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.atualizarContato(1, updateData)).rejects.toThrow(
+        NotFoundException,
+      );
+
+      expect(mockEmpresaModel.update).not.toHaveBeenCalled();
     });
 
     it('deve atualizar múltiplos campos', async () => {
+      mockEmpresaModel.findOne.mockResolvedValue(mockEmpresa);
       mockEmpresaModel.update.mockResolvedValue([1]);
 
       const updateData = {
         telefone: '11999999999',
         email: 'novo@email.com',
         endereco: 'Novo Endereço, 456',
+        tipo: 'vistoria',
       };
 
-      await service.atualizarContato(1, '12.345.678/0001-90', updateData);
+      await service.atualizarContato(1, updateData);
 
       expect(mockEmpresaModel.update).toHaveBeenCalledWith(updateData, {
-        where: { id: 1, cnpj: '12.345.678/0001-90' },
+        where: { id: 1 },
       });
     });
   });
@@ -166,7 +185,7 @@ describe('ContatoService', () => {
     it('deve converter Empresa model para EmpresaDto corretamente', async () => {
       mockEmpresaModel.findOne.mockResolvedValue(mockEmpresa);
 
-      const result = await service.buscarContato('12.345.678/0001-90');
+      const result = await service.buscarContatoById(1);
 
       expect(result).toEqual(
         expect.objectContaining({
@@ -179,6 +198,9 @@ describe('ContatoService', () => {
           cidade: mockEmpresa.cidade,
           estado: mockEmpresa.estado,
           site: mockEmpresa.site,
+          tipo: mockEmpresa.tipo,
+          latitude: mockEmpresa.latitude,
+          longitude: mockEmpresa.longitude,
         }),
       );
     });
@@ -194,83 +216,20 @@ describe('ContatoService', () => {
         cidade: null,
         estado: null,
         site: null,
+        tipo: null,
+        latitude: null,
+        longitude: null,
       };
 
       mockEmpresaModel.findOne.mockResolvedValue(empresaComNulos);
 
-      const result = await service.buscarContato('00.000.000/0000-00');
+      const result = await service.buscarContatoById(2);
 
       expect(result.nomeFantasia).toBe('');
       expect(result.cnpj).toBe('');
       expect(result.telefone).toBe('');
-    });
-  });
-
-  describe('enviarMensagemContato', () => {
-    it('deve enviar mensagem de contato com sucesso', async () => {
-      const enviarEmailDto = {
-        nome: 'João Silva',
-        email: 'joao@example.com',
-        assunto: 'Dúvida',
-        mensagem: 'Tenho uma dúvida sobre os serviços',
-        telefone: '11987654321',
-      };
-
-      mockEmailService.enviarEmail.mockResolvedValue(undefined);
-      mockEmailEnviadoModel.create.mockResolvedValue({
-        nomeUsuario: enviarEmailDto.nome,
-        emailUsuario: enviarEmailDto.email,
-      });
-
-      process.env.CONTACT_EMAIL = 'contato@empresa.com';
-
-      const result = await service.enviarMensagemContato(enviarEmailDto);
-
-      expect(result.message).toBe('Mensagem de contato enviada com sucesso!');
-      expect(mockEmailService.enviarEmail).toHaveBeenCalled();
-      expect(mockEmailEnviadoModel.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          nomeUsuario: enviarEmailDto.nome,
-          emailUsuario: enviarEmailDto.email,
-          assunto: enviarEmailDto.assunto,
-          textoDigitado: enviarEmailDto.mensagem,
-        }),
-      );
-    });
-
-    it('deve lançar erro quando CONTACT_EMAIL não estiver configurado', async () => {
-      const enviarEmailDto = {
-        nome: 'João Silva',
-        email: 'joao@example.com',
-        assunto: 'Dúvida',
-        mensagem: 'Tenho uma dúvida',
-        telefone: '11987654321',
-      };
-
-      delete process.env.CONTACT_EMAIL;
-
-      await expect(
-        service.enviarMensagemContato(enviarEmailDto),
-      ).rejects.toThrow();
-    });
-
-    it('deve lançar erro quando falhar ao enviar email', async () => {
-      const enviarEmailDto = {
-        nome: 'João Silva',
-        email: 'joao@example.com',
-        assunto: 'Dúvida',
-        mensagem: 'Tenho uma dúvida',
-        telefone: '11987654321',
-      };
-
-      process.env.CONTACT_EMAIL = 'contato@empresa.com';
-      mockEmailService.enviarEmail.mockRejectedValue(
-        new Error('Erro ao enviar email'),
-      );
-
-      await expect(
-        service.enviarMensagemContato(enviarEmailDto),
-      ).rejects.toThrow();
+      expect(result.tipo).toBe('');
+      expect(result.latitude).toBe('');
     });
   });
 });

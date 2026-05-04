@@ -18,7 +18,6 @@ Ele é responsável por fornecer uma API completa para o front-end consumir, al�
 |---|---|
 | `main` | https://backend-main-412027788376.southamerica-east1.run.app/swagger |
 | `develop` | https://backend-develop-412027788376.southamerica-east1.run.app/swagger |
-| `release` | https://backend-release-entrega-09-04-412027788376.southamerica-east1.run.app/swagger |
  
 ---
 
