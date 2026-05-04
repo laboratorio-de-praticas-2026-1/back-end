@@ -97,6 +97,37 @@ export class ChatService {
     return userId;
   }
 
+  /** Reconexão: mantém o mesmo `sessionId` e o histórico em memória. */
+  rebindClientSocket(
+    sessionId: string,
+    socket: Socket,
+    nome: string,
+    authUserId: number,
+  ): void {
+    const previousSocket = this.users[sessionId]?.socket;
+
+    this.users[sessionId] = {
+      socket,
+      nome,
+      authUserId,
+      lastActivity: Date.now(),
+    };
+
+    if (!this.history[sessionId]) {
+      this.history[sessionId] = [];
+    }
+
+    this.resetTimeout(sessionId);
+
+    if (
+      previousSocket &&
+      previousSocket !== socket &&
+      previousSocket.connected
+    ) {
+      previousSocket.disconnect(true);
+    }
+  }
+
   addAgent(agentId: string, socket: Socket) {
     this.agents[agentId] = socket;
   }

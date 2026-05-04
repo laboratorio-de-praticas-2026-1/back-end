@@ -133,7 +133,37 @@ describe('ChatGateway', () => {
 
     expect(sendSpy).toHaveBeenCalledWith(socket, {
       type: 'error',
-      msg: 'A mensagem deve ter entre 1 e 200 caracteres.',
+      msg: 'Mensagem vazia não é permitida.',
+    });
+  });
+
+  it('should reject message when text is not a string', () => {
+    const socket: MockAuthSocket = {
+      disconnect: jest.fn(),
+      join: jest.fn(),
+      emit: jest.fn(),
+      connected: true,
+      role: NivelUsuarioEnum.cliente,
+      userId: 'user-1',
+      name: 'Test User',
+    };
+
+    jest.spyOn(timeUtils, 'dentroHorario').mockReturnValue({ ok: true });
+    const sendSpy = jest
+      .spyOn(chatService, 'send')
+      .mockImplementation(() => {});
+
+    gateway.handleChat(
+      {
+        type: 'message',
+        text: 123 as unknown as string,
+      },
+      socket as any,
+    );
+
+    expect(sendSpy).toHaveBeenCalledWith(socket, {
+      type: 'error',
+      msg: 'Formato de mensagem inválido.',
     });
   });
 

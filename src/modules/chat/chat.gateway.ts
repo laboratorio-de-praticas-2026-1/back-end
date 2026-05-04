@@ -17,8 +17,38 @@ import { NivelUsuarioEnum } from 'src/commons/constantes/nivel-usuario-enum';
 import type { AuthSocket } from './utils/types';
 import { sanitizeChatPlainText } from './utils/sanitize';
 
+/**
+ * `origin: '*'` com `credentials: true` é rejeitado pelos navegadores (CORS).
+ * Use `CHAT_CORS_ORIGINS` (lista separada por vírgula) em produção.
+ */
+function resolveChatSocketCors(): {
+  origin: string | string[] | boolean;
+  credentials: boolean;
+} {
+  const raw = process.env.CHAT_CORS_ORIGINS?.trim();
+  if (raw) {
+    if (raw === '*') {
+      return { origin: '*', credentials: false };
+    }
+    const origins = raw
+      .split(',')
+      .map((o) => o.trim())
+      .filter(Boolean);
+    if (origins.length > 0) {
+      return { origin: origins, credentials: true };
+    }
+  }
+  if (process.env.NODE_ENV !== 'production') {
+    return {
+      origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+      credentials: true,
+    };
+  }
+  return { origin: '*', credentials: false };
+}
+
 @WebSocketGateway({
-  cors: { origin: '*', credentials: true },
+  cors: resolveChatSocketCors(),
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
@@ -98,17 +128,25 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const previousSession = this.chatService.findSessionIdByAuthUserId(
         decoded.id,
       );
-      if (previousSession) {
-        this.chatService.endUserSession(previousSession, 'reconnect');
-      }
 
       await socket.join(this.userRoom(String(decoded.id)));
 
-      const userIdGerado = this.chatService.addUser(
-        socket,
-        socket.name,
-        decoded.id,
-      );
+      let userIdGerado: string;
+      if (previousSession) {
+        this.chatService.rebindClientSocket(
+          previousSession,
+          socket,
+          socket.name ?? `Cliente ${decoded.id}`,
+          decoded.id,
+        );
+        userIdGerado = previousSession;
+      } else {
+        userIdGerado = this.chatService.addUser(
+          socket,
+          socket.name ?? `Cliente ${decoded.id}`,
+          decoded.id,
+        );
+      }
       socket.userId = userIdGerado;
       await socket.join(this.userRoom(userIdGerado));
 
@@ -250,7 +288,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     if (!role || !userId) return;
 
-    if (!data.text) {
+    if (typeof data.text !== 'string') {
+      this.chatService.send(socket, {
+        type: 'error',
+        msg: 'Formato de mensagem inválido.',
+      });
+      return;
+    }
+
+    if (!data.text.trim()) {
       this.chatService.send(socket, {
         type: 'error',
         msg: 'Mensagem vazia não é permitida.',
@@ -375,8 +421,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     );
 
     if (userEntry) {
-      const [uid] = userEntry;
-      this.chatService.endUserSession(uid, 'disconnect');
+      const [uid, userData] = userEntry;
+      if (userData.socket === socket) {
+        this.chatService.endUserSession(uid, 'disconnect');
+      }
     }
   }
 }
