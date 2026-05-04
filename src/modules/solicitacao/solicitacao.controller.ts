@@ -9,10 +9,12 @@ import {
   Post,
   Put,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiConsumes,
   ApiCreatedResponse,
@@ -22,6 +24,7 @@ import {
   ApiProperty,
   ApiTags,
 } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
 import { DocumentoFilePipe } from 'src/commons/pipes/file.pipe';
 import { CreateDocumentoDto } from './dto/create-documento.dto';
 import { CreateSolicitacaoResponseDto } from './dto/create-solicitacao-response.dto';
@@ -38,6 +41,8 @@ export class SolicitacaoController {
   constructor(private readonly solicitacaoService: SolicitacaoService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Criar uma solicitação',
     description:
@@ -70,6 +75,8 @@ export class SolicitacaoController {
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Atualizar status de solicitação',
     description: 'Atualizar status de solicitação e mudar observação de Admin.',
@@ -115,6 +122,8 @@ export class SolicitacaoController {
   }
 
   @Post(':id/documentos')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Adicionar um documento novo em uma solicitação existente.',
     description:

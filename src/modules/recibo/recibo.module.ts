@@ -10,6 +10,7 @@ import { Servico } from 'src/models/servico.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
 import { Usuario } from 'src/models/usuario.model';
 import { Veiculo } from 'src/models/veiculo.model';
+import { UsuarioModule } from '../usuario/usuario.module';
 import { ReciboController } from './recibo.controller';
 import { ReciboService } from './recibo.service';
 
@@ -29,6 +30,7 @@ import { ReciboService } from './recibo.service';
     ]),
     CloudinaryModule,
     UtilsModule,
+    UsuarioModule,
   ],
 })
 export class ReciboModule {}

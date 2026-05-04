@@ -1,6 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SolicitacaoController } from './solicitacao.controller';
 import { SolicitacaoService } from './solicitacao.service';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+
+const mockGuard = { canActivate: jest.fn().mockReturnValue(true) };
 
 describe('SolicitacaoController', () => {
   let controller: SolicitacaoController;
@@ -18,7 +21,10 @@ describe('SolicitacaoController', () => {
           useValue: mockSolicitacaoService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue(mockGuard)
+      .compile();
 
     controller = module.get<SolicitacaoController>(SolicitacaoController);
   });

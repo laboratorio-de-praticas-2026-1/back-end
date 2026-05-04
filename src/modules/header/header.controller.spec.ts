@@ -2,6 +2,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HeaderController } from './header.controller';
 import { HeaderService } from './header.service';
+import { AdminGuard } from '../usuario/guards/admin.guard';
+
+const mockGuard = { canActivate: jest.fn().mockReturnValue(true) };
 
 describe('HeaderController', () => {
   let controller: HeaderController;
@@ -40,7 +43,10 @@ describe('HeaderController', () => {
           useValue: headerServiceMock,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(AdminGuard)
+      .useValue(mockGuard)
+      .compile();
 
     controller = module.get<HeaderController>(HeaderController);
   });

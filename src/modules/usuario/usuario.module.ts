@@ -7,6 +7,7 @@ import { UsuarioController } from './usuario.controller';
 import { Usuario } from 'src/models/usuario.model';
 import { UsuarioOwnerGuard } from './guards/usuario-owner.guard';
 import { AdminGuard } from './guards/admin.guard';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { AdminGuard } from './guards/admin.guard';
     }),
   ],
   controllers: [UsuarioController],
-  providers: [UsuarioService, UsuarioOwnerGuard, AdminGuard],
+  providers: [UsuarioService, UsuarioOwnerGuard, AdminGuard, JwtAuthGuard],
+  exports: [AdminGuard, JwtAuthGuard, JwtModule],
 })
 export class UsuarioModule {}

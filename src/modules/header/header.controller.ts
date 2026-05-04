@@ -12,15 +12,18 @@ import {
   Patch,
   Post,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiConsumes,
   ApiOkResponse,
   ApiOperation,
 } from '@nestjs/swagger';
+import { AdminGuard } from '../usuario/guards/admin.guard';
 import { Banner } from 'src/models/banner.model';
 import { CarrosselBannerResponseDto } from './dto/carrosel-banner-response.dto';
 import { HeaderCreateDto } from './dto/header-create.dto';
@@ -89,6 +92,8 @@ export class HeaderController {
   }
 
   @Post()
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Criar um novo banner' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -134,6 +139,8 @@ export class HeaderController {
   }
 
   @Patch(':id')
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -181,6 +188,8 @@ export class HeaderController {
   }
 
   @Delete(':id')
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Deletar um banner por ID' })
   @ApiOkResponse({ description: 'Banner deletado' })
   async delete(@Param('id', ParseIntPipe) id: number) {
