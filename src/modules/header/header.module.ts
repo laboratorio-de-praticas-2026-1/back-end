@@ -5,6 +5,8 @@ import { UsuarioModule } from '../usuario/usuario.module';
 import { Banner } from '../../models/banner.model';
 import { HeaderController } from './header.controller';
 import { HeaderService } from './header.service';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { RolesGuard } from '../usuario/guards/roles.guard';
 
 @Module({
   imports: [
@@ -13,6 +15,6 @@ import { HeaderService } from './header.service';
     UsuarioModule,
   ],
   controllers: [HeaderController],
-  providers: [HeaderService],
+  providers: [HeaderService, JwtAuthGuard, RolesGuard],
 })
 export class HeaderModule {}

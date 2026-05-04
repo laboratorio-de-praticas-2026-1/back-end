@@ -18,10 +18,12 @@ import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
 import { PdfGeneratorService } from './pdf-generator.service';
 import { ReportQueries } from './queries/reports.queries';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { RolesGuard } from '../usuario/guards/roles.guard';
 
 @Module({
   controllers: [ReportsController],
-  providers: [ReportsService, PdfGeneratorService, ReportQueries],
+  providers: [ReportsService, PdfGeneratorService, ReportQueries, JwtAuthGuard, RolesGuard],
   imports: [
     SequelizeModule.forFeature([
       Relatorio,

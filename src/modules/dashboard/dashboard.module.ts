@@ -12,6 +12,8 @@ import { Veiculo } from '../../models/veiculo.model';
 import { Servico } from '../../models/servico.model';
 import { DebitoServico } from '../../models/debito-servico.model';
 import { DebitoVeiculo } from '../../models/debito-veiculo.model';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { RolesGuard } from '../usuario/guards/roles.guard';
 
 @Module({
   imports: [
@@ -29,6 +31,6 @@ import { DebitoVeiculo } from '../../models/debito-veiculo.model';
     ]),
   ],
   controllers: [DashboardController],
-  providers: [DashboardService],
+  providers: [DashboardService, JwtAuthGuard, RolesGuard],
 })
 export class DashboardModule {}

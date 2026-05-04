@@ -12,6 +12,7 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -35,7 +36,6 @@ import { CreateSolicitacaoDto } from './dto/create-solicitacao.dto';
 import { ListSolicitacoesResponseDto } from './dto/list-solicitacoes-response.dto';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 import { SolicitacaoService } from './solicitacao.service';
-import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
 
 @ApiTags('solicitacao')
