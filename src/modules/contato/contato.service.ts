@@ -115,8 +115,7 @@ export class ContatoService {
   }
 
   private montarEmailParams(dadosDto: EnviarEmailDto): EmailParams {
-    const destinatario =
-      process.env.CONTACT_EMAIL || 'seuexemplo@email.com';
+    const destinatario = process.env.CONTACT_EMAIL || 'seuexemplo@email.com';
 
     if (!process.env.CONTACT_EMAIL) {
       this.logger.warn('CONTACT_EMAIL não definido, usando email fallback');
