@@ -53,15 +53,38 @@ export class VeiculoService {
       throw new NotFoundException('Veículo não encontrado');
     }
 
-    await veiculo.update({
-      usuarioId: veiculoDto.usuarioId,
-      placa: veiculoDto.placa,
-      renavam: veiculoDto.renavam,
-      marca: veiculoDto.marca,
-      modelo: veiculoDto.modelo,
-      anoFabricacao: veiculoDto.anoFabricacao,
-      anoModelo: veiculoDto.anoModelo,
-    });
+    const updateData: Partial<Veiculo> = {};
+
+    if (veiculoDto.usuarioId !== undefined) {
+      updateData.usuarioId = veiculoDto.usuarioId;
+    }
+
+    if (veiculoDto.placa !== undefined) {
+      updateData.placa = veiculoDto.placa;
+    }
+
+    if (veiculoDto.renavam !== undefined) {
+      updateData.renavam = veiculoDto.renavam;
+    }
+
+    if (veiculoDto.marca !== undefined) {
+      updateData.marca = veiculoDto.marca;
+    }
+
+    if (veiculoDto.modelo !== undefined) {
+      updateData.modelo = veiculoDto.modelo;
+    }
+
+    if (veiculoDto.anoFabricacao !== undefined) {
+      updateData.anoFabricacao = veiculoDto.anoFabricacao;
+    }
+
+    if (veiculoDto.anoModelo !== undefined) {
+      updateData.anoModelo = veiculoDto.anoModelo;
+    }
+
+    await veiculo.update(updateData);
+    await veiculo.reload();
 
     return veiculo;
   }
