@@ -13,6 +13,10 @@ describe('SolicitacaoController', () => {
     criarSolicitacao: jest.fn(),
   };
 
+  const mockGuard = {
+  canActivate: jest.fn().mockReturnValue(true),
+  };
+  
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SolicitacaoController],

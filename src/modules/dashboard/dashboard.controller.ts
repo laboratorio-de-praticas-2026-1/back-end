@@ -12,8 +12,14 @@ import {
   VeiculosDto,
 } from './dto/dashboard-return.dto';
 import { DashboardPeriodoQueryDto } from './dto/dashboard-periodo-query.dto';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { RolesGuard } from '../usuario/guards/roles.guard';
+import { Roles } from '../usuario/decorators/roles.decorator';
 
 @ApiTags('Dashboard')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('administrador')
 @Controller('dashboard')
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
