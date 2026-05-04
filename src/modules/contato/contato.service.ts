@@ -11,16 +11,19 @@ import { EmpresaDto } from './dto/empresa-response.dto';
 import { EnviarEmailDto } from './dto/enviar-email-dto';
 import { EmailService } from 'src/infra/email/email.service';
 import { EmailParams } from 'src/infra/email/dto/email-params';
+import { EmailEnviado } from 'src/models/email-enviado.model';
 
 const CONTATO_DUVIDA_CLIENTE = 'contato';
 
 @Injectable()
 export class ContatoService {
   private readonly logger = new Logger(ContatoService.name);
-  private readonly ASSUNTO_FIXO = 'Contato pelo site';
+  private readonly ASSUNTO_FIXO = 'Contato Dúvida do Cliente';
 
   constructor(
     @InjectModel(Empresa) private empresaModel: typeof Empresa,
+    @InjectModel(EmailEnviado)
+    private emailEnviadoModel: typeof EmailEnviado,
     private readonly emailService: EmailService,
   ) {}
 
@@ -86,6 +89,14 @@ export class ContatoService {
 
       await this.emailService.enviarEmail(emailParams);
 
+      await this.emailEnviadoModel.create({
+        nomeUsuario: dadosDto.nome,
+        emailUsuario: dadosDto.email,
+        textoDigitado: dadosDto.mensagem,
+        assunto: this.ASSUNTO_FIXO,
+        dataEnvio: new Date(),
+      });
+
       this.logger.log(`Mensagem enviada: ${dadosDto.email}`);
 
       return { message: 'Mensagem de contato enviada com sucesso!' };
@@ -104,7 +115,8 @@ export class ContatoService {
   }
 
   private montarEmailParams(dadosDto: EnviarEmailDto): EmailParams {
-    const destinatario = process.env.CONTACT_EMAIL || 'seuemail@exemplo.com';
+    const destinatario =
+      process.env.CONTACT_EMAIL || 'seuexemplo@email.com';
 
     if (!process.env.CONTACT_EMAIL) {
       this.logger.warn('CONTACT_EMAIL não definido, usando email fallback');
