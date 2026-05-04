@@ -21,17 +21,14 @@ export class ContatoService {
   private readonly ASSUNTO_FIXO = 'Contato Dúvida do Cliente';
 
   constructor(
-    @InjectModel(Empresa)
-    private readonly empresaModel: typeof Empresa,
-
+    @InjectModel(Empresa) private empresaModel: typeof Empresa,
     @InjectModel(EmailEnviado)
-    private readonly emailEnviadoModel: typeof EmailEnviado,
-
+    private emailEnviadoModel: typeof EmailEnviado,
     private readonly emailService: EmailService,
   ) {}
 
   async buscarContatoById(id: number): Promise<EmpresaDto> {
-    const empresa = await this.empresaModel.findOne({
+    const empresa: Empresa | null = await this.empresaModel.findOne({
       where: { id },
     });
 
@@ -55,7 +52,7 @@ export class ContatoService {
     }
 
     const safeData = Object.fromEntries(
-      Object.entries(data).filter(([, value]) => value !== undefined),
+      Object.entries(data).filter(([_, value]) => value !== undefined),
     );
 
     await this.empresaModel.update(safeData, {
@@ -102,9 +99,7 @@ export class ContatoService {
 
       this.logger.log(`Mensagem enviada: ${dadosDto.email}`);
 
-      return {
-        message: 'Mensagem de contato enviada com sucesso!',
-      };
+      return { message: 'Mensagem de contato enviada com sucesso!' };
     } catch (error: unknown) {
       let mensagemErro = 'Erro ao enviar mensagem';
 
@@ -140,7 +135,7 @@ export class ContatoService {
         nome: dadosDto.nome,
         email: dadosDto.email,
         mensagem: dadosDto.mensagem,
-        telefone: dadosDto.telefone ?? 'Não fornecido',
+        telefone: dadosDto.telefone || 'Não fornecido',
         dataEnvio: new Date().toLocaleString(),
         assunto: this.ASSUNTO_FIXO,
       },
