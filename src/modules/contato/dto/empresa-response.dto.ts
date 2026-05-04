@@ -28,15 +28,6 @@ export class EmpresaDto {
   @ApiProperty()
   site: string;
 
-  @ApiProperty({ enum: ['clinica', 'vistoria', 'detran'] })
-  tipo: string;
-
-  @ApiProperty()
-  latitude: string;
-
-  @ApiProperty()
-  longitude: string;
-
   @ApiProperty({
     description: 'Endereço completo (endereço + cidade + estado)',
   })
@@ -52,9 +43,6 @@ export class EmpresaDto {
     cidade: string,
     estado: string,
     site: string,
-    tipo: string,
-    latitude: string,
-    longitude: string,
   ) {
     this.id = id;
     this.nomeFantasia = nomeFantasia;
@@ -65,10 +53,7 @@ export class EmpresaDto {
     this.cidade = cidade;
     this.estado = estado;
     this.site = site;
-    this.tipo = tipo;
-    this.latitude = latitude;
-    this.longitude = longitude;
-
+    // Concatena os campos para formar o endereço completo
     this.enderecoCompleto = [endereco, cidade, estado]
       .filter(Boolean)
       .join(', ');
