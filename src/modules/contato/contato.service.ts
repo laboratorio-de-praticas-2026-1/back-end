@@ -110,10 +110,7 @@ export class ContatoService {
         this.logger.error('Erro desconhecido ao processar envio');
       }
 
-      throw new HttpException(
-        mensagemErro,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException(mensagemErro, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -122,9 +119,7 @@ export class ContatoService {
       process.env.CONTACT_EMAIL || 'seuexemplo@email.com';
 
     if (!process.env.CONTACT_EMAIL) {
-      this.logger.warn(
-        'CONTACT_EMAIL não definido, usando email fallback',
-      );
+      this.logger.warn('CONTACT_EMAIL não definido, usando email fallback');
     }
 
     return new EmailParams(
