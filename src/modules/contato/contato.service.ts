@@ -1,42 +1,32 @@
 import {
+  Injectable,
+  NotFoundException,
+  Logger,
   HttpException,
   HttpStatus,
-  Injectable,
-  Logger,
-  NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { EmailParams } from 'src/infra/email/dto/email-params';
-import { CONTATO_DUVIDA_CLIENTE } from 'src/infra/email/templates/templates-names';
 import { Empresa } from 'src/models/empresa.model';
-import { EmailService } from '../../infra/email/email.service';
 import { EmpresaDto } from './dto/empresa-response.dto';
 import { EnviarEmailDto } from './dto/enviar-email-dto';
+import { EmailService } from 'src/infra/email/email.service';
+import { EmailParams } from 'src/infra/email/dto/email-params';
+
+const CONTATO_DUVIDA_CLIENTE = 'contato';
 
 @Injectable()
 export class ContatoService {
   private readonly logger = new Logger(ContatoService.name);
-
-  private readonly ASSUNTO_FIXO = 'Contato Duvida Cliente';
+  private readonly ASSUNTO_FIXO = 'Contato pelo site';
 
   constructor(
     @InjectModel(Empresa) private empresaModel: typeof Empresa,
     private readonly emailService: EmailService,
   ) {}
 
-  async buscarContato(cnpj: string): Promise<EmpresaDto> {
-    const empresa = await this.empresaModel.findOne({ where: { cnpj } });
-
-    if (!empresa) {
-      throw new NotFoundException('Dados de contato não encontrados');
-    }
-
-    return this.toDto(empresa);
-  }
-
-  async buscarContatoById(id: number, cnpj: string): Promise<EmpresaDto> {
-    const empresa = await this.empresaModel.findOne({
-      where: { id, cnpj },
+  async buscarContatoById(id: number): Promise<EmpresaDto> {
+    const empresa: Empresa | null = await this.empresaModel.findOne({
+      where: { id },
     });
 
     if (!empresa) {
@@ -48,20 +38,27 @@ export class ContatoService {
 
   async atualizarContato(
     id: number,
-    cnpj: string,
     data: Partial<EmpresaDto>,
-  ): Promise<void> {
-    const { cnpj: _, ...safeData } = data;
-
-    const [updated] = await this.empresaModel.update(safeData, {
-      where: { id, cnpj },
+  ): Promise<{ message: string }> {
+    const empresa = await this.empresaModel.findOne({
+      where: { id },
     });
 
-    if (updated === 0) {
-      throw new NotFoundException(
-        'Contato não encontrado ou não pertence à empresa',
-      );
+    if (!empresa) {
+      throw new NotFoundException('Contato não encontrado');
     }
+
+    const safeData = Object.fromEntries(
+      Object.entries(data).filter(([_, value]) => value !== undefined),
+    );
+
+    await this.empresaModel.update(safeData, {
+      where: { id },
+    });
+
+    return {
+      message: 'Contato atualizado com sucesso',
+    };
   }
 
   private toDto(empresa: Empresa): EmpresaDto {
@@ -75,6 +72,9 @@ export class ContatoService {
       empresa.cidade ?? '',
       empresa.estado ?? '',
       empresa.site ?? '',
+      empresa.tipo ?? '',
+      empresa.latitude ?? '',
+      empresa.longitude ?? '',
     );
   }
 
@@ -89,7 +89,6 @@ export class ContatoService {
       this.logger.log(`Mensagem enviada: ${dadosDto.email}`);
 
       return { message: 'Mensagem de contato enviada com sucesso!' };
-
     } catch (error: unknown) {
       let mensagemErro = 'Erro ao enviar mensagem';
 
@@ -100,7 +99,10 @@ export class ContatoService {
         this.logger.error('Erro desconhecido ao processar envio');
       }
 
-      throw new HttpException(mensagemErro, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        mensagemErro,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 

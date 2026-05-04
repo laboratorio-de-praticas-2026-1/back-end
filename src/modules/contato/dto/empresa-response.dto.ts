@@ -29,6 +29,24 @@ export class EmpresaDto {
   site: string;
 
   @ApiProperty({
+    description: 'Tipo da empresa',
+    required: false,
+  })
+  tipo?: string;
+
+  @ApiProperty({
+    description: 'Latitude da empresa',
+    required: false,
+  })
+  latitude?: string;
+
+  @ApiProperty({
+    description: 'Longitude da empresa',
+    required: false,
+  })
+  longitude?: string;
+
+  @ApiProperty({
     description: 'Endereço completo (endereço + cidade + estado)',
   })
   enderecoCompleto: string;
@@ -43,6 +61,9 @@ export class EmpresaDto {
     cidade: string,
     estado: string,
     site: string,
+    tipo?: string,
+    latitude?: string,
+    longitude?: string,
   ) {
     this.id = id;
     this.nomeFantasia = nomeFantasia;
@@ -53,7 +74,10 @@ export class EmpresaDto {
     this.cidade = cidade;
     this.estado = estado;
     this.site = site;
-    // Concatena os campos para formar o endereço completo
+    this.tipo = tipo;
+    this.latitude = latitude;
+    this.longitude = longitude;
+
     this.enderecoCompleto = [endereco, cidade, estado]
       .filter(Boolean)
       .join(', ');
