@@ -23,6 +23,7 @@ import { ServicosModule } from './modules/servicos/servicos.module';
 import { SimuladorModule } from './modules/simulador/simulador.module';
 import { SolicitacaoModule } from './modules/solicitacao/solicitacao.module';
 import { UsuarioModule } from './modules/usuario/usuario.module';
+import { VeiculoModule } from './modules/veiculo/veiculo.module';
 
 @Module({
   imports: [
@@ -79,6 +80,7 @@ import { UsuarioModule } from './modules/usuario/usuario.module';
     UtilsModule,
     FileConversorModule,
     ReciboModule,
+    VeiculoModule,
   ],
   controllers: [],
   providers: [],
