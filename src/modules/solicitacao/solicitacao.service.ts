@@ -295,14 +295,21 @@ export class SolicitacaoService implements OnModuleDestroy {
         const textos = obterTextosEmailPorStatus(novoStatus, isReabertura);
 
         if (textos) {
-          await this.dispararEmailStatus(
-            solicitacao,
-            textos.assunto,
-            textos.titulo,
-            textos.mensagem,
-            textos.cor,
-            observacao,
-          );
+          try {
+            await this.dispararEmailStatus(
+              solicitacao,
+              textos.assunto,
+              textos.titulo,
+              textos.mensagem,
+              textos.cor,
+              observacao,
+            );
+          } catch (error) {
+            new Logger(SolicitacaoService.name).error(
+              `Falha ao enviar e-mail de atualização de status da solicitação ${id}. Status anterior: ${statusAnterior}. Novo status: ${novoStatus}.`,
+              error instanceof Error ? error.stack : undefined,
+            );
+          }
         }
       }
     }
