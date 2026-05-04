@@ -99,21 +99,15 @@ export class ContatoService {
         this.logger.error('Erro desconhecido ao processar envio');
       }
 
-      throw new HttpException(
-        mensagemErro,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException(mensagemErro, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
   private montarEmailParams(dadosDto: EnviarEmailDto): EmailParams {
-    const destinatario =
-      process.env.CONTACT_EMAIL || 'seuemail@exemplo.com';
+    const destinatario = process.env.CONTACT_EMAIL || 'seuemail@exemplo.com';
 
     if (!process.env.CONTACT_EMAIL) {
-      this.logger.warn(
-        'CONTACT_EMAIL não definido, usando email fallback',
-      );
+      this.logger.warn('CONTACT_EMAIL não definido, usando email fallback');
     }
 
     return new EmailParams(

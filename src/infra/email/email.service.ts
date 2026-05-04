@@ -1,13 +1,13 @@
 import { MailerService } from '@nestjs-modules/mailer';
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { join } from 'path';
 import { EmailParams } from './dto/email-params';
 import { InjectModel } from '@nestjs/sequelize';
 import { EmailEnviado } from 'src/models/email-enviado.model';
+
+type Primitive = string | number | boolean | null | undefined;
+
+type SafeRecord = Record<string, Primitive | object>;
 
 @Injectable()
 export class EmailService {
@@ -22,25 +22,35 @@ export class EmailService {
     private readonly emailModel: typeof EmailEnviado,
   ) {}
 
-  private normalizeDados(dados: Record<string, any>): Record<string, object> {
-    const result: Record<string, object> = {};
+  /**
+   * Normaliza dados sem usar any
+   */
+  private normalizeDados(dados: SafeRecord): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
 
     for (const key in dados) {
       const value = dados[key];
 
-      if (typeof value === 'object' && value !== null) {
+      if (value !== null && typeof value === 'object') {
         result[key] = value;
       } else {
-        result[key] = Object(value);
+        result[key] = value ?? null;
       }
     }
 
     return result;
   }
 
-  private toSafeString(value: any): string | null {
+  private toSafeString(value: unknown): string | null {
     if (value === null || value === undefined) return null;
-    return value.toString();
+
+    if (typeof value === 'string') return value;
+
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
+    }
+
+    return null;
   }
 
   async enviarEmail(params: EmailParams): Promise<void> {
@@ -91,18 +101,18 @@ export class EmailService {
       });
 
       this.logger.log(`E-mail enviado com sucesso para ${params.to}`);
-    } catch (error) {
-      this.logger.error('Erro ao enviar e-mail', error);
-  
+    } catch (error: unknown) {
+      this.logger.error(
+        'Erro ao enviar e-mail',
+        error instanceof Error ? error.message : error,
+      );
+
       throw new BadRequestException('Erro ao enviar e-mail');
     }
 
     try {
       if (!nome || !email || !mensagem) {
-        this.logger.warn(
-          'Dados inválidos para salvar no banco',
-          params.dados,
-        );
+        this.logger.warn('Dados inválidos para salvar no banco', params.dados);
         return;
       }
 
@@ -113,8 +123,11 @@ export class EmailService {
         assunto: assuntoFinal,
         dataEnvio: new Date(),
       });
-    } catch (dbError) {
-      this.logger.error('Erro ao salvar e-mail no banco', dbError);
+    } catch (dbError: unknown) {
+      this.logger.error(
+        'Erro ao salvar e-mail no banco',
+        dbError instanceof Error ? dbError.message : dbError,
+      );
     }
   }
 }
