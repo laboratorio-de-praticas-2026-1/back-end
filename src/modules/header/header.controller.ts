@@ -29,6 +29,10 @@ import { CarrosselBannerResponseDto } from './dto/carrosel-banner-response.dto';
 import { HeaderCreateDto } from './dto/header-create.dto';
 import { HeaderUpdateDto } from './dto/header-update.dto';
 import { HeaderService } from './header.service';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { RolesGuard } from '../usuario/guards/roles.guard';
+import { Roles } from '../usuario/decorators/roles.decorator';
 
 @Controller('header')
 export class HeaderController {
@@ -37,6 +41,8 @@ export class HeaderController {
   constructor(private readonly headerService: HeaderService) {}
 
   @Get('carrossel')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiOperation({
     summary: 'Obter banners para o carrossel',
     description: 'Retorna os banners ativos para o carrossel do site',
@@ -72,6 +78,8 @@ export class HeaderController {
     return this.headerService.getBannersAtivos();
   }
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiOperation({ summary: 'Listar todos os banners' })
   @ApiOkResponse({
     description: 'Lista de banners',
@@ -84,6 +92,8 @@ export class HeaderController {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiOperation({ summary: 'Buscar banner por ID' })
   @ApiOkResponse({ description: 'Banner  encontrado', type: Banner })
   async getById(@Param('id') id: string) {

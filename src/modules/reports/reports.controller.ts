@@ -20,14 +20,17 @@ import {
   ApiOperation,
   ApiProduces,
 } from '@nestjs/swagger';
-import { AdminGuard } from '../usuario/guards/admin.guard';
 import type { Response } from 'express';
 import { Relatorio } from 'src/models/relatorio.model';
+import { Roles } from '../usuario/decorators/roles.decorator';
+import { AdminGuard } from '../usuario/guards/admin.guard';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { RolesGuard } from '../usuario/guards/roles.guard';
 import { RelatorioCategoriaResponseDto } from './dto/categoria-response.dto';
 import { CreateReportDto } from './dto/create-report.dto';
 import { ResponseReportDto } from './dto/response-report.dto';
-import { ReportsService } from './reports.service';
 import { PdfGeneratorService } from './pdf-generator.service';
+import { ReportsService } from './reports.service';
 
 @Controller('reports')
 export class ReportsController {
@@ -37,6 +40,8 @@ export class ReportsController {
   ) {}
 
   @Get('categorias')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiOperation({
     summary: 'Retorna as categorias de relatórios disponíveis',
     description:

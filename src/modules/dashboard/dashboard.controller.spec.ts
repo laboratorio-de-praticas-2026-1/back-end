@@ -12,11 +12,17 @@ import { DebitoServico } from '../../models/debito-servico.model';
 import { Usuario } from '../../models/usuario.model';
 import { Veiculo } from '../../models/veiculo.model';
 import { DebitoVeiculo } from '../../models/debito-veiculo.model';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { RolesGuard } from '../usuario/guards/roles.guard';
 
 const mockModel = { findAll: jest.fn(), findOne: jest.fn(), count: jest.fn() };
 
 describe('DashboardController', () => {
   let controller: DashboardController;
+
+  const mockGuard = {
+  canActivate: jest.fn().mockReturnValue(true),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -34,7 +40,12 @@ describe('DashboardController', () => {
         { provide: getModelToken(Usuario), useValue: mockModel },
         { provide: getModelToken(DebitoVeiculo), useValue: {} },
       ],
-    }).compile();
+    })
+    .overrideGuard(JwtAuthGuard)
+    .useValue(mockGuard)
+    .overrideGuard(RolesGuard)
+    .useValue(mockGuard)
+    .compile();
 
     controller = module.get<DashboardController>(DashboardController);
   });

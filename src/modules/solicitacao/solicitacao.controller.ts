@@ -35,6 +35,8 @@ import { CreateSolicitacaoDto } from './dto/create-solicitacao.dto';
 import { ListSolicitacoesResponseDto } from './dto/list-solicitacoes-response.dto';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 import { SolicitacaoService } from './solicitacao.service';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
 
 @ApiTags('solicitacao')
 @Controller('solicitacoes')
@@ -67,6 +69,7 @@ export class SolicitacaoController {
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'Listar todas as solicitações',
     description:

@@ -34,6 +34,10 @@ describe('HeaderController', () => {
     getBannersAtivos: jest.fn().mockResolvedValue([mockBanner]),
   };
 
+  const mockGuard = {
+  canActivate: jest.fn().mockReturnValue(true),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [HeaderController],
