@@ -843,7 +843,7 @@ export class SolicitacaoService implements OnModuleDestroy {
     await documento.update({
       nomeHash: nomeHash,
       dataUpload: new Date(),
-      statusValidacao: 'pendente',
+      statusValidacao: StatusValidacaoEnum.PENDENTE,
     });
 
     return {
