@@ -5,20 +5,23 @@ import { ContatoService } from './contato.service';
 import { Empresa } from 'src/models/empresa.model';
 import { EmpresaDto } from './dto/empresa-response.dto';
 import { EmailService } from 'src/infra/email/email.service';
-
-type MockEmpresaModel = {
-  findOne: jest.Mock;
-  update: jest.Mock;
-};
-
-type MockEmailService = {
-  enviarEmail: jest.Mock;
-};
+import { EmailEnviado } from 'src/models/email-enviado.model';
 
 describe('ContatoService', () => {
   let service: ContatoService;
-  let mockEmpresaModel: MockEmpresaModel;
-  let mockEmailService: MockEmailService;
+
+  const mockEmpresaModel = {
+    findOne: jest.fn(),
+    update: jest.fn(),
+  };
+
+  const mockEmailService: jest.Mocked<EmailService> = {
+    enviarEmail: jest.fn(),
+  } as any;
+
+  const mockEmailEnviadoModel = {
+    create: jest.fn(),
+  };
 
   const mockEmpresa = {
     id: 1,
@@ -36,21 +39,16 @@ describe('ContatoService', () => {
   };
 
   beforeEach(async () => {
-    mockEmpresaModel = {
-      findOne: jest.fn(),
-      update: jest.fn(),
-    };
-
-    mockEmailService = {
-      enviarEmail: jest.fn(),
-    };
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ContatoService,
         {
           provide: getModelToken(Empresa),
           useValue: mockEmpresaModel,
+        },
+        {
+          provide: getModelToken(EmailEnviado),
+          useValue: mockEmailEnviadoModel,
         },
         {
           provide: EmailService,
@@ -60,9 +58,7 @@ describe('ContatoService', () => {
     }).compile();
 
     service = module.get<ContatoService>(ContatoService);
-  });
 
-  afterEach(() => {
     jest.clearAllMocks();
   });
 
@@ -92,7 +88,10 @@ describe('ContatoService', () => {
 
       await service.atualizarContato(1, { telefone: '11999999999' });
 
-      expect(mockEmpresaModel.update).toHaveBeenCalled();
+      expect(mockEmpresaModel.update).toHaveBeenCalledWith(
+        { telefone: '11999999999' },
+        { where: { id: 1 } },
+      );
     });
 
     it('deve lançar NotFoundException quando contato não existir', async () => {
@@ -101,6 +100,49 @@ describe('ContatoService', () => {
       await expect(
         service.atualizarContato(1, { telefone: '11999999999' }),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('enviarMensagemContato', () => {
+    const dto = {
+      nome: 'Lucas',
+      email: 'lucas@email.com',
+      mensagem: 'Teste mensagem',
+      telefone: '11999999999',
+    };
+
+    it('deve enviar email e salvar no banco com sucesso', async () => {
+      mockEmailService.enviarEmail.mockResolvedValue(undefined);
+      mockEmailEnviadoModel.create.mockResolvedValue({});
+
+      const result = await service.enviarMensagemContato(dto);
+
+      expect(mockEmailService.enviarEmail).toHaveBeenCalled();
+
+      expect(mockEmailEnviadoModel.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          nomeUsuario: dto.nome,
+          emailUsuario: dto.email,
+          textoDigitado: dto.mensagem,
+          assunto: expect.any(String),
+        }),
+      );
+
+      expect(result).toEqual({
+        message: 'Mensagem de contato enviada com sucesso!',
+      });
+    });
+
+    it('deve lançar erro se envio de email falhar', async () => {
+      mockEmailService.enviarEmail.mockRejectedValue(
+        new Error('Erro ao enviar'),
+      );
+
+      await expect(service.enviarMensagemContato(dto)).rejects.toThrow(
+        'Erro ao enviar',
+      );
+
+      expect(mockEmailEnviadoModel.create).not.toHaveBeenCalled();
     });
   });
 });
