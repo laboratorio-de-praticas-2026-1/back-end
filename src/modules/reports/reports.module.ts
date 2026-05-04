@@ -23,7 +23,13 @@ import { RolesGuard } from '../usuario/guards/roles.guard';
 
 @Module({
   controllers: [ReportsController],
-  providers: [ReportsService, PdfGeneratorService, ReportQueries, JwtAuthGuard, RolesGuard],
+  providers: [
+    ReportsService,
+    PdfGeneratorService,
+    ReportQueries,
+    JwtAuthGuard,
+    RolesGuard,
+  ],
   imports: [
     SequelizeModule.forFeature([
       Relatorio,
