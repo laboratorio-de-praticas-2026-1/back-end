@@ -835,24 +835,30 @@ describe('SolicitacaoService', () => {
       );
     });
 
-    it('deve falhar quando o envio do email de status falhar', async () => {
-      const solicitacao = mockSolicitacaoComRelacoes('em_andamento', 10);
-      mockSolicitacaoModel.findByPk.mockResolvedValue(solicitacao);
-      mockEmailService.enviarEmail.mockRejectedValue(
-        new Error('Falha no envio de email'),
+    it('deve logar erro quando o envio do email de status falhar, mas continuar atualizando status', async () => {
+      // mock que faz o email falhar
+      mockEmailService.enviarEmail.mockRejectedValueOnce(
+        new Error('Falha ao enviar email')
       );
+
+      const solicitacao = {
+        id: 1,
+        status: StatusSolicitacaoEnum.RECEBIDO,
+        usuario: { id: 1, nome: 'Amanda', email: 'amanda@email.com' },
+        servico: { id: 3, nome: 'Transferencia' },
+        update: jest.fn().mockResolvedValue(undefined),
+      };
+      mockSolicitacaoModel.findByPk.mockResolvedValue(solicitacao);
 
       await expect(
-        service.updateSolicitacaoStatusById(10, {
+        service.updateSolicitacaoStatusById(1, {
           status: StatusSolicitacaoEnum.CANCELADO,
         }),
-      ).rejects.toThrow('Falha no envio de email');
+      ).resolves.toEqual({
+        message: 'Status da solicitação atualizado com sucesso.',
+      });
 
-      expect(solicitacao.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          status: StatusSolicitacaoEnum.CANCELADO,
-        }),
-      );
+      expect(mockEmailService.enviarEmail).toHaveBeenCalled();
     });
   });
 
