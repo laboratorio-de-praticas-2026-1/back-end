@@ -95,12 +95,12 @@ describe('VeiculoController', () => {
   it('deve criar veículo com sucesso!', async () => {
     const veiculoData = {
       usuarioId: 1,
+      placa: 'ABC-1234',
+      renavam: '12345678901',
       marca: 'Toyota',
       modelo: 'Corolla',
-      ano: 2023,
-      cor: 'Prata',
-      placa: 'ABC-1234',
-      preco: 120000,
+      anoFabricacao: 2020,
+      anoModelo: 2021,
     };
 
     const mockVeiculo = {
@@ -116,12 +116,14 @@ describe('VeiculoController', () => {
 
   it('deve atualizar veículo com sucesso!', async () => {
     const veiculoData = {
+      usuarioId: 1,
       marca: 'Honda',
       modelo: 'Civic',
-      ano: 2023,
-      cor: 'Preto',
       placa: 'XYZ-5678',
-      preco: 130000,
+      renavam: '12345678901',
+      anoFabricacao: 2020,
+      anoModelo: 2021,
+
     };
 
     const mockVeiculoAtualizado = {

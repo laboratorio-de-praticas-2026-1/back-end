@@ -122,9 +122,9 @@ describe('VeiculoService', () => {
       anoModelo: 2023,
     };
 
+    // estado antes da atualização
     const mockVeiculo = {
       id: 1,
-      update: jest.fn(),
       usuarioId: 2,
       placa: 'ABC-1234',
       renavam: '12345678901',
@@ -132,12 +132,25 @@ describe('VeiculoService', () => {
       modelo: 'Corolla',
       anoFabricacao: 2020,
       anoModelo: 2021,
+      // vamos sobrescrever update/reload abaixo
     };
 
-    mockVeiculo.update.mockResolvedValue({ ...mockVeiculo, ...veiculoData });
+    // mock update que altera a instância e resolve com a mesma instância
+    mockVeiculo.update = jest.fn().mockImplementation(async (data) => {
+      Object.assign(mockVeiculo, data);
+      return mockVeiculo;
+    });
+
+    // mock reload que apenas resolve com a instância (no-op)
+    mockVeiculo.reload = jest.fn().mockResolvedValue(mockVeiculo);
+
     mockVeiculoModel.findByPk.mockResolvedValue(mockVeiculo);
 
-    await expect(service.atualizarVeiculo(1, veiculoData)).resolves.toEqual(mockVeiculo);
+    // verificamos que a promise resolve e que o objeto contém os dados atualizados
+    await expect(service.atualizarVeiculo(1, veiculoData)).resolves.toMatchObject({
+      id: 1,
+      ...veiculoData,
+    });
 
     expect(mockVeiculoModel.findByPk).toHaveBeenCalledWith(1);
     expect(mockVeiculo.update).toHaveBeenCalledWith(veiculoData);
