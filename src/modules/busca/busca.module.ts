@@ -10,6 +10,7 @@ import { Usuario } from 'src/models/usuario.model';
 import { Empresa } from 'src/models/empresa.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
 import { Faq } from 'src/models/faq.model';
+import { DocumentoSolicitacao } from 'src/models/documento-solicitacao.model';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { Faq } from 'src/models/faq.model';
       Empresa,
       Faq,
       Solicitacao,
+      DocumentoSolicitacao,
     ]),
   ],
   controllers: [BuscaController],

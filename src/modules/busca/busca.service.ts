@@ -475,14 +475,20 @@ export class BuscaService {
     const termoNormalizado = dto.termo?.trim();
     const filtros: Array<Record<string, unknown> | ReturnType<typeof where>> = [];
     const includes: Array<any> = [];
+    const de = dto.de ? this.parseYmdDate(dto.de, 'de') : undefined;
+    const ate = dto.ate ? this.parseYmdDate(dto.ate, 'ate') : undefined;
 
-    if (dto.de) {
-      const de = this.parseYmdDate(dto.de, 'de');
+    if (de && ate && de.key > ate.key) {
+      throw new BadRequestException(
+        'Intervalo inválido: "de" não pode ser maior que "ate"',
+      );
+    }
+
+    if (de) {
       filtros.push(where(col('data_solicitacao'), Op.gte, de.ymd));
     }
 
-    if (dto.ate) {
-      const ate = this.parseYmdDate(dto.ate, 'ate');
+    if (ate) {
       filtros.push(where(col('data_solicitacao'), Op.lte, ate.ymd));
     }
 
@@ -499,21 +505,19 @@ export class BuscaService {
       });
     }
 
-    if (termoNormalizado || dto.de || dto.ate || dto.servico_id !== undefined) {
-      includes.push(
-        {
-          model: Usuario,
-          attributes: ['id', 'nome', 'email'],
-          ...(termoNormalizado
-            ? { where: { nome: { [Op.like]: `%${termoNormalizado}%` } } }
-            : {}),
-        },
-        {
-          model: Servico,
-          attributes: ['id', 'nome', 'valorBase'],
-        },
-      );
-    }
+    includes.push(
+      {
+        model: Usuario,
+        attributes: ['id', 'nome', 'email'],
+        ...(termoNormalizado
+          ? { where: { nome: { [Op.like]: `%${termoNormalizado}%` } } }
+          : {}),
+      },
+      {
+        model: Servico,
+        attributes: ['id', 'nome', 'valorBase'],
+      },
+    );
 
     if (
       !termoNormalizado &&
@@ -523,6 +527,7 @@ export class BuscaService {
       !dto.status_documentacao
     ) {
       const itens = await this.solicitacaoModel.findAll({
+        include: includes,
         order: [['id', 'DESC']],
       });
 
