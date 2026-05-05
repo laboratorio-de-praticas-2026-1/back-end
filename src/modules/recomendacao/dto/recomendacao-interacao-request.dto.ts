@@ -5,13 +5,6 @@ import { RecomendacaoCategoriaBlogEnum } from '../enums/recomendacao-categoria-b
 // DTO de request da rota POST
 export class RecomendacaoInteracaoRequestDto {
   @ApiProperty({
-    example: 1,
-    description: 'ID do usuário logado',
-  })
-  @IsInt()
-  usuarioId!: number;
-
-  @ApiProperty({
     example: 'Documentacao',
     enum: RecomendacaoCategoriaBlogEnum,
   })
