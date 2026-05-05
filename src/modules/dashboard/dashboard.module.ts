@@ -3,17 +3,16 @@ import { SequelizeModule } from '@nestjs/sequelize';
 import { Debito } from 'src/models/debito.model';
 import { DocumentoSolicitacao } from 'src/models/documento-solicitacao.model';
 import { Pagamento } from 'src/models/pagamento.model';
-import { Solicitacao } from 'src/models/solicitacao.model';
-import { DashboardController } from './dashboard.controller';
-import { DashboardService } from './dashboard.service';
 import { Parcela } from 'src/models/parcela.model';
-import { Usuario } from '../../models/usuario.model';
-import { Veiculo } from '../../models/veiculo.model';
-import { Servico } from '../../models/servico.model';
+import { Solicitacao } from 'src/models/solicitacao.model';
 import { DebitoServico } from '../../models/debito-servico.model';
 import { DebitoVeiculo } from '../../models/debito-veiculo.model';
-import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
-import { RolesGuard } from '../usuario/guards/roles.guard';
+import { Servico } from '../../models/servico.model';
+import { Usuario } from '../../models/usuario.model';
+import { Veiculo } from '../../models/veiculo.model';
+import { UsuarioModule } from '../usuario/usuario.module';
+import { DashboardController } from './dashboard.controller';
+import { DashboardService } from './dashboard.service';
 
 @Module({
   imports: [
@@ -27,10 +26,11 @@ import { RolesGuard } from '../usuario/guards/roles.guard';
       Veiculo,
       Servico,
       DebitoServico,
-      DebitoVeiculo,
+      DebitoVeiculo,      
     ]),
+    UsuarioModule,
   ],
   controllers: [DashboardController],
-  providers: [DashboardService, JwtAuthGuard, RolesGuard],
+  providers: [DashboardService],
 })
 export class DashboardModule {}
