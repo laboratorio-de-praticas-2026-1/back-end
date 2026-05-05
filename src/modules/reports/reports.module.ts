@@ -21,11 +21,7 @@ import { ReportQueries } from './queries/reports.queries';
 
 @Module({
   controllers: [ReportsController],
-  providers: [
-    ReportsService,
-    PdfGeneratorService,
-    ReportQueries,
-  ],
+  providers: [ReportsService, PdfGeneratorService, ReportQueries],
   imports: [
     SequelizeModule.forFeature([
       Relatorio,
