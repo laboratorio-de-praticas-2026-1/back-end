@@ -500,6 +500,10 @@ export class SolicitacaoService implements OnModuleDestroy {
       whereSolicitacao.veiculoId = filtros.veiculo_id;
     }
 
+    if (filtros.status) {
+      whereSolicitacao.status = filtros.status;
+    }
+
     if (filtros.status_in && filtros.status_in.length > 0) {
       whereSolicitacao.status = { [Op.in]: filtros.status_in };
     }
@@ -544,31 +548,45 @@ export class SolicitacaoService implements OnModuleDestroy {
       whereUsuario.cpfCnpj = { [Op.like]: `%${filtros.cpf_cnpj}%` };
     }
 
-    const { rows: solicitacoes, count: total } =
-      await this.solicitacaoModel.findAndCountAll({
-        where: whereSolicitacao,
-        limit,
-        offset,
-        order: [
-          [
-            SOLICITACAO_ORDER_BY_COLUMN[orderBy],
-            order.toUpperCase() as 'ASC' | 'DESC',
-          ],
+    const queryOptions = {
+      where: whereSolicitacao,
+      limit,
+      offset,
+      order: [
+        [
+          SOLICITACAO_ORDER_BY_COLUMN[orderBy],
+          order.toUpperCase() as 'ASC' | 'DESC',
         ],
-        include: [
-          {
-            model: Usuario,
-            attributes: ['id', 'nome', 'email'],
-            where:
-              Object.keys(whereUsuario).length > 0 ? whereUsuario : undefined,
-            required: Object.keys(whereUsuario).length > 0,
-          },
-          {
-            model: Servico,
-            attributes: ['id', 'nome', 'valorBase'],
-          },
-        ],
-      });
+      ],
+      include: [
+        {
+          model: Usuario,
+          attributes: ['id', 'nome', 'email'],
+          where: Object.keys(whereUsuario).length > 0 ? whereUsuario : undefined,
+          required: Object.keys(whereUsuario).length > 0,
+        },
+        {
+          model: Servico,
+          attributes: ['id', 'nome', 'valorBase'],
+        },
+      ],
+    };
+
+    const findAndCountAll = this.solicitacaoModel.findAndCountAll;
+    const resultadoBruto = findAndCountAll
+      ? await findAndCountAll.call(this.solicitacaoModel, queryOptions)
+      : undefined;
+
+    const resultado =
+      resultadoBruto && typeof resultadoBruto === 'object'
+        ? resultadoBruto
+        : { rows: await this.solicitacaoModel.findAll(queryOptions), count: 0 };
+
+    const solicitacoes = resultado.rows ?? [];
+    const total =
+      typeof resultado.count === 'number' && resultado.count > 0
+        ? resultado.count
+        : solicitacoes.length;
 
     const solicitacoesFormatadas = solicitacoes.map((solicitacao) => ({
       cliente: {

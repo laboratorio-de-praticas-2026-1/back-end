@@ -134,6 +134,8 @@ export class SolicitacaoController {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Retornar os dados completos de uma solicitação',
     description:
@@ -213,6 +215,8 @@ export class SolicitacaoController {
   }
 
   @Post(':id/cancelar')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Cancelar solicitação',
     description:
@@ -239,6 +243,8 @@ export class SolicitacaoController {
   }
 
   @Post(':id/reabrir')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Reabrir solicitação',
     description:

@@ -532,6 +532,11 @@ describe('SolicitacaoService', () => {
 
       expect(resposta).toEqual({
         total: 1,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+        hasNext: false,
+        hasPrevious: false,
         solicitacoes: [
           {
             cliente: {
@@ -977,6 +982,9 @@ describe('SolicitacaoService', () => {
         total: 1,
         page: 1,
         limit: 10,
+        totalPages: 1,
+        hasNext: false,
+        hasPrevious: false,
         solicitacoes: [
           {
             cliente: {
@@ -1026,6 +1034,9 @@ describe('SolicitacaoService', () => {
         total: 0,
         page: 3,
         limit: 5,
+        totalPages: 1,
+        hasNext: false,
+        hasPrevious: true,
         solicitacoes: [],
       });
 
@@ -1048,6 +1059,9 @@ describe('SolicitacaoService', () => {
         total: 0,
         page: 1,
         limit: 10,
+        totalPages: 1,
+        hasNext: false,
+        hasPrevious: false,
         solicitacoes: [],
       });
     });

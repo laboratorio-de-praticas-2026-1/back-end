@@ -1,6 +1,14 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, type TransformFnParams } from 'class-transformer';
-import { IsIn, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 
 export const SOLICITACAO_ORDER_BY_FIELDS = [
   'id',
@@ -46,6 +54,59 @@ const parseNumberOrDefault = (value: unknown, defaultValue: number) => {
   }
 
   return Number(value);
+};
+
+const parseOptionalNumber = (value: unknown) => {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  return Number(value);
+};
+
+const parseOptionalArray = (value: unknown) => {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [value];
+};
+
+const parseOptionalBoolean = (value: unknown) => {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.toLowerCase();
+    if (['true', '1', 'yes', 'on'].includes(normalized)) return true;
+    if (['false', '0', 'no', 'off'].includes(normalized)) return false;
+  }
+
+  return Boolean(value);
+};
+
+const parseOptionalString = (value: unknown) => {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  return String(value);
 };
 
 export class ListSolicitacoesQueryDto {
@@ -107,4 +168,105 @@ export class ListSolicitacoesQueryDto {
   @IsOptional()
   @IsString()
   status?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filtrar por um ou mais status da solicitação',
+    example: ['recebido', 'em_andamento'],
+    isArray: true,
+  })
+  @Transform(({ value }: TransformFnParams) => parseOptionalArray(value))
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  status_in?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Filtrar solicitações concluídas ou não concluídas',
+    example: true,
+  })
+  @Transform(({ value }: TransformFnParams) => parseOptionalBoolean(value))
+  @IsOptional()
+  @IsBoolean()
+  concluida?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Filtrar pelo identificador do usuário',
+    example: 10,
+  })
+  @Transform(({ value }: TransformFnParams) => parseOptionalNumber(value))
+  @IsOptional()
+  @IsInt()
+  usuario_id?: number;
+
+  @ApiPropertyOptional({
+    description: 'Filtrar pelo identificador do serviço',
+    example: 20,
+  })
+  @Transform(({ value }: TransformFnParams) => parseOptionalNumber(value))
+  @IsOptional()
+  @IsInt()
+  servico_id?: number;
+
+  @ApiPropertyOptional({
+    description: 'Filtrar pelo identificador do veículo',
+    example: 30,
+  })
+  @Transform(({ value }: TransformFnParams) => parseOptionalNumber(value))
+  @IsOptional()
+  @IsInt()
+  veiculo_id?: number;
+
+  @ApiPropertyOptional({
+    description: 'Filtrar pelo nome do cliente',
+    example: 'Amanda',
+  })
+  @Transform(({ value }: TransformFnParams) => parseOptionalString(value))
+  @IsOptional()
+  @IsString()
+  nome?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filtrar por CPF ou CNPJ do cliente',
+    example: '12345678901',
+  })
+  @Transform(({ value }: TransformFnParams) => parseOptionalString(value))
+  @IsOptional()
+  @IsString()
+  cpf_cnpj?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filtrar solicitações com data de solicitação inicial',
+    example: '2026-04-01',
+  })
+  @Transform(({ value }: TransformFnParams) => parseOptionalString(value))
+  @IsOptional()
+  @IsString()
+  data_solicitacao_inicio?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filtrar solicitações com data de solicitação final',
+    example: '2026-04-30',
+  })
+  @Transform(({ value }: TransformFnParams) => parseOptionalString(value))
+  @IsOptional()
+  @IsString()
+  data_solicitacao_fim?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filtrar solicitações com data de conclusão inicial',
+    example: '2026-05-01',
+  })
+  @Transform(({ value }: TransformFnParams) => parseOptionalString(value))
+  @IsOptional()
+  @IsString()
+  data_conclusao_inicio?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filtrar solicitações com data de conclusão final',
+    example: '2026-05-31',
+  })
+  @Transform(({ value }: TransformFnParams) => parseOptionalString(value))
+  @IsOptional()
+  @IsString()
+  data_conclusao_fim?: string;
 }
