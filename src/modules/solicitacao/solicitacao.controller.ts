@@ -25,8 +25,9 @@ import {
 } from '@nestjs/swagger';
 import 'multer';
 import { DocumentoFilePipe } from 'src/commons/pipes/file.pipe';
-import { AdminGuard } from '../usuario/guards/admin.guard';
 import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { RolesGuard } from '../usuario/guards/roles.guard';
+import { Roles } from '../usuario/decorators/roles.decorator';
 import { CreateDocumentoDto } from './dto/create-documento.dto';
 import { CreateSolicitacaoResponseDto } from './dto/create-solicitacao-response.dto';
 import { CreateSolicitacaoDto } from './dto/create-solicitacao.dto';
@@ -82,7 +83,8 @@ export class SolicitacaoController {
   }
 
   @Put(':id')
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Atualizar status de solicitação',
