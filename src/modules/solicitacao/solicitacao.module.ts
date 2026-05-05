@@ -11,7 +11,6 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
 import { UsuarioModule } from '../usuario/usuario.module';
 import { SolicitacaoController } from './solicitacao.controller';
 import { SolicitacaoService } from './solicitacao.service';
-import { UsuarioModule } from '../usuario/usuario.module';
 
 @Module({
   imports: [

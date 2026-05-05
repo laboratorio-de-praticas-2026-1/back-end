@@ -26,7 +26,7 @@ import { DashboardService } from './dashboard.service';
       Veiculo,
       Servico,
       DebitoServico,
-      DebitoVeiculo,      
+      DebitoVeiculo,
     ]),
     UsuarioModule,
   ],

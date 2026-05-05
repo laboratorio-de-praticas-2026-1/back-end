@@ -1,5 +1,5 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
 import {
   ClientesDto,
@@ -25,6 +25,7 @@ export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @Get('all')
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Retorna todos os dados do dashboard',
     description:
@@ -39,6 +40,7 @@ export class DashboardController {
   }
 
   @Get()
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Retorna os dados gerais do dashboard',
     description:
@@ -53,6 +55,7 @@ export class DashboardController {
   }
 
   @Get('solicitacoes')
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Retorna os dados de solicitações do dashboard',
     description:
@@ -70,6 +73,7 @@ export class DashboardController {
   }
 
   @Get('veiculos')
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Retorna os dados de veículos do dashboard',
     description:
@@ -80,6 +84,7 @@ export class DashboardController {
   }
 
   @Get('servicos')
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Retorna os dados de serviços do dashboard',
     description:
@@ -94,6 +99,7 @@ export class DashboardController {
   }
 
   @Get('financeiro')
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Retorna os dados financeiros do dashboard',
     description:
@@ -108,6 +114,7 @@ export class DashboardController {
   }
 
   @Get('documentos')
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Retorna os dados de documentos do dashboard',
     description:
@@ -122,6 +129,7 @@ export class DashboardController {
   }
 
   @Get('clientes')
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Retorna os dados de clientes do dashboard',
     description:

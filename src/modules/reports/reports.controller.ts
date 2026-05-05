@@ -41,6 +41,7 @@ export class ReportsController {
 
   @Get('categorias')
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
   @Roles('administrador')
   @ApiOperation({
     summary: 'Retorna as categorias de relatórios disponíveis',
