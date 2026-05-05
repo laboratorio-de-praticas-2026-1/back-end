@@ -4,10 +4,11 @@ import {
   Logger,
   HttpException,
   HttpStatus,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Empresa } from 'src/models/empresa.model';
-import { EmpresaDto } from './dto/empresa-response.dto';
+import { EmpresaDto, TipoEmpresa } from './dto/empresa-response.dto';
 import { EnviarEmailDto } from './dto/enviar-email-dto';
 import { EmailService } from 'src/infra/email/email.service';
 import { EmailParams } from 'src/infra/email/dto/email-params';
@@ -65,6 +66,9 @@ export class ContatoService {
   }
 
   private toDto(empresa: Empresa): EmpresaDto {
+    this.logger.log(
+      `Convertendo empresa para DTO: ${empresa.id} - ${empresa.tipo}`,
+    );
     return new EmpresaDto(
       empresa.id,
       empresa.nomeFantasia ?? '',
@@ -75,7 +79,7 @@ export class ContatoService {
       empresa.cidade ?? '',
       empresa.estado ?? '',
       empresa.site ?? '',
-      empresa.tipo ?? '',
+      empresa.tipo ? (empresa.tipo as TipoEmpresa) : null,
       empresa.latitude ?? '',
       empresa.longitude ?? '',
     );
@@ -115,10 +119,12 @@ export class ContatoService {
   }
 
   private montarEmailParams(dadosDto: EnviarEmailDto): EmailParams {
-    const destinatario = process.env.CONTACT_EMAIL || 'seuexemplo@email.com';
+    const destinatario = process.env.CONTACT_EMAIL || null;
 
-    if (!process.env.CONTACT_EMAIL) {
-      this.logger.warn('CONTACT_EMAIL não definido, usando email fallback');
+    if (!destinatario) {
+      throw new InternalServerErrorException(
+        'Não foi possível enviar a mensagem de contato. Por favor, tente novamente mais tarde. Ou entre em contato diretamente pelo telefone.',
+      );
     }
 
     return new EmailParams(

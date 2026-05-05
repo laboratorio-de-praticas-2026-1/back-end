@@ -1,4 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { IsEnum, IsString, MaxLength } from 'class-validator';
+
+export enum TipoEmpresa {
+  CLINICA = 'clinica',
+  VISTORIA = 'vistoria',
+  DETRAN = 'detran',
+}
 
 export class EmpresaDto {
   @ApiProperty()
@@ -22,7 +29,12 @@ export class EmpresaDto {
   @ApiProperty()
   cidade: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: 'Estado da empresa (sigla de 2 letras)',
+    example: 'SP',
+  })
+  @IsString({ message: 'O estado deve ser uma string' })
+  @MaxLength(2, { message: 'O estado deve conter no máximo 2 caracteres' })
   estado: string;
 
   @ApiProperty()
@@ -32,7 +44,10 @@ export class EmpresaDto {
     description: 'Tipo da empresa',
     required: false,
   })
-  tipo?: string;
+  @IsEnum(TipoEmpresa, {
+    message: `O tipo deve ser um dos seguintes valores: ${Object.values(TipoEmpresa).join(', ')}`,
+  })
+  tipo?: TipoEmpresa | null;
 
   @ApiProperty({
     description: 'Latitude da empresa',
@@ -61,7 +76,7 @@ export class EmpresaDto {
     cidade: string,
     estado: string,
     site: string,
-    tipo?: string,
+    tipo?: TipoEmpresa | null,
     latitude?: string,
     longitude?: string,
   ) {
