@@ -9,7 +9,6 @@ import {
 } from '@nestjs/common';
 import { UsuarioOwnerGuard } from './guards/usuario-owner.guard';
 import { NivelUsuario } from './dto/create-usuario.dto';
-import { AdminGuard } from './guards/admin.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 
@@ -43,8 +42,6 @@ describe('UsuarioController', () => {
       .overrideGuard(UsuarioOwnerGuard)
       .useValue(mockGuard)
       .overrideGuard(RolesGuard)
-      .useValue(mockGuard)
-      .overrideGuard(AdminGuard)
       .useValue(mockGuard)
       .compile();
 

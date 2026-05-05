@@ -16,7 +16,9 @@ export class UsuarioOwnerGuard implements CanActivate {
       .getRequest<Request & { user?: JwtPayload; params: { id: string } }>();
 
     if (!request.user) {
-      throw new UnauthorizedException('Usuário não autenticado para esta operação.');
+      throw new UnauthorizedException(
+        'Usuário não autenticado para esta operação.',
+      );
     }
 
     if (request.user.nivel === 'administrador') return true;

@@ -3,7 +3,8 @@ import { Readable } from 'stream';
 import { BlogController } from './blog.controller';
 import { BlogService } from './blog.service';
 import { CategoriaBlog } from 'src/models/blog.model';
-import { AdminGuard } from '../usuario/guards/admin.guard';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { RolesGuard } from '../usuario/guards/roles.guard';
 
 const mockGuard = { canActivate: jest.fn().mockReturnValue(true) };
 
@@ -41,7 +42,9 @@ describe('BlogController', () => {
         },
       ],
     })
-      .overrideGuard(AdminGuard)
+      .overrideGuard(JwtAuthGuard)
+      .useValue(mockGuard)
+      .overrideGuard(RolesGuard)
       .useValue(mockGuard)
       .compile();
 
