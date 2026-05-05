@@ -1,44 +1,36 @@
 import {
+  Injectable,
+  NotFoundException,
+  Logger,
   HttpException,
   HttpStatus,
-  Injectable,
-  Logger,
-  NotFoundException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { EmailParams } from 'src/infra/email/dto/email-params';
-import { CONTATO_DUVIDA_CLIENTE } from 'src/infra/email/templates/templates-names';
-import { EmailEnviado } from 'src/models/email-enviado.model';
 import { Empresa } from 'src/models/empresa.model';
-import { EmailService } from '../../infra/email/email.service';
-import { EmpresaDto } from './dto/empresa-response.dto';
+import { EmpresaDto, TipoEmpresa } from './dto/empresa-response.dto';
 import { EnviarEmailDto } from './dto/enviar-email-dto';
+import { EmailService } from 'src/infra/email/email.service';
+import { EmailParams } from 'src/infra/email/dto/email-params';
+import { EmailEnviado } from 'src/models/email-enviado.model';
+
+const CONTATO_DUVIDA_CLIENTE = 'contato';
 
 @Injectable()
 export class ContatoService {
   private readonly logger = new Logger(ContatoService.name);
+  private readonly ASSUNTO_FIXO = 'Contato Dúvida do Cliente';
 
   constructor(
     @InjectModel(Empresa) private empresaModel: typeof Empresa,
-    @InjectModel(EmailEnviado) private emailEnviadoModel: typeof EmailEnviado,
+    @InjectModel(EmailEnviado)
+    private emailEnviadoModel: typeof EmailEnviado,
     private readonly emailService: EmailService,
   ) {}
 
-  async buscarContato(cnpj: string): Promise<EmpresaDto> {
+  async buscarContatoById(id: number): Promise<EmpresaDto> {
     const empresa: Empresa | null = await this.empresaModel.findOne({
-      where: { cnpj },
-    });
-
-    if (!empresa) {
-      throw new NotFoundException('Dados de contato não encontrados');
-    }
-
-    return this.toDto(empresa);
-  }
-
-  async buscarContatoById(id: number, cnpj: string): Promise<EmpresaDto> {
-    const empresa: Empresa | null = await this.empresaModel.findOne({
-      where: { id, cnpj },
+      where: { id },
     });
 
     if (!empresa) {
@@ -50,23 +42,33 @@ export class ContatoService {
 
   async atualizarContato(
     id: number,
-    cnpj: string,
     data: Partial<EmpresaDto>,
-  ): Promise<void> {
-    const { cnpj: _, ...safeData } = data;
-
-    const [updated] = await this.empresaModel.update(safeData, {
-      where: { id, cnpj },
+  ): Promise<{ message: string }> {
+    const empresa = await this.empresaModel.findOne({
+      where: { id },
     });
 
-    if (updated === 0) {
-      throw new NotFoundException(
-        'Contato não encontrado ou não pertence à empresa',
-      );
+    if (!empresa) {
+      throw new NotFoundException('Contato não encontrado');
     }
+
+    const safeData = Object.fromEntries(
+      Object.entries(data).filter(([_, value]) => value !== undefined),
+    );
+
+    await this.empresaModel.update(safeData, {
+      where: { id },
+    });
+
+    return {
+      message: 'Contato atualizado com sucesso',
+    };
   }
 
   private toDto(empresa: Empresa): EmpresaDto {
+    this.logger.log(
+      `Convertendo empresa para DTO: ${empresa.id} - ${empresa.tipo}`,
+    );
     return new EmpresaDto(
       empresa.id,
       empresa.nomeFantasia ?? '',
@@ -77,6 +79,9 @@ export class ContatoService {
       empresa.cidade ?? '',
       empresa.estado ?? '',
       empresa.site ?? '',
+      empresa.tipo ? (empresa.tipo as TipoEmpresa) : null,
+      empresa.latitude ?? '',
+      empresa.longitude ?? '',
     );
   }
 
@@ -84,55 +89,55 @@ export class ContatoService {
     dadosDto: EnviarEmailDto,
   ): Promise<{ message: string }> {
     try {
-      const dataEnvio = new Date();
-
-      const destinatario = process.env.CONTACT_EMAIL;
-      if (!destinatario) {
-        throw new HttpException(
-          'Não foi possível enviar a mensagem. Contato da empresa não configurado.',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
-
-      // Envia e-mail usando EmailService
       const emailParams = this.montarEmailParams(dadosDto);
 
       await this.emailService.enviarEmail(emailParams);
 
-      // Salva no banco após enviar o e-mail
       await this.emailEnviadoModel.create({
         nomeUsuario: dadosDto.nome,
         emailUsuario: dadosDto.email,
-        assunto: dadosDto.assunto,
         textoDigitado: dadosDto.mensagem,
-        dataEnvio: dataEnvio,
+        assunto: this.ASSUNTO_FIXO,
+        dataEnvio: new Date(),
       });
+
+      this.logger.log(`Mensagem enviada: ${dadosDto.email}`);
 
       return { message: 'Mensagem de contato enviada com sucesso!' };
     } catch (error: unknown) {
       let mensagemErro = 'Erro ao enviar mensagem';
+
       if (error instanceof Error) {
         mensagemErro = error.message;
         this.logger.error(`Erro ao processar envio: ${error.message}`);
       } else {
         this.logger.error('Erro desconhecido ao processar envio');
       }
+
       throw new HttpException(mensagemErro, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
   private montarEmailParams(dadosDto: EnviarEmailDto): EmailParams {
+    const destinatario = process.env.CONTACT_EMAIL || null;
+
+    if (!destinatario) {
+      throw new InternalServerErrorException(
+        'Não foi possível enviar a mensagem de contato. Por favor, tente novamente mais tarde. Ou entre em contato diretamente pelo telefone.',
+      );
+    }
+
     return new EmailParams(
-      process.env.CONTACT_EMAIL!,
+      destinatario,
       CONTATO_DUVIDA_CLIENTE,
-      dadosDto.assunto,
+      this.ASSUNTO_FIXO,
       {
         nome: dadosDto.nome,
         email: dadosDto.email,
         mensagem: dadosDto.mensagem,
-        dataEnvio: new Date().toLocaleString(),
         telefone: dadosDto.telefone || 'Não fornecido',
-        assunto: dadosDto.assunto,
+        dataEnvio: new Date().toLocaleString(),
+        assunto: this.ASSUNTO_FIXO,
       },
       false,
     );

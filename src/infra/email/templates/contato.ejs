@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novo Contato - Grupo Bortone</title>
+    <style>
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f5f7; margin: 0; padding: 0; }
+
+        .email-container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .header { background-color: #283e7b; padding: 30px 20px; text-align: center; }
+        .header img { max-width: 220px; height: auto; }
+        
+        .content { padding: 40px 30px; color: #333333; line-height: 1.6; }
+        .content h2 { color: #283e7b; margin-top: 0; font-size: 22px; border-bottom: 2px solid #f0f0f0; padding-bottom: 12px; }
+        .data-group { margin-bottom: 12px; font-size: 15px; }
+        .data-label { font-weight: 600; color: #555555; display: inline-block; width: 80px; }
+        
+        .message-box { background-color: #f9f9fb; border-left: 4px solid #283e7b; padding: 16px; margin-top: 24px; border-radius: 0 4px 4px 0; font-size: 15px; color: #444444; }
+        .message-label { font-weight: 600; color: #283e7b; display: block; margin-bottom: 8px; }
+        
+        .footer { background-color: #f4f5f7; padding: 20px; text-align: center; font-size: 12px; color: #888888; border-top: 1px solid #e0e0e0; }
+    </style>
+</head>
+
+<body>
+    <div class="email-container">
+
+        <div class="header">
+            <img src="cid:logo_img" alt="Logo Grupo Bortone">
+        </div>
+
+        <div class="content">
+            <h2>Novo contato recebido</h2>
+            <p style="margin-bottom: 24px; color: #666;">
+                Você recebeu uma nova mensagem através do formulário 
+                <strong>"Entre em Contato"</strong> do site.
+            </p>
+            
+            <div class="data-group">
+                <span class="data-label">Nome:</span>
+                <%= nome ?? 'Não informado' %>
+            </div>
+
+            <div class="data-group">
+                <span class="data-label">E-mail:</span>
+                <a href="mailto:<%= email ?? '' %>" style="color: #283e7b; text-decoration: none;">
+                    <%= email ?? 'Não informado' %>
+                </a>
+            </div>
+
+            <% if (telefone) { %>
+            <div class="data-group">
+                <span class="data-label">Telefone:</span>
+                <%= telefone %>
+            </div>
+            <% } %>
+
+            <div class="data-group">
+                <span class="data-label">Assunto:</span>
+                <%= assunto ?? 'Sem assunto' %>
+            </div>
+            
+            <div class="message-box">
+                <span class="message-label">Mensagem:</span>
+                <%= mensagem ?? 'Sem mensagem' %>
+            </div>
+        </div>
+
+        <div class="footer">
+            Este é um e-mail automático gerado pelo sistema do Grupo Bortone.<br>
+            Por favor, não responda diretamente a este e-mail.
+        </div>
+        
+    </div>
+</body>
+</html>

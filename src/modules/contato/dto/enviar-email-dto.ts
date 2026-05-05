@@ -18,10 +18,14 @@ export class EnviarEmailDto {
   @IsEmail({}, { message: 'E-mail inválido' })
   email: string;
 
-  @ApiProperty({ description: 'Assunto do e-mail', example: 'Orçamento' })
-  @IsNotEmpty({ message: 'O assunto é obrigatório' })
+  @ApiProperty({
+    description: 'Assunto do e-mail',
+    example: 'Orçamento',
+    required: false,
+  })
+  @IsOptional()
   @IsString()
-  assunto: string;
+  assunto?: string;
 
   @ApiProperty({
     description: 'Mensagem do usuário',

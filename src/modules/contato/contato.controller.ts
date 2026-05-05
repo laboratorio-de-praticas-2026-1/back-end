@@ -1,90 +1,169 @@
 import {
-  Body,
   Controller,
-  ForbiddenException,
   Get,
+  Post,
+  Put,
+  Body,
   Logger,
   Param,
   ParseIntPipe,
-  Post,
-  Put,
+  ForbiddenException,
   ValidationPipe,
 } from '@nestjs/common';
 import {
-  ApiBadRequestResponse,
-  ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiCreatedResponse,
+  ApiBadRequestResponse,
 } from '@nestjs/swagger';
 import { ContatoService } from './contato.service';
+import { EmpresaDto, TipoEmpresa } from './dto/empresa-response.dto';
 import { ContatoUpdateDto } from './dto/contato-update.dto';
-import { EmpresaDto } from './dto/empresa-response.dto';
 import { EnviarEmailDto } from './dto/enviar-email-dto';
 
 @Controller('contato')
 export class ContatoController {
   private readonly logger = new Logger(ContatoController.name);
 
-  private readonly CNPJ_EMPRESA = '12.345.678/0001-99';
+  private readonly EMPRESA_ID = 1;
 
   constructor(private readonly contatoService: ContatoService) {}
 
-  @Get()
-  @ApiOperation({
-    summary: 'Retorna dados do contato da empresa bortone',
-  })
-  @ApiOkResponse({ type: EmpresaDto })
-  @ApiNotFoundResponse({ description: 'Dados de contato não encontrados' })
-  buscarContato(): Promise<EmpresaDto> {
-    const cnpj = this.getCnpjValido();
-
-    this.logger.log(`Buscando contato para CNPJ: ${cnpj}`);
-
-    return this.contatoService.buscarContato(cnpj);
-  }
-
   @Get(':id')
   @ApiOperation({
-    summary: 'Retorna dados do contato da empresa bortone. (Fallback)',
-    description:
-      'Busca dados do contato da empresa bortone por ID. Usado caso o dado no banco tenha id diferente de 1.',
+    summary: 'Retorna dados do contato (somente ID = 1 permitido)',
   })
   @ApiOkResponse({ type: EmpresaDto })
   @ApiNotFoundResponse({ description: 'Dados de contato não encontrados' })
   buscarContatoById(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<EmpresaDto> {
-    const cnpj = this.getCnpjValido();
+    if (id !== this.EMPRESA_ID) {
+      throw new ForbiddenException(
+        'Somente a empresa com ID = 1 pode ser acessada',
+      );
+    }
 
-    this.logger.log(`Buscando contato ID ${id} para CNPJ: ${cnpj}`);
-
-    return this.contatoService.buscarContatoById(id, cnpj);
+    this.logger.log(`Buscando contato ID: ${id}`);
+    return this.contatoService.buscarContatoById(id);
   }
+
+  /*export class EmpresaDto {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty()
+  nomeFantasia: string;
+
+  @ApiProperty()
+  cnpj: string;
+
+  @ApiProperty()
+  telefone: string;
+
+  @ApiProperty()
+  email: string;
+
+  @ApiProperty()
+  endereco: string;
+
+  @ApiProperty()
+  cidade: string;
+
+  @ApiProperty({
+    description: 'Estado da empresa (sigla de 2 letras)',
+    example: 'SP',
+  })
+  @IsString({ message: 'O estado deve ser uma string' })
+  @MaxLength(2, { message: 'O estado deve conter no máximo 2 caracteres' })
+  estado: string;
+
+  @ApiProperty()
+  site: string;
+
+  @ApiProperty({
+    description: 'Tipo da empresa',
+    required: false,
+  })
+  @IsEnum({
+    enum: TipoEmpresa,
+    message: `O tipo deve ser um dos seguintes valores: ${Object.values(TipoEmpresa).join(', ')}`,
+  })
+  tipo?: TipoEmpresa | null;
+
+  @ApiProperty({
+    description: 'Latitude da empresa',
+    required: false,
+  })
+  latitude?: string;
+
+  @ApiProperty({
+    description: 'Longitude da empresa',
+    required: false,
+  })
+  longitude?: string;
+
+  @ApiProperty({
+    description: 'Endereço completo (endereço + cidade + estado)',
+  })
+  enderecoCompleto: string; */
 
   @Put(':id')
   @ApiOperation({
-    summary: 'Atualiza dados de contato da empresa bortone pelo Id.',
+    summary: 'Atualiza dados do contato (somente ID = 1 permitido)',
+    requestBody: {
+      description: 'Dados a serem atualizados (todos os campos opcionais)',
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              nomeFantasia: { type: 'string', example: 'Auto Vistoria' },
+              cnpj: { type: 'string', example: '12.345.678/0001-90' },
+              telefone: { type: 'string', example: '11987654321' },
+              email: { type: 'string', example: 'contato@autovistoria.com.br' },
+              endereco: { type: 'string', example: 'Rua Exemplo, 123' },
+              cidade: { type: 'string', example: 'São Paulo' },
+              estado: {
+                type: 'string',
+                example: 'SP',
+                description: 'Sigla do estado (2 letras)',
+              },
+              site: { type: 'string', example: 'www.autovistoria.com.br' },
+              tipo: {
+                type: 'string',
+                enum: Object.values(TipoEmpresa),
+                example: 'vistoria',
+                description: 'Tipo da empresa (clinica, vistoria ou detran)',
+              },
+              latitude: { type: 'string', example: '-23.55052' },
+              longitude: { type: 'string', example: '-46.633308' },
+              enderecoCompleto: {
+                type: 'string',
+                example: 'Rua Exemplo, 123, São Paulo, SP',
+                description: 'Endereço completo (endereço + cidade + estado)',
+              },
+            },
+          },
+        },
+      },
+    },
   })
   @ApiOkResponse({ description: 'Contato atualizado com sucesso' })
   @ApiNotFoundResponse({ description: 'Contato não encontrado' })
-  async atualizarContato(
+  async atualizarContatoById(
     @Param('id', ParseIntPipe) id: number,
     @Body() data: ContatoUpdateDto,
-  ): Promise<void> {
-    const cnpj = this.getCnpjValido();
-
-    this.logger.log(`Atualizando contato ID ${id} para CNPJ: ${cnpj}`);
-
-    return this.contatoService.atualizarContato(id, cnpj, data);
-  }
-
-  private getCnpjValido(): string {
-    if (!this.CNPJ_EMPRESA) {
-      throw new ForbiddenException('CNPJ inválido');
+  ): Promise<{ message: string }> {
+    if (id !== this.EMPRESA_ID) {
+      throw new ForbiddenException(
+        'Somente a empresa com ID = 1 pode ser atualizada',
+      );
     }
 
-    return this.CNPJ_EMPRESA;
+    this.logger.log(`Atualizando contato ID: ${id}`);
+    return this.contatoService.atualizarContato(id, data);
   }
 
   @Post('enviar-email')
