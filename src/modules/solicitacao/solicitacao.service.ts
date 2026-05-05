@@ -548,6 +548,16 @@ export class SolicitacaoService implements OnModuleDestroy {
       whereUsuario.cpfCnpj = { [Op.like]: `%${filtros.cpf_cnpj}%` };
     }
 
+    type SolicitacaoListaRow = {
+      usuario: { id: number; nome: string; email: string };
+      servico: { id: number; nome: string; valorBase: unknown };
+      status: string;
+      observacaoCliente: string | null;
+      observacaoAdmin: string | null;
+      dataSolicitacao: Date;
+      dataConclusao: Date | null;
+    };
+
     const queryOptions = {
       where: whereSolicitacao,
       limit,
@@ -562,7 +572,8 @@ export class SolicitacaoService implements OnModuleDestroy {
         {
           model: Usuario,
           attributes: ['id', 'nome', 'email'],
-          where: Object.keys(whereUsuario).length > 0 ? whereUsuario : undefined,
+          where:
+            Object.keys(whereUsuario).length > 0 ? whereUsuario : undefined,
           required: Object.keys(whereUsuario).length > 0,
         },
         {
@@ -572,15 +583,18 @@ export class SolicitacaoService implements OnModuleDestroy {
       ],
     };
 
-    const findAndCountAll = this.solicitacaoModel.findAndCountAll;
-    const resultadoBruto = findAndCountAll
-      ? await findAndCountAll.call(this.solicitacaoModel, queryOptions)
-      : undefined;
+    const resultadoBruto =
+      await this.solicitacaoModel.findAndCountAll?.(queryOptions);
 
     const resultado =
       resultadoBruto && typeof resultadoBruto === 'object'
         ? resultadoBruto
-        : { rows: await this.solicitacaoModel.findAll(queryOptions), count: 0 };
+        : {
+            rows: (await this.solicitacaoModel.findAll(
+              queryOptions,
+            )) as SolicitacaoListaRow[],
+            count: 0,
+          };
 
     const solicitacoes = resultado.rows ?? [];
     const total =
@@ -623,10 +637,11 @@ export class SolicitacaoService implements OnModuleDestroy {
     };
   }
 
-  async getAllSolicitacoes(query: ListSolicitacoesQueryDto): Promise<any> {
+  async getAllSolicitacoes(
+    query: ListSolicitacoesQueryDto,
+  ): Promise<ListSolicitacoesResponseDto> {
     return this.listarSolicitacoes(query);
   }
-
 
   private normalizarDataFim(data: string): Date {
     if (/^\d{4}-\d{2}-\d{2}$/.test(data)) {
@@ -655,37 +670,34 @@ export class SolicitacaoService implements OnModuleDestroy {
       );
     }
 
-  let urlDocRestricted: CloudinaryResponse;
+    let urlDocRestricted: CloudinaryResponse;
 
-  try {
-    urlDocRestricted =
-      await this.cloudinaryService.uploadDocument(documento);
-  } catch (error) {
-    const mensagemErro =
-      error instanceof Error ? error.message : 'Erro desconhecido';
+    try {
+      urlDocRestricted = await this.cloudinaryService.uploadDocument(documento);
+    } catch (error) {
+      const mensagemErro =
+        error instanceof Error ? error.message : 'Erro desconhecido';
 
-    this.logger.error(
-      `Falha ao enviar documento para a solicitacao ${solicitacaoId}: ${mensagemErro}`,
-    );
+      this.logger.error(
+        `Falha ao enviar documento para a solicitacao ${solicitacaoId}: ${mensagemErro}`,
+      );
 
-    throw new BadRequestException(
-      `Erro ao enviar documento: ${mensagemErro}`,
-    );
-  }
+      throw new BadRequestException(
+        `Erro ao enviar documento: ${mensagemErro}`,
+      );
+    }
 
-  const publicId = urlDocRestricted.public_id as string;
+    const publicId = urlDocRestricted.public_id as string;
 
-  if (!publicId) {
-    throw new InternalServerErrorException(
-      'Resposta inválida do Cloudinary: public_id ausente',
-    );
-  }
+    if (!publicId) {
+      throw new InternalServerErrorException(
+        'Resposta inválida do Cloudinary: public_id ausente',
+      );
+    }
 
-  const resourceType = urlDocRestricted.resource_type as 'raw' | 'image';
+    const resourceType = urlDocRestricted.resource_type as 'raw' | 'image';
 
-  const nomeHash = this.cryptoUtil.encrypt(
-    `${resourceType}|${publicId}`,
-  );
+    const nomeHash = this.cryptoUtil.encrypt(`${resourceType}|${publicId}`);
 
     await this.documentoModel.create({
       solicitacaoId: solicitacaoId,
@@ -698,7 +710,6 @@ export class SolicitacaoService implements OnModuleDestroy {
       message: 'Documento enviado com sucesso e aguardando validação.',
     };
   }
-
 
   async listarDocumentos(solicitacaoId: number): Promise<{
     data: {
@@ -721,9 +732,16 @@ export class SolicitacaoService implements OnModuleDestroy {
       });
     }
 
-    const documentos = await this.documentoModel.findAll({
+    const documentos = (await this.documentoModel.findAll({
       where: { solicitacaoId },
-    });
+    })) as Array<{
+      id: number;
+      nomeHash: string | null;
+      nomeOriginal: string | null;
+      tipoDocumento: string | null;
+      statusValidacao: StatusValidacaoEnum;
+      dataUpload: Date | null;
+    }>;
 
     if (!documentos.length) {
       return {
@@ -733,54 +751,52 @@ export class SolicitacaoService implements OnModuleDestroy {
       };
     }
 
-    const data = (
-      await Promise.all(
-        documentos.map(async (doc) => {
-          try {
-            if (!doc.nomeHash) {
-              throw new Error('Documento sem nomeHash');
-            }
-
-            const decrypted = this.cryptoUtil.decrypt(doc.nomeHash);
-            const [resourceType, publicId] = decrypted.split('|');
-
-            if (!resourceType || !publicId) {
-              throw new Error('Formato inválido');
-            }
-
-            const url = this.cloudinaryService.generateTemporaryUrl(decrypted);
-
-            return {
-              id: doc.id,
-              tipo_documento: doc.tipoDocumento,
-              nome_arquivo: doc.nomeOriginal ?? publicId,
-              status_validacao: doc.statusValidacao,
-              url,
-              data_upload: doc.dataUpload,
-            };
-          } catch (error) {
-            this.logger.warn(
-              `Erro ao processar documento ID ${doc.id}: ${
-                error instanceof Error ? error.message : 'Erro desconhecido'
-              }`,
-            );
-
-            return null;
+    const data = documentos
+      .map((doc) => {
+        try {
+          if (!doc.nomeHash) {
+            throw new Error('Documento sem nomeHash');
           }
-        }),
-      )
-    ).filter(
-      (
-        item,
-      ): item is {
-        id: number;
-        tipo_documento: string | null;
-        nome_arquivo: string;
-        status_validacao: StatusValidacaoEnum;
-        url: string;
-        data_upload: Date | null;
-      } => item !== null,
-    );
+
+          const decrypted = this.cryptoUtil.decrypt(doc.nomeHash);
+          const [resourceType, publicId] = decrypted.split('|');
+
+          if (!resourceType || !publicId) {
+            throw new Error('Formato inválido');
+          }
+
+          const url = this.cloudinaryService.generateTemporaryUrl(decrypted);
+
+          return {
+            id: doc.id,
+            tipo_documento: doc.tipoDocumento,
+            nome_arquivo: doc.nomeOriginal ?? publicId,
+            status_validacao: doc.statusValidacao,
+            url,
+            data_upload: doc.dataUpload,
+          };
+        } catch (error) {
+          this.logger.warn(
+            `Erro ao processar documento ID ${doc.id}: ${
+              error instanceof Error ? error.message : 'Erro desconhecido'
+            }`,
+          );
+
+          return null;
+        }
+      })
+      .filter(
+        (
+          item,
+        ): item is {
+          id: number;
+          tipo_documento: string | null;
+          nome_arquivo: string;
+          status_validacao: StatusValidacaoEnum;
+          url: string;
+          data_upload: Date | null;
+        } => item !== null,
+      );
 
     if (!data.length) {
       return {
@@ -869,5 +885,4 @@ export class SolicitacaoService implements OnModuleDestroy {
       mensagem: 'Documento substituído com sucesso',
     };
   }
-
 }

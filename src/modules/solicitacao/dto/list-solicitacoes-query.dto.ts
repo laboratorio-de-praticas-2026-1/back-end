@@ -25,15 +25,11 @@ export const SOLICITACAO_ORDER_BY_FIELDS = [
   'data_conclusao',
 ] as const;
 
-export type SolicitacaoOrderBy =
-  (typeof SOLICITACAO_ORDER_BY_FIELDS)[number];
+export type SolicitacaoOrderBy = (typeof SOLICITACAO_ORDER_BY_FIELDS)[number];
 
 export type SolicitacaoOrder = 'asc' | 'desc';
 
-export const SOLICITACAO_ORDER_BY_COLUMN: Record<
-  SolicitacaoOrderBy,
-  string
-> = {
+export const SOLICITACAO_ORDER_BY_COLUMN: Record<SolicitacaoOrderBy, string> = {
   id: 'id',
   status: 'status',
   usuarioId: 'usuarioId',
@@ -64,13 +60,13 @@ const parseOptionalNumber = (value: unknown) => {
   return Number(value);
 };
 
-const parseOptionalArray = (value: unknown) => {
+const parseOptionalArray = (value: unknown): string[] | undefined => {
   if (value === undefined || value === null || value === '') {
     return undefined;
   }
 
   if (Array.isArray(value)) {
-    return value;
+    return value.map((item) => String(item));
   }
 
   if (typeof value === 'string') {
@@ -80,7 +76,7 @@ const parseOptionalArray = (value: unknown) => {
       .filter(Boolean);
   }
 
-  return [value];
+  return undefined;
 };
 
 const parseOptionalBoolean = (value: unknown) => {
@@ -101,12 +97,20 @@ const parseOptionalBoolean = (value: unknown) => {
   return Boolean(value);
 };
 
-const parseOptionalString = (value: unknown) => {
+const parseOptionalString = (value: unknown): string | undefined => {
   if (value === undefined || value === null || value === '') {
     return undefined;
   }
 
-  return String(value);
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+
+  return undefined;
 };
 
 export class ListSolicitacoesQueryDto {
@@ -116,9 +120,7 @@ export class ListSolicitacoesQueryDto {
     default: 1,
     minimum: 1,
   })
-  @Transform(({ value }: TransformFnParams) =>
-    parseNumberOrDefault(value, 1),
-  )
+  @Transform(({ value }: TransformFnParams) => parseNumberOrDefault(value, 1))
   @IsInt()
   @Min(1)
   page: number = 1;
@@ -129,9 +131,7 @@ export class ListSolicitacoesQueryDto {
     default: 10,
     minimum: 1,
   })
-  @Transform(({ value }: TransformFnParams) =>
-    parseNumberOrDefault(value, 10),
-  )
+  @Transform(({ value }: TransformFnParams) => parseNumberOrDefault(value, 10))
   @IsInt()
   @Min(1)
   limit: number = 10;
@@ -153,17 +153,15 @@ export class ListSolicitacoesQueryDto {
     default: 'desc',
   })
   @Transform(({ value }: TransformFnParams) =>
-    typeof value === 'string'
-      ? value.toLowerCase()
-      : (value as unknown),
+    typeof value === 'string' ? value.toLowerCase() : (value as unknown),
   )
   @IsOptional()
   @IsIn(['asc', 'desc'])
   order: SolicitacaoOrder = 'desc';
 
   @ApiPropertyOptional({
-  description: 'Filtrar por status da solicitação',
-  example: 'Recebido',
+    description: 'Filtrar por status da solicitação',
+    example: 'Recebido',
   })
   @IsOptional()
   @IsString()
