@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { JwtPayload } from '../usuario/guards/jwt-auth.guard';
 import type { Response } from 'express';
 import { CreateReciboDto } from './dto/create-recibo.dto';
 import { ReciboService } from './recibo.service';
@@ -27,9 +28,13 @@ export class ReciboController {
   @ApiBearerAuth()
   create(
     @Body() createReciboDto: CreateReciboDto,
-    @Req() req: { user: { id: number } },
+    @Req() req: { user: JwtPayload },
   ) {
-    return this.reciboService.create(createReciboDto, req.user.id);
+    return this.reciboService.create(
+      createReciboDto,
+      req.user.id,
+      req.user.nivel,
+    );
   }
 
   @ApiOperation({
@@ -43,11 +48,12 @@ export class ReciboController {
   async previewDownload(
     @Body() createReciboDto: CreateReciboDto,
     @Res({ passthrough: true }) res: Response,
-    @Req() req: { user: { id: number } },
+    @Req() req: { user: JwtPayload },
   ) {
     const pdfBuffer = await this.reciboService.previewDownload(
       createReciboDto,
       req.user.id,
+      req.user.nivel,
     );
     const filename = `recibo-solicitacao.pdf`;
 

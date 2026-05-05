@@ -48,7 +48,6 @@ describe('ReciboService', () => {
         { provide: getModelToken(Servico), useValue: mockModel },
         { provide: getModelToken(Solicitacao), useValue: mockModel },
         { provide: getModelToken(Veiculo), useValue: mockModel },
-        { provide: getModelToken(Usuario), useValue: mockModel },
         { provide: getModelToken(Pagamento), useValue: mockModel },
         { provide: getModelToken(Debito), useValue: mockModel },
         { provide: getModelToken(DebitoVeiculo), useValue: mockModel },
@@ -84,7 +83,7 @@ describe('ReciboService', () => {
       resource_type: 'raw',
     });
 
-    const resultado = await service.create({ idSolicitacao: 1 } as any, 1);
+    const resultado = await service.create({ idSolicitacao: 1 } as any, 1, 'cliente');
 
     expect(buildReciboHtmlSpy).toHaveBeenCalledWith({ idSolicitacao: 1 });
     expect(renderHtmlToPdfSpy).toHaveBeenCalledWith('<html></html>');
@@ -110,7 +109,7 @@ describe('ReciboService', () => {
       .spyOn(service as any, 'renderHtmlToPdf')
       .mockResolvedValue(Buffer.from('preview-pdf'));
 
-    const resultado = await service.previewDownload({ idSolicitacao: 1 } as any, 1);
+    const resultado = await service.previewDownload({ idSolicitacao: 1 } as any, 1, 'cliente');
 
     expect(renderHtmlToPdfSpy).toHaveBeenCalledWith('<html></html>');
     expect(resultado).toEqual(Buffer.from('preview-pdf'));
