@@ -22,7 +22,20 @@ import { UsuarioService } from './usuario.service';
     }),
   ],
   controllers: [UsuarioController],
-  providers: [UsuarioService, UsuarioOwnerGuard, AdminGuard, JwtAuthGuard, RolesGuard],
-  exports: [AdminGuard, JwtAuthGuard, JwtModule, RolesGuard],
+  providers: [
+    UsuarioService,
+    UsuarioOwnerGuard,
+    AdminGuard,
+    JwtAuthGuard,
+    RolesGuard,
+  ],
+  exports: [
+    UsuarioService,
+    UsuarioOwnerGuard,
+    AdminGuard,
+    JwtAuthGuard,
+    RolesGuard,
+    JwtModule,
+  ],
 })
 export class UsuarioModule {}

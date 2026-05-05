@@ -11,8 +11,7 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
 import { UsuarioModule } from '../usuario/usuario.module';
 import { SolicitacaoController } from './solicitacao.controller';
 import { SolicitacaoService } from './solicitacao.service';
-import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
-import { RolesGuard } from '../usuario/guards/roles.guard';
+import { UsuarioModule } from '../usuario/usuario.module';
 
 @Module({
   imports: [
@@ -29,6 +28,6 @@ import { RolesGuard } from '../usuario/guards/roles.guard';
     UsuarioModule,
   ],
   controllers: [SolicitacaoController],
-  providers: [SolicitacaoService, JwtAuthGuard, RolesGuard],
+  providers: [SolicitacaoService],
 })
 export class SolicitacaoModule {}
