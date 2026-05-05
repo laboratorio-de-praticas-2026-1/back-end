@@ -9,6 +9,7 @@ import { EmailEnviado } from 'src/models/email-enviado.model';
 
 describe('ContatoService', () => {
   let service: ContatoService;
+  const originalContactEmail = process.env.CONTACT_EMAIL;
 
   const mockEmpresaModel = {
     findOne: jest.fn(),
@@ -39,6 +40,8 @@ describe('ContatoService', () => {
   };
 
   beforeEach(async () => {
+    process.env.CONTACT_EMAIL = 'contato@empresa.com';
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ContatoService,
@@ -60,6 +63,15 @@ describe('ContatoService', () => {
     service = module.get<ContatoService>(ContatoService);
 
     jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    if (originalContactEmail === undefined) {
+      delete process.env.CONTACT_EMAIL;
+      return;
+    }
+
+    process.env.CONTACT_EMAIL = originalContactEmail;
   });
 
   describe('buscarContatoById', () => {
@@ -135,11 +147,13 @@ describe('ContatoService', () => {
 
     it('deve lançar erro se envio de email falhar', async () => {
       mockEmailService.enviarEmail.mockRejectedValue(
-        new Error('Erro ao enviar'),
+        new Error(
+          'Não foi possível enviar a mensagem de contato. Por favor, tente novamente mais tarde. Ou entre em contato diretamente pelo telefone.',
+        ),
       );
 
       await expect(service.enviarMensagemContato(dto)).rejects.toThrow(
-        'Erro ao enviar',
+        'Não foi possível enviar a mensagem de contato. Por favor, tente novamente mais tarde. Ou entre em contato diretamente pelo telefone.',
       );
 
       expect(mockEmailEnviadoModel.create).not.toHaveBeenCalled();
