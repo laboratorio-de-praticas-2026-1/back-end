@@ -1,7 +1,9 @@
 import {
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import * as ejs from 'ejs';
@@ -76,7 +78,11 @@ export class ReciboService {
     private readonly cryptoUtil: CryptoUtil,
   ) {}
 
-  async create(createReciboDto: CreateReciboDto): Promise<ResponseReciboDto> {
+  async create(
+    createReciboDto: CreateReciboDto,
+    usuarioId: number,
+  ): Promise<ResponseReciboDto> {
+    await this.checkOwnership(createReciboDto.idSolicitacao, usuarioId);
     const html = await this.buildReciboHtml(createReciboDto);
     const pdfBuffer = await this.renderHtmlToPdf(html);
 
@@ -106,9 +112,30 @@ export class ReciboService {
     return { urlDownload };
   }
 
-  async previewDownload(createReciboDto: CreateReciboDto): Promise<Buffer> {
+  async previewDownload(
+    createReciboDto: CreateReciboDto,
+    usuarioId: number,
+  ): Promise<Buffer> {
+    await this.checkOwnership(createReciboDto.idSolicitacao, usuarioId);
     const html = await this.buildReciboHtml(createReciboDto);
     return this.renderHtmlToPdf(html);
+  }
+
+  private async checkOwnership(
+    idSolicitacao: number,
+    usuarioId: number,
+  ): Promise<void> {
+    const solicitacao = await this.solicitacaoModel.findByPk(idSolicitacao, {
+      attributes: ['id', 'usuarioId'],
+    });
+    if (!solicitacao) {
+      throw new NotFoundException('Solicitação não encontrada');
+    }
+    if (solicitacao.usuarioId !== usuarioId) {
+      throw new ForbiddenException(
+        'Você não tem permissão para gerar recibo desta solicitação',
+      );
+    }
   }
 
   private async buildReciboHtml(

@@ -8,6 +8,7 @@ import {
   ParseIntPipe,
   Post,
   Put,
+  Req,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -24,6 +25,7 @@ import {
   ApiProperty,
   ApiTags,
 } from '@nestjs/swagger';
+import { AdminGuard } from '../usuario/guards/admin.guard';
 import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
 import { DocumentoFilePipe } from 'src/commons/pipes/file.pipe';
 import { CreateDocumentoDto } from './dto/create-documento.dto';
@@ -54,9 +56,10 @@ export class SolicitacaoController {
   })
   criarSolicitacao(
     @Body() solicitacaoDto: CreateSolicitacaoDto,
+    @Req() req: { user: { id: number } },
   ): Promise<CreateSolicitacaoResponseDto> {
     this.logger.log('Iniciando criacao de solicitacao de servico...');
-    return this.solicitacaoService.criarSolicitacao(solicitacaoDto);
+    return this.solicitacaoService.criarSolicitacao(solicitacaoDto, req.user.id);
   }
 
   @Get()
@@ -75,7 +78,7 @@ export class SolicitacaoController {
   }
 
   @Put(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AdminGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Atualizar status de solicitação',
@@ -170,7 +173,8 @@ export class SolicitacaoController {
     @Body() data: CreateDocumentoDto,
     @UploadedFile(DocumentoFilePipe)
     documento: Express.Multer.File,
+    @Req() req: { user: { id: number } },
   ): Promise<{ message: string }> {
-    return this.solicitacaoService.enviarDocumento(id, data, documento);
+    return this.solicitacaoService.enviarDocumento(id, req.user.id, data, documento);
   }
 }
