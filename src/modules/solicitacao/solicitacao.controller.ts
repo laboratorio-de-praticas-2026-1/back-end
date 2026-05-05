@@ -8,11 +8,14 @@ import {
   ParseIntPipe,
   Post,
   Put,
+  Req,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiConsumes,
   ApiCreatedResponse,
@@ -22,6 +25,9 @@ import {
   ApiProperty,
   ApiTags,
 } from '@nestjs/swagger';
+import 'multer';
+import { AdminGuard } from '../usuario/guards/admin.guard';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
 import { DocumentoFilePipe } from 'src/commons/pipes/file.pipe';
 import { CreateDocumentoDto } from './dto/create-documento.dto';
 import { CreateSolicitacaoResponseDto } from './dto/create-solicitacao-response.dto';
@@ -38,6 +44,8 @@ export class SolicitacaoController {
   constructor(private readonly solicitacaoService: SolicitacaoService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Criar uma solicitação',
     description:
@@ -49,9 +57,13 @@ export class SolicitacaoController {
   })
   criarSolicitacao(
     @Body() solicitacaoDto: CreateSolicitacaoDto,
+    @Req() req: { user: { id: number } },
   ): Promise<CreateSolicitacaoResponseDto> {
     this.logger.log('Iniciando criacao de solicitacao de servico...');
-    return this.solicitacaoService.criarSolicitacao(solicitacaoDto);
+    return this.solicitacaoService.criarSolicitacao(
+      solicitacaoDto,
+      req.user.id,
+    );
   }
 
   @Get()
@@ -70,6 +82,8 @@ export class SolicitacaoController {
   }
 
   @Put(':id')
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Atualizar status de solicitação',
     description: 'Atualizar status de solicitação e mudar observação de Admin.',
@@ -115,6 +129,8 @@ export class SolicitacaoController {
   }
 
   @Post(':id/documentos')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Adicionar um documento novo em uma solicitação existente.',
     description:
@@ -161,7 +177,13 @@ export class SolicitacaoController {
     @Body() data: CreateDocumentoDto,
     @UploadedFile(DocumentoFilePipe)
     documento: Express.Multer.File,
+    @Req() req: { user: { id: number } },
   ): Promise<{ message: string }> {
-    return this.solicitacaoService.enviarDocumento(id, data, documento);
+    return this.solicitacaoService.enviarDocumento(
+      id,
+      req.user.id,
+      data,
+      documento,
+    );
   }
 }

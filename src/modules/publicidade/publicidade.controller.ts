@@ -10,16 +10,19 @@ import {
   Post,
   Put,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiConsumes,
   ApiOperation,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { AdminGuard } from '../usuario/guards/admin.guard';
 import { imageFilePipe } from 'src/commons/pipes/file.pipe';
 import { Publicidade } from '../../models/publicidade.model';
 import {
@@ -67,6 +70,8 @@ export class PublicidadeController {
     );
   }
 
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Criar uma nova publicidade' })
   @ApiResponse({ status: 201, type: PublicidadeResponseDto })
   @ApiBody({
@@ -100,6 +105,8 @@ export class PublicidadeController {
   }
 
   @Put(':id')
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar publicidade' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -126,6 +133,8 @@ export class PublicidadeController {
   }
 
   @Delete(':id')
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Remover publicidade por ID' })
   @ApiResponse({ status: 200, description: 'Publicidade removida com sucesso' })
   async remove(@Param('id', ParseIntPipe) id: number) {

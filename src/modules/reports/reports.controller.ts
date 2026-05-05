@@ -10,14 +10,17 @@ import {
   Post,
   Res,
   StreamableFile,
+  UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBearerAuth,
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
   ApiProduces,
 } from '@nestjs/swagger';
+import { AdminGuard } from '../usuario/guards/admin.guard';
 import type { Response } from 'express';
 import { Relatorio } from 'src/models/relatorio.model';
 import { RelatorioCategoriaResponseDto } from './dto/categoria-response.dto';
@@ -48,6 +51,8 @@ export class ReportsController {
   }
 
   @Get()
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Listar relatórios',
     description:
@@ -62,6 +67,8 @@ export class ReportsController {
   }
 
   @Delete(':id')
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Excluir relatório por id' })
   @ApiNoContentResponse({ description: 'Relatório excluído com sucesso' })
@@ -70,6 +77,8 @@ export class ReportsController {
   }
 
   @Post('generate')
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Gerar Relatório PDF e salvar no Cloudinary',
@@ -87,6 +96,8 @@ export class ReportsController {
 
   //endpoint alternativo antes de ir para o Cloudinary. Visualizar antes de confirmar o salvamento.
   @Post('preview')
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Pré-visualizar Relatório PDF (streaming direto)',

@@ -5,6 +5,7 @@ import { jest } from '@jest/globals';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
 import { PdfGeneratorService } from './pdf-generator.service';
+import { AdminGuard } from '../usuario/guards/admin.guard';
 import { Relatorio } from 'src/models/relatorio.model';
 import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
 import { CryptoUtil } from 'src/commons/utils/crypto';
@@ -50,7 +51,10 @@ describe('ReportsController', () => {
         { provide: CryptoUtil, useValue: mockCryptoUtil },
         { provide: PdfGeneratorService, useValue: mockPdfGeneratorService },
       ],
-    }).compile();
+    })
+      .overrideGuard(AdminGuard)
+      .useValue({ canActivate: jest.fn().mockReturnValue(true) })
+      .compile();
 
     controller = module.get<ReportsController>(ReportsController);
     service = module.get<ReportsService>(ReportsService);

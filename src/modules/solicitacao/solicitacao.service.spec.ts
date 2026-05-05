@@ -129,7 +129,6 @@ describe('SolicitacaoService', () => {
 
   it('deve criar solicitacao com sucesso', async () => {
     const solicitacaoDto = {
-      usuario_id: 1,
       veiculo_id: 2,
       servico_id: 3,
       observacao_cliente: 'Observacao do cliente',
@@ -160,7 +159,7 @@ describe('SolicitacaoService', () => {
       undefined,
     );
 
-    await expect(service.criarSolicitacao(solicitacaoDto)).resolves.toEqual({
+    await expect(service.criarSolicitacao(solicitacaoDto, 1)).resolves.toEqual({
       message: 'Agendamento de serviço realizado com sucesso',
       protocolo: {
         cliente: {
@@ -209,7 +208,6 @@ describe('SolicitacaoService', () => {
 
   it('deve criar solicitacao sem veiculo quando nao informado', async () => {
     const solicitacaoDto = {
-      usuario_id: 1,
       servico_id: 3,
       observacao_cliente: 'Observacao sem veiculo',
     };
@@ -235,7 +233,7 @@ describe('SolicitacaoService', () => {
       undefined,
     );
 
-    await expect(service.criarSolicitacao(solicitacaoDto)).resolves.toEqual({
+    await expect(service.criarSolicitacao(solicitacaoDto, 1)).resolves.toEqual({
       message: 'Agendamento de serviço realizado com sucesso',
       protocolo: {
         cliente: {
@@ -265,7 +263,6 @@ describe('SolicitacaoService', () => {
 
   it('deve criar solicitacao mesmo se o envio do email falhar', async () => {
     const solicitacaoDto = {
-      usuario_id: 1,
       veiculo_id: 2,
       servico_id: 3,
       observacao_cliente: 'Observacao com falha de email',
@@ -296,7 +293,7 @@ describe('SolicitacaoService', () => {
       new Error('Falha no envio'),
     );
 
-    await expect(service.criarSolicitacao(solicitacaoDto)).resolves.toEqual({
+    await expect(service.criarSolicitacao(solicitacaoDto, 1)).resolves.toEqual({
       message: 'Agendamento de serviço realizado com sucesso',
       protocolo: {
         cliente: {
@@ -328,11 +325,7 @@ describe('SolicitacaoService', () => {
     });
 
     await expect(
-      service.criarSolicitacao({
-        usuario_id: 1,
-        veiculo_id: 2,
-        servico_id: 3,
-      }),
+      service.criarSolicitacao({ veiculo_id: 2, servico_id: 3 }, 1),
     ).rejects.toThrow('Usuário não encontrado');
   });
 
@@ -354,11 +347,7 @@ describe('SolicitacaoService', () => {
     });
 
     await expect(
-      service.criarSolicitacao({
-        usuario_id: 1,
-        veiculo_id: 2,
-        servico_id: 3,
-      }),
+      service.criarSolicitacao({ veiculo_id: 2, servico_id: 3 }, 1),
     ).rejects.toThrow('O veículo informado não pertence ao usuário');
   });
 });
