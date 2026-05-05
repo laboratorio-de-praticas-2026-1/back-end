@@ -1,12 +1,10 @@
 import {
+  Injectable,
   CanActivate,
   ExecutionContext,
   ForbiddenException,
-  Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Request } from 'express';
-import { JwtService } from '@nestjs/jwt';
 
 type NivelUsuario = 'cliente' | 'administrador';
 
@@ -26,42 +24,25 @@ interface RequestComUsuario {
   };
 }
 
-interface JwtPayload {
-  id: number;
-  nivel: NivelUsuario;
-}
 @Injectable()
 export class UsuarioOwnerGuard implements CanActivate {
-  constructor(private readonly jwtService: JwtService) {}
-
   canActivate(context: ExecutionContext): boolean {
-    console.log('Verificando permissão de acesso com UsuarioOwnerGuard');
-    const request: Request = context.switchToHttp().getRequest<Request>();
+    const request = context.switchToHttp().getRequest<RequestComUsuario>();
 
-    const headers = request.headers as Record<string, string | undefined>;
-    const authHeader = headers['authorization'];
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Token não fornecido');
+    const usuario = this.extrairUsuario(request);
+
+    if (!this.isUsuarioValido(usuario)) {
+      throw new UnauthorizedException(
+        'Usuário não autenticado para esta operação.',
+      );
     }
 
-    const token = authHeader.split(' ')[1];
-    console.log('Token extraído:', token);
-    try {
-      const payload = this.jwtService.verify<JwtPayload>(token);
-      console.log('Token verificado com sucesso:', payload);
-      (request as Request & { user: JwtPayload }).user = payload;
-    } catch {
-      console.log('Falha na verificação do token');
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
-
-    const usuario = (request as Request & { user: JwtPayload }).user;
-
-    if (usuario.nivel === 'administrador' || usuario.nivel === 'cliente') return true;
+    if (usuario.nivel === 'administrador') return true;
 
     const idAlvo = Number(request.params.id);
-    
-    console.log(`Acesso negado: usuário ${usuario.id} tentou acessar dados do usuário ${idAlvo}`);
+
+    if (usuario.id === idAlvo) return true;
+
     throw new ForbiddenException(
       'Você não tem permissão para alterar os dados deste usuário.',
     );

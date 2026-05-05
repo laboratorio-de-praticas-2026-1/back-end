@@ -11,6 +11,7 @@ import { Veiculo } from 'src/models/veiculo.model';
 import { RecomendacaoController } from './recomendacao.controller';
 import { RecomendacaoService } from './recomendacao.service';
 import { JwtModule } from '@nestjs/jwt';
+import { UsuarioModule } from '../usuario/usuario.module';
 
 @Module({
   imports: [
@@ -24,10 +25,7 @@ import { JwtModule } from '@nestjs/jwt';
       DebitoVeiculo,
     ]),
     CloudinaryModule,
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'SEGREDO_SUPER_SECRETO',
-      signOptions: { expiresIn: '7d' },
-    }),
+    UsuarioModule,
   ],
   controllers: [RecomendacaoController],
   providers: [RecomendacaoService],
