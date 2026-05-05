@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Post,
+  Req,
   Res,
   StreamableFile,
   UseGuards,
@@ -24,8 +25,11 @@ export class ReciboController {
   @Post('generate')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  create(@Body() createReciboDto: CreateReciboDto) {
-    return this.reciboService.create(createReciboDto);
+  create(
+    @Body() createReciboDto: CreateReciboDto,
+    @Req() req: { user: { id: number } },
+  ) {
+    return this.reciboService.create(createReciboDto, req.user.id);
   }
 
   @ApiOperation({
@@ -39,8 +43,12 @@ export class ReciboController {
   async previewDownload(
     @Body() createReciboDto: CreateReciboDto,
     @Res({ passthrough: true }) res: Response,
+    @Req() req: { user: { id: number } },
   ) {
-    const pdfBuffer = await this.reciboService.previewDownload(createReciboDto);
+    const pdfBuffer = await this.reciboService.previewDownload(
+      createReciboDto,
+      req.user.id,
+    );
     const filename = `recibo-solicitacao.pdf`;
 
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);

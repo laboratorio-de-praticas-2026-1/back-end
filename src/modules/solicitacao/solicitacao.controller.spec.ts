@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SolicitacaoController } from './solicitacao.controller';
 import { SolicitacaoService } from './solicitacao.service';
+import { AdminGuard } from '../usuario/guards/admin.guard';
 import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
 
 const mockGuard = { canActivate: jest.fn().mockReturnValue(true) };
@@ -22,6 +23,8 @@ describe('SolicitacaoController', () => {
         },
       ],
     })
+      .overrideGuard(AdminGuard)
+      .useValue(mockGuard)
       .overrideGuard(JwtAuthGuard)
       .useValue(mockGuard)
       .compile();
@@ -35,11 +38,11 @@ describe('SolicitacaoController', () => {
 
   it('deve criar solicitacao com sucesso', async () => {
     const solicitacaoDto = {
-      usuario_id: 1,
       veiculo_id: 2,
       servico_id: 3,
       observacao_cliente: 'Primeira solicitacao',
     };
+    const mockReq = { user: { id: 1 } };
 
     const resposta = {
       message: 'Agendamento de serviço realizado com sucesso',
@@ -60,11 +63,12 @@ describe('SolicitacaoController', () => {
 
     mockSolicitacaoService.criarSolicitacao.mockResolvedValue(resposta);
 
-    await expect(controller.criarSolicitacao(solicitacaoDto)).resolves.toEqual(
-      resposta,
-    );
+    await expect(
+      controller.criarSolicitacao(solicitacaoDto, mockReq),
+    ).resolves.toEqual(resposta);
     expect(mockSolicitacaoService.criarSolicitacao).toHaveBeenCalledWith(
       solicitacaoDto,
+      1,
     );
   });
 });

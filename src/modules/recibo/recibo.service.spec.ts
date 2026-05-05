@@ -71,6 +71,7 @@ describe('ReciboService', () => {
   });
 
   it('deve gerar um recibo e retornar a url temporária', async () => {
+    jest.spyOn(service as any, 'checkOwnership').mockResolvedValue(undefined);
     const buildReciboHtmlSpy = jest
       .spyOn(service as any, 'buildReciboHtml')
       .mockResolvedValue('<html></html>');
@@ -83,7 +84,7 @@ describe('ReciboService', () => {
       resource_type: 'raw',
     });
 
-    const resultado = await service.create({ idSolicitacao: 1 } as any);
+    const resultado = await service.create({ idSolicitacao: 1 } as any, 1);
 
     expect(buildReciboHtmlSpy).toHaveBeenCalledWith({ idSolicitacao: 1 });
     expect(renderHtmlToPdfSpy).toHaveBeenCalledWith('<html></html>');
@@ -103,12 +104,13 @@ describe('ReciboService', () => {
   });
 
   it('deve gerar o buffer do pdf no previewDownload', async () => {
+    jest.spyOn(service as any, 'checkOwnership').mockResolvedValue(undefined);
     jest.spyOn(service as any, 'buildReciboHtml').mockResolvedValue('<html></html>');
     const renderHtmlToPdfSpy = jest
       .spyOn(service as any, 'renderHtmlToPdf')
       .mockResolvedValue(Buffer.from('preview-pdf'));
 
-    const resultado = await service.previewDownload({ idSolicitacao: 1 } as any);
+    const resultado = await service.previewDownload({ idSolicitacao: 1 } as any, 1);
 
     expect(renderHtmlToPdfSpy).toHaveBeenCalledWith('<html></html>');
     expect(resultado).toEqual(Buffer.from('preview-pdf'));

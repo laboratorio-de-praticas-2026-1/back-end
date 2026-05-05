@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -47,9 +48,10 @@ export class SolicitacaoService {
 
   async criarSolicitacao(
     solicitacaoDto: CreateSolicitacaoDto,
+    usuarioId: number,
   ): Promise<CreateSolicitacaoResponseDto> {
     const [usuario, servico] = await Promise.all([
-      this.usuarioModel.findByPk(solicitacaoDto.usuario_id),
+      this.usuarioModel.findByPk(usuarioId),
       this.servicoModel.findByPk(solicitacaoDto.servico_id),
     ]);
 
@@ -227,6 +229,7 @@ export class SolicitacaoService {
   // Criação de rota de envio de documentos
   async enviarDocumento(
     solicitacaoId: number,
+    usuarioId: number,
     data: CreateDocumentoDto,
     documento: Express.Multer.File,
   ): Promise<{ message: string }> {
@@ -236,6 +239,11 @@ export class SolicitacaoService {
     const solicitacao = await this.solicitacaoModel.findByPk(solicitacaoId);
     if (!solicitacao) {
       throw new NotFoundException('Solicitação não encontrada');
+    }
+    if (solicitacao.usuarioId !== usuarioId) {
+      throw new ForbiddenException(
+        'Você não tem permissão para enviar documentos nesta solicitação',
+      );
     }
 
     let urlDocRestricted: CloudinaryResponse;

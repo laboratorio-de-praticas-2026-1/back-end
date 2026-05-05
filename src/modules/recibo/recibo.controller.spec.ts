@@ -38,26 +38,27 @@ describe('ReciboController', () => {
 
   it('deve delegar a geração do recibo para o service', async () => {
     reciboService.create.mockResolvedValue({ urlDownload: 'https://temp-url.com' });
+    const mockReq = { user: { id: 1 } };
 
-    const resultado = await controller.create({ idSolicitacao: 1 } as any);
+    const resultado = await controller.create({ idSolicitacao: 1 } as any, mockReq);
 
-    expect(reciboService.create).toHaveBeenCalledWith({ idSolicitacao: 1 });
+    expect(reciboService.create).toHaveBeenCalledWith({ idSolicitacao: 1 }, 1);
     expect(resultado).toEqual({ urlDownload: 'https://temp-url.com' });
   });
 
   it('deve retornar StreamableFile e definir header de download', async () => {
     const buffer = Buffer.from('pdf-content');
     reciboService.previewDownload.mockResolvedValue(buffer);
-    const res = {
-      setHeader: jest.fn(),
-    } as any;
+    const res = { setHeader: jest.fn() } as any;
+    const mockReq = { user: { id: 7 } };
 
     const resultado = await controller.previewDownload(
       { idSolicitacao: 7 } as any,
       res,
+      mockReq,
     );
 
-    expect(reciboService.previewDownload).toHaveBeenCalledWith({ idSolicitacao: 7 });
+    expect(reciboService.previewDownload).toHaveBeenCalledWith({ idSolicitacao: 7 }, 7);
     expect(res.setHeader).toHaveBeenCalledWith(
       'Content-Disposition',
       'attachment; filename="recibo-solicitacao.pdf"',
