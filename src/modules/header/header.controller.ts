@@ -103,7 +103,6 @@ export class HeaderController {
   @Post()
   @UseGuards(AdminGuard)
   @ApiBearerAuth()
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Criar um novo banner' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
