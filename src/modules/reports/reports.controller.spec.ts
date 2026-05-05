@@ -27,9 +27,7 @@ describe('ReportsController', () => {
   let mockCryptoUtil: MockCryptoUtil;
   let mockPdfGeneratorService: MockPdfGeneratorService;
 
-  const mockGuard = {
-  canActivate: jest.fn().mockReturnValue(true),
-  };
+  const mockGuard = { canActivate: jest.fn().mockReturnValue(true) };
 
   beforeEach(async () => {
     mockRelatorioModel = { create: jest.fn() };
@@ -58,8 +56,12 @@ describe('ReportsController', () => {
         { provide: PdfGeneratorService, useValue: mockPdfGeneratorService },
       ],
     })
+      .overrideGuard(JwtAuthGuard)
+      .useValue(mockGuard)
+      .overrideGuard(RolesGuard)
+      .useValue(mockGuard)
       .overrideGuard(AdminGuard)
-      .useValue({ canActivate: jest.fn().mockReturnValue(true) })
+      .useValue(mockGuard)
       .compile();
 
     controller = module.get<ReportsController>(ReportsController);
