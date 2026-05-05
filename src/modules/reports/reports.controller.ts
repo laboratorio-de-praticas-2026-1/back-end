@@ -51,6 +51,8 @@ export class ReportsController {
   }
 
   @Get()
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Listar relatórios',
     description:
