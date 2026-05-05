@@ -83,7 +83,7 @@ export class SolicitacaoController {
 
   @Put(':id')
   @UseGuards(AdminGuard)
-  @ApiBearerAuth()  
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Atualizar status de solicitação',
     description: 'Atualizar status de solicitação e mudar observação de Admin.',
