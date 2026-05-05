@@ -9,18 +9,21 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { ServicosService } from './servicos.service';
 import { Servico } from 'src/models/servico.model';
 import { CreateServicoDto } from './dto/servico-create.dto';
 import { UpdateServicoDto } from './dto/servico-update.dto';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiOperation,
   ApiParam,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { AdminGuard } from '../usuario/guards/admin.guard';
 
 @ApiTags('Serviços')
 @Controller('servicos')
@@ -52,6 +55,8 @@ export class ServicosController {
   }
 
   @Patch(':id')
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar serviço por ID' })
   @ApiParam({ name: 'id', description: 'ID do serviço', example: 1 })
   @ApiBody({ type: UpdateServicoDto })
@@ -68,6 +73,8 @@ export class ServicosController {
   }
 
   @Delete(':id')
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Remover serviço por ID' })
   @ApiParam({ name: 'id', description: 'ID do serviço', example: 1 })
   @ApiResponse({ status: 200, description: 'Serviço removido com sucesso' })
@@ -80,6 +87,8 @@ export class ServicosController {
   }
 
   @Post()
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Cadastrar novo serviço' })
   @ApiBody({ type: CreateServicoDto })

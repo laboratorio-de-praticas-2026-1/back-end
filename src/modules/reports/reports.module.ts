@@ -13,6 +13,7 @@ import { DebitoServico } from 'src/models/debito-servico.model';
 import { DebitoVeiculo } from 'src/models/debito-veiculo.model';
 import { Pagamento } from 'src/models/pagamento.model';
 import { Parcela } from 'src/models/parcela.model';
+import { UsuarioModule } from '../usuario/usuario.module';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
 import { PdfGeneratorService } from './pdf-generator.service';
@@ -37,6 +38,7 @@ import { ReportQueries } from './queries/reports.queries';
     ]),
     CloudinaryModule,
     UtilsModule,
+    UsuarioModule,
   ],
 })
 export class ReportsModule {}

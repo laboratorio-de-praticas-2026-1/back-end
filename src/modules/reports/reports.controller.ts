@@ -10,8 +10,10 @@ import {
   Post,
   Res,
   StreamableFile,
+  UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBearerAuth,
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiOkResponse,
@@ -20,11 +22,15 @@ import {
 } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { Relatorio } from 'src/models/relatorio.model';
+import { Roles } from '../usuario/decorators/roles.decorator';
+import { AdminGuard } from '../usuario/guards/admin.guard';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { RolesGuard } from '../usuario/guards/roles.guard';
 import { RelatorioCategoriaResponseDto } from './dto/categoria-response.dto';
 import { CreateReportDto } from './dto/create-report.dto';
 import { ResponseReportDto } from './dto/response-report.dto';
-import { ReportsService } from './reports.service';
 import { PdfGeneratorService } from './pdf-generator.service';
+import { ReportsService } from './reports.service';
 
 @Controller('reports')
 export class ReportsController {
@@ -34,6 +40,9 @@ export class ReportsController {
   ) {}
 
   @Get('categorias')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
+  @Roles('administrador')
   @ApiOperation({
     summary: 'Retorna as categorias de relatórios disponíveis',
     description:
@@ -48,6 +57,8 @@ export class ReportsController {
   }
 
   @Get()
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Listar relatórios',
     description:
@@ -62,6 +73,8 @@ export class ReportsController {
   }
 
   @Delete(':id')
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Excluir relatório por id' })
   @ApiNoContentResponse({ description: 'Relatório excluído com sucesso' })
@@ -70,6 +83,8 @@ export class ReportsController {
   }
 
   @Post('generate')
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Gerar Relatório PDF e salvar no Cloudinary',
@@ -87,6 +102,8 @@ export class ReportsController {
 
   //endpoint alternativo antes de ir para o Cloudinary. Visualizar antes de confirmar o salvamento.
   @Post('preview')
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Pré-visualizar Relatório PDF (streaming direto)',

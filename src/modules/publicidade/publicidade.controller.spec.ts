@@ -2,6 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Readable } from 'stream';
 import { PublicidadeController } from './publicidade.controller';
 import { PublicidadeService } from './publicidade.service';
+import { AdminGuard } from '../usuario/guards/admin.guard';
+
+const mockGuard = { canActivate: jest.fn().mockReturnValue(true) };
 
 describe('PublicidadeController', () => {
   let controller: PublicidadeController;
@@ -38,7 +41,10 @@ describe('PublicidadeController', () => {
           useValue: mockPublicidadeService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(AdminGuard)
+      .useValue(mockGuard)
+      .compile();
 
     controller = module.get<PublicidadeController>(PublicidadeController);
   });

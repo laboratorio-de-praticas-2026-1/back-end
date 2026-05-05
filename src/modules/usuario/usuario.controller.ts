@@ -26,6 +26,9 @@ import {
 import { ResponseUsuarioDto } from './dto/response-usuario.dto';
 import { LoginUsuarioDto } from './dto/login-usuario.dto';
 import { CreateAdminUsuarioDto } from './dto/create-admin.dto';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { RolesGuard } from '../usuario/guards/roles.guard';
+import { Roles } from '../usuario/decorators/roles.decorator';
 
 @Controller('usuario')
 export class UsuarioController {
@@ -85,13 +88,16 @@ export class UsuarioController {
   }
 
   @Get()
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
+  @ApiBearerAuth()
   findAll() {
     return this.usuarioService.findAll();
   }
 
   @Get(':id')
-  @UseGuards(UsuarioOwnerGuard)
+  @UseGuards(JwtAuthGuard, UsuarioOwnerGuard)
+  @ApiBearerAuth()
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.usuarioService.findOne(id);
   }

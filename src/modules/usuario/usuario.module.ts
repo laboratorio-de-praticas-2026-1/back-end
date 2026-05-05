@@ -2,11 +2,13 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { SequelizeModule } from '@nestjs/sequelize';
-import { UsuarioService } from './usuario.service';
-import { UsuarioController } from './usuario.controller';
 import { Usuario } from 'src/models/usuario.model';
-import { UsuarioOwnerGuard } from './guards/usuario-owner.guard';
 import { AdminGuard } from './guards/admin.guard';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RolesGuard } from './guards/roles.guard';
+import { UsuarioOwnerGuard } from './guards/usuario-owner.guard';
+import { UsuarioController } from './usuario.controller';
+import { UsuarioService } from './usuario.service';
 
 @Module({
   imports: [
@@ -20,6 +22,20 @@ import { AdminGuard } from './guards/admin.guard';
     }),
   ],
   controllers: [UsuarioController],
-  providers: [UsuarioService, UsuarioOwnerGuard, AdminGuard],
+  providers: [
+    UsuarioService,
+    UsuarioOwnerGuard,
+    AdminGuard,
+    JwtAuthGuard,
+    RolesGuard,
+  ],
+  exports: [
+    UsuarioService,
+    UsuarioOwnerGuard,
+    AdminGuard,
+    JwtAuthGuard,
+    RolesGuard,
+    JwtModule,
+  ],
 })
 export class UsuarioModule {}

@@ -5,10 +5,13 @@ import { jest } from '@jest/globals';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
 import { PdfGeneratorService } from './pdf-generator.service';
+import { AdminGuard } from '../usuario/guards/admin.guard';
 import { Relatorio } from 'src/models/relatorio.model';
 import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
 import { CryptoUtil } from 'src/commons/utils/crypto';
 import { CreateReportDto } from './dto/create-report.dto';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { RolesGuard } from '../usuario/guards/roles.guard';
 
 type MockRelatorioModel = { create: jest.Mock };
 type MockCloudinaryService = { uploadDocument: jest.Mock; generateTemporaryUrl: jest.Mock };
@@ -23,6 +26,8 @@ describe('ReportsController', () => {
   let mockCloudinaryService: MockCloudinaryService;
   let mockCryptoUtil: MockCryptoUtil;
   let mockPdfGeneratorService: MockPdfGeneratorService;
+
+  const mockGuard = { canActivate: jest.fn().mockReturnValue(true) };
 
   beforeEach(async () => {
     mockRelatorioModel = { create: jest.fn() };
@@ -50,7 +55,14 @@ describe('ReportsController', () => {
         { provide: CryptoUtil, useValue: mockCryptoUtil },
         { provide: PdfGeneratorService, useValue: mockPdfGeneratorService },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue(mockGuard)
+      .overrideGuard(RolesGuard)
+      .useValue(mockGuard)
+      .overrideGuard(AdminGuard)
+      .useValue(mockGuard)
+      .compile();
 
     controller = module.get<ReportsController>(ReportsController);
     service = module.get<ReportsService>(ReportsService);
