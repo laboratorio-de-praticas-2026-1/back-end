@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
@@ -11,8 +10,7 @@ import {
   Req,
   UploadedFile,
   UseGuards,
-  UseInterceptors,
-  UseGuards,
+  UseInterceptors
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -23,20 +21,18 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
-  ApiProperty,
-  ApiTags,
+  ApiTags
 } from '@nestjs/swagger';
 import 'multer';
+import { DocumentoFilePipe } from 'src/commons/pipes/file.pipe';
 import { AdminGuard } from '../usuario/guards/admin.guard';
 import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
-import { DocumentoFilePipe } from 'src/commons/pipes/file.pipe';
 import { CreateDocumentoDto } from './dto/create-documento.dto';
 import { CreateSolicitacaoResponseDto } from './dto/create-solicitacao-response.dto';
 import { CreateSolicitacaoDto } from './dto/create-solicitacao.dto';
 import { ListSolicitacoesResponseDto } from './dto/list-solicitacoes-response.dto';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 import { SolicitacaoService } from './solicitacao.service';
-import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
 
 @ApiTags('solicitacao')
 @Controller('solicitacoes')
@@ -70,6 +66,7 @@ export class SolicitacaoController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Listar todas as solicitações',
     description:
@@ -86,6 +83,7 @@ export class SolicitacaoController {
 
   @Put(':id')
   @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Atualizar status de solicitação',

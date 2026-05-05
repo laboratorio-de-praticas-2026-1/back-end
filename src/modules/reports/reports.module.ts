@@ -18,7 +18,6 @@ import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
 import { PdfGeneratorService } from './pdf-generator.service';
 import { ReportQueries } from './queries/reports.queries';
-import { UsuarioModule } from '../usuario/usuario.module';
 
 @Module({
   controllers: [ReportsController],

@@ -90,12 +90,14 @@ export class UsuarioController {
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
+  @ApiBearerAuth()
   findAll() {
     return this.usuarioService.findAll();
   }
 
   @Get(':id')
   @UseGuards(JwtAuthGuard, UsuarioOwnerGuard)
+  @ApiBearerAuth()
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.usuarioService.findOne(id);
   }
