@@ -25,6 +25,7 @@ import {
   ApiProperty,
   ApiTags,
 } from '@nestjs/swagger';
+import 'multer';
 import { AdminGuard } from '../usuario/guards/admin.guard';
 import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
 import { DocumentoFilePipe } from 'src/commons/pipes/file.pipe';
@@ -59,7 +60,10 @@ export class SolicitacaoController {
     @Req() req: { user: { id: number } },
   ): Promise<CreateSolicitacaoResponseDto> {
     this.logger.log('Iniciando criacao de solicitacao de servico...');
-    return this.solicitacaoService.criarSolicitacao(solicitacaoDto, req.user.id);
+    return this.solicitacaoService.criarSolicitacao(
+      solicitacaoDto,
+      req.user.id,
+    );
   }
 
   @Get()
@@ -175,6 +179,11 @@ export class SolicitacaoController {
     documento: Express.Multer.File,
     @Req() req: { user: { id: number } },
   ): Promise<{ message: string }> {
-    return this.solicitacaoService.enviarDocumento(id, req.user.id, data, documento);
+    return this.solicitacaoService.enviarDocumento(
+      id,
+      req.user.id,
+      data,
+      documento,
+    );
   }
 }
