@@ -13,7 +13,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { JwtAuthGuard, JwtPayload } from '../usuario/guards/jwt-auth.guard';
 import { RecomendacaoInteracaoRequestDto } from './dto/recomendacao-interacao-request.dto';
 import { RecomendacaoInteracaoResponseDto } from './dto/recomendacao-interacao-response.dto';
 import { RecomendacaoRespostaDto } from './dto/recomendacao-resposta.dto';
@@ -37,7 +37,7 @@ export class RecomendacaoController {
     type: RecomendacaoRespostaDto,
     isArray: true,
   })
-  async getRecomendacao(@Req() req: { user: { id: number } }) {
+  async getRecomendacao(@Req() req: { user: JwtPayload }) {
     const user = req.user;
     this.logger.log(`Gerando recomendações para o usuário ${user.id}`);
     return this.recomendacaoService.obterRecomendacoes(user.id);
@@ -53,7 +53,7 @@ export class RecomendacaoController {
     type: RecomendacaoInteracaoResponseDto,
   })
   criarInteracao(
-    @Req() req: { user: { id: number } },
+    @Req() req: { user: JwtPayload },
     @Body() interacaoDto: RecomendacaoInteracaoRequestDto,
   ): Promise<RecomendacaoInteracaoResponseDto> {
     const user = req.user;
