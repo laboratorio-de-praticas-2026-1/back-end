@@ -20,12 +20,13 @@ export interface ChatMessage {
 export interface UserData {
   socket: Socket;
   nome: string;
+  authUserId: number;
   lastActivity: number;
   lastMessageAt?: number;
 }
 
 export type IncomingMessage = {
-  type: 'message';
-  text: string;
+  type: 'message' | 'resync' | 'admin_resync';
+  text?: string;
   to?: string;
 };
