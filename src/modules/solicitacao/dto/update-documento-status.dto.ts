@@ -1,12 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsIn } from 'class-validator';
+import { IsEnum } from 'class-validator';
 import { StatusValidacaoEnum } from 'src/commons/enums/status-validacao.enum';
 
 export class UpdateDocumentoStatusDto {
   @ApiProperty({
-    enum: [StatusValidacaoEnum.APROVADO, StatusValidacaoEnum.REJEITADO],
+    enum: StatusValidacaoEnum,
     example: StatusValidacaoEnum.APROVADO,
   })
-  @IsIn([StatusValidacaoEnum.APROVADO, StatusValidacaoEnum.REJEITADO])
+  @IsEnum(StatusValidacaoEnum)
   status: StatusValidacaoEnum;
 }

@@ -2,6 +2,11 @@ import { Type } from 'class-transformer';
 import { IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
 export class CreateSolicitacaoDto {
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  usuario_id: number;
+
   @IsOptional()
   @Type(() => Number)
   @IsInt()

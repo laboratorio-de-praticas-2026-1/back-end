@@ -8,7 +8,6 @@ import { Solicitacao } from 'src/models/solicitacao.model';
 import { Usuario } from 'src/models/usuario.model';
 import { Veiculo } from 'src/models/veiculo.model';
 import { NotificacaoModule } from '../notificacao/notificacao.module';
-import { UsuarioModule } from '../usuario/usuario.module';
 import { SolicitacaoController } from './solicitacao.controller';
 import { SolicitacaoService } from './solicitacao.service';
 
@@ -24,7 +23,6 @@ import { SolicitacaoService } from './solicitacao.service';
     NotificacaoModule,
     CloudinaryModule,
     UtilsModule,
-    UsuarioModule,
   ],
   controllers: [SolicitacaoController],
   providers: [SolicitacaoService],
