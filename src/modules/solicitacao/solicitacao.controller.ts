@@ -11,7 +11,6 @@ import {
   Patch,
   Post,
   Put,
-  Query,
   Req,
   UploadedFile,
   UseGuards,
@@ -47,7 +46,7 @@ import { ListSolicitacoesResponseDto } from './dto/list-solicitacoes-response.dt
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 import { StatusValidacaoEnum } from 'src/commons/enums/status-validacao.enum';
 import { SolicitacaoService } from './solicitacao.service';
-import { Patch } from '@nestjs/common';
+
 
 @ApiTags('solicitacao')
 @Controller('solicitacoes')
@@ -134,7 +133,8 @@ export class SolicitacaoController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard, AdminGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Retornar os dados completos de uma solicitação',
@@ -215,7 +215,8 @@ export class SolicitacaoController {
   }
 
   @Post(':id/cancelar')
-  @UseGuards(JwtAuthGuard, AdminGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Cancelar solicitação',
@@ -243,7 +244,8 @@ export class SolicitacaoController {
   }
 
   @Post(':id/reabrir')
-  @UseGuards(JwtAuthGuard, AdminGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Reabrir solicitação',
