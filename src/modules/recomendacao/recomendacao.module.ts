@@ -10,6 +10,8 @@ import { Usuario } from 'src/models/usuario.model';
 import { Veiculo } from 'src/models/veiculo.model';
 import { RecomendacaoController } from './recomendacao.controller';
 import { RecomendacaoService } from './recomendacao.service';
+import { JwtModule } from '@nestjs/jwt';
+import { UsuarioModule } from '../usuario/usuario.module';
 
 @Module({
   imports: [
@@ -23,6 +25,7 @@ import { RecomendacaoService } from './recomendacao.service';
       DebitoVeiculo,
     ]),
     CloudinaryModule,
+    UsuarioModule,
   ],
   controllers: [RecomendacaoController],
   providers: [RecomendacaoService],

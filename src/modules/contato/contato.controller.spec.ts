@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ContatoController } from './contato.controller';
 import { ContatoService } from './contato.service';
 import { ForbiddenException } from '@nestjs/common';
-import { EmailParams } from 'src/infra/email/dto/email-params';
 
 describe('ContatoController', () => {
   let controller: ContatoController;
@@ -10,7 +9,6 @@ describe('ContatoController', () => {
   const mockContatoService = {
     buscarContatoById: jest.fn(),
     atualizarContato: jest.fn(),
-    enviarEmail: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -85,28 +83,5 @@ describe('ContatoController', () => {
     ).rejects.toThrow(ForbiddenException);
 
     expect(mockContatoService.atualizarContato).not.toHaveBeenCalled();
-  });
-
-  it('deve enviar email com sucesso', async () => {
-    const payload: EmailParams = {
-      to: 'destinatario@teste.com',
-      template: 'contato',
-      subject: 'Teste de Email',
-      context: {
-        nome: 'Victor',
-        email: 'victor@email.com',
-        telefone: '99999-9999',
-        mensagem: 'Olá mundo',
-      },
-      isContato: true,
-    };
-
-    mockContatoService.enviarEmail.mockResolvedValue(undefined);
-
-    const result = await controller.enviarEmail(payload);
-
-    expect(result).toEqual({ message: 'E-mail enviado com sucesso' });
-
-    expect(mockContatoService.enviarEmail).toHaveBeenCalledWith(payload);
   });
 });

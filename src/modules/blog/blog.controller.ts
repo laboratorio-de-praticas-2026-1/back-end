@@ -11,9 +11,16 @@ import {
   Delete,
   HttpCode,
   UploadedFile,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiConsumes, ApiBody, ApiOperation } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
+  ApiOperation,
+} from '@nestjs/swagger';
+import { AdminGuard } from '../usuario/guards/admin.guard';
 import { Blog, CategoriaBlog } from 'src/models/blog.model';
 import { BlogService } from './blog.service';
 import { BlogCreateDto } from './dto/blog-create.dto';
@@ -26,6 +33,8 @@ export class BlogController {
   constructor(private readonly blogService: BlogService) {}
 
   @Post()
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Criar um novo post para o blog' })
   @ApiBody({
     schema: {
@@ -87,6 +96,8 @@ export class BlogController {
   }
 
   @Delete(':id')
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Deletar um post do blog pelo id' })
   @HttpCode(204)
   deleteById(@Param('id', ParseIntPipe) id: number): Promise<void> {
@@ -95,6 +106,8 @@ export class BlogController {
   }
 
   @Put(':id')
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar um post do blog' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({

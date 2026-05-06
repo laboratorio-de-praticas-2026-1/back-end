@@ -1,4 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { IsEnum, IsString, MaxLength } from 'class-validator';
+
+export enum TipoEmpresa {
+  CLINICA = 'clinica',
+  VISTORIA = 'vistoria',
+  DETRAN = 'detran',
+}
 
 export class EmpresaDto {
   @ApiProperty()
@@ -22,20 +29,37 @@ export class EmpresaDto {
   @ApiProperty()
   cidade: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: 'Estado da empresa (sigla de 2 letras)',
+    example: 'SP',
+  })
+  @IsString({ message: 'O estado deve ser uma string' })
+  @MaxLength(2, { message: 'O estado deve conter no máximo 2 caracteres' })
   estado: string;
 
   @ApiProperty()
   site: string;
 
-  @ApiProperty({ enum: ['clinica', 'vistoria', 'detran'] })
-  tipo: string;
+  @ApiProperty({
+    description: 'Tipo da empresa',
+    required: false,
+  })
+  @IsEnum(TipoEmpresa, {
+    message: `O tipo deve ser um dos seguintes valores: ${Object.values(TipoEmpresa).join(', ')}`,
+  })
+  tipo?: TipoEmpresa | null;
 
-  @ApiProperty()
-  latitude: string;
+  @ApiProperty({
+    description: 'Latitude da empresa',
+    required: false,
+  })
+  latitude?: string;
 
-  @ApiProperty()
-  longitude: string;
+  @ApiProperty({
+    description: 'Longitude da empresa',
+    required: false,
+  })
+  longitude?: string;
 
   @ApiProperty({
     description: 'Endereço completo (endereço + cidade + estado)',
@@ -52,9 +76,9 @@ export class EmpresaDto {
     cidade: string,
     estado: string,
     site: string,
-    tipo: string,
-    latitude: string,
-    longitude: string,
+    tipo?: TipoEmpresa | null,
+    latitude?: string,
+    longitude?: string,
   ) {
     this.id = id;
     this.nomeFantasia = nomeFantasia;

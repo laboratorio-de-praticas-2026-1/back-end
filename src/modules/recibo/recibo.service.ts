@@ -1,14 +1,15 @@
 import {
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import * as ejs from 'ejs';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import puppeteer, { Browser } from 'puppeteer';
-import { Readable } from 'stream';
 import { CryptoUtil } from 'src/commons/utils/crypto';
 import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
 import { DebitoServico } from 'src/models/debito-servico.model';
@@ -19,7 +20,9 @@ import { Servico } from 'src/models/servico.model';
 import { Solicitacao } from 'src/models/solicitacao.model';
 import { Usuario } from 'src/models/usuario.model';
 import { Veiculo } from 'src/models/veiculo.model';
+import { Readable } from 'stream';
 
+import { NivelUsuario } from '../usuario/dto/create-usuario.dto';
 import { CreateReciboDto } from './dto/create-recibo.dto';
 import { ResponseReciboDto } from './dto/responde-recibo.dt';
 
@@ -76,7 +79,11 @@ export class ReciboService {
     private readonly cryptoUtil: CryptoUtil,
   ) {}
 
-  async create(createReciboDto: CreateReciboDto): Promise<ResponseReciboDto> {
+  async create(
+    createReciboDto: CreateReciboDto,
+    usuarioId: number,
+  ): Promise<ResponseReciboDto> {
+    await this.checkOwnership(createReciboDto.idSolicitacao, usuarioId);
     const html = await this.buildReciboHtml(createReciboDto);
     const pdfBuffer = await this.renderHtmlToPdf(html);
 
@@ -106,9 +113,42 @@ export class ReciboService {
     return { urlDownload };
   }
 
-  async previewDownload(createReciboDto: CreateReciboDto): Promise<Buffer> {
+  async previewDownload(
+    createReciboDto: CreateReciboDto,
+    usuarioId: number,
+  ): Promise<Buffer> {
+    await this.checkOwnership(createReciboDto.idSolicitacao, usuarioId);
     const html = await this.buildReciboHtml(createReciboDto);
     return this.renderHtmlToPdf(html);
+  }
+
+  private async checkOwnership(
+    idSolicitacao: number,
+    usuarioId: number,
+  ): Promise<void> {
+    const usuario = await this.usuarioModel.findByPk(usuarioId, {
+      attributes: ['id', 'nivel'],
+    });
+
+    if (!usuario) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+
+    const solicitacao = await this.solicitacaoModel.findByPk(idSolicitacao, {
+      attributes: ['id', 'usuarioId'],
+    });
+    if (!solicitacao) {
+      throw new NotFoundException('Solicitação não encontrada');
+    }
+
+    if (
+      usuario.nivel != 'administrador' &&
+      solicitacao.usuarioId !== usuarioId
+    ) {
+      throw new ForbiddenException(
+        'Você não tem permissão para gerar recibo desta solicitação',
+      );
+    }
   }
 
   private async buildReciboHtml(
