@@ -20,7 +20,9 @@ import {
   ApiBody,
   ApiOperation,
 } from '@nestjs/swagger';
-import { AdminGuard } from '../usuario/guards/admin.guard';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { RolesGuard } from '../usuario/guards/roles.guard';
+import { Roles } from '../usuario/decorators/roles.decorator';
 import { Blog, CategoriaBlog } from 'src/models/blog.model';
 import { BlogService } from './blog.service';
 import { BlogCreateDto } from './dto/blog-create.dto';
@@ -33,7 +35,8 @@ export class BlogController {
   constructor(private readonly blogService: BlogService) {}
 
   @Post()
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Criar um novo post para o blog' })
   @ApiBody({
@@ -96,7 +99,8 @@ export class BlogController {
   }
 
   @Delete(':id')
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Deletar um post do blog pelo id' })
   @HttpCode(204)
@@ -106,7 +110,8 @@ export class BlogController {
   }
 
   @Put(':id')
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar um post do blog' })
   @ApiConsumes('multipart/form-data')

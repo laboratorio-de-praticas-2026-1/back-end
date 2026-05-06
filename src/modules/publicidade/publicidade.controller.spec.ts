@@ -2,7 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Readable } from 'stream';
 import { PublicidadeController } from './publicidade.controller';
 import { PublicidadeService } from './publicidade.service';
-import { AdminGuard } from '../usuario/guards/admin.guard';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { RolesGuard } from '../usuario/guards/roles.guard';
 
 const mockGuard = { canActivate: jest.fn().mockReturnValue(true) };
 
@@ -42,7 +43,9 @@ describe('PublicidadeController', () => {
         },
       ],
     })
-      .overrideGuard(AdminGuard)
+      .overrideGuard(JwtAuthGuard)
+      .useValue(mockGuard)
+      .overrideGuard(RolesGuard)
       .useValue(mockGuard)
       .compile();
 

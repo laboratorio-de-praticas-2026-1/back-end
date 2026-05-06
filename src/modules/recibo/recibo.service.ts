@@ -22,7 +22,7 @@ import { Usuario } from 'src/models/usuario.model';
 import { Veiculo } from 'src/models/veiculo.model';
 import { Readable } from 'stream';
 
-import { NivelUsuario } from '../usuario/dto/create-usuario.dto';
+import { NivelUsuario } from '../usuario/guards/jwt-auth.guard';
 import { CreateReciboDto } from './dto/create-recibo.dto';
 import { ResponseReciboDto } from './dto/responde-recibo.dt';
 
@@ -65,8 +65,6 @@ export class ReciboService {
     private readonly solicitacaoModel: typeof Solicitacao,
     @InjectModel(Veiculo)
     private readonly veiculoModel: typeof Veiculo,
-    @InjectModel(Usuario)
-    private readonly usuarioModel: typeof Usuario,
     @InjectModel(Pagamento)
     private readonly pagamentoModel: typeof Pagamento,
     @InjectModel(Debito)
@@ -82,8 +80,9 @@ export class ReciboService {
   async create(
     createReciboDto: CreateReciboDto,
     usuarioId: number,
+    nivel: NivelUsuario,
   ): Promise<ResponseReciboDto> {
-    await this.checkOwnership(createReciboDto.idSolicitacao, usuarioId);
+    await this.checkOwnership(createReciboDto.idSolicitacao, usuarioId, nivel);
     const html = await this.buildReciboHtml(createReciboDto);
     const pdfBuffer = await this.renderHtmlToPdf(html);
 
@@ -116,8 +115,9 @@ export class ReciboService {
   async previewDownload(
     createReciboDto: CreateReciboDto,
     usuarioId: number,
+    nivel: NivelUsuario,
   ): Promise<Buffer> {
-    await this.checkOwnership(createReciboDto.idSolicitacao, usuarioId);
+    await this.checkOwnership(createReciboDto.idSolicitacao, usuarioId, nivel);
     const html = await this.buildReciboHtml(createReciboDto);
     return this.renderHtmlToPdf(html);
   }
@@ -125,26 +125,19 @@ export class ReciboService {
   private async checkOwnership(
     idSolicitacao: number,
     usuarioId: number,
+    nivel: NivelUsuario,
   ): Promise<void> {
-    const usuario = await this.usuarioModel.findByPk(usuarioId, {
-      attributes: ['id', 'nivel'],
-    });
-
-    if (!usuario) {
-      throw new NotFoundException('Usuário não encontrado');
-    }
+    if (nivel === 'administrador') return;
 
     const solicitacao = await this.solicitacaoModel.findByPk(idSolicitacao, {
       attributes: ['id', 'usuarioId'],
     });
+
     if (!solicitacao) {
       throw new NotFoundException('Solicitação não encontrada');
     }
 
-    if (
-      usuario.nivel != 'administrador' &&
-      solicitacao.usuarioId !== usuarioId
-    ) {
+    if (solicitacao.usuarioId !== usuarioId) {
       throw new ForbiddenException(
         'Você não tem permissão para gerar recibo desta solicitação',
       );

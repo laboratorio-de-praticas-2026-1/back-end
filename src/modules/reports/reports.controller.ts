@@ -22,10 +22,9 @@ import {
 } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { Relatorio } from 'src/models/relatorio.model';
-import { Roles } from '../usuario/decorators/roles.decorator';
-import { AdminGuard } from '../usuario/guards/admin.guard';
 import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
 import { RolesGuard } from '../usuario/guards/roles.guard';
+import { Roles } from '../usuario/decorators/roles.decorator';
 import { RelatorioCategoriaResponseDto } from './dto/categoria-response.dto';
 import { CreateReportDto } from './dto/create-report.dto';
 import { ResponseReportDto } from './dto/response-report.dto';
@@ -41,8 +40,8 @@ export class ReportsController {
 
   @Get('categorias')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @ApiBearerAuth()
   @Roles('administrador')
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Retorna as categorias de relatórios disponíveis',
     description:
@@ -57,7 +56,8 @@ export class ReportsController {
   }
 
   @Get()
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Listar relatórios',
@@ -73,7 +73,8 @@ export class ReportsController {
   }
 
   @Delete(':id')
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Excluir relatório por id' })
@@ -83,7 +84,8 @@ export class ReportsController {
   }
 
   @Post('generate')
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
@@ -102,7 +104,8 @@ export class ReportsController {
 
   //endpoint alternativo antes de ir para o Cloudinary. Visualizar antes de confirmar o salvamento.
   @Post('preview')
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({

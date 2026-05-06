@@ -23,7 +23,9 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { AdminGuard } from '../usuario/guards/admin.guard';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { RolesGuard } from '../usuario/guards/roles.guard';
+import { Roles } from '../usuario/decorators/roles.decorator';
 
 @ApiTags('Serviços')
 @Controller('servicos')
@@ -55,7 +57,8 @@ export class ServicosController {
   }
 
   @Patch(':id')
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar serviço por ID' })
   @ApiParam({ name: 'id', description: 'ID do serviço', example: 1 })
@@ -73,7 +76,8 @@ export class ServicosController {
   }
 
   @Delete(':id')
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Remover serviço por ID' })
   @ApiParam({ name: 'id', description: 'ID do serviço', example: 1 })
@@ -87,7 +91,8 @@ export class ServicosController {
   }
 
   @Post()
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Cadastrar novo serviço' })

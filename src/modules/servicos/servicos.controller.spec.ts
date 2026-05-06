@@ -4,7 +4,8 @@ import { ServicosService } from './servicos.service';
 import { NotFoundException } from '@nestjs/common';
 import { CreateServicoDto } from './dto/servico-create.dto';
 import { UpdateServicoDto } from './dto/servico-update.dto';
-import { AdminGuard } from '../usuario/guards/admin.guard';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { RolesGuard } from '../usuario/guards/roles.guard';
 
 const mockGuard = { canActivate: jest.fn().mockReturnValue(true) };
 
@@ -29,7 +30,9 @@ describe('ServicosController', () => {
         },
       ],
     })
-      .overrideGuard(AdminGuard)
+      .overrideGuard(JwtAuthGuard)
+      .useValue(mockGuard)
+      .overrideGuard(RolesGuard)
       .useValue(mockGuard)
       .compile();
 

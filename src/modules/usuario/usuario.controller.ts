@@ -12,7 +12,6 @@ import {
 import { UsuarioService } from './usuario.service';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { UsuarioOwnerGuard } from './guards/usuario-owner.guard';
-import { AdminGuard } from './guards/admin.guard';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import {
   ApiBadRequestResponse,
@@ -49,7 +48,8 @@ export class UsuarioController {
   }
 
   @Post('/admin/usuarios')
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Cria um usuário via painel administrativo' })
   @ApiCreatedResponse({
@@ -73,13 +73,15 @@ export class UsuarioController {
   }
 
   @Delete(':id')
-  @UseGuards(UsuarioOwnerGuard)
+  @UseGuards(JwtAuthGuard, UsuarioOwnerGuard)
+  @ApiBearerAuth()
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.usuarioService.remove(id);
   }
 
   @Patch(':id')
-  @UseGuards(UsuarioOwnerGuard)
+  @UseGuards(JwtAuthGuard, UsuarioOwnerGuard)
+  @ApiBearerAuth()
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateUsuarioDto: UpdateUsuarioDto,

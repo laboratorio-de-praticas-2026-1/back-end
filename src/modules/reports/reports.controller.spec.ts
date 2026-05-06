@@ -5,7 +5,6 @@ import { jest } from '@jest/globals';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
 import { PdfGeneratorService } from './pdf-generator.service';
-import { AdminGuard } from '../usuario/guards/admin.guard';
 import { Relatorio } from 'src/models/relatorio.model';
 import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
 import { CryptoUtil } from 'src/commons/utils/crypto';
@@ -59,8 +58,6 @@ describe('ReportsController', () => {
       .overrideGuard(JwtAuthGuard)
       .useValue(mockGuard)
       .overrideGuard(RolesGuard)
-      .useValue(mockGuard)
-      .overrideGuard(AdminGuard)
       .useValue(mockGuard)
       .compile();
 

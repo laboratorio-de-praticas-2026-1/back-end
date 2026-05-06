@@ -22,7 +22,9 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { AdminGuard } from '../usuario/guards/admin.guard';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { RolesGuard } from '../usuario/guards/roles.guard';
+import { Roles } from '../usuario/decorators/roles.decorator';
 import { imageFilePipe } from 'src/commons/pipes/file.pipe';
 import { Publicidade } from '../../models/publicidade.model';
 import {
@@ -70,7 +72,8 @@ export class PublicidadeController {
     );
   }
 
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Criar uma nova publicidade' })
   @ApiResponse({ status: 201, type: PublicidadeResponseDto })
@@ -105,7 +108,8 @@ export class PublicidadeController {
   }
 
   @Put(':id')
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar publicidade' })
   @ApiConsumes('multipart/form-data')
@@ -133,7 +137,8 @@ export class PublicidadeController {
   }
 
   @Delete(':id')
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Remover publicidade por ID' })
   @ApiResponse({ status: 200, description: 'Publicidade removida com sucesso' })
