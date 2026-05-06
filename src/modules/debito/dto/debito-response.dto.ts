@@ -3,28 +3,28 @@ import { StatusDebito } from 'src/models/debito.model';
 
 export class DebitoItemDto {
   @ApiProperty({ example: 1 })
-  id: number;
+  declare id: number;
 
   @ApiProperty({ example: 'IPVA 2026' })
-  descricao: string;
+  declare descricao: string;
 
   @ApiProperty({ example: 1500.0 })
-  valor: number;
+  declare valor: number;
 
   @ApiProperty({ enum: StatusDebito, example: StatusDebito.PENDENTE })
-  status: StatusDebito;
+  declare status: StatusDebito;
 }
 
 export class DebitoResponseDto {
   @ApiProperty({ example: 'ABC1234' })
-  placa: string;
+  declare placa: string;
 
   @ApiProperty({ type: [DebitoItemDto] })
-  debitos: DebitoItemDto[];
+  declare debitos: DebitoItemDto[];
 
   @ApiProperty({ example: 1800.0 })
-  total: number;
+  declare total: number;
 
   @ApiProperty({ example: 'Nenhum débito encontrado', required: false })
-  mensagem?: string;
+  declare mensagem?: string;
 }

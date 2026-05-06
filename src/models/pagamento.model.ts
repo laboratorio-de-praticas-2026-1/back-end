@@ -1,28 +1,31 @@
 import {
+  BelongsTo,
   Column,
   DataType,
+  ForeignKey,
   HasMany,
   Model,
   Table,
-  ForeignKey,
-  BelongsTo,
 } from 'sequelize-typescript';
-import { Parcela } from './parcela.model';
 import { Debito } from './debito.model';
+import { Parcela } from './parcela.model';
 
 export enum TipoPagamento {
   AVISTA = 'AVISTA',
   PARCELADO = 'PARCELADO',
 }
 
+/*Representa a transação financeira que quita um Debito*/
 @Table({ tableName: 'pagamento', timestamps: false })
 export class Pagamento extends Model {
   @Column({ primaryKey: true, autoIncrement: true, allowNull: false })
   declare id: number;
 
+  /*FK para Debito*/
   @ForeignKey(() => Debito)
   @Column({ field: 'id_debito', allowNull: false, unique: true })
   declare idDebito: number;
+
   @BelongsTo(() => Debito)
   declare debito: Debito;
 
@@ -34,8 +37,6 @@ export class Pagamento extends Model {
   })
   declare valorTotal: number;
 
-  @Column({ type: DataType.INTEGER, allowNull: false })
-  declare qtd_parcelas: number;
   /*Número de parcelas*/
   @Column({
     field: 'qtd_parcelas',
@@ -44,12 +45,13 @@ export class Pagamento extends Model {
   })
   declare qtdParcelas: number;
 
+  /*Se foi pago de uma vez ou parcelado*/
   @Column({
     field: 'tipo_pagamento',
-    type: DataType.ENUM(...Object.values(TipoPagamento)),
+    type: DataType.ENUM('avista', 'parcelado'),
     allowNull: false,
   })
-  declare tipoPagamento: TipoPagamento;
+  declare tipoPagamento: 'avista' | 'parcelado';
 
   /*Canal de pagamento (pix, boleto, cartao, etc.)*/
   @Column({

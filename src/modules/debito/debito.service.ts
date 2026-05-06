@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { Debito, TipoDebito } from 'src/models/debito.model';
+import { Debito, StatusDebito, TipoDebito } from 'src/models/debito.model';
 import { DebitoVeiculo } from 'src/models/debito-veiculo.model';
 import { Veiculo } from 'src/models/veiculo.model';
 import { DebitoItemDto, DebitoResponseDto } from './dto/debito-response.dto';
@@ -30,7 +30,7 @@ export class DebitoService {
     }
 
     const debitosVeiculo = (veiculo.debitoVeiculos ?? []).filter(
-      (dv: DebitoVeiculo) => dv.debito?.tipo === TipoDebito.VEICULO,
+      (dv: DebitoVeiculo) => dv.debito?.tipo === TipoDebito.VEICULO.toString(),
     );
 
     if (
@@ -42,11 +42,11 @@ export class DebitoService {
       );
     }
 
-    const debitos = debitosVeiculo.map((dv: DebitoVeiculo) => ({
+    const debitos : DebitoItemDto[] = debitosVeiculo.map((dv: DebitoVeiculo) => ({
       id: dv.debito.id,
-      descricao: dv.debito.descricao,
+      descricao: dv.debito.descricao ?? "",
       valor: Number(dv.debito.valor),
-      status: dv.debito.status,
+      status: dv.debito.status.toString() as StatusDebito,
     }));
 
     const total = debitos.reduce(

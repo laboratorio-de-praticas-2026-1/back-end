@@ -14,13 +14,14 @@ export enum StatusParcela {
   ATRASADA = 'atrasada',
 }
 
+/*Representa uma parcela individual de um Pagamento parcelado*/
 @Table({ tableName: 'parcela', timestamps: false })
 export class Parcela extends Model {
   @Column({ primaryKey: true, autoIncrement: true, allowNull: false })
   declare id: number;
 
   @ForeignKey(() => Pagamento)
-  @Column({ field: 'id_pagamento', type: DataType.INTEGER, allowNull: false })
+  @Column({ field: 'id_pagamento', allowNull: false })
   declare idPagamento: number;
 
   @BelongsTo(() => Pagamento)
@@ -39,10 +40,10 @@ export class Parcela extends Model {
 
   /*Estado da parcela*/
   @Column({
-    type: DataType.ENUM(...Object.values(StatusParcela)),
-    allowNull: false,
+    type: DataType.ENUM('pago', 'atrasado', 'ativo'),
+    defaultValue: 'ativo',
   })
-  declare status: StatusParcela;
+  declare status: 'pago' | 'atrasado' | 'ativo';
 
   /*Data de vencimento desta parcela*/
   @Column({

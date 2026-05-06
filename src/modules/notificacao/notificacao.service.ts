@@ -1,9 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Sequelize } from 'sequelize-typescript';
 import { QueryTypes } from 'sequelize';
 import { EmailService } from 'src/infra/email/email.service';
 import { EmailParams } from 'src/infra/email/dto/email-params';
-import { Cron } from '@nestjs/schedule';
+import { join } from 'path';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { NOTIFICACAO_DEBITOS_PRAZOS } from 'src/infra/email/templates/templates-names';
 
 interface DebitoRow {

@@ -26,8 +26,4 @@ export class DebitoVeiculo extends Model {
 
   @BelongsTo(() => Veiculo)
   declare veiculo: Veiculo;
-
-  @ForeignKey(() => Debito)
-  @Column({ field: 'id_debito', allowNull: false })
-  declare debitoId: number;
 }

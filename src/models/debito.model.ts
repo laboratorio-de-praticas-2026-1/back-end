@@ -6,7 +6,6 @@ import {
   HasOne,
   Model,
   Table,
-  HasMany,
 } from 'sequelize-typescript';
 import { DebitoServico } from './debito-servico.model';
 import { DebitoVeiculo } from './debito-veiculo.model';
@@ -30,41 +29,32 @@ export class Debito extends Model {
 
   /*Classifica se o débito veio de um serviço contratado ou de um veículo*/
   @Column({
-    type: DataType.ENUM(...Object.values(TipoDebito)),
+    type: DataType.ENUM('servico', 'veiculo'),
     allowNull: false,
   })
-  declare tipo: TipoDebito;
+  declare tipo: 'servico' | 'veiculo';
 
-  @Column({
-    type: DataType.STRING(100),
-    allowNull: false,
-  })
-  declare descricao: string;
+  @Column({ type: DataType.TEXT, allowNull: true })
+  declare descricao: string | null;
 
-  @Column({
-    type: DataType.DECIMAL(10, 2),
-    allowNull: false,
-  })
+  /*Valor base da cobrança (sem taxas/juros)*/
+  @Column({ type: DataType.DECIMAL(10, 2), allowNull: false })
   declare valor: number;
 
   /*Estado atual do débito*/
   @Column({
-    type: DataType.ENUM(...Object.values(StatusDebito)),
-    allowNull: false,
+    type: DataType.ENUM('pago', 'pendente'),
+    defaultValue: 'pendente',
   })
-  declare status: StatusDebito;
+  declare status: 'pago' | 'pendente';
 
   /*Data de criação do débito*/
   @Column({
     field: 'created_at',
     type: DataType.DATE,
     defaultValue: DataType.NOW,
-    allowNull: true,
   })
   declare createdAt: Date;
-
-  //@HasMany(() => DebitoVeiculo)
-  //declare debitoVeiculos: DebitoVeiculo[];
 
   @ForeignKey(() => Solicitacao)
   @Column({ field: 'solicitacao_id', type: DataType.INTEGER, allowNull: false })
