@@ -42,12 +42,14 @@ export class DebitoService {
       );
     }
 
-    const debitos : DebitoItemDto[] = debitosVeiculo.map((dv: DebitoVeiculo) => ({
-      id: dv.debito.id,
-      descricao: dv.debito.descricao ?? "",
-      valor: Number(dv.debito.valor),
-      status: dv.debito.status.toString() as StatusDebito,
-    }));
+    const debitos: DebitoItemDto[] = debitosVeiculo.map(
+      (dv: DebitoVeiculo) => ({
+        id: dv.debito.id,
+        descricao: dv.debito.descricao ?? '',
+        valor: Number(dv.debito.valor),
+        status: dv.debito.status.toString() as StatusDebito,
+      }),
+    );
 
     const total = debitos.reduce(
       (acc: number, d: DebitoItemDto) => acc + d.valor,
