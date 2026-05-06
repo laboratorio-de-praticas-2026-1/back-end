@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ChatService } from './chat.service';
-import { AuthService } from '../../commons/auth.service';
 import { Logger } from '@nestjs/common';
 import { getModelToken } from '@nestjs/sequelize';
 import { Usuario } from 'src/models/usuario.model';
@@ -20,7 +19,6 @@ describe('ChatService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ChatService,
-        AuthService,
         {
           provide: Logger,
           useValue: {

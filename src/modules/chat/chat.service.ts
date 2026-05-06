@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { randomUUID } from 'crypto';
-import { AuthService } from '../../commons/auth.service';
 import { ChatMessage, UserData } from './utils/types';
 import { InjectModel } from '@nestjs/sequelize';
 import { Usuario } from 'src/models/usuario.model';
@@ -10,7 +9,6 @@ import { Usuario } from 'src/models/usuario.model';
 @Injectable()
 export class ChatService {
   constructor(
-    private readonly authService: AuthService,
     private readonly logger: Logger,
     @InjectModel(Usuario) private usuarioModel: typeof Usuario,
   ) {}
@@ -23,13 +21,11 @@ export class ChatService {
   history: Record<string, ChatMessage[]> = {};
   timeouts: Record<string, NodeJS.Timeout> = {};
 
-  // 🚨 NOVO: controle de última mensagem
   private lastMessages: Record<string, { text: string; timestamp: number }> =
     {};
 
-  private INACTIVITY_TIMEOUT = 60 * 60 * 1000; // 60 min
+  private readonly INACTIVITY_TIMEOUT = 20 * 60 * 1000; // 20 min fixo em código
 
-  // ================= CALLBACKS =================
   setBroadcastCallbacks(
     broadcastToAgents: (data: unknown) => void,
     broadcastAgentsList: () => void,
@@ -38,7 +34,6 @@ export class ChatService {
     this.broadcastAgentsListCallback = broadcastAgentsList;
   }
 
-  // ================= SOCKET =================
   send(socket: Socket, data: unknown) {
     if (!socket.connected) return;
     try {
@@ -62,7 +57,6 @@ export class ChatService {
     }
   }
 
-  // ================= 🚨 DETECÇÃO DE DUPLICADAS =================
   isDuplicateMessage(userId: string, text: string, windowMs: number): boolean {
     const now = Date.now();
     const last = this.lastMessages[userId];
@@ -74,11 +68,10 @@ export class ChatService {
       const isFast = now - last.timestamp < windowMs;
 
       if (isSame && isFast) {
-        return true; // 🚫 bloqueia
+        return true;
       }
     }
 
-    // atualiza última mensagem
     this.lastMessages[userId] = {
       text: normalizedText,
       timestamp: now,
@@ -87,13 +80,13 @@ export class ChatService {
     return false;
   }
 
-  // ================= USERS =================
-  addUser(socket: Socket, nome: string) {
+  addUser(socket: Socket, nome: string, authUserId: number) {
     const userId = this.getNextUserId();
 
     this.users[userId] = {
       socket,
       nome,
+      authUserId,
       lastActivity: Date.now(),
     };
 
@@ -104,13 +97,44 @@ export class ChatService {
     return userId;
   }
 
+  /** Reconexão: mantém o mesmo `sessionId` e o histórico em memória. */
+  rebindClientSocket(
+    sessionId: string,
+    socket: Socket,
+    nome: string,
+    authUserId: number,
+  ): void {
+    const previousSocket = this.users[sessionId]?.socket;
+
+    this.users[sessionId] = {
+      socket,
+      nome,
+      authUserId,
+      lastActivity: Date.now(),
+    };
+
+    if (!this.history[sessionId]) {
+      this.history[sessionId] = [];
+    }
+
+    this.resetTimeout(sessionId);
+
+    if (
+      previousSocket &&
+      previousSocket !== socket &&
+      previousSocket.connected
+    ) {
+      previousSocket.disconnect(true);
+    }
+  }
+
   addAgent(agentId: string, socket: Socket) {
     this.agents[agentId] = socket;
   }
 
   removeAgent(agentId: string) {
     delete this.agents[agentId];
-    delete this.lastMessages[agentId]; // 🚨 limpa cache de duplicadas
+    delete this.lastMessages[agentId];
   }
 
   getNextUserId() {
@@ -124,7 +148,12 @@ export class ChatService {
     this.resetTimeout(userId);
   }
 
-  // ================= TIMEOUT =================
+  findSessionIdByAuthUserId(authUserId: number): string | undefined {
+    return Object.entries(this.users).find(
+      ([_, u]) => u.authUserId === authUserId,
+    )?.[0];
+  }
+
   private resetTimeout(userId: string) {
     if (this.timeouts[userId]) {
       clearTimeout(this.timeouts[userId]);
@@ -142,7 +171,6 @@ export class ChatService {
     }
   }
 
-  // ================= HISTORY =================
   addMessageToHistory(userId: string, msg: ChatMessage) {
     if (!this.history[userId]) {
       this.history[userId] = [];
@@ -155,7 +183,6 @@ export class ChatService {
     }
   }
 
-  // ================= SESSION =================
   endUserSession(userId: string, reason = 'disconnect') {
     const user = this.users[userId];
     if (!user) return;
@@ -177,12 +204,11 @@ export class ChatService {
 
     delete this.users[userId];
     delete this.history[userId];
-    delete this.lastMessages[userId]; // 🚨 limpa cache
+    delete this.lastMessages[userId];
 
     this.broadcastAgentsList();
   }
 
-  // ================= LIST =================
   broadcastAgentsList() {
     if (this.broadcastAgentsListCallback) {
       this.broadcastAgentsListCallback();
