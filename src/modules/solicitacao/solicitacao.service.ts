@@ -549,6 +549,7 @@ export class SolicitacaoService implements OnModuleDestroy {
     }
 
     type SolicitacaoListaRow = {
+      id: number;
       usuario: { id: number; nome: string; email: string };
       servico: { id: number; nome: string; valorBase: unknown };
       status: string;
@@ -562,12 +563,7 @@ export class SolicitacaoService implements OnModuleDestroy {
       where: whereSolicitacao,
       limit,
       offset,
-      order: [
-        [
-          SOLICITACAO_ORDER_BY_COLUMN[orderBy],
-          order.toUpperCase() as 'ASC' | 'DESC',
-        ],
-      ],
+      order: [[SOLICITACAO_ORDER_BY_COLUMN[orderBy], order.toUpperCase()]] as any,
       include: [
         {
           model: Usuario,
@@ -614,6 +610,7 @@ export class SolicitacaoService implements OnModuleDestroy {
         valorBase: Number(solicitacao.servico.valorBase) || 0,
       },
       solicitacao: {
+        id: solicitacao.id,
         status:
           solicitacao.status.charAt(0).toUpperCase() +
           solicitacao.status.slice(1),
@@ -732,16 +729,9 @@ export class SolicitacaoService implements OnModuleDestroy {
       });
     }
 
-    const documentos = (await this.documentoModel.findAll({
+    const documentos = await this.documentoModel.findAll({
       where: { solicitacaoId },
-    })) as Array<{
-      id: number;
-      nomeHash: string | null;
-      nomeOriginal: string | null;
-      tipoDocumento: string | null;
-      statusValidacao: StatusValidacaoEnum;
-      dataUpload: Date | null;
-    }>;
+    });
 
     if (!documentos.length) {
       return {
@@ -770,7 +760,7 @@ export class SolicitacaoService implements OnModuleDestroy {
           return {
             id: doc.id,
             tipo_documento: doc.tipoDocumento,
-            nome_arquivo: doc.nomeOriginal ?? publicId,
+            nome_arquivo: publicId,
             status_validacao: doc.statusValidacao,
             url,
             data_upload: doc.dataUpload,
