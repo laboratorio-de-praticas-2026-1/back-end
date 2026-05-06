@@ -8,6 +8,12 @@ import {
 } from 'sequelize-typescript';
 import { Pagamento } from './pagamento.model';
 
+export enum StatusParcela {
+  PENDENTE = 'pendente',
+  PAGA = 'paga',
+  ATRASADA = 'atrasada',
+}
+
 /*Representa uma parcela individual de um Pagamento parcelado*/
 @Table({ tableName: 'parcela', timestamps: false })
 export class Parcela extends Model {
