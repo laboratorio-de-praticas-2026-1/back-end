@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import puppeteer, { Browser } from 'puppeteer';
 
 import { RelatorioCategoria } from 'src/models/relatorio.model';
-import { Solicitacao } from 'src/models/solicitacao.model';
 import { CreateReportDto } from './dto/create-report.dto';
 import { ReportQueries } from './queries/reports.queries';
 
@@ -73,6 +72,9 @@ export class PdfGeneratorService {
         COMPANY_NAME,
       ),
     );
+
+    const include = (cat: RelatorioCategoria) =>
+      isCompleto || categoria === cat;
 
     if (isCompleto || categoria === RelatorioCategoria.PERFORMANCE_FINANCEIRA) {
       summaryItems.push('Indicadores Financeiros');
@@ -1049,9 +1051,9 @@ export class PdfGeneratorService {
   }
 
   private splitSolicitacoesRowsByPage(
-    rows: Solicitacao[],
+    rows: any[],
     pieChartDataUrl: string,
-  ): { firstChunk: Solicitacao[]; otherChunks: Solicitacao[][] } {
+  ): { firstChunk: any[]; otherChunks: any[][] } {
     const firstPageCapacity = this.getSafeRowsCapacity(
       this.getSolicitacoesRowsCapacityWithChart(pieChartDataUrl),
     );
@@ -1061,7 +1063,7 @@ export class PdfGeneratorService {
 
     const firstChunk = rows.slice(0, firstPageCapacity);
     const remaining = rows.slice(firstPageCapacity);
-    const otherChunks: Solicitacao[][] = [];
+    const otherChunks: any[][] = [];
 
     for (let i = 0; i < remaining.length; i += continuationCapacity) {
       otherChunks.push(remaining.slice(i, i + continuationCapacity));

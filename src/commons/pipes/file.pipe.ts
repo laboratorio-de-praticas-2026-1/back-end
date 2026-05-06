@@ -27,12 +27,6 @@ const DOCUMENTO_MIME_TYPES = [
   'image/webp',
 ] as const;
 
-type DocumentoMimeType = (typeof DOCUMENTO_MIME_TYPES)[number];
-
-function isDocumentoMimeType(mimetype: string): mimetype is DocumentoMimeType {
-  return (DOCUMENTO_MIME_TYPES as readonly string[]).includes(mimetype);
-}
-
 export class DocumentoFilePipe implements PipeTransform {
   private readonly maxSize = 10 * 1024 * 1024; // 10mb
 
@@ -45,7 +39,7 @@ export class DocumentoFilePipe implements PipeTransform {
       throw new BadRequestException('Arquivo excede o tamanho máximo de 10MB');
     }
 
-    if (!isDocumentoMimeType(file.mimetype)) {
+    if (!DOCUMENTO_MIME_TYPES.includes(file.mimetype as any)) {
       throw new BadRequestException(
         `Tipo de arquivo inválido. Tipos permitidos: ${DOCUMENTO_MIME_TYPES.join(', ')}`,
       );
