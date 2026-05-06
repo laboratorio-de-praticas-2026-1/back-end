@@ -559,11 +559,13 @@ export class SolicitacaoService implements OnModuleDestroy {
       dataConclusao: Date | null;
     };
 
+    const orderDirection: 'ASC' | 'DESC' = order === 'asc' ? 'ASC' : 'DESC';
+
     const queryOptions = {
       where: whereSolicitacao,
       limit,
       offset,
-      order: [[SOLICITACAO_ORDER_BY_COLUMN[orderBy], order.toUpperCase()]] as any,
+      order: [[SOLICITACAO_ORDER_BY_COLUMN[orderBy], orderDirection]],
       include: [
         {
           model: Usuario,

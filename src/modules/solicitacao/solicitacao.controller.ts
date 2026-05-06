@@ -47,7 +47,6 @@ import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto'
 import { StatusValidacaoEnum } from 'src/commons/enums/status-validacao.enum';
 import { SolicitacaoService } from './solicitacao.service';
 
-
 @ApiTags('solicitacao')
 @Controller('solicitacoes')
 export class SolicitacaoController {
@@ -81,9 +80,9 @@ export class SolicitacaoController {
   @Get()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-    async getAllSolicitacoes(@Query() query: ListSolicitacoesQueryDto) {
+  async getAllSolicitacoes(@Query() query: ListSolicitacoesQueryDto) {
     return this.solicitacaoService.getAllSolicitacoes(query);
-}
+  }
 
   @Get()
   @UseGuards(JwtAuthGuard)
