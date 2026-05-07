@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ContatoController } from './contato.controller';
 import { ContatoService } from './contato.service';
 import { ForbiddenException } from '@nestjs/common';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
 
 describe('ContatoController', () => {
   let controller: ContatoController;
@@ -20,7 +21,12 @@ describe('ContatoController', () => {
           useValue: mockContatoService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({
+        canActivate: jest.fn(() => true),
+      })
+      .compile();
 
     controller = module.get<ContatoController>(ContatoController);
   });
@@ -55,7 +61,9 @@ describe('ContatoController', () => {
   });
 
   it('deve bloquear busca quando id for diferente de 1', () => {
-    expect(() => controller.buscarContatoById(2)).toThrow(ForbiddenException);
+    expect(() => controller.buscarContatoById(2)).toThrow(
+      ForbiddenException,
+    );
 
     expect(mockContatoService.buscarContatoById).not.toHaveBeenCalled();
   });
@@ -69,6 +77,7 @@ describe('ContatoController', () => {
     const result = await controller.atualizarContatoById(1, updateData);
 
     expect(result).toEqual(mockResponse);
+
     expect(mockContatoService.atualizarContato).toHaveBeenCalledWith(
       1,
       updateData,
