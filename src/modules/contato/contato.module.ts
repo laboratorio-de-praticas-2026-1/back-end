@@ -10,13 +10,7 @@ import { ContatoService } from './contato.service';
 import { UsuarioModule } from '../usuario/usuario.module';
 
 @Module({
-  imports: [
-    SequelizeModule.forFeature([
-      Empresa,
-      EmailEnviado,
-    ]),
-    UsuarioModule,
-  ],
+  imports: [SequelizeModule.forFeature([Empresa, EmailEnviado]), UsuarioModule],
 
   controllers: [ContatoController],
 

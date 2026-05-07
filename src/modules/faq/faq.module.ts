@@ -9,10 +9,7 @@ import { Faq } from 'src/models/faq.model';
 import { UsuarioModule } from '../usuario/usuario.module';
 
 @Module({
-  imports: [
-    SequelizeModule.forFeature([Faq]),
-    UsuarioModule,
-  ],
+  imports: [SequelizeModule.forFeature([Faq]), UsuarioModule],
 
   controllers: [FaqController],
 
