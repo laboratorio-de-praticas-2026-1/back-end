@@ -7,17 +7,25 @@ import {
   Post,
   Body,
   Patch,
+  UseGuards,
 } from '@nestjs/common';
+
 import {
   ApiOperation,
   ApiResponse,
   ApiParam,
   ApiBody,
   ApiTags,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
+
 import { FaqService } from './faq.service';
 import { CreateFaqDto } from './dto/create-faq.dto';
 import { UpdateFaqDto } from './dto/update-faq.dto';
+
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { RolesGuard } from '../usuario/guards/roles.guard';
+import { Roles } from '../usuario/decorators/roles.decorator';
 
 @ApiTags('FAQ')
 @Controller('faq')
@@ -43,6 +51,9 @@ export class FaqController {
     description:
       'Retorna todas as FAQs incluindo as inativas. Restrito a administradores.',
   })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiResponse({
     status: 200,
     description: 'Lista completa de FAQs retornada com sucesso.',
@@ -92,6 +103,9 @@ export class FaqController {
     description:
       'Cria uma nova FAQ com pergunta, resposta e categoria. Restrito a administradores.',
   })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiBody({
     type: CreateFaqDto,
     description: 'Dados da FAQ a ser criada',
@@ -113,6 +127,9 @@ export class FaqController {
     summary: 'Atualizar FAQ',
     description: 'Atualiza uma FAQ existente. Restrito a administradores.',
   })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiParam({
     name: 'id',
     type: Number,
@@ -131,7 +148,10 @@ export class FaqController {
     description: 'FAQ não encontrada.',
   })
   @Patch('admin/:id')
-  updateFaq(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateFaqDto) {
+  updateFaq(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateFaqDto,
+  ) {
     return this.faqService.updateFaq(id, dto);
   }
 
@@ -139,6 +159,9 @@ export class FaqController {
     summary: 'Deletar FAQ',
     description: 'Remove uma FAQ do sistema. Restrito a administradores.',
   })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiParam({
     name: 'id',
     type: Number,
