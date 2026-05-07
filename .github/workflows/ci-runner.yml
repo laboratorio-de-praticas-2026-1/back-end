@@ -1,0 +1,47 @@
+name: Deploy Node.js App (Docker on Windows Runner)
+
+on:
+  push:
+    branches:
+      - test-pedrão-ci-cd
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Build and Run Docker Container
+    runs-on: [self-hosted, Windows, X64]
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Limpar container antigo
+        shell: powershell
+        run: |
+          # Para o container se ele já estiver rodando e remove
+          docker ps -q --filter "name=backend-app" | ForEach-Object { docker stop $_; docker rm $_ }
+          Write-Host "Ambiente limpo para novo deploy."
+
+      - name: Build da Imagem Docker
+        shell: powershell
+        run: |
+          # Constrói a imagem usando o Dockerfile que você forneceu
+          docker build -t backend-node-app:latest .
+
+      - name: Iniciar o Container
+        shell: powershell
+        run: |
+          # Executa o container mapeando a porta 8080
+          # O parâmetro --restart always garante que o sistema suba o app se o PC reiniciar
+          docker run -d `
+            --name backend-app `
+            -p 8080:8080 `
+            --restart always `
+            backend-node-app:latest
+          
+          Write-Host "Deploy realizado com sucesso na porta 8080!"
+
+      - name: Verificar Status
+        shell: powershell
+        run: |
+          docker ps --filter "name=backend-app"
