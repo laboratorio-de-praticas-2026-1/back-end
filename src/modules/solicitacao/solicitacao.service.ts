@@ -10,8 +10,8 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Op } from 'sequelize';
-import { ListSolicitacoesKanbanQueryDto } from './dto/list-solicitacoes-kanban-query.dto';
 import { StatusSolicitacaoEnum } from 'src/commons/enums/status-solicitacao.enum';
+import { ListSolicitacoesKanbanQueryDto } from './dto/list-solicitacoes-kanban-query.dto';
 import { StatusValidacaoEnum } from 'src/commons/enums/status-validacao.enum';
 import { CryptoUtil } from 'src/commons/utils/crypto';
 import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
@@ -480,32 +480,48 @@ export class SolicitacaoService implements OnModuleDestroy {
     return data.toISOString().slice(0, 10);
   }
 
-  private formatarSolicitacoes(solicitacoes: any[]) {
+  private formatarSolicitacoes(
+    solicitacoes: Array<
+      Solicitacao & {
+        usuario?: Usuario;
+        servico?: Servico;
+      }
+    >,
+  ) {
     return solicitacoes.map((solicitacao) => ({
       cliente: {
-        id: solicitacao.usuario.id,
-        nome: solicitacao.usuario.nome,
-        email: solicitacao.usuario.email,
+        id: solicitacao.usuario?.id ?? 0,
+        nome: solicitacao.usuario?.nome ?? '',
+        email: solicitacao.usuario?.email ?? '',
       },
+
       servico: {
-        id: solicitacao.servico.id,
-        tipo: solicitacao.servico.nome,
-        valorBase: Number(solicitacao.servico.valorBase) || 0,
+        id: solicitacao.servico?.id ?? 0,
+        tipo: solicitacao.servico?.nome ?? '',
+        valorBase: Number(solicitacao.servico?.valorBase ?? 0),
       },
+
       solicitacao: {
         id: solicitacao.id,
+
         status:
-          solicitacao.status.charAt(0).toUpperCase() +
-          solicitacao.status.slice(1),
-        observacaoCliente: solicitacao.observacaoCliente || '',
-        observacaoAdmin: solicitacao.observacaoAdmin || '',
+          typeof solicitacao.status === 'string'
+            ? solicitacao.status.charAt(0).toUpperCase() +
+              solicitacao.status.slice(1)
+            : '',
+
+        observacaoCliente: solicitacao.observacaoCliente ?? '',
+
+        observacaoAdmin: solicitacao.observacaoAdmin ?? '',
+
         dataSolicitacao: solicitacao.dataSolicitacao,
+
         dataConclusao: solicitacao.dataConclusao,
       },
     }));
   }
   async listarSolicitacoesKanban(
-    filtros: ListSolicitacoesQueryDto = new ListSolicitacoesQueryDto(),
+    filtros: ListSolicitacoesKanbanQueryDto = new ListSolicitacoesKanbanQueryDto(),
   ): Promise<ListSolicitacoesKanbanResponseDto> {
     const whereSolicitacao: Record<string, unknown> = {};
     const whereUsuario: Record<string, unknown> = {};
@@ -541,11 +557,11 @@ export class SolicitacaoService implements OnModuleDestroy {
     ];
 
     type SolicitacaoKanbanRow = Solicitacao & {
-      usuario: Usuario;
-      servico: Servico;
+      usuario?: Usuario;
+      servico?: Servico;
     };
 
-    const solicitacoes = (await this.solicitacaoModel.findAll({
+    const solicitacoes = await this.solicitacaoModel.findAll({
       where: whereSolicitacao,
       order: [orderClause],
       include: [
@@ -561,27 +577,38 @@ export class SolicitacaoService implements OnModuleDestroy {
           attributes: ['id', 'nome', 'valorBase'],
         },
       ],
-    })) as SolicitacaoKanbanRow[];
+    });
 
-    const solicitacoesFormatadas = solicitacoes.map((solicitacao) => ({
+    const solicitacoesTipadas = solicitacoes as SolicitacaoKanbanRow[];
+
+    const solicitacoesFormatadas = solicitacoesTipadas.map((solicitacao) => ({
       cliente: {
-        id: solicitacao.usuario.id,
-        nome: solicitacao.usuario.nome,
-        email: solicitacao.usuario.email,
+        id: solicitacao.usuario?.id ?? 0,
+        nome: solicitacao.usuario?.nome ?? '',
+        email: solicitacao.usuario?.email ?? '',
       },
+
       servico: {
-        id: solicitacao.servico.id,
-        tipo: solicitacao.servico.nome,
-        valorBase: Number(solicitacao.servico.valorBase) || 0,
+        id: solicitacao.servico?.id ?? 0,
+        tipo: solicitacao.servico?.nome ?? '',
+        valorBase: Number(solicitacao.servico?.valorBase ?? 0),
       },
+
       solicitacao: {
         id: solicitacao.id,
+
         status:
-          solicitacao.status.charAt(0).toUpperCase() +
-          solicitacao.status.slice(1),
-        observacaoCliente: solicitacao.observacaoCliente || '',
-        observacaoAdmin: solicitacao.observacaoAdmin || '',
+          typeof solicitacao.status === 'string'
+            ? solicitacao.status.charAt(0).toUpperCase() +
+              solicitacao.status.slice(1)
+            : '',
+
+        observacaoCliente: solicitacao.observacaoCliente ?? '',
+
+        observacaoAdmin: solicitacao.observacaoAdmin ?? '',
+
         dataSolicitacao: solicitacao.dataSolicitacao,
+
         dataConclusao: solicitacao.dataConclusao,
       },
     }));
