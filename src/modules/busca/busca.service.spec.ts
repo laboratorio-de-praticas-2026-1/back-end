@@ -755,7 +755,7 @@ describe('BuscaService', () => {
                 { categoria: { [Op.like]: '%renovacao%' } },
               ],
             },
-            { ativo: true },
+            { status: true },
             { categoria: 'CNH' },
           ],
         },
@@ -771,6 +771,16 @@ describe('BuscaService', () => {
       const resultado = await service.listarSolicitacoesByBusca({} as any);
 
       expect(solicitacaoFindAllMock).toHaveBeenCalledWith({
+        include: [
+          {
+            model: Usuario,
+            attributes: ['id', 'nome', 'email'],
+          },
+          {
+            model: Servico,
+            attributes: ['id', 'nome', 'valorBase'],
+          },
+        ],
         order: [['id', 'DESC']],
       });
       expect(resultado).toEqual({

@@ -1,31 +1,12 @@
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, type TransformFnParams } from 'class-transformer';
 import { IsIn, IsOptional, IsString } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
-
-const CATEGORIAS_FAQ = ['Novidades', 'CNH', 'Detran', 'Leis', 'Ipva'] as const;
-
-function normalizarCategoria(value: unknown): unknown {
-  if (typeof value !== 'string') {
-    return value;
-  }
-
-  const categoria = value.trim().toLowerCase();
-
-  const mapaCategorias: Record<string, (typeof CATEGORIAS_FAQ)[number]> = {
-    novidades: 'Novidades',
-    cnh: 'CNH',
-    detran: 'Detran',
-    leis: 'Leis',
-    ipva: 'Ipva',
-  };
-
-  return mapaCategorias[categoria] ?? value;
-}
+import { CategoriaFaqEnum } from 'src/models/faq.model';
 
 export class BuscaFaqDto {
   @IsOptional()
-  @Transform(({ value }: TransformFnParams) =>
-    typeof value === 'string' ? value.trim() : value,
+  @Transform(({ value }: TransformFnParams): string | undefined =>
+    typeof value === 'string' ? value.trim() : undefined,
   )
   @IsString()
   @ApiPropertyOptional({
@@ -36,9 +17,6 @@ export class BuscaFaqDto {
   declare termo?: string;
 
   @IsOptional()
-  @Transform(({ value }: TransformFnParams) =>
-    typeof value === 'string' ? value.trim().toLowerCase() : value,
-  )
   @IsString()
   @IsIn(['ativo', 'inativo'], {
     message: 'Campo "status" deve ser "ativo" ou "inativo"',
@@ -51,16 +29,17 @@ export class BuscaFaqDto {
   declare status?: 'ativo' | 'inativo';
 
   @IsOptional()
-  @Transform(({ value }: TransformFnParams) => normalizarCategoria(value))
+  @Transform(({ value }: TransformFnParams): string | undefined =>
+    typeof value === 'string' ? value.trim().toLowerCase() : undefined,
+  )
   @IsString()
-  @IsIn(CATEGORIAS_FAQ, {
-    message:
-      'Campo "categoria" deve ser um dos valores: Novidades, CNH, Detran, Leis ou Ipva',
+  @IsIn(Object.values(CategoriaFaqEnum), {
+    message: `Campo "categoria" deve ser um dos valores: ${Object.values(CategoriaFaqEnum).join(', ')}`,
   })
   @ApiPropertyOptional({
     description: 'Categoria do FAQ',
-    example: 'Detran',
-    enum: CATEGORIAS_FAQ,
+    example: 'detran',
+    enum: Object.values(CategoriaFaqEnum),
   })
-  declare categoria?: (typeof CATEGORIAS_FAQ)[number];
+  declare categoria?: (typeof CategoriaFaqEnum)[keyof typeof CategoriaFaqEnum];
 }

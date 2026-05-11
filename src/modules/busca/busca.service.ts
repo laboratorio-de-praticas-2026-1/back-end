@@ -450,7 +450,7 @@ export class BuscaService {
     }
 
     if (dto.status) {
-      filtrosAnd.push({ ativo: dto.status === 'ativo' });
+      filtrosAnd.push({ status: dto.status === 'ativo' });
     }
 
     if (dto.categoria) {
@@ -473,7 +473,8 @@ export class BuscaService {
     mensagem?: string;
   }> {
     const termoNormalizado = dto.termo?.trim();
-    const filtros: Array<Record<string, unknown> | ReturnType<typeof where>> = [];
+    const filtros: Array<Record<string, unknown> | ReturnType<typeof where>> =
+      [];
     const includes: Array<any> = [];
     const de = dto.de ? this.parseYmdDate(dto.de, 'de') : undefined;
     const ate = dto.ate ? this.parseYmdDate(dto.ate, 'ate') : undefined;
@@ -489,7 +490,10 @@ export class BuscaService {
     }
 
     if (ate) {
-      filtros.push(where(col('data_solicitacao'), Op.lte, ate.ymd));
+      const proximoDia = new Date(`${ate.ymd}T00:00:00.000Z`);
+      proximoDia.setUTCDate(proximoDia.getUTCDate() + 1);
+      const proximoDiaYmd = proximoDia.toISOString().slice(0, 10);
+      filtros.push(where(col('data_solicitacao'), Op.lt, proximoDiaYmd));
     }
 
     if (dto.servico_id !== undefined && dto.servico_id !== null) {
@@ -533,7 +537,8 @@ export class BuscaService {
 
       return {
         itens,
-        mensagem: itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+        mensagem:
+          itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
       };
     }
 

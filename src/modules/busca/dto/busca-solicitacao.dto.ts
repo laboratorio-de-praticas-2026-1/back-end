@@ -1,6 +1,6 @@
-import { IsOptional, IsString, IsDateString, IsInt } from 'class-validator';
-import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { IsDateString, IsInt, IsOptional, IsString } from 'class-validator';
 
 export class BuscaSolicitacaoDto {
   @IsOptional()
@@ -13,7 +13,10 @@ export class BuscaSolicitacaoDto {
   declare termo?: string;
 
   @IsOptional()
-  @IsDateString({}, { message: 'Campo "de" deve ser uma data válida no formato YYYY-MM-DD' })
+  @IsDateString(
+    {},
+    { message: 'Campo "de" deve ser uma data válida no formato YYYY-MM-DD' },
+  )
   @ApiPropertyOptional({
     description: 'Data inicial do intervalo',
     example: '2024-10-29',
@@ -22,7 +25,10 @@ export class BuscaSolicitacaoDto {
   declare de?: string;
 
   @IsOptional()
-  @IsDateString({}, { message: 'Campo "ate" deve ser uma data válida no formato YYYY-MM-DD' })
+  @IsDateString(
+    {},
+    { message: 'Campo "ate" deve ser uma data válida no formato YYYY-MM-DD' },
+  )
   @ApiPropertyOptional({
     description: 'Data final do intervalo',
     example: '2024-12-31',
