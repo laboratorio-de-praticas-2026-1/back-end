@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -8,6 +9,8 @@ import {
   OnModuleDestroy,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
+import { Op } from 'sequelize';
+import { ListSolicitacoesKanbanQueryDto } from './dto/list-solicitacoes-kanban-query.dto';
 import { StatusSolicitacaoEnum } from 'src/commons/enums/status-solicitacao.enum';
 import { StatusValidacaoEnum } from 'src/commons/enums/status-validacao.enum';
 import { CryptoUtil } from 'src/commons/utils/crypto';
@@ -37,14 +40,11 @@ import {
   ListSolicitacoesQueryDto,
   SOLICITACAO_ORDER_BY_COLUMN,
 } from './dto/list-solicitacoes-query.dto';
-import { ListSolicitacoesKanbanQueryDto } from './dto/list-solicitacoes-kanban-query.dto';
 import {
   ListSolicitacoesResponseDto,
   ListSolicitacoesKanbanResponseDto,
 } from './dto/list-solicitacoes-response.dto';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
-import { Op, WhereOptions, type Order } from 'sequelize';
-import { UpdateDocumentoStatusDto } from './dto/update-documento-status.dto';
 
 @Injectable()
 export class SolicitacaoService implements OnModuleDestroy {
@@ -106,9 +106,10 @@ export class SolicitacaoService implements OnModuleDestroy {
 
   async criarSolicitacao(
     solicitacaoDto: CreateSolicitacaoDto,
+    usuarioId: number,
   ): Promise<CreateSolicitacaoResponseDto> {
     const [usuario, servico] = await Promise.all([
-      this.usuarioModel.findByPk(solicitacaoDto.usuario_id),
+      this.usuarioModel.findByPk(usuarioId),
       this.servicoModel.findByPk(solicitacaoDto.servico_id),
     ]);
 
@@ -298,14 +299,21 @@ export class SolicitacaoService implements OnModuleDestroy {
         const textos = obterTextosEmailPorStatus(novoStatus, isReabertura);
 
         if (textos) {
-          await this.dispararEmailStatus(
-            solicitacao,
-            textos.assunto,
-            textos.titulo,
-            textos.mensagem,
-            textos.cor,
-            observacao,
-          );
+          try {
+            await this.dispararEmailStatus(
+              solicitacao,
+              textos.assunto,
+              textos.titulo,
+              textos.mensagem,
+              textos.cor,
+              observacao,
+            );
+          } catch (error) {
+            new Logger(SolicitacaoService.name).error(
+              `Falha ao enviar e-mail de atualização de status da solicitação ${id}. Status anterior: ${statusAnterior}. Novo status: ${novoStatus}.`,
+              error instanceof Error ? error.stack : undefined,
+            );
+          }
         }
       }
     }
@@ -472,19 +480,242 @@ export class SolicitacaoService implements OnModuleDestroy {
     return data.toISOString().slice(0, 10);
   }
 
-  private formatarSolicitacoes(solicitacoes: Solicitacao[]): {
-    cliente: { id: number; nome: string; email: string };
-    servico: { id: number; tipo: string; valorBase: number };
+  private formatarSolicitacoes(solicitacoes: any[]) {
+  return solicitacoes.map((solicitacao) => ({
+    cliente: {
+      id: solicitacao.usuario.id,
+      nome: solicitacao.usuario.nome,
+      email: solicitacao.usuario.email,
+    },
+    servico: {
+      id: solicitacao.servico.id,
+      tipo: solicitacao.servico.nome,
+      valorBase: Number(solicitacao.servico.valorBase) || 0,
+    },
     solicitacao: {
+      id: solicitacao.id,
+      status:
+        solicitacao.status.charAt(0).toUpperCase() +
+        solicitacao.status.slice(1),
+      observacaoCliente: solicitacao.observacaoCliente || '',
+      observacaoAdmin: solicitacao.observacaoAdmin || '',
+      dataSolicitacao: solicitacao.dataSolicitacao,
+      dataConclusao: solicitacao.dataConclusao,
+    },
+  }));
+}
+
+  async listarSolicitacoesKanban(
+  query: ListSolicitacoesKanbanQueryDto,
+): Promise<ListSolicitacoesKanbanResponseDto> {
+  const whereSolicitacao: Record<string, unknown> = {};
+  const whereUsuario: Record<string, unknown> = {};
+
+  if (query.usuario_id) {
+    whereSolicitacao.usuarioId = query.usuario_id;
+  }
+
+  if (query.servico_id) {
+    whereSolicitacao.servicoId = query.servico_id;
+  }
+
+  if (query.veiculo_id) {
+    whereSolicitacao.veiculoId = query.veiculo_id;
+  }
+
+  // NÃO aplica filtro de status no Kanban
+
+  if (query.nome) {
+    whereUsuario.nome = { [Op.like]: `%${query.nome}%` };
+  }
+
+  if (query.cpf_cnpj) {
+    whereUsuario.cpfCnpj = { [Op.like]: `%${query.cpf_cnpj}%` };
+  }
+
+  const orderDirection: 'ASC' | 'DESC' =
+    query.order === 'asc' ? 'ASC' : 'DESC';
+
+  const orderClause: [string, 'ASC' | 'DESC'] = [
+    SOLICITACAO_ORDER_BY_COLUMN[
+      query.orderBy ?? 'dataSolicitacao'
+    ],
+    orderDirection,
+  ];
+
+  const solicitacoes = await this.solicitacaoModel.findAll({
+    where: whereSolicitacao,
+    include: [
+      {
+        model: Usuario,
+        attributes: ['id', 'nome', 'email'],
+        where:
+          Object.keys(whereUsuario).length > 0
+            ? whereUsuario
+            : undefined,
+        required: Object.keys(whereUsuario).length > 0,
+      },
+      {
+        model: Servico,
+        attributes: ['id', 'nome', 'valorBase'],
+      },
+    ],
+    order: [orderClause],
+  });
+
+  const solicitacoesFormatadas =
+    this.formatarSolicitacoes(solicitacoes);
+
+  const kanbanColumns = solicitacoesFormatadas.reduce(
+    (acc, item) => {
+      const status = item.solicitacao.status;
+
+      if (!acc[status]) {
+        acc[status] = [];
+      }
+
+      acc[status].push(item);
+
+      return acc;
+    },
+    {} as Record<string, typeof solicitacoesFormatadas>,
+  );
+
+  return {
+    total: solicitacoesFormatadas.length,
+    solicitacoes: kanbanColumns,
+  };
+}
+
+  async listarSolicitacoes(
+    filtros: ListSolicitacoesQueryDto = new ListSolicitacoesQueryDto(),
+  ): Promise<ListSolicitacoesResponseDto> {
+    const page = filtros.page ?? 1;
+    const limit = filtros.limit ?? 10;
+    const orderBy = filtros.orderBy ?? 'dataSolicitacao';
+    const order = filtros.order ?? 'desc';
+    const offset = (page - 1) * limit;
+
+    const whereSolicitacao: Record<string, unknown> = {};
+    const whereUsuario: Record<string, unknown> = {};
+
+    if (filtros.usuario_id) {
+      whereSolicitacao.usuarioId = filtros.usuario_id;
+    }
+
+    if (filtros.servico_id) {
+      whereSolicitacao.servicoId = filtros.servico_id;
+    }
+
+    if (filtros.veiculo_id) {
+      whereSolicitacao.veiculoId = filtros.veiculo_id;
+    }
+
+    if (filtros.status) {
+      whereSolicitacao.status = filtros.status;
+    }
+
+    if (filtros.status_in && filtros.status_in.length > 0) {
+      whereSolicitacao.status = { [Op.in]: filtros.status_in };
+    }
+
+    const dataSolicitacaoFiltro: Record<symbol, Date> = {};
+    if (filtros.data_solicitacao_inicio) {
+      dataSolicitacaoFiltro[Op.gte] = new Date(filtros.data_solicitacao_inicio);
+    }
+    if (filtros.data_solicitacao_fim) {
+      dataSolicitacaoFiltro[Op.lte] = this.normalizarDataFim(
+        filtros.data_solicitacao_fim,
+      );
+    }
+    if (Reflect.ownKeys(dataSolicitacaoFiltro).length > 0) {
+      whereSolicitacao.dataSolicitacao = dataSolicitacaoFiltro;
+    }
+
+    const dataConclusaoFiltro: Record<symbol, Date | null> = {};
+    if (filtros.data_conclusao_inicio) {
+      dataConclusaoFiltro[Op.gte] = new Date(filtros.data_conclusao_inicio);
+    }
+    if (filtros.data_conclusao_fim) {
+      dataConclusaoFiltro[Op.lte] = this.normalizarDataFim(
+        filtros.data_conclusao_fim,
+      );
+    }
+    if (filtros.concluida === true) {
+      dataConclusaoFiltro[Op.not] = null;
+    }
+
+    if (filtros.concluida === false) {
+      whereSolicitacao.dataConclusao = { [Op.is]: null };
+    } else if (Reflect.ownKeys(dataConclusaoFiltro).length > 0) {
+      whereSolicitacao.dataConclusao = dataConclusaoFiltro;
+    }
+
+    if (filtros.nome) {
+      whereUsuario.nome = { [Op.like]: `%${filtros.nome}%` };
+    }
+
+    if (filtros.cpf_cnpj) {
+      whereUsuario.cpfCnpj = { [Op.like]: `%${filtros.cpf_cnpj}%` };
+    }
+
+    type SolicitacaoListaRow = {
       id: number;
+      usuario: { id: number; nome: string; email: string };
+      servico: { id: number; nome: string; valorBase: unknown };
       status: string;
-      observacaoCliente: string;
-      observacaoAdmin: string;
+      observacaoCliente: string | null;
+      observacaoAdmin: string | null;
       dataSolicitacao: Date;
       dataConclusao: Date | null;
     };
-  }[] {
-    return solicitacoes.map((solicitacao) => ({
+
+    const orderDirection: 'ASC' | 'DESC' = order === 'asc' ? 'ASC' : 'DESC';
+    const orderClause: [string, 'ASC' | 'DESC'] = [
+      SOLICITACAO_ORDER_BY_COLUMN[orderBy],
+      orderDirection,
+    ];
+
+    const queryOptions = {
+      where: whereSolicitacao,
+      limit,
+      offset,
+      order: [orderClause],
+      include: [
+        {
+          model: Usuario,
+          attributes: ['id', 'nome', 'email'],
+          where:
+            Object.keys(whereUsuario).length > 0 ? whereUsuario : undefined,
+          required: Object.keys(whereUsuario).length > 0,
+        },
+        {
+          model: Servico,
+          attributes: ['id', 'nome', 'valorBase'],
+        },
+      ],
+    };
+
+    const resultadoBruto =
+      await this.solicitacaoModel.findAndCountAll?.(queryOptions);
+
+    const resultado =
+      resultadoBruto && typeof resultadoBruto === 'object'
+        ? resultadoBruto
+        : {
+            rows: (await this.solicitacaoModel.findAll(
+              queryOptions,
+            )) as SolicitacaoListaRow[],
+            count: 0,
+          };
+
+    const solicitacoes = resultado.rows ?? [];
+    const total =
+      typeof resultado.count === 'number' && resultado.count > 0
+        ? resultado.count
+        : solicitacoes.length;
+
+    const solicitacoesFormatadas = solicitacoes.map((solicitacao) => ({
       cliente: {
         id: solicitacao.usuario.id,
         nome: solicitacao.usuario.nome,
@@ -493,7 +724,7 @@ export class SolicitacaoService implements OnModuleDestroy {
       servico: {
         id: solicitacao.servico.id,
         tipo: solicitacao.servico.nome,
-        valorBase: solicitacao.servico.valorBase || 0,
+        valorBase: Number(solicitacao.servico.valorBase) || 0,
       },
       solicitacao: {
         id: solicitacao.id,
@@ -506,133 +737,7 @@ export class SolicitacaoService implements OnModuleDestroy {
         dataConclusao: solicitacao.dataConclusao,
       },
     }));
-  }
 
-  private buildWhereClause(
-    query: ListSolicitacoesQueryDto,
-    excludeStatus = false,
-  ): WhereOptions {
-    const where: WhereOptions = {};
-
-    if (!excludeStatus && query.status_in && query.status_in.length > 0) {
-      where.status = { [Op.in]: query.status_in };
-    }
-
-    if (query.usuario_id) where.usuarioId = query.usuario_id;
-    if (query.servico_id) where.servicoId = query.servico_id;
-    if (query.veiculo_id) where.veiculoId = query.veiculo_id;
-
-    if (query.concluida !== undefined) {
-      where.dataConclusao = query.concluida
-        ? { [Op.ne]: null }
-        : { [Op.is]: null };
-    }
-
-    if (query.data_solicitacao_inicio || query.data_solicitacao_fim) {
-      const dataSolicitacaoWhere: Record<string, any> = {};
-
-      if (query.data_solicitacao_inicio) {
-        dataSolicitacaoWhere[Op.gte as unknown as string] = new Date(
-          query.data_solicitacao_inicio,
-        );
-      }
-
-      if (query.data_solicitacao_fim) {
-        dataSolicitacaoWhere[Op.lte as unknown as string] = new Date(
-          `${query.data_solicitacao_fim}T23:59:59.999Z`,
-        );
-      }
-
-      where.dataSolicitacao = dataSolicitacaoWhere;
-    }
-
-    if (query.data_conclusao_inicio || query.data_conclusao_fim) {
-      const dataConclusaoWhere: Record<string, any> = {};
-
-      if (query.data_conclusao_inicio) {
-        dataConclusaoWhere[Op.gte as unknown as string] = new Date(
-          query.data_conclusao_inicio,
-        );
-      }
-
-      if (query.data_conclusao_fim) {
-        dataConclusaoWhere[Op.lte as unknown as string] = new Date(
-          `${query.data_conclusao_fim}T23:59:59.999Z`,
-        );
-      }
-
-      where.dataConclusao = dataConclusaoWhere;
-    }
-
-    return where;
-  }
-
-  /**
-   * Constrói a cláusula WHERE para filtros de Usuario
-   */
-  private buildUsuarioWhereClause(
-    query: ListSolicitacoesQueryDto,
-  ): WhereOptions {
-    const usuarioWhere: WhereOptions = {};
-
-    if (query.nome) {
-      usuarioWhere.nome = { [Op.like]: `%${query.nome}%` };
-    }
-
-    if (query.cpf_cnpj) {
-      usuarioWhere.cpfCnpj = { [Op.like]: `%${query.cpf_cnpj}%` };
-    }
-
-    return usuarioWhere;
-  }
-
-  private buildOrderClause(
-    orderBy: string = 'dataSolicitacao',
-    order: string = 'desc',
-  ): Order {
-    return [
-      [
-        SOLICITACAO_ORDER_BY_COLUMN[
-          orderBy as keyof typeof SOLICITACAO_ORDER_BY_COLUMN
-        ] || 'dataSolicitacao',
-        order.toUpperCase() as 'ASC' | 'DESC',
-      ],
-    ];
-  }
-
-  async listarSolicitacoes(
-    query: ListSolicitacoesQueryDto = new ListSolicitacoesQueryDto(),
-  ): Promise<ListSolicitacoesResponseDto> {
-    const page = query.page ?? 1;
-    const limit = query.limit ?? 10;
-    const offset = (page - 1) * limit;
-
-    const where = this.buildWhereClause(query, false);
-    const usuarioWhere = this.buildUsuarioWhereClause(query);
-    const hasUsuarioFilter = Object.keys(usuarioWhere).length > 0;
-    const orderClause = this.buildOrderClause(query.orderBy, query.order);
-
-    const { rows: solicitacoes, count: total } =
-      await this.solicitacaoModel.findAndCountAll({
-        where,
-        include: [
-          {
-            model: Usuario,
-            attributes: ['id', 'nome', 'email'],
-            where: hasUsuarioFilter ? usuarioWhere : undefined,
-            required: hasUsuarioFilter,
-          },
-          {
-            model: Servico,
-            attributes: ['id', 'nome', 'valorBase'],
-          },
-        ],
-        limit,
-        offset,
-        order: orderClause,
-      });
-
-    const solicitacoesFormatadas = this.formatarSolicitacoes(solicitacoes);
     const totalPages = total > 0 ? Math.ceil(total / limit) : 1;
 
     return {
@@ -646,56 +751,23 @@ export class SolicitacaoService implements OnModuleDestroy {
     };
   }
 
-  async listarSolicitacoesKanban(
-    query: ListSolicitacoesKanbanQueryDto,
-  ): Promise<ListSolicitacoesKanbanResponseDto> {
-    // ListSolicitacoesKanbanQueryDto herda de ListSolicitacoesQueryDto, então é seguro fazer cast
-    const where = this.buildWhereClause(
-      query as ListSolicitacoesQueryDto,
-      true,
-    ); // Exclui filtro de status
-    const usuarioWhere = this.buildUsuarioWhereClause(
-      query as ListSolicitacoesQueryDto,
-    );
-    const hasUsuarioFilter = Object.keys(usuarioWhere).length > 0;
-    const orderClause = this.buildOrderClause(query.orderBy, query.order);
-
-    const solicitacoes = await this.solicitacaoModel.findAll({
-      where,
-      include: [
-        {
-          model: Usuario,
-          attributes: ['id', 'nome', 'email'],
-          where: hasUsuarioFilter ? usuarioWhere : undefined,
-          required: hasUsuarioFilter,
-        },
-        {
-          model: Servico,
-          attributes: ['id', 'nome', 'valorBase'],
-        },
-      ],
-      order: orderClause,
-    });
-
-    const solicitacoesFormatadas = this.formatarSolicitacoes(solicitacoes);
-
-    const kanbanColumns = solicitacoesFormatadas.reduce(
-      (acc, item) => {
-        const status = item.solicitacao.status;
-        if (!acc[status]) acc[status] = [];
-        acc[status].push(item);
-        return acc;
-      },
-      {} as Record<string, typeof solicitacoesFormatadas>,
-    );
-
-    return {
-      total: solicitacoesFormatadas.length,
-      solicitacoes: kanbanColumns,
-    };
+  async getAllSolicitacoes(
+    query: ListSolicitacoesQueryDto,
+  ): Promise<ListSolicitacoesResponseDto> {
+    return this.listarSolicitacoes(query);
   }
+
+  private normalizarDataFim(data: string): Date {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(data)) {
+      return new Date(`${data}T23:59:59.999Z`);
+    }
+
+    return new Date(data);
+  }
+
   async enviarDocumento(
     solicitacaoId: number,
+    usuarioId: number,
     data: CreateDocumentoDto,
     documento: Express.Multer.File,
   ): Promise<{ message: string }> {
@@ -705,6 +777,11 @@ export class SolicitacaoService implements OnModuleDestroy {
     const solicitacao = await this.solicitacaoModel.findByPk(solicitacaoId);
     if (!solicitacao) {
       throw new NotFoundException('Solicitação não encontrada');
+    }
+    if (solicitacao.usuarioId !== usuarioId) {
+      throw new ForbiddenException(
+        'Você não tem permissão para enviar documentos nesta solicitação',
+      );
     }
 
     let urlDocRestricted: CloudinaryResponse;
@@ -725,12 +802,15 @@ export class SolicitacaoService implements OnModuleDestroy {
     }
 
     const publicId = urlDocRestricted.public_id as string;
+
     if (!publicId) {
       throw new InternalServerErrorException(
         'Resposta inválida do Cloudinary: public_id ausente',
       );
     }
+
     const resourceType = urlDocRestricted.resource_type as 'raw' | 'image';
+
     const nomeHash = this.cryptoUtil.encrypt(`${resourceType}|${publicId}`);
 
     await this.documentoModel.create({
@@ -744,6 +824,7 @@ export class SolicitacaoService implements OnModuleDestroy {
       message: 'Documento enviado com sucesso e aguardando validação.',
     };
   }
+
   async listarDocumentos(solicitacaoId: number): Promise<{
     data: {
       id: number;
@@ -780,11 +861,15 @@ export class SolicitacaoService implements OnModuleDestroy {
     const data = documentos
       .map((doc) => {
         try {
-          const decrypted = this.cryptoUtil.decrypt(doc.nomeHash ?? '');
+          if (!doc.nomeHash) {
+            throw new Error('Documento sem nomeHash');
+          }
+
+          const decrypted = this.cryptoUtil.decrypt(doc.nomeHash);
           const [resourceType, publicId] = decrypted.split('|');
 
           if (!resourceType || !publicId) {
-            throw new Error('Formato inválido do nome_hash');
+            throw new Error('Formato inválido');
           }
 
           const url = this.cloudinaryService.generateTemporaryUrl(decrypted);
@@ -797,7 +882,7 @@ export class SolicitacaoService implements OnModuleDestroy {
             url,
             data_upload: doc.dataUpload,
           };
-        } catch (error: unknown) {
+        } catch (error) {
           this.logger.warn(
             `Erro ao processar documento ID ${doc.id}: ${
               error instanceof Error ? error.message : 'Erro desconhecido'
@@ -899,41 +984,12 @@ export class SolicitacaoService implements OnModuleDestroy {
     await documento.update({
       nomeHash: nomeHash,
       dataUpload: new Date(),
-      statusValidacao: 'pendente',
+      statusValidacao: StatusValidacaoEnum.PENDENTE,
     });
 
     return {
       id: documento.id,
       mensagem: 'Documento substituído com sucesso',
-    };
-  }
-
-  async validarDocumento(
-    solicitacaoId: number,
-    docId: number,
-    dto: UpdateDocumentoStatusDto,
-  ) {
-    // Busca o documento garantindo o vínculo com a solicitação
-    const documento = await this.documentoModel.findOne({
-      where: {
-        id: docId,
-        solicitacaoId: solicitacaoId,
-      },
-    });
-
-    if (!documento) {
-      throw new NotFoundException(
-        'Documento não encontrado para esta solicitação',
-      );
-    }
-
-    // Atualiza apenas o status
-    await documento.update({
-      statusValidacao: dto.status,
-    });
-
-    return {
-      message: `Documento ${dto.status === StatusValidacaoEnum.APROVADO ? 'aprovado' : 'rejeitado'} com sucesso.`,
     };
   }
 }
