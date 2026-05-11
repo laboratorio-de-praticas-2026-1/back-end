@@ -1,26 +1,36 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Put,
   Body,
+  Controller,
+  ForbiddenException,
+  Get,
   Logger,
   Param,
   ParseIntPipe,
-  ForbiddenException,
+  Post,
+  Put,
+  UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
+
 import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
-  ApiCreatedResponse,
-  ApiBadRequestResponse,
 } from '@nestjs/swagger';
+
 import { ContatoService } from './contato.service';
+
 import { EmpresaDto, TipoEmpresa } from './dto/empresa-response.dto';
+
 import { ContatoUpdateDto } from './dto/contato-update.dto';
 import { EnviarEmailDto } from './dto/enviar-email-dto';
+
+import { Roles } from '../usuario/decorators/roles.decorator';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { RolesGuard } from '../usuario/guards/roles.guard';
 
 @Controller('contato')
 export class ContatoController {
@@ -49,67 +59,10 @@ export class ContatoController {
     return this.contatoService.buscarContatoById(id);
   }
 
-  /*export class EmpresaDto {
-  @ApiProperty()
-  id: number;
-
-  @ApiProperty()
-  nomeFantasia: string;
-
-  @ApiProperty()
-  cnpj: string;
-
-  @ApiProperty()
-  telefone: string;
-
-  @ApiProperty()
-  email: string;
-
-  @ApiProperty()
-  endereco: string;
-
-  @ApiProperty()
-  cidade: string;
-
-  @ApiProperty({
-    description: 'Estado da empresa (sigla de 2 letras)',
-    example: 'SP',
-  })
-  @IsString({ message: 'O estado deve ser uma string' })
-  @MaxLength(2, { message: 'O estado deve conter no máximo 2 caracteres' })
-  estado: string;
-
-  @ApiProperty()
-  site: string;
-
-  @ApiProperty({
-    description: 'Tipo da empresa',
-    required: false,
-  })
-  @IsEnum({
-    enum: TipoEmpresa,
-    message: `O tipo deve ser um dos seguintes valores: ${Object.values(TipoEmpresa).join(', ')}`,
-  })
-  tipo?: TipoEmpresa | null;
-
-  @ApiProperty({
-    description: 'Latitude da empresa',
-    required: false,
-  })
-  latitude?: string;
-
-  @ApiProperty({
-    description: 'Longitude da empresa',
-    required: false,
-  })
-  longitude?: string;
-
-  @ApiProperty({
-    description: 'Endereço completo (endereço + cidade + estado)',
-  })
-  enderecoCompleto: string; */
-
   @Put(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Atualiza dados do contato (somente ID = 1 permitido)',
     requestBody: {
@@ -122,23 +75,41 @@ export class ContatoController {
               nomeFantasia: { type: 'string', example: 'Auto Vistoria' },
               cnpj: { type: 'string', example: '12.345.678/0001-90' },
               telefone: { type: 'string', example: '11987654321' },
-              email: { type: 'string', example: 'contato@autovistoria.com.br' },
-              endereco: { type: 'string', example: 'Rua Exemplo, 123' },
-              cidade: { type: 'string', example: 'São Paulo' },
+              email: {
+                type: 'string',
+                example: 'contato@autovistoria.com.br',
+              },
+              endereco: {
+                type: 'string',
+                example: 'Rua Exemplo, 123',
+              },
+              cidade: {
+                type: 'string',
+                example: 'São Paulo',
+              },
               estado: {
                 type: 'string',
                 example: 'SP',
                 description: 'Sigla do estado (2 letras)',
               },
-              site: { type: 'string', example: 'www.autovistoria.com.br' },
+              site: {
+                type: 'string',
+                example: 'www.autovistoria.com.br',
+              },
               tipo: {
                 type: 'string',
                 enum: Object.values(TipoEmpresa),
                 example: 'vistoria',
                 description: 'Tipo da empresa (clinica, vistoria ou detran)',
               },
-              latitude: { type: 'string', example: '-23.55052' },
-              longitude: { type: 'string', example: '-46.633308' },
+              latitude: {
+                type: 'string',
+                example: '-23.55052',
+              },
+              longitude: {
+                type: 'string',
+                example: '-46.633308',
+              },
               enderecoCompleto: {
                 type: 'string',
                 example: 'Rua Exemplo, 123, São Paulo, SP',
@@ -150,8 +121,12 @@ export class ContatoController {
       },
     },
   })
-  @ApiOkResponse({ description: 'Contato atualizado com sucesso' })
-  @ApiNotFoundResponse({ description: 'Contato não encontrado' })
+  @ApiOkResponse({
+    description: 'Contato atualizado com sucesso',
+  })
+  @ApiNotFoundResponse({
+    description: 'Contato não encontrado',
+  })
   async atualizarContatoById(
     @Param('id', ParseIntPipe) id: number,
     @Body() data: ContatoUpdateDto,
@@ -163,6 +138,7 @@ export class ContatoController {
     }
 
     this.logger.log(`Atualizando contato ID: ${id}`);
+
     return this.contatoService.atualizarContato(id, data);
   }
 

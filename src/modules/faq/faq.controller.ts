@@ -1,23 +1,31 @@
 import {
+  Body,
   Controller,
-  Get,
   Delete,
+  Get,
   Param,
   ParseIntPipe,
-  Post,
-  Body,
   Patch,
+  Post,
+  UseGuards,
 } from '@nestjs/common';
+
 import {
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
+  ApiBearerAuth,
   ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { FaqService } from './faq.service';
+
 import { CreateFaqDto } from './dto/create-faq.dto';
 import { UpdateFaqDto } from './dto/update-faq.dto';
+import { FaqService } from './faq.service';
+
+import { Roles } from '../usuario/decorators/roles.decorator';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { RolesGuard } from '../usuario/guards/roles.guard';
 
 @ApiTags('FAQ')
 @Controller('faq')
@@ -43,6 +51,9 @@ export class FaqController {
     description:
       'Retorna todas as FAQs incluindo as inativas. Restrito a administradores.',
   })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiResponse({
     status: 200,
     description: 'Lista completa de FAQs retornada com sucesso.',
@@ -92,6 +103,9 @@ export class FaqController {
     description:
       'Cria uma nova FAQ com pergunta, resposta e categoria. Restrito a administradores.',
   })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiBody({
     type: CreateFaqDto,
     description: 'Dados da FAQ a ser criada',
@@ -113,6 +127,9 @@ export class FaqController {
     summary: 'Atualizar FAQ',
     description: 'Atualiza uma FAQ existente. Restrito a administradores.',
   })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiParam({
     name: 'id',
     type: Number,
@@ -139,6 +156,9 @@ export class FaqController {
     summary: 'Deletar FAQ',
     description: 'Remove uma FAQ do sistema. Restrito a administradores.',
   })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiParam({
     name: 'id',
     type: Number,

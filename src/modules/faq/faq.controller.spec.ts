@@ -5,6 +5,7 @@ import { FaqController } from './faq.controller';
 import { FaqService } from './faq.service';
 import { NotFoundException } from '@nestjs/common';
 import { CategoriaFaqEnum } from 'src/models/faq.model';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
 
 describe('FaqController', () => {
   let controller: FaqController;
@@ -28,7 +29,12 @@ describe('FaqController', () => {
           useValue: faqServiceMock,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({
+        canActivate: jest.fn(() => true),
+      })
+      .compile();
 
     controller = module.get<FaqController>(FaqController);
   });
