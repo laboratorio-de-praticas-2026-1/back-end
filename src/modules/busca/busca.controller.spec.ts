@@ -10,6 +10,8 @@ describe('BuscaController', () => {
     listarPublicidadeByTermo: jest.fn(),
     listarUsuariosByTermo: jest.fn(),
     listarEmpresasByTermo: jest.fn(),
+    listarFaqByBusca: jest.fn(),
+    listarSolicitacoesByBusca: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -18,6 +20,8 @@ describe('BuscaController', () => {
     buscaServiceMock.listarPublicidadeByTermo.mockReset();
     buscaServiceMock.listarUsuariosByTermo.mockReset();
     buscaServiceMock.listarEmpresasByTermo.mockReset();
+    buscaServiceMock.listarFaqByBusca.mockReset();
+    buscaServiceMock.listarSolicitacoesByBusca.mockReset();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [BuscaController],
@@ -78,5 +82,23 @@ describe('BuscaController', () => {
     expect(buscaServiceMock.listarEmpresasByTermo).toHaveBeenCalledWith(
       'curitiba',
     );
+  });
+
+  it('deve delegar a busca de faq com termo e filtros para o BuscaService', async () => {
+    buscaServiceMock.listarFaqByBusca.mockResolvedValue({ itens: [] });
+    const dto = { termo: 'renovacao', status: 'ativo', categoria: 'CNH' };
+
+    await controller.listarFaq(dto as any);
+
+    expect(buscaServiceMock.listarFaqByBusca).toHaveBeenCalledWith(dto);
+  });
+
+  it('deve delegar a busca de solicitacoes com filtros para o BuscaService', async () => {
+    buscaServiceMock.listarSolicitacoesByBusca.mockResolvedValue({ itens: [] });
+    const dto = { termo: 'joao', de: '2026-01-01', ate: '2026-01-31' };
+
+    await controller.listarSolicitacoes(dto as any);
+
+    expect(buscaServiceMock.listarSolicitacoesByBusca).toHaveBeenCalledWith(dto);
   });
 });
