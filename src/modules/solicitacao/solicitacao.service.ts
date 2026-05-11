@@ -11,6 +11,7 @@ import {
 import { InjectModel } from '@nestjs/sequelize';
 import { Op } from 'sequelize';
 import { StatusSolicitacaoEnum } from 'src/commons/enums/status-solicitacao.enum';
+import { ListSolicitacoesKanbanQueryDto } from './dto/list-solicitacoes-kanban-query.dto';
 import { StatusValidacaoEnum } from 'src/commons/enums/status-validacao.enum';
 import { CryptoUtil } from 'src/commons/utils/crypto';
 import { CloudinaryService } from 'src/infra/cloudinary/cloudinary.service';
@@ -39,7 +40,10 @@ import {
   ListSolicitacoesQueryDto,
   SOLICITACAO_ORDER_BY_COLUMN,
 } from './dto/list-solicitacoes-query.dto';
-import { ListSolicitacoesResponseDto } from './dto/list-solicitacoes-response.dto';
+import {
+  ListSolicitacoesResponseDto,
+  ListSolicitacoesKanbanResponseDto,
+} from './dto/list-solicitacoes-response.dto';
 import { UpdateSolicitacaoStatusDto } from './dto/update-solicitacao-status.dto';
 
 @Injectable()
@@ -476,6 +480,158 @@ export class SolicitacaoService implements OnModuleDestroy {
     return data.toISOString().slice(0, 10);
   }
 
+  private formatarSolicitacoes(
+    solicitacoes: Array<
+      Solicitacao & {
+        usuario?: Usuario;
+        servico?: Servico;
+      }
+    >,
+  ) {
+    return solicitacoes.map((solicitacao) => ({
+      cliente: {
+        id: solicitacao.usuario?.id ?? 0,
+        nome: solicitacao.usuario?.nome ?? '',
+        email: solicitacao.usuario?.email ?? '',
+      },
+
+      servico: {
+        id: solicitacao.servico?.id ?? 0,
+        tipo: solicitacao.servico?.nome ?? '',
+        valorBase: Number(solicitacao.servico?.valorBase ?? 0),
+      },
+
+      solicitacao: {
+        id: solicitacao.id,
+
+        status:
+          typeof solicitacao.status === 'string'
+            ? solicitacao.status.charAt(0).toUpperCase() +
+              solicitacao.status.slice(1)
+            : '',
+
+        observacaoCliente: solicitacao.observacaoCliente ?? '',
+
+        observacaoAdmin: solicitacao.observacaoAdmin ?? '',
+
+        dataSolicitacao: solicitacao.dataSolicitacao,
+
+        dataConclusao: solicitacao.dataConclusao,
+      },
+    }));
+  }
+  async listarSolicitacoesKanban(
+    filtros: ListSolicitacoesKanbanQueryDto = new ListSolicitacoesKanbanQueryDto(),
+  ): Promise<ListSolicitacoesKanbanResponseDto> {
+    const whereSolicitacao: Record<string, unknown> = {};
+    const whereUsuario: Record<string, unknown> = {};
+
+    if (filtros.usuario_id) {
+      whereSolicitacao.usuarioId = filtros.usuario_id;
+    }
+
+    if (filtros.servico_id) {
+      whereSolicitacao.servicoId = filtros.servico_id;
+    }
+
+    if (filtros.veiculo_id) {
+      whereSolicitacao.veiculoId = filtros.veiculo_id;
+    }
+
+    // NÃO aplica filtro de status no kanban
+
+    if (filtros.nome) {
+      whereUsuario.nome = { [Op.like]: `%${filtros.nome}%` };
+    }
+
+    if (filtros.cpf_cnpj) {
+      whereUsuario.cpfCnpj = { [Op.like]: `%${filtros.cpf_cnpj}%` };
+    }
+
+    const orderDirection: 'ASC' | 'DESC' =
+      filtros.order === 'asc' ? 'ASC' : 'DESC';
+
+    const orderClause: [string, 'ASC' | 'DESC'] = [
+      SOLICITACAO_ORDER_BY_COLUMN[filtros.orderBy ?? 'dataSolicitacao'],
+      orderDirection,
+    ];
+
+    type SolicitacaoKanbanRow = Solicitacao & {
+      usuario?: Usuario;
+      servico?: Servico;
+    };
+
+    const solicitacoes = await this.solicitacaoModel.findAll({
+      where: whereSolicitacao,
+      order: [orderClause],
+      include: [
+        {
+          model: Usuario,
+          attributes: ['id', 'nome', 'email'],
+          where:
+            Object.keys(whereUsuario).length > 0 ? whereUsuario : undefined,
+          required: Object.keys(whereUsuario).length > 0,
+        },
+        {
+          model: Servico,
+          attributes: ['id', 'nome', 'valorBase'],
+        },
+      ],
+    });
+
+    const solicitacoesTipadas = solicitacoes as SolicitacaoKanbanRow[];
+
+    const solicitacoesFormatadas = solicitacoesTipadas.map((solicitacao) => ({
+      cliente: {
+        id: solicitacao.usuario?.id ?? 0,
+        nome: solicitacao.usuario?.nome ?? '',
+        email: solicitacao.usuario?.email ?? '',
+      },
+
+      servico: {
+        id: solicitacao.servico?.id ?? 0,
+        tipo: solicitacao.servico?.nome ?? '',
+        valorBase: Number(solicitacao.servico?.valorBase ?? 0),
+      },
+
+      solicitacao: {
+        id: solicitacao.id,
+
+        status:
+          typeof solicitacao.status === 'string'
+            ? solicitacao.status.charAt(0).toUpperCase() +
+              solicitacao.status.slice(1)
+            : '',
+
+        observacaoCliente: solicitacao.observacaoCliente ?? '',
+
+        observacaoAdmin: solicitacao.observacaoAdmin ?? '',
+
+        dataSolicitacao: solicitacao.dataSolicitacao,
+
+        dataConclusao: solicitacao.dataConclusao,
+      },
+    }));
+
+    const kanbanColumns = solicitacoesFormatadas.reduce<
+      Record<string, typeof solicitacoesFormatadas>
+    >((acc, item) => {
+      const status = item.solicitacao.status;
+
+      if (!acc[status]) {
+        acc[status] = [];
+      }
+
+      acc[status].push(item);
+
+      return acc;
+    }, {});
+
+    return {
+      total: solicitacoesFormatadas.length,
+      solicitacoes: kanbanColumns,
+    };
+  }
   async listarSolicitacoes(
     filtros: ListSolicitacoesQueryDto = new ListSolicitacoesQueryDto(),
   ): Promise<ListSolicitacoesResponseDto> {

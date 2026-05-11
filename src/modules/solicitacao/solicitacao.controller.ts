@@ -10,7 +10,6 @@ import {
   ParseIntPipe,
   Patch,
   Post,
-  Put,
   Req,
   UploadedFile,
   UseGuards,
@@ -31,6 +30,7 @@ import {
 } from '@nestjs/swagger';
 import 'multer';
 import { DocumentoFilePipe } from 'src/commons/pipes/file.pipe';
+import { ListSolicitacoesKanbanResponseDto } from './dto/list-solicitacoes-response.dto';
 import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
 import { RolesGuard } from '../usuario/guards/roles.guard';
 import { Roles } from '../usuario/decorators/roles.decorator';
@@ -130,7 +130,33 @@ export class SolicitacaoController {
     this.logger.log('Buscando lista de solicitações...');
     return this.solicitacaoService.listarSolicitacoes(query);
   }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
+  @ApiBearerAuth()
+  @Get('kanban')
+  @ApiOperation({
+    summary: 'Listar solicitações no formato Kanban',
+    description:
+      'Retorna todas as solicitações agrupadas por status (sem paginação). Aplica todos os filtros exceto status.',
+  })
+  @ApiOkResponse({ type: ListSolicitacoesKanbanResponseDto })
+  @ApiQuery({
+    name: 'orderBy',
+    required: false,
+    enum: SOLICITACAO_ORDER_BY_FIELDS,
+  })
+  @ApiQuery({
+    name: 'order',
+    required: false,
+    enum: ['asc', 'desc'],
+  })
+  async listarSolicitacoesKanban(
+    @Query() query: ListSolicitacoesQueryDto,
+  ): Promise<ListSolicitacoesKanbanResponseDto> {
+    this.logger.log('Buscando solicitações no formato kanban...');
 
+    return this.solicitacaoService.listarSolicitacoesKanban(query);
+  }
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
@@ -163,7 +189,6 @@ export class SolicitacaoController {
     this.logger.log(`Buscando solicitação com id=${id}...`);
     return this.solicitacaoService.getSolicitacaoById(id);
   }
-
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
@@ -212,7 +237,6 @@ export class SolicitacaoController {
       updateSolicitacaoStatusDto,
     );
   }
-
   @Post(':id/cancelar')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
@@ -329,7 +353,6 @@ export class SolicitacaoController {
       documento,
     );
   }
-
   @Patch(':id/documentos/:docId')
   @ApiOperation({
     summary: 'Substituir arquivo de um documento vinculado a uma solicitação',
