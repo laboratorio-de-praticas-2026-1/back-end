@@ -2,21 +2,20 @@ import {
   Injectable,
   CanActivate,
   ExecutionContext,
-  ForbiddenException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 
-type NivelUsuario = 'cliente' | 'administrador';
+export type NivelUsuario = 'cliente' | 'administrador';
 
-interface JwtPayload {
+export interface JwtPayload {
   id: number;
   nivel: NivelUsuario;
 }
 
 @Injectable()
-export class AdminGuard implements CanActivate {
+export class JwtAuthGuard implements CanActivate {
   constructor(private readonly jwtService: JwtService) {}
 
   canActivate(context: ExecutionContext): boolean {
@@ -32,15 +31,9 @@ export class AdminGuard implements CanActivate {
     try {
       const payload = this.jwtService.verify<JwtPayload>(token);
       (request as Request & { user: JwtPayload }).user = payload;
+      return true;
     } catch {
       throw new UnauthorizedException('Token inválido ou expirado');
     }
-
-    const user = (request as Request & { user: JwtPayload }).user;
-    if (user.nivel !== 'administrador') {
-      throw new ForbiddenException('Acesso negado');
-    }
-
-    return true;
   }
 }

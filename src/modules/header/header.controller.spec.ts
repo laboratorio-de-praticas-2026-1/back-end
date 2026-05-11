@@ -2,6 +2,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HeaderController } from './header.controller';
 import { HeaderService } from './header.service';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { RolesGuard } from '../usuario/guards/roles.guard';
 
 describe('HeaderController', () => {
   let controller: HeaderController;
@@ -31,6 +33,8 @@ describe('HeaderController', () => {
     getBannersAtivos: jest.fn().mockResolvedValue([mockBanner]),
   };
 
+  const mockGuard = { canActivate: jest.fn().mockReturnValue(true) };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [HeaderController],
@@ -40,7 +44,12 @@ describe('HeaderController', () => {
           useValue: headerServiceMock,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue(mockGuard)
+      .overrideGuard(RolesGuard)
+      .useValue(mockGuard)
+      .compile();
 
     controller = module.get<HeaderController>(HeaderController);
   });

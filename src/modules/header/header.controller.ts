@@ -12,15 +12,20 @@ import {
   Patch,
   Post,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiConsumes,
   ApiOkResponse,
   ApiOperation,
 } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { RolesGuard } from '../usuario/guards/roles.guard';
+import { Roles } from '../usuario/decorators/roles.decorator';
 import { Banner } from 'src/models/banner.model';
 import { CarrosselBannerResponseDto } from './dto/carrosel-banner-response.dto';
 import { HeaderCreateDto } from './dto/header-create.dto';
@@ -69,6 +74,9 @@ export class HeaderController {
     return this.headerService.getBannersAtivos();
   }
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar todos os banners' })
   @ApiOkResponse({
     description: 'Lista de banners',
@@ -81,6 +89,9 @@ export class HeaderController {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Buscar banner por ID' })
   @ApiOkResponse({ description: 'Banner  encontrado', type: Banner })
   async getById(@Param('id') id: string) {
@@ -89,6 +100,9 @@ export class HeaderController {
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Criar um novo banner' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -134,6 +148,9 @@ export class HeaderController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
+  @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -181,6 +198,9 @@ export class HeaderController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Deletar um banner por ID' })
   @ApiOkResponse({ description: 'Banner deletado' })
   async delete(@Param('id', ParseIntPipe) id: number) {

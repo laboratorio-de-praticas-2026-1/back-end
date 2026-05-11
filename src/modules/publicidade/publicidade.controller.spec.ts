@@ -2,6 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Readable } from 'stream';
 import { PublicidadeController } from './publicidade.controller';
 import { PublicidadeService } from './publicidade.service';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { RolesGuard } from '../usuario/guards/roles.guard';
+
+const mockGuard = { canActivate: jest.fn().mockReturnValue(true) };
 
 describe('PublicidadeController', () => {
   let controller: PublicidadeController;
@@ -38,7 +42,12 @@ describe('PublicidadeController', () => {
           useValue: mockPublicidadeService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue(mockGuard)
+      .overrideGuard(RolesGuard)
+      .useValue(mockGuard)
+      .compile();
 
     controller = module.get<PublicidadeController>(PublicidadeController);
   });

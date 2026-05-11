@@ -12,7 +12,6 @@ import {
 import { UsuarioService } from './usuario.service';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { UsuarioOwnerGuard } from './guards/usuario-owner.guard';
-import { AdminGuard } from './guards/admin.guard';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import {
   ApiBadRequestResponse,
@@ -26,6 +25,9 @@ import {
 import { ResponseUsuarioDto } from './dto/response-usuario.dto';
 import { LoginUsuarioDto } from './dto/login-usuario.dto';
 import { CreateAdminUsuarioDto } from './dto/create-admin.dto';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { RolesGuard } from '../usuario/guards/roles.guard';
+import { Roles } from '../usuario/decorators/roles.decorator';
 
 @Controller('usuario')
 export class UsuarioController {
@@ -46,7 +48,8 @@ export class UsuarioController {
   }
 
   @Post('/admin/usuarios')
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Cria um usuário via painel administrativo' })
   @ApiCreatedResponse({
@@ -70,13 +73,15 @@ export class UsuarioController {
   }
 
   @Delete(':id')
-  @UseGuards(UsuarioOwnerGuard)
+  @UseGuards(JwtAuthGuard, UsuarioOwnerGuard)
+  @ApiBearerAuth()
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.usuarioService.remove(id);
   }
 
   @Patch(':id')
-  @UseGuards(UsuarioOwnerGuard)
+  @UseGuards(JwtAuthGuard, UsuarioOwnerGuard)
+  @ApiBearerAuth()
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateUsuarioDto: UpdateUsuarioDto,
@@ -85,13 +90,16 @@ export class UsuarioController {
   }
 
   @Get()
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
+  @ApiBearerAuth()
   findAll() {
     return this.usuarioService.findAll();
   }
 
   @Get(':id')
-  @UseGuards(UsuarioOwnerGuard)
+  @UseGuards(JwtAuthGuard, UsuarioOwnerGuard)
+  @ApiBearerAuth()
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.usuarioService.findOne(id);
   }

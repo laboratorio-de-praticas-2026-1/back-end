@@ -9,18 +9,23 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { ServicosService } from './servicos.service';
 import { Servico } from 'src/models/servico.model';
 import { CreateServicoDto } from './dto/servico-create.dto';
 import { UpdateServicoDto } from './dto/servico-update.dto';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiOperation,
   ApiParam,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { RolesGuard } from '../usuario/guards/roles.guard';
+import { Roles } from '../usuario/decorators/roles.decorator';
 
 @ApiTags('Serviços')
 @Controller('servicos')
@@ -52,6 +57,9 @@ export class ServicosController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar serviço por ID' })
   @ApiParam({ name: 'id', description: 'ID do serviço', example: 1 })
   @ApiBody({ type: UpdateServicoDto })
@@ -68,6 +76,9 @@ export class ServicosController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Remover serviço por ID' })
   @ApiParam({ name: 'id', description: 'ID do serviço', example: 1 })
   @ApiResponse({ status: 200, description: 'Serviço removido com sucesso' })
@@ -80,6 +91,9 @@ export class ServicosController {
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Cadastrar novo serviço' })
   @ApiBody({ type: CreateServicoDto })

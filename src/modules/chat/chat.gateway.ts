@@ -15,8 +15,41 @@ import { dentroHorario } from './utils/timeUtils';
 import { ChatMessage, IncomingMessage } from './utils/types';
 import { NivelUsuarioEnum } from 'src/commons/constantes/nivel-usuario-enum';
 import type { AuthSocket } from './utils/types';
+import { sanitizeChatPlainText } from './utils/sanitize';
 
-@WebSocketGateway()
+/**
+ * `origin: '*'` com `credentials: true` é rejeitado pelos navegadores (CORS).
+ * Use `CHAT_CORS_ORIGINS` (lista separada por vírgula) em produção.
+ */
+function resolveChatSocketCors(): {
+  origin: string | string[] | boolean;
+  credentials: boolean;
+} {
+  const raw = process.env.CHAT_CORS_ORIGINS?.trim();
+  if (raw) {
+    if (raw === '*') {
+      return { origin: '*', credentials: false };
+    }
+    const origins = raw
+      .split(',')
+      .map((o) => o.trim())
+      .filter(Boolean);
+    if (origins.length > 0) {
+      return { origin: origins, credentials: true };
+    }
+  }
+  if (process.env.NODE_ENV !== 'production') {
+    return {
+      origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+      credentials: true,
+    };
+  }
+  return { origin: '*', credentials: false };
+}
+
+@WebSocketGateway({
+  cors: resolveChatSocketCors(),
+})
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly chatService: ChatService,
@@ -34,7 +67,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private readonly AGENTS_ROOM = 'chat:agents';
 
-  // CONTROLE DE RATE LIMIT E COOLDOWN
   private messageTimestamps: Map<string, number[]> = new Map();
   private lastMessageTime: Map<string, number> = new Map();
 
@@ -53,7 +85,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    if (decoded.id && decoded.nivel) {
+    if (!decoded.id || !decoded.nivel) {
+      socket.disconnect(true);
+      return;
+    }
+
+    try {
       const usuario = await this.chatService.buscarUsuarioPeloId(
         String(decoded.id),
       );
@@ -79,37 +116,80 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           msg: 'Conectado como atendente.',
         });
 
-        this.broadcastAgentsList();
-      } else {
-        socket.role = NivelUsuarioEnum.cliente;
-        socket.name = usuario.nome || `Cliente ${decoded.id}`;
-        await socket.join(this.userRoom(String(decoded.id)));
-
-        const userIdGerado = this.chatService.addUser(socket, socket.name);
-        socket.userId = userIdGerado;
-        await socket.join(this.userRoom(userIdGerado));
-
-        void this.chatService.send(socket, {
-          type: 'status',
-          msg: `✅ Conectado como ${socket.name}`,
-        });
-
-        void this.chatService.send(socket, {
-          type: 'history',
-          messages: this.chatService.history[userIdGerado],
-        });
+        this.replayInMemoryHistoryToAgent(socket);
 
         this.broadcastAgentsList();
+        return;
       }
+
+      socket.role = NivelUsuarioEnum.cliente;
+      socket.name = usuario.nome || `Cliente ${decoded.id}`;
+
+      const previousSession = this.chatService.findSessionIdByAuthUserId(
+        decoded.id,
+      );
+
+      await socket.join(this.userRoom(String(decoded.id)));
+
+      let userIdGerado: string;
+      if (previousSession) {
+        this.chatService.rebindClientSocket(
+          previousSession,
+          socket,
+          socket.name ?? `Cliente ${decoded.id}`,
+          decoded.id,
+        );
+        userIdGerado = previousSession;
+      } else {
+        userIdGerado = this.chatService.addUser(
+          socket,
+          socket.name ?? `Cliente ${decoded.id}`,
+          decoded.id,
+        );
+      }
+      socket.userId = userIdGerado;
+      await socket.join(this.userRoom(userIdGerado));
+
+      void this.chatService.send(socket, {
+        type: 'session',
+        chatUserId: userIdGerado,
+      });
+
+      void this.chatService.send(socket, {
+        type: 'status',
+        msg: `✅ Conectado como ${socket.name}`,
+      });
+
+      void this.chatService.send(socket, {
+        type: 'history',
+        messages: this.chatService.history[userIdGerado] ?? [],
+      });
+
+      this.broadcastAgentsList();
+    } catch (err: unknown) {
+      this.logger.error(
+        'Erro na conexão do chat',
+        err instanceof Error ? err.stack : String(err),
+      );
+      socket.disconnect(true);
+    }
+  }
+
+  /** Histórico em RAM para atendentes que conectam depois (sem persistência). */
+  private replayInMemoryHistoryToAgent(agentSocket: AuthSocket) {
+    for (const [sessionId] of Object.entries(this.chatService.users)) {
+      const msgs = this.chatService.history[sessionId] ?? [];
+      if (msgs.length === 0) continue;
+      this.chatService.send(agentSocket, {
+        type: 'history_for_user',
+        userId: sessionId,
+        messages: msgs,
+      });
     }
   }
 
   private userRoom(userId: string) {
     return `chat:user:${userId}`;
-  }
-
-  private adminRoom(userId: string) {
-    return `chat:admin:${userId}`;
   }
 
   private broadcastAgentsList() {
@@ -144,18 +224,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     let data: IncomingMessage;
 
-    const horario = dentroHorario();
-
-    if (!horario.ok) {
-      socket.emit('chat', {
-        type: 'status',
-        msg: horario.message,
-      });
-
-      socket.disconnect(true);
-      return;
-    }
-
     try {
       const parsed: unknown =
         typeof payload === 'string' ? JSON.parse(payload) : payload;
@@ -169,8 +237,48 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
+    if (data.type === 'resync') {
+      if (socket.role === NivelUsuarioEnum.cliente && socket.userId) {
+        const msgs = this.chatService.history[socket.userId] ?? [];
+        void this.chatService.send(socket, { type: 'history', messages: msgs });
+      }
+      return;
+    }
+
+    if (data.type === 'admin_resync') {
+      if (socket.role === NivelUsuarioEnum.administrador) {
+        const userList = Object.entries(this.chatService.users).map(
+          ([id, u]) => ({
+            userId: id,
+            nome: u.nome,
+          }),
+        );
+        void this.chatService.send(socket, {
+          type: 'users',
+          users: userList,
+        });
+        this.replayInMemoryHistoryToAgent(socket);
+      }
+      return;
+    }
+
+    const skipHours = process.env.CHAT_SKIP_BUSINESS_HOURS === 'true';
+    if (!skipHours && data.type === 'message') {
+      const horario = dentroHorario();
+
+      if (!horario.ok) {
+        socket.emit('chat', {
+          type: 'status',
+          msg: horario.message,
+        });
+
+        socket.disconnect(true);
+        return;
+      }
+    }
+
     if (data.type === 'message') {
-      this.handleMessage(socket, data);
+      void this.handleMessage(socket, data);
     }
   }
 
@@ -180,7 +288,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     if (!role || !userId) return;
 
-    if (!data.text) {
+    if (typeof data.text !== 'string') {
+      this.chatService.send(socket, {
+        type: 'error',
+        msg: 'Formato de mensagem inválido.',
+      });
+      return;
+    }
+
+    if (!data.text.trim()) {
       this.chatService.send(socket, {
         type: 'error',
         msg: 'Mensagem vazia não é permitida.',
@@ -188,10 +304,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    //  NORMALIZAÇÃO
     const normalizedText = data.text.replace(/\s+/g, ' ').trim();
 
-    //  VALIDAÇÃO TAMANHO
     if (normalizedText.length < 1 || normalizedText.length > 200) {
       this.chatService.send(socket, {
         type: 'error',
@@ -200,18 +314,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    //  SANITIZAÇÃO
-    const sanitizedText = normalizedText
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#x27;')
-      .replace(/\//g, '&#x2F;');
+    const sanitizedText = sanitizeChatPlainText(normalizedText);
 
     const now = Date.now();
 
-    //  COOLDOWN (3s)
     const lastTime = this.lastMessageTime.get(userId) || 0;
     if (now - lastTime < this.COOLDOWN_MS) {
       this.chatService.send(socket, {
@@ -222,7 +328,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
     this.lastMessageTime.set(userId, now);
 
-    //  RATE LIMIT (10/min)
     const timestamps = this.messageTimestamps.get(userId) || [];
     const oneMinuteAgo = now - 60000;
     const recentMessages = timestamps.filter((t) => t > oneMinuteAgo);
@@ -238,7 +343,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     recentMessages.push(now);
     this.messageTimestamps.set(userId, recentMessages);
 
-    // 🚨 DUPLICADAS
     if (
       this.chatService.isDuplicateMessage(
         userId,
@@ -255,7 +359,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const timestamp = new Date().toISOString();
 
-    // CLIENTE
     if (role === NivelUsuarioEnum.cliente) {
       const newMsg: ChatMessage = {
         userId: userId,
@@ -270,9 +373,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.chatService.broadcastAgents(newMsg);
     }
 
-    // ADMIN
     if (role === NivelUsuarioEnum.administrador) {
       const targetUser = data.to;
+
       if (!targetUser || !this.chatService.users[targetUser]) {
         this.chatService.send(socket, {
           type: 'status',
@@ -300,7 +403,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   handleDisconnect(socket: AuthSocket) {
-    // Limpar controles de rate limit e cooldown
     if (socket.userId) {
       this.messageTimestamps.delete(socket.userId);
       this.lastMessageTime.delete(socket.userId);
@@ -319,8 +421,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     );
 
     if (userEntry) {
-      const [userId] = userEntry;
-      this.chatService.endUserSession(userId, 'disconnect');
+      const [uid, userData] = userEntry;
+      if (userData.socket === socket) {
+        this.chatService.endUserSession(uid, 'disconnect');
+      }
     }
   }
 }

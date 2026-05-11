@@ -10,6 +10,11 @@ import {
 import { Debito } from './debito.model';
 import { Parcela } from './parcela.model';
 
+export enum TipoPagamento {
+  AVISTA = 'AVISTA',
+  PARCELADO = 'PARCELADO',
+}
+
 /*Representa a transação financeira que quita um Debito*/
 @Table({ tableName: 'pagamento', timestamps: false })
 export class Pagamento extends Model {

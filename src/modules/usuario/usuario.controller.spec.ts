@@ -9,7 +9,8 @@ import {
 } from '@nestjs/common';
 import { UsuarioOwnerGuard } from './guards/usuario-owner.guard';
 import { NivelUsuario } from './dto/create-usuario.dto';
-import { AdminGuard } from './guards/admin.guard';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RolesGuard } from './guards/roles.guard';
 
 const mockUsuarioService = {
   create: jest.fn(),
@@ -36,9 +37,11 @@ describe('UsuarioController', () => {
         },
       ],
     })
+      .overrideGuard(JwtAuthGuard)
+      .useValue(mockGuard)
       .overrideGuard(UsuarioOwnerGuard)
       .useValue(mockGuard)
-      .overrideGuard(AdminGuard)
+      .overrideGuard(RolesGuard)
       .useValue(mockGuard)
       .compile();
 

@@ -12,6 +12,16 @@ import { DebitoVeiculo } from './debito-veiculo.model';
 import { Pagamento } from './pagamento.model';
 import { Solicitacao } from './solicitacao.model';
 
+export enum TipoDebito {
+  VEICULO = 'veiculo',
+  SERVICO = 'servico',
+}
+
+export enum StatusDebito {
+  PAGO = 'pago',
+  PENDENTE = 'pendente',
+}
+
 @Table({ tableName: 'debito' })
 export class Debito extends Model {
   @Column({ primaryKey: true, autoIncrement: true, allowNull: false })

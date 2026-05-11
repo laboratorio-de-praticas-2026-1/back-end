@@ -10,16 +10,21 @@ import {
   Post,
   Put,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiConsumes,
   ApiOperation,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { RolesGuard } from '../usuario/guards/roles.guard';
+import { Roles } from '../usuario/decorators/roles.decorator';
 import { imageFilePipe } from 'src/commons/pipes/file.pipe';
 import { Publicidade } from '../../models/publicidade.model';
 import {
@@ -67,6 +72,9 @@ export class PublicidadeController {
     );
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Criar uma nova publicidade' })
   @ApiResponse({ status: 201, type: PublicidadeResponseDto })
   @ApiBody({
@@ -100,6 +108,9 @@ export class PublicidadeController {
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar publicidade' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -126,6 +137,9 @@ export class PublicidadeController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Remover publicidade por ID' })
   @ApiResponse({ status: 200, description: 'Publicidade removida com sucesso' })
   async remove(@Param('id', ParseIntPipe) id: number) {

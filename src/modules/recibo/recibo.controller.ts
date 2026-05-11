@@ -1,5 +1,15 @@
-import { Body, Controller, Post, Res, StreamableFile } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Post,
+  Req,
+  Res,
+  StreamableFile,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
+import { JwtPayload } from '../usuario/guards/jwt-auth.guard';
 import type { Response } from 'express';
 import { CreateReciboDto } from './dto/create-recibo.dto';
 import { ReciboService } from './recibo.service';
@@ -14,8 +24,17 @@ export class ReciboController {
     description: 'Gera um recibo em PDF para a solicitação especificada.',
   })
   @Post('generate')
-  create(@Body() createReciboDto: CreateReciboDto) {
-    return this.reciboService.create(createReciboDto);
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  create(
+    @Body() createReciboDto: CreateReciboDto,
+    @Req() req: { user: JwtPayload },
+  ) {
+    return this.reciboService.create(
+      createReciboDto,
+      req.user.id,
+      req.user.nivel,
+    );
   }
 
   @ApiOperation({
@@ -24,11 +43,18 @@ export class ReciboController {
       'Visualiza e baixa o recibo gerado para a solicitação especificada.',
   })
   @Post('preview/download')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async previewDownload(
     @Body() createReciboDto: CreateReciboDto,
     @Res({ passthrough: true }) res: Response,
+    @Req() req: { user: JwtPayload },
   ) {
-    const pdfBuffer = await this.reciboService.previewDownload(createReciboDto);
+    const pdfBuffer = await this.reciboService.previewDownload(
+      createReciboDto,
+      req.user.id,
+      req.user.nivel,
+    );
     const filename = `recibo-solicitacao.pdf`;
 
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
