@@ -481,93 +481,114 @@ export class SolicitacaoService implements OnModuleDestroy {
   }
 
   private formatarSolicitacoes(solicitacoes: any[]) {
-  return solicitacoes.map((solicitacao) => ({
-    cliente: {
-      id: solicitacao.usuario.id,
-      nome: solicitacao.usuario.nome,
-      email: solicitacao.usuario.email,
-    },
-    servico: {
-      id: solicitacao.servico.id,
-      tipo: solicitacao.servico.nome,
-      valorBase: Number(solicitacao.servico.valorBase) || 0,
-    },
-    solicitacao: {
-      id: solicitacao.id,
-      status:
-        solicitacao.status.charAt(0).toUpperCase() +
-        solicitacao.status.slice(1),
-      observacaoCliente: solicitacao.observacaoCliente || '',
-      observacaoAdmin: solicitacao.observacaoAdmin || '',
-      dataSolicitacao: solicitacao.dataSolicitacao,
-      dataConclusao: solicitacao.dataConclusao,
-    },
-  }));
-}
-
+    return solicitacoes.map((solicitacao) => ({
+      cliente: {
+        id: solicitacao.usuario.id,
+        nome: solicitacao.usuario.nome,
+        email: solicitacao.usuario.email,
+      },
+      servico: {
+        id: solicitacao.servico.id,
+        tipo: solicitacao.servico.nome,
+        valorBase: Number(solicitacao.servico.valorBase) || 0,
+      },
+      solicitacao: {
+        id: solicitacao.id,
+        status:
+          solicitacao.status.charAt(0).toUpperCase() +
+          solicitacao.status.slice(1),
+        observacaoCliente: solicitacao.observacaoCliente || '',
+        observacaoAdmin: solicitacao.observacaoAdmin || '',
+        dataSolicitacao: solicitacao.dataSolicitacao,
+        dataConclusao: solicitacao.dataConclusao,
+      },
+    }));
+  }
   async listarSolicitacoesKanban(
-  query: ListSolicitacoesKanbanQueryDto,
-): Promise<ListSolicitacoesKanbanResponseDto> {
-  const whereSolicitacao: Record<string, unknown> = {};
-  const whereUsuario: Record<string, unknown> = {};
+    filtros: ListSolicitacoesQueryDto = new ListSolicitacoesQueryDto(),
+  ): Promise<ListSolicitacoesKanbanResponseDto> {
+    const whereSolicitacao: Record<string, unknown> = {};
+    const whereUsuario: Record<string, unknown> = {};
 
-  if (query.usuario_id) {
-    whereSolicitacao.usuarioId = query.usuario_id;
-  }
+    if (filtros.usuario_id) {
+      whereSolicitacao.usuarioId = filtros.usuario_id;
+    }
 
-  if (query.servico_id) {
-    whereSolicitacao.servicoId = query.servico_id;
-  }
+    if (filtros.servico_id) {
+      whereSolicitacao.servicoId = filtros.servico_id;
+    }
 
-  if (query.veiculo_id) {
-    whereSolicitacao.veiculoId = query.veiculo_id;
-  }
+    if (filtros.veiculo_id) {
+      whereSolicitacao.veiculoId = filtros.veiculo_id;
+    }
 
-  // NÃO aplica filtro de status no Kanban
+    // NÃO aplica filtro de status no kanban
 
-  if (query.nome) {
-    whereUsuario.nome = { [Op.like]: `%${query.nome}%` };
-  }
+    if (filtros.nome) {
+      whereUsuario.nome = { [Op.like]: `%${filtros.nome}%` };
+    }
 
-  if (query.cpf_cnpj) {
-    whereUsuario.cpfCnpj = { [Op.like]: `%${query.cpf_cnpj}%` };
-  }
+    if (filtros.cpf_cnpj) {
+      whereUsuario.cpfCnpj = { [Op.like]: `%${filtros.cpf_cnpj}%` };
+    }
 
-  const orderDirection: 'ASC' | 'DESC' =
-    query.order === 'asc' ? 'ASC' : 'DESC';
+    const orderDirection: 'ASC' | 'DESC' =
+      filtros.order === 'asc' ? 'ASC' : 'DESC';
 
-  const orderClause: [string, 'ASC' | 'DESC'] = [
-    SOLICITACAO_ORDER_BY_COLUMN[
-      query.orderBy ?? 'dataSolicitacao'
-    ],
-    orderDirection,
-  ];
+    const orderClause: [string, 'ASC' | 'DESC'] = [
+      SOLICITACAO_ORDER_BY_COLUMN[filtros.orderBy ?? 'dataSolicitacao'],
+      orderDirection,
+    ];
 
-  const solicitacoes = await this.solicitacaoModel.findAll({
-    where: whereSolicitacao,
-    include: [
-      {
-        model: Usuario,
-        attributes: ['id', 'nome', 'email'],
-        where:
-          Object.keys(whereUsuario).length > 0
-            ? whereUsuario
-            : undefined,
-        required: Object.keys(whereUsuario).length > 0,
+    type SolicitacaoKanbanRow = Solicitacao & {
+      usuario: Usuario;
+      servico: Servico;
+    };
+
+    const solicitacoes = (await this.solicitacaoModel.findAll({
+      where: whereSolicitacao,
+      order: [orderClause],
+      include: [
+        {
+          model: Usuario,
+          attributes: ['id', 'nome', 'email'],
+          where:
+            Object.keys(whereUsuario).length > 0 ? whereUsuario : undefined,
+          required: Object.keys(whereUsuario).length > 0,
+        },
+        {
+          model: Servico,
+          attributes: ['id', 'nome', 'valorBase'],
+        },
+      ],
+    })) as SolicitacaoKanbanRow[];
+
+    const solicitacoesFormatadas = solicitacoes.map((solicitacao) => ({
+      cliente: {
+        id: solicitacao.usuario.id,
+        nome: solicitacao.usuario.nome,
+        email: solicitacao.usuario.email,
       },
-      {
-        model: Servico,
-        attributes: ['id', 'nome', 'valorBase'],
+      servico: {
+        id: solicitacao.servico.id,
+        tipo: solicitacao.servico.nome,
+        valorBase: Number(solicitacao.servico.valorBase) || 0,
       },
-    ],
-    order: [orderClause],
-  });
+      solicitacao: {
+        id: solicitacao.id,
+        status:
+          solicitacao.status.charAt(0).toUpperCase() +
+          solicitacao.status.slice(1),
+        observacaoCliente: solicitacao.observacaoCliente || '',
+        observacaoAdmin: solicitacao.observacaoAdmin || '',
+        dataSolicitacao: solicitacao.dataSolicitacao,
+        dataConclusao: solicitacao.dataConclusao,
+      },
+    }));
 
-  const solicitacoesFormatadas =
-    this.formatarSolicitacoes(solicitacoes);
-
-  const kanbanColumns = solicitacoesFormatadas.reduce(
-    (acc, item) => {
+    const kanbanColumns = solicitacoesFormatadas.reduce<
+      Record<string, typeof solicitacoesFormatadas>
+    >((acc, item) => {
       const status = item.solicitacao.status;
 
       if (!acc[status]) {
@@ -577,16 +598,13 @@ export class SolicitacaoService implements OnModuleDestroy {
       acc[status].push(item);
 
       return acc;
-    },
-    {} as Record<string, typeof solicitacoesFormatadas>,
-  );
+    }, {});
 
-  return {
-    total: solicitacoesFormatadas.length,
-    solicitacoes: kanbanColumns,
-  };
-}
-
+    return {
+      total: solicitacoesFormatadas.length,
+      solicitacoes: kanbanColumns,
+    };
+  }
   async listarSolicitacoes(
     filtros: ListSolicitacoesQueryDto = new ListSolicitacoesQueryDto(),
   ): Promise<ListSolicitacoesResponseDto> {

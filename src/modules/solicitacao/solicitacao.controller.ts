@@ -10,7 +10,6 @@ import {
   ParseIntPipe,
   Patch,
   Post,
-  Put,
   Req,
   UploadedFile,
   UseGuards,
@@ -131,33 +130,33 @@ export class SolicitacaoController {
     this.logger.log('Buscando lista de solicitações...');
     return this.solicitacaoService.listarSolicitacoes(query);
   }
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('administrador')
-@ApiBearerAuth()
-@Get('kanban')
-@ApiOperation({
-  summary: 'Listar solicitações no formato Kanban',
-  description:
-    'Retorna todas as solicitações agrupadas por status (sem paginação). Aplica todos os filtros exceto status.',
-})
-@ApiOkResponse({ type: ListSolicitacoesKanbanResponseDto })
-@ApiQuery({
-  name: 'orderBy',
-  required: false,
-  enum: SOLICITACAO_ORDER_BY_FIELDS,
-})
-@ApiQuery({
-  name: 'order',
-  required: false,
-  enum: ['asc', 'desc'],
-})
-async listarSolicitacoesKanban(
-  @Query() query: ListSolicitacoesQueryDto,
-): Promise<ListSolicitacoesKanbanResponseDto> {
-  this.logger.log('Buscando solicitações no formato kanban...');
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
+  @ApiBearerAuth()
+  @Get('kanban')
+  @ApiOperation({
+    summary: 'Listar solicitações no formato Kanban',
+    description:
+      'Retorna todas as solicitações agrupadas por status (sem paginação). Aplica todos os filtros exceto status.',
+  })
+  @ApiOkResponse({ type: ListSolicitacoesKanbanResponseDto })
+  @ApiQuery({
+    name: 'orderBy',
+    required: false,
+    enum: SOLICITACAO_ORDER_BY_FIELDS,
+  })
+  @ApiQuery({
+    name: 'order',
+    required: false,
+    enum: ['asc', 'desc'],
+  })
+  async listarSolicitacoesKanban(
+    @Query() query: ListSolicitacoesQueryDto,
+  ): Promise<ListSolicitacoesKanbanResponseDto> {
+    this.logger.log('Buscando solicitações no formato kanban...');
 
-  return this.solicitacaoService.listarSolicitacoesKanban(query);
-}
+    return this.solicitacaoService.listarSolicitacoesKanban(query);
+  }
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
