@@ -3,6 +3,9 @@ import { InjectModel } from '@nestjs/sequelize';
 import { cast, col, fn, Op, where } from 'sequelize';
 import { Banner } from 'src/models/banner.model';
 import { Blog } from 'src/models/blog.model';
+import { Faq } from 'src/models/faq.model';
+import { Solicitacao } from 'src/models/solicitacao.model';
+import { DocumentoSolicitacao } from 'src/models/documento-solicitacao.model';
 import { Empresa } from 'src/models/empresa.model';
 import { Publicidade } from 'src/models/publicidade.model';
 import { Servico } from 'src/models/servico.model';
@@ -13,6 +16,8 @@ import { BuscaEmpresaFiltroDto } from './dto/busca-empresa-filtro.dto';
 import { BuscaPublicidadeStatusDto } from './dto/busca-publicidade-status.dto';
 import { BuscaServicoFiltroDto } from './dto/busca-servico-filtro.dto';
 import { BuscaUsuarioFiltroDto } from './dto/busca-usuario-filtro.dto';
+import { BuscaFaqDto } from './dto/busca-faq.dto';
+import { BuscaSolicitacaoDto } from './dto/busca-solicitacao.dto';
 
 @Injectable()
 export class BuscaService {
@@ -23,6 +28,8 @@ export class BuscaService {
     @InjectModel(Publicidade) private publicidadeModel: typeof Publicidade,
     @InjectModel(Usuario) private usuarioModel: typeof Usuario,
     @InjectModel(Empresa) private empresaModel: typeof Empresa,
+    @InjectModel(Faq) private faqModel: typeof Faq,
+    @InjectModel(Solicitacao) private solicitacaoModel: typeof Solicitacao,
   ) {}
 
   async buscarBlogsPorIntervaloDeData(
@@ -416,6 +423,128 @@ export class BuscaService {
           { conteudo: { [Op.like]: `%${termoNormalizado}%` } },
         ],
       },
+      order: [['id', 'DESC']],
+    });
+
+    return {
+      itens,
+      mensagem: itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+    };
+  }
+
+  async listarFaqByBusca(dto: BuscaFaqDto): Promise<{
+    itens: Faq[];
+    mensagem?: string;
+  }> {
+    const termoNormalizado = dto.termo?.trim();
+    const filtrosAnd: Array<Record<string, unknown>> = [];
+
+    if (termoNormalizado) {
+      filtrosAnd.push({
+        [Op.or]: [
+          { pergunta: { [Op.like]: `%${termoNormalizado}%` } },
+          { resposta: { [Op.like]: `%${termoNormalizado}%` } },
+          { categoria: { [Op.like]: `%${termoNormalizado}%` } },
+        ],
+      });
+    }
+
+    if (dto.status) {
+      filtrosAnd.push({ status: dto.status === 'ativo' });
+    }
+
+    if (dto.categoria) {
+      filtrosAnd.push({ categoria: dto.categoria });
+    }
+
+    const itens = await this.faqModel.findAll({
+      ...(filtrosAnd.length > 0 ? { where: { [Op.and]: filtrosAnd } } : {}),
+      order: [['id', 'DESC']],
+    });
+
+    return {
+      itens,
+      mensagem: itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+    };
+  }
+
+  async listarSolicitacoesByBusca(dto: BuscaSolicitacaoDto): Promise<{
+    itens: Solicitacao[];
+    mensagem?: string;
+  }> {
+    const termoNormalizado = dto.termo?.trim();
+    const filtros: Array<Record<string, unknown> | ReturnType<typeof where>> =
+      [];
+    const includes: Array<any> = [];
+    const de = dto.de ? this.parseYmdDate(dto.de, 'de') : undefined;
+    const ate = dto.ate ? this.parseYmdDate(dto.ate, 'ate') : undefined;
+
+    if (de && ate && de.key > ate.key) {
+      throw new BadRequestException(
+        'Intervalo inválido: "de" não pode ser maior que "ate"',
+      );
+    }
+
+    if (de) {
+      filtros.push(where(col('data_solicitacao'), Op.gte, de.ymd));
+    }
+
+    if (ate) {
+      const proximoDia = new Date(`${ate.ymd}T00:00:00.000Z`);
+      proximoDia.setUTCDate(proximoDia.getUTCDate() + 1);
+      const proximoDiaYmd = proximoDia.toISOString().slice(0, 10);
+      filtros.push(where(col('data_solicitacao'), Op.lt, proximoDiaYmd));
+    }
+
+    if (dto.servico_id !== undefined && dto.servico_id !== null) {
+      filtros.push(where(col('servico_id'), Op.eq, dto.servico_id));
+    }
+
+    if (dto.status_documentacao) {
+      // incluir somente solicitações que possuam documento com status informado
+      includes.push({
+        model: DocumentoSolicitacao,
+        where: { statusValidacao: dto.status_documentacao },
+        required: true,
+      });
+    }
+
+    includes.push(
+      {
+        model: Usuario,
+        attributes: ['id', 'nome', 'email'],
+        ...(termoNormalizado
+          ? { where: { nome: { [Op.like]: `%${termoNormalizado}%` } } }
+          : {}),
+      },
+      {
+        model: Servico,
+        attributes: ['id', 'nome', 'valorBase'],
+      },
+    );
+
+    if (
+      !termoNormalizado &&
+      !dto.de &&
+      !dto.ate &&
+      dto.servico_id === undefined &&
+      !dto.status_documentacao
+    ) {
+      const itens = await this.solicitacaoModel.findAll({
+        include: includes,
+        order: [['id', 'DESC']],
+      });
+
+      return {
+        itens,
+        mensagem:
+          itens.length === 0 ? 'Nenhum item foi encontrado.' : undefined,
+      };
+    }
+
+    const itens = await this.solicitacaoModel.findAll({
+      ...(filtros.length > 0 ? { where: { [Op.and]: filtros } } : {}),
+      ...(includes.length > 0 ? { include: includes } : {}),
       order: [['id', 'DESC']],
     });
 
