@@ -1,24 +1,24 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Put,
   Body,
+  Controller,
+  ForbiddenException,
+  Get,
   Logger,
   Param,
   ParseIntPipe,
-  ForbiddenException,
-  ValidationPipe,
+  Post,
+  Put,
   UseGuards,
+  ValidationPipe,
 } from '@nestjs/common';
 
 import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
-  ApiCreatedResponse,
-  ApiBadRequestResponse,
-  ApiBearerAuth,
 } from '@nestjs/swagger';
 
 import { ContatoService } from './contato.service';
@@ -28,9 +28,9 @@ import { EmpresaDto, TipoEmpresa } from './dto/empresa-response.dto';
 import { ContatoUpdateDto } from './dto/contato-update.dto';
 import { EnviarEmailDto } from './dto/enviar-email-dto';
 
+import { Roles } from '../usuario/decorators/roles.decorator';
 import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
 import { RolesGuard } from '../usuario/guards/roles.guard';
-import { Roles } from '../usuario/decorators/roles.decorator';
 
 @Controller('contato')
 export class ContatoController {
@@ -58,66 +58,6 @@ export class ContatoController {
     this.logger.log(`Buscando contato ID: ${id}`);
     return this.contatoService.buscarContatoById(id);
   }
-
-  /*export class EmpresaDto {
-  @ApiProperty()
-  id: number;
-
-  @ApiProperty()
-  nomeFantasia: string;
-
-  @ApiProperty()
-  cnpj: string;
-
-  @ApiProperty()
-  telefone: string;
-
-  @ApiProperty()
-  email: string;
-
-  @ApiProperty()
-  endereco: string;
-
-  @ApiProperty()
-  cidade: string;
-
-  @ApiProperty({
-    description: 'Estado da empresa (sigla de 2 letras)',
-    example: 'SP',
-  })
-  @IsString({ message: 'O estado deve ser uma string' })
-  @MaxLength(2, { message: 'O estado deve conter no máximo 2 caracteres' })
-  estado: string;
-
-  @ApiProperty()
-  site: string;
-
-  @ApiProperty({
-    description: 'Tipo da empresa',
-    required: false,
-  })
-  @IsEnum({
-    enum: TipoEmpresa,
-    message: `O tipo deve ser um dos seguintes valores: ${Object.values(TipoEmpresa).join(', ')}`,
-  })
-  tipo?: TipoEmpresa | null;
-
-  @ApiProperty({
-    description: 'Latitude da empresa',
-    required: false,
-  })
-  latitude?: string;
-
-  @ApiProperty({
-    description: 'Longitude da empresa',
-    required: false,
-  })
-  longitude?: string;
-
-  @ApiProperty({
-    description: 'Endereço completo (endereço + cidade + estado)',
-  })
-  enderecoCompleto: string; */
 
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)

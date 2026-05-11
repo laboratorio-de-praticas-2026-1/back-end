@@ -1,31 +1,31 @@
 import {
+  Body,
   Controller,
-  Get,
   Delete,
+  Get,
   Param,
   ParseIntPipe,
-  Post,
-  Body,
   Patch,
+  Post,
   UseGuards,
 } from '@nestjs/common';
 
 import {
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-  ApiBody,
-  ApiTags,
   ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
 } from '@nestjs/swagger';
 
-import { FaqService } from './faq.service';
 import { CreateFaqDto } from './dto/create-faq.dto';
 import { UpdateFaqDto } from './dto/update-faq.dto';
+import { FaqService } from './faq.service';
 
+import { Roles } from '../usuario/decorators/roles.decorator';
 import { JwtAuthGuard } from '../usuario/guards/jwt-auth.guard';
 import { RolesGuard } from '../usuario/guards/roles.guard';
-import { Roles } from '../usuario/decorators/roles.decorator';
 
 @ApiTags('FAQ')
 @Controller('faq')
